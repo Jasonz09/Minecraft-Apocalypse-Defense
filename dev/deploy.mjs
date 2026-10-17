@@ -3,7 +3,7 @@
 // carries this pack's header UUID. Never touches worlds or other packs.
 // Usage: node dev/deploy.mjs [--dry-run] [--target <development_behavior_packs dir>]
 import { createHash } from "node:crypto";
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
+import { cpSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, statSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -12,6 +12,10 @@ const source = join(root, "CivilizationApocalypse_BP");
 const args = process.argv.slice(2);
 const dryRun = args.includes("--dry-run");
 const targetFlag = args.indexOf("--target");
+if (targetFlag >= 0 && (args[targetFlag + 1] === undefined || args[targetFlag + 1].startsWith("--"))) {
+    console.error("--target needs a directory");
+    process.exit(1);
+}
 const devPacks =
     targetFlag >= 0
         ? resolve(args[targetFlag + 1])
@@ -31,6 +35,15 @@ const hash = (file) => createHash("sha256").update(readFileSync(file)).digest("h
 
 if (!existsSync(devPacks)) {
     console.error(`development_behavior_packs not found: ${devPacks}`);
+    process.exit(1);
+}
+// Safety: the delete target must be a real (non-link) folder disjoint from the source tree.
+const real = (p) => (existsSync(p) ? realpathSync(p) : resolve(p));
+const srcReal = real(source);
+const destReal = existsSync(dest) ? real(dest) : join(real(devPacks), "CivilizationApocalypse_BP");
+const overlaps = (a, b) => a === b || a.startsWith(b + "\\") || a.startsWith(b + "/");
+if (overlaps(destReal, srcReal) || overlaps(srcReal, destReal) || (existsSync(dest) && lstatSync(dest).isSymbolicLink())) {
+    console.error(`Refusing: target ${dest} overlaps the source pack or is a link.`);
     process.exit(1);
 }
 const uuid = JSON.parse(readFileSync(join(source, "manifest.json"), "utf8")).header.uuid;
