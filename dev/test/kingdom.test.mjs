@@ -138,13 +138,24 @@ test("the store seeds once, then reloads the same state from storage", () => {
 test("state survives a world restart (fresh store, same saved world)", () => {
     const world = createMockWorld();
     const before = createKingdomStore(world).ensureInitial().kingdom;
-    before.districts[0].civilians = 123;
+    before.districts[0].civilians = 118;
     createKingdomStore(world).save(before);
 
     const after = createKingdomStore(world).load();
     assert.equal(after.reason, undefined);
-    assert.equal(after.kingdom.districts[0].civilians, 123);
-    assert.equal(computeTotals(after.kingdom).civilians, 443);
+    assert.equal(after.kingdom.districts[0].civilians, 118);
+    assert.equal(computeTotals(after.kingdom).civilians, 438);
+});
+
+test("saving over shelter capacity is refused, so an overfilled district cannot persist", () => {
+    const world = createMockWorld();
+    const store = createKingdomStore(world);
+    const kingdom = store.ensureInitial().kingdom;
+    const savedBefore = world.properties.get(STORAGE_KEYS.kingdom);
+
+    kingdom.districts[0].civilians = 123;
+    assert.throws(() => store.save(kingdom), /over shelter: 123 civilians \+ 0 refugees exceed capacity 120/);
+    assert.equal(world.properties.get(STORAGE_KEYS.kingdom), savedBefore);
 });
 
 test("corrupt or mistyped storage is reported, then reseeded on the next join", () => {

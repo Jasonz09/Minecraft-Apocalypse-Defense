@@ -8,6 +8,7 @@ const gates = [
     { name: "manifest + packaging", argv: ["dev/validate-manifest.mjs"] },
     { name: "typecheck against @minecraft/server 2.7.0", argv: ["node_modules/typescript/bin/tsc", "-p", "tsconfig.json"] },
     { name: "offline unit tests", argv: ["--test", "dev/test/*.test.mjs"] },
+    { name: "headless end-to-end kingdom run", argv: ["dev/e2e-kingdom.mjs"] },
 ];
 
 const results = [];

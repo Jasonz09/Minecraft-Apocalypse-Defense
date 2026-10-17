@@ -13,17 +13,26 @@ export const STORAGE_KEYS = {
 
 export const SCRIPT_EVENT_NAMESPACE = "civ";
 
+/** Ordinary inspection commands. */
 export const SCRIPT_EVENT_IDS = {
     status: "civ:status",
     district: "civ:district",
     territory: "civ:territory",
     policy: "civ:policy",
-    tick: "civ:tick",
-    scenarios: "civ:scenarios",
-    scenario: "civ:scenario",
 };
 
-/** Debug/demo commands live in their own id space so they can never fire from ordinary gameplay. */
+/**
+ * Debug and demonstration commands live behind their own id prefix, so nothing here can
+ * fire from ordinary gameplay and every one of them is a deliberate, typed invocation.
+ */
+export const DEBUG_EVENT_IDS = {
+    help: "civ:debug:help",
+    tick: "civ:debug:tick",
+    scenarios: "civ:debug:scenarios",
+    scenario: "civ:debug:scenario",
+    build: "civ:debug:build",
+};
+
 export const DEBUG_EVENT_PREFIX = "civ:debug";
 
 export const STARTING_SIMULATION = {

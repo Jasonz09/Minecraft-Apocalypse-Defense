@@ -1,21 +1,33 @@
 import { world } from "@minecraft/server";
-import { formatSummaryLines } from "../ui/report.js";
+import { formatMissingKingdomLines, formatRefusedKingdomLines, formatWelcomeLines } from "../ui/report.js";
+
+let registered = false;
 
 /**
- * Greets each player the first time they spawn in a session and makes sure the
- * kingdom has been seeded, so the state exists as soon as someone looks at it.
+ * Greets a player on the first spawn of their session. This is also the moment the
+ * kingdom is seeded for a brand new world - an existing save is loaded, a v1 save is
+ * migrated, and a save this pack cannot read is reported rather than replaced.
  *
  * @param {ReturnType<typeof import("../kingdom/store.js").createKingdomStore>} kingdomStore
  */
 export function registerWelcomeOnJoin(kingdomStore) {
+    if (registered) {
+        return;
+    }
+    registered = true;
+
     world.afterEvents.playerSpawn.subscribe((event) => {
         if (!event.initialSpawn) {
             return;
         }
-        const { kingdom, seeded } = kingdomStore.ensureInitial();
-        const greeting = seeded
-            ? `Welcome to the ruins. ${kingdom.name} has been founded.`
-            : `Welcome back, ${event.player.name}.`;
-        event.player.sendMessage([greeting, ...formatSummaryLines(kingdom)]);
+        const result = kingdomStore.ensureInitial();
+        const player = event.player;
+
+        if (result.kingdom === undefined) {
+            player.sendMessage(result.refused ? formatRefusedKingdomLines(result.reason) : formatMissingKingdomLines(result.reason));
+            return;
+        }
+
+        player.sendMessage(formatWelcomeLines(result.kingdom, result.seeded, player.name));
     });
 }

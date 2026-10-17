@@ -191,6 +191,24 @@ export function computeTotals(kingdom) {
 }
 
 /**
+ * Shelter is shared: an evacuee counts against its host district's capacity, so
+ * occupancy is residents plus refugees. Every system that fills or empties a
+ * district must use these two helpers instead of inventing its own formula.
+ *
+ * @param {{ civilians?: number, refugees?: number, civilianCapacity?: number }} district
+ */
+export function districtOccupancy(district) {
+    return Number(district.civilians ?? 0) + Number(district.refugees ?? 0);
+}
+
+/**
+ * @param {{ civilians?: number, refugees?: number, civilianCapacity?: number }} district
+ */
+export function districtHeadroom(district) {
+    return Math.max(0, Number(district.civilianCapacity ?? 0) - districtOccupancy(district));
+}
+
+/**
  * @param {any} kingdom
  * @param {string} districtId
  */
@@ -298,6 +316,16 @@ export function findValidationProblems(value) {
             if (!Number.isInteger(amount) || amount < 0) {
                 problems.push(`${label}.${field} must be a non-negative integer, got ${String(amount)}`);
             }
+        }
+        if (
+            Number.isInteger(district.civilians) &&
+            Number.isInteger(district.refugees) &&
+            Number.isInteger(district.civilianCapacity) &&
+            district.civilians + district.refugees > district.civilianCapacity
+        ) {
+            problems.push(
+                `${label} is over shelter: ${String(district.civilians)} civilians + ${String(district.refugees)} refugees exceed capacity ${String(district.civilianCapacity)}`,
+            );
         }
         if (district.security !== undefined && !SECURITY_LEVELS.includes(district.security)) {
             problems.push(`${label}.security '${String(district.security)}' is not one of ${SECURITY_LEVELS.join("/")}`);

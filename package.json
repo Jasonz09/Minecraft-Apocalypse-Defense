@@ -8,6 +8,7 @@
         "validate": "node dev/validate-manifest.mjs",
         "typecheck": "node node_modules/typescript/bin/tsc -p tsconfig.json",
         "test": "node --test \"dev/test/*.test.mjs\"",
+        "e2e": "node dev/e2e-kingdom.mjs",
         "verify": "node dev/verify.mjs"
     },
     "devDependencies": {
