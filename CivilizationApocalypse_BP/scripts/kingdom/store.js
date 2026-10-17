@@ -42,7 +42,13 @@ export function createKingdomStore(target) {
         if (typeof raw !== "string") {
             return false;
         }
-        target.setDynamicProperty(quarantineKey, JSON.stringify({ note, schemaVersion: readSchemaVersion(raw), payload: raw.slice(0, 20000) }));
+        let version;
+        try {
+            version = readSchemaVersion(JSON.parse(raw));
+        } catch (_error) {
+            version = undefined;
+        }
+        target.setDynamicProperty(quarantineKey, JSON.stringify({ note, schemaVersion: version, payload: raw.slice(0, 20000) }));
         return true;
     }
 

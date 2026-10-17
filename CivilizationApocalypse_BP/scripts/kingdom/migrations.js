@@ -13,7 +13,7 @@ const upgrades = {
         createV2Kingdom({
             name: state.name,
             seed: DEFAULT_SEED,
-            districts: (state.districts ?? []).map((district, index) => ({
+            districts: /** @type {any[]} */ (state.districts ?? []).map((district, index) => ({
                 id: typeof district?.id === "string" ? district.id : `district-${String(index + 1)}`,
                 name: typeof district?.name === "string" ? district.name : `District ${String(index + 1)}`,
                 civilians: district?.civilians,

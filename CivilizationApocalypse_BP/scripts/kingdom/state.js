@@ -99,14 +99,17 @@ export function makeDistrict(id, name, civilians, soldiers, neighbors, gateTarge
  */
 export function createV2Kingdom(input) {
     const name = typeof input.name === "string" && input.name.length > 0 ? input.name : PACK_NAME;
-    const seed = Number.isInteger(input.seed) ? input.seed : DEFAULT_SEED;
+    const seed = typeof input.seed === "number" && Number.isInteger(input.seed) ? input.seed : DEFAULT_SEED;
     const source = input.districts && input.districts.length > 0 ? input.districts : [];
     const count = source.length;
 
     const districts = source.map((entry, index) => {
+        /** @param {number} offset */
+        const wrap = (offset) => (((index + offset) % count) + count) % count;
+        /** @param {number} offset */
         const idFor = (offset) => {
-            const target = source[((index + offset) % count + count) % count];
-            return typeof target?.id === "string" ? target.id : `district-${String((((index + offset) % count) + 1))}`;
+            const target = source[wrap(offset)];
+            return typeof target?.id === "string" ? target.id : `district-${String(wrap(offset) + 1)}`;
         };
         const neighbors = count === 1 ? [] : count === 2 ? [idFor(1)] : [idFor(-1), idFor(1)];
         const gateTargets = count < 2 ? [] : [idFor(1)];
@@ -192,7 +195,8 @@ export function computeTotals(kingdom) {
  * @param {string} districtId
  */
 export function districtById(kingdom, districtId) {
-    return kingdom.districts.find((district) => district.id === districtId);
+    const list = /** @type {any[]} */ (kingdom.districts ?? []);
+    return list.find((district) => district.id === districtId);
 }
 
 /**
@@ -319,7 +323,8 @@ export function findValidationProblems(value) {
             }
         }
         if (Array.isArray(district.gates)) {
-            district.gates.forEach((gate, gateIndex) => {
+            const gates = /** @type {any[]} */ (district.gates);
+            gates.forEach((gate, gateIndex) => {
                 if (typeof gate?.id !== "string" || typeof gate?.with !== "string") {
                     problems.push(`${label}.gate ${String(gateIndex)} needs an id and a partner district`);
                 } else if (gate.state !== undefined && !GATE_STATES.includes(gate.state)) {
@@ -328,13 +333,15 @@ export function findValidationProblems(value) {
             });
         }
         if (Array.isArray(district.projects)) {
-            district.projects.forEach((project, projectIndex) => {
+            const projects = /** @type {any[]} */ (district.projects);
+            const catalogue = /** @type {Record<string, any>} */ (PROJECT_TYPES);
+            projects.forEach((project, projectIndex) => {
                 const kind = project?.kind;
-                if (typeof kind !== "string" || PROJECT_TYPES[kind] === undefined) {
+                if (typeof kind !== "string" || catalogue[kind] === undefined) {
                     problems.push(`${label}.project ${String(projectIndex)} has unknown kind '${String(kind)}'`);
                     return;
                 }
-                const definition = PROJECT_TYPES[kind];
+                const definition = catalogue[kind];
                 if (!Number.isInteger(project.stage) || project.stage < 0 || project.stage > definition.stages) {
                     problems.push(`${label}.project ${String(projectIndex)}.stage must be 0..${String(definition.stages)}`);
                 }
@@ -370,7 +377,8 @@ export function findValidationProblems(value) {
     }
 
     if (Array.isArray(value.territory)) {
-        value.territory.forEach((land, index) => {
+        const territories = /** @type {any[]} */ (value.territory);
+        territories.forEach((land, index) => {
             if (typeof land?.id !== "string" || typeof land?.name !== "string") {
                 problems.push(`territory ${String(index)} needs an id and a name`);
             }
