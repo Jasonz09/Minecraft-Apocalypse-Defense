@@ -110,3 +110,7 @@ files**), headless end-to-end kingdom run (**52/52 stages**).
 Real entity counterparts for squads and civilians, physical city generation from the
 project footprints, combat against actual mobs, iron golems and wolves, multiple kingdoms,
 and a UI. Explicitly out of this milestone per the brief.
+
+
+## Physical district prototype
+First physical district (district-1) implemented and tested offline; see MINECRAFT_INTEGRATION.md. Next: in-game verification, then district 2-5 layouts, NPC/entity bridge.

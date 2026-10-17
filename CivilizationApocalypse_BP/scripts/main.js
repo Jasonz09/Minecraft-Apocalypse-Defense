@@ -1,6 +1,7 @@
 import { world } from "@minecraft/server";
 import { registerDebugCommands } from "./commands/debug.js";
 import { registerInspectionCommands } from "./commands/inspect.js";
+import { registerPhysicalCommands } from "./commands/physical.js";
 import { registerStatusCommand } from "./commands/status.js";
 import { registerWelcomeOnJoin } from "./events/welcome.js";
 import { startSimulationLoop } from "./integration/simulationLoop.js";
@@ -18,4 +19,5 @@ registerWelcomeOnJoin(kingdomStore);
 registerStatusCommand(kingdomStore);
 registerInspectionCommands(kingdomStore);
 registerDebugCommands(kingdomStore);
+registerPhysicalCommands(kingdomStore);
 startSimulationLoop(kingdomStore);

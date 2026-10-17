@@ -1,4 +1,7 @@
-# Minecraft integration status (first real-game preparation)
+# Minecraft integration status
+
+In-game verified by the user (previous milestone): the pack loads, `civ:status` and save persistence work.
+The physical district below is **built and tested offline only**; nothing in it has run in the game yet.
 
 ## Verified (executed, offline)
 Run `npm run verify` — all four gates green; `npm test` = 214 tests (incl. 66 reliability/regression
@@ -68,3 +71,46 @@ Skip `civ:debug:build` and `--apply` until the above pass.
 ## Next milestone
 Physical world: first fortified district, limited real civilian entities, NPC soldiers, small zombie
 invasion — only after the checklist above passes in a real game.
+
+
+---
+
+# Physical district prototype (district-1, Hearthgate)
+
+Design: [PHYSICAL_DISTRICT_DESIGN.md](PHYSICAL_DISTRICT_DESIGN.md). Code: `scripts/structures/` (pure: palette,
+facing, blueprints, layout, planner, siteRules), `integration/districtBuilder.js` and `commands/physical.js`
+(Bedrock boundary). The saved record gains an optional validated `district.physical`
+{layout, version, status, origin, dimension, placed, total, planHash, built}; no schema bump.
+
+## Generate it (NEW test world only)
+1. New **Superflat**, Creative, cheats on, with the Behavior Pack attached. Join once so the kingdom is seeded.
+2. Stand at the **centre of a flat, empty area** (about 55x55 blocks of clear grass; the district is centred on your feet).
+3. Survey (writes nothing): `/scriptevent civ:district:generate district-1`
+4. Build: `/scriptevent civ:district:generate district-1 confirm`
+5. Others: `civ:district:status`, `civ:district:abort`, `civ:district:resume` (after an interruption or "paused").
+   `civ:district` now also shows a `Physical:` line once built.
+
+## What is verified (executed, offline)
+`npm test`: 249/249; `npm run verify` all gates green (manifest 279 checks, typecheck, e2e). Tests prove: deterministic plan
+(8,7xx blocks, inside 49x49, y -1..12); counts mirror the record (6/3/1/4 + 1 wall + 4 gates); wall ring complete except
+the four gate passages; every door/gate/wall-stair is road-connected (evacuation and reinforcement routes); every block
+id exists in the installed game data and every state *name* is valid; dry run writes nothing; obstructions, player builds
+and non-natural ground refuse the whole site; a cell occupied after the survey is never overwritten; pause on unloaded
+chunks, resume, abort, single job at a time, state-fallback; simulation continues unchanged over a built district.
+Independent reviewers: code review (4 confirmed/suspected issues fixed: unresumable build after sim changes, abort/re-run
+race, hook cleanup, gravel in roads) and a flood-fill geometry audit (all doors/towers/walkway reachable, no floating or
+unsupported blocks, roofs cover interiors).
+
+## Still requires in-game testing
+- Facing/state conventions are inferred, not confirmed: stairs (`weirdo_direction` 0=E,1=W,2=S,3=N ascending), doors
+  (`minecraft:cardinal_direction`, both halves hinge=false), ladders (`facing_direction` 2=N..5=E), chests. Wrong
+  values show as rotated roof/stairs or doors facing inward; if the engine *rejects* a state the block is placed plain and
+  the final message says `state fallbacks N` with samples - send those lines.
+- Gate leaves are not modelled (open arch with raised portcullis bars); fence gates in farms are closed.
+- Real build time/lag, ticking-area behaviour, farmland staying hydrated, wheat appearance, lantern placement.
+- Chests are empty; there are no beds (colour cannot be set from stable script); no NPCs or entities are spawned.
+
+## Known limits
+Flat ground required (any obstruction refuses the site; there is no terrain levelling or override). Only `district-1`
+has a layout. Simulation gate/wall state does not drive the physical blocks. Entities in the footprint (item frames,
+armor stands) are not checked. A stuck build can always be re-surveyed with `resume`; an aborted district is left as is.

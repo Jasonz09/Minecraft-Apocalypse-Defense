@@ -90,7 +90,8 @@ const hooksSource = `
 export async function resolve(specifier, context, nextResolve) {
     if (specifier === "@minecraft/server") {
         const stub = 'export const world = globalThis.__mc.world; export const system = globalThis.__mc.system;' +
-            'export const ScriptEventSource = { Block: "Block", Entity: "Entity", NPCDialogue: "NPCDialogue", Server: "Server" };';
+            'export const ScriptEventSource = { Block: "Block", Entity: "Entity", NPCDialogue: "NPCDialogue", Server: "Server" };' +
+            'export const BlockPermutation = { resolve() { throw new Error("BlockPermutation is not modelled in this suite"); } };';
         return { url: "data:text/javascript," + encodeURIComponent(stub), shortCircuit: true };
     }
     if (specifier === "./war.js" && typeof context.parentURL === "string" && context.parentURL.endsWith("/sim/tick.js")) {
@@ -179,7 +180,7 @@ test("main.js: importing it during early execution does not touch world state an
 
 test("main.js: registers exactly the subscriptions the pack needs and one hourly interval", () => {
     assert.equal(earlySnapshot.spawn, 1, "one playerSpawn subscriber");
-    assert.equal(earlySnapshot.scriptEvents, 3, "status + inspection + debug script-event subscribers");
+    assert.equal(earlySnapshot.scriptEvents, 4, "status + inspection + debug + physical script-event subscribers");
     assert.deepEqual(earlySnapshot.intervals, [SIM.stepTicks], "one interval at the in-game-hour cadence");
     for (const { options } of mc.scriptEventSubscribers) {
         assert.deepEqual(options?.namespaces, ["civ"], "every script-event subscription is namespace-filtered");
@@ -192,8 +193,9 @@ test("registration is idempotent: calling the register functions again adds no d
     (await load("commands", "status.js")).registerStatusCommand(store);
     (await load("commands", "inspect.js")).registerInspectionCommands(store);
     (await load("commands", "debug.js")).registerDebugCommands(store);
+    (await load("commands", "physical.js")).registerPhysicalCommands(store);
     assert.equal(mc.spawnSubscribers.length, 1);
-    assert.equal(mc.scriptEventSubscribers.length, 3);
+    assert.equal(mc.scriptEventSubscribers.length, 4);
     assert.equal(loop.isSimulationLoopRunning(), true);
     assert.equal(mc.intervals.length, 1, "startSimulationLoop returns the existing handle");
 });

@@ -76,6 +76,10 @@ export function formatDistrictLines(kingdom, district) {
         `Buildings: homes ${String(district.buildings.homes)}, farms ${String(district.buildings.farms)}, storehouses ${String(district.buildings.storehouses)}, barracks ${String(district.buildings.barracks)}`,
         `Neighbors: ${neighborNames || "none"} | Evacuated to: ${String(district.evacuatedTo ?? "nobody")}`,
     ];
+    if (district.physical) {
+        const where = district.physical.origin;
+        lines.push(`Physical: ${String(district.physical.status)} at ${String(where.x)}, ${String(where.y)}, ${String(where.z)} (${String(district.physical.placed)}/${String(district.physical.total)} blocks)`);
+    }
     const projects = district.projects ?? [];
     if (projects.length === 0) {
         lines.push("Projects: none scheduled");

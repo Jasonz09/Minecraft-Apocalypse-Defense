@@ -265,7 +265,7 @@ test("command argument parsing rejects invalid input instead of guessing", () =>
 
 test("the offline core stays free of the Minecraft runtime, and the adapters are the only things that use it", () => {
     const runtimeImport = /(^|\n)\s*import\s[^;\n]*from\s*["']@minecraft\/server["']/;
-    const pureDirs = ["sim", "kingdom", "ui"];
+    const pureDirs = ["sim", "kingdom", "ui", "structures"];
     const runtimeDirs = ["integration", "commands", "events"];
 
     let pureChecked = 0;
@@ -276,7 +276,7 @@ test("the offline core stays free of the Minecraft runtime, and the adapters are
             assert.ok(!runtimeImport.test(readFileSync(join(scriptsRoot, dir, file), "utf8")), `${dir}/${file} must not import @minecraft/server at runtime`);
         }
     }
-    assert.ok(pureChecked >= 9, `expected the whole pure core to be scanned, only saw ${String(pureChecked)} files`);
+    assert.ok(pureChecked >= 14, `expected the whole pure core to be scanned, only saw ${String(pureChecked)} files`);
 
     // commands/args.js is pure by design; everything else under the runtime dirs must
     // genuinely be a runtime file, otherwise it has been mis-placed out of the core.
@@ -292,7 +292,7 @@ test("the offline core stays free of the Minecraft runtime, and the adapters are
             }
         }
     }
-    assert.ok(runtimeChecked >= 6, `expected at least 6 runtime-side files, saw ${String(runtimeChecked)}`);
+    assert.ok(runtimeChecked >= 8, `expected at least 8 runtime-side files, saw ${String(runtimeChecked)}`);
 });
 
 test("assignBuilders never puts more builders to work than there are people", () => {

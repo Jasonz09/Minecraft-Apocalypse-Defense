@@ -33,6 +33,32 @@ export const DEBUG_EVENT_IDS = {
     build: "civ:debug:build",
 };
 
+/**
+ * Physical-world commands (district generation). Separate from the debug namespace on purpose:
+ * generating a district is a deliberate world edit, never a demo toggle.
+ */
+export const PHYSICAL_EVENT_IDS = {
+    generate: "civ:district:generate",
+    resume: "civ:district:resume",
+    status: "civ:district:status",
+    abort: "civ:district:abort",
+};
+
+export const PHYSICAL = {
+    /** The only physical layout so far, and the district record it mirrors. */
+    prototypeDistrict: "district-1",
+    layoutId: "hearthgate",
+    /** Blocks placed per job slice before yielding to the engine. */
+    blocksPerSlice: 400,
+    /** Cells inspected per job slice while scanning a site. */
+    scanPerSlice: 1500,
+    /** Progress is persisted (and reported) every this many placed blocks. */
+    saveEvery: 1500,
+    /** Consecutive slices to wait for an unloaded chunk before pausing the build. */
+    unloadedRetrySlices: 40,
+    tickingAreaId: "civ-district-build",
+};
+
 export const DEBUG_EVENT_PREFIX = "civ:debug";
 
 export const STARTING_SIMULATION = {

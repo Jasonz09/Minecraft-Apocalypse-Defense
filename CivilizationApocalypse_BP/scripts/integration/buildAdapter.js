@@ -142,6 +142,10 @@ export function materialiseNextStage(dimension, kingdom, options = {}) {
         return { placed: 0, skipped: [], project: entry.projectId, kind: entry.kind, blocked: "the queued project is no longer on its district" };
     }
 
+    if (district?.physical !== undefined) {
+        return { placed: 0, skipped: [], project: entry.projectId, kind: entry.kind, blocked: `${String(district.id)} has a real physical district; the ring demo does not touch it` };
+    }
+
     const alreadyPlaced = Number.isInteger(project.placedBlocks) ? Number(project.placedBlocks) : 0;
     const positions = /** @type {{ x: number, y: number, z: number }[]} */ (ringPositions(anchor, Number(project.stage), limit + alreadyPlaced));
     const /** @type {{ position: any, reason: string }[]} */ skipped = [];

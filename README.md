@@ -122,6 +122,12 @@ powershell -NoProfile -Command "Get-ChildItem -Path $env:LOCALAPPDATA\Packages -
 
 ---
 
+## Physical district (new)
+
+`/scriptevent civ:district:generate district-1` surveys a flat empty site centred on you (dry run);
+add `confirm` to build the walled district. Also `civ:district:status|resume|abort`. See
+[docs/MINECRAFT_INTEGRATION.md](docs/MINECRAFT_INTEGRATION.md). Use a NEW superflat test world.
+
 ## Test script
 
 Run these in order; each step states exactly what you should see.

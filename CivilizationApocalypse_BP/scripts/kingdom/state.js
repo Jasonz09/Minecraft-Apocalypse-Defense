@@ -360,6 +360,31 @@ export function findValidationProblems(value) {
                 }
             });
         }
+        if (district.physical !== undefined) {
+            const physical = district.physical;
+            const origin = physical?.origin;
+            if (typeof physical !== "object" || physical === null) {
+                problems.push(`${label}.physical must be an object`);
+            } else {
+                if (physical.status !== "building" && physical.status !== "complete") {
+                    problems.push(`${label}.physical.status must be building or complete`);
+                }
+                if (typeof physical.layout !== "string" || typeof physical.planHash !== "string") {
+                    problems.push(`${label}.physical needs a layout id and plan hash`);
+                }
+                for (const field of ["placed", "total", "version"]) {
+                    if (!Number.isInteger(physical[field]) || physical[field] < 0) {
+                        problems.push(`${label}.physical.${field} must be a non-negative integer`);
+                    }
+                }
+                if (physical.built !== undefined && (physical.built === null || typeof physical.built !== "object" || !Object.values(physical.built).every((count) => Number.isInteger(count) && /** @type {number} */ (count) >= 0))) {
+                    problems.push(`${label}.physical.built must map building kinds to non-negative integers`);
+                }
+                if (origin === null || typeof origin !== "object" || !["x", "y", "z"].every((axis) => Number.isInteger(origin[axis]))) {
+                    problems.push(`${label}.physical.origin must hold integer x, y, z`);
+                }
+            }
+        }
         if (Array.isArray(district.projects)) {
             const projects = /** @type {any[]} */ (district.projects);
             const catalogue = /** @type {Record<string, any>} */ (PROJECT_TYPES);
