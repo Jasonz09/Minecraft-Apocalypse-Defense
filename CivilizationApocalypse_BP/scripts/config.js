@@ -1,0 +1,118 @@
+export const PACK_NAME = "Civilization Apocalypse";
+
+export const KINGDOM_SCHEMA_VERSION = 2;
+
+/** Oldest saved schema this build can still read (everything older is refused, never reseeded blindly). */
+export const MIN_SUPPORTED_SCHEMA_VERSION = 1;
+
+export const STORAGE_KEYS = {
+    kingdom: "civ:kingdom",
+    /** Unreadable or newer-than-supported payloads are copied here instead of being overwritten. */
+    quarantine: "civ:kingdom-quarantine",
+};
+
+export const SCRIPT_EVENT_NAMESPACE = "civ";
+
+export const SCRIPT_EVENT_IDS = {
+    status: "civ:status",
+    district: "civ:district",
+    territory: "civ:territory",
+    policy: "civ:policy",
+    tick: "civ:tick",
+    scenarios: "civ:scenarios",
+    scenario: "civ:scenario",
+};
+
+/** Debug/demo commands live in their own id space so they can never fire from ordinary gameplay. */
+export const DEBUG_EVENT_PREFIX = "civ:debug";
+
+export const STARTING_SIMULATION = {
+    districtCount: 5,
+    civilians: 400,
+    soldiers: 150,
+};
+
+export const DISTRICT_NAMES = ["Hearthgate", "Ironquarry", "Whitethorn", "Saltmere", "Ashfall"];
+
+/** Adjacent lands that an outside victory can open up. One per starting district. */
+export const TERRITORY_NAMES = ["Ashford Reach", "Broken Kettle", "Coldmoor Fen", "Emberdown", "Glassmoor Rampart"];
+
+export const DEFAULT_SEED = 20261017;
+
+export const SIM = {
+    /** One simulation step = one in-game hour. Minecraft runs 24000 ticks per day, so 1000 ticks per hour divides exactly. */
+    stepTicks: 1000,
+    stepsPerDay: 24,
+    /** Hard ceiling on catch-up work after a long offline period, so a step loop can never run away. */
+    maxCatchUpSteps: 24,
+    /** Placement budget per build tick, to keep chunk work bounded. */
+    maxBlocksPerStep: 64,
+    battleLogLimit: 12,
+    eventLogLimit: 24,
+};
+
+export const POLICY_MODES = ["balanced", "paused", "rapid"];
+
+export const POLICY_DEFAULTS = {
+    expansion: "balanced",
+    /** A neighbour may never send away more than this share of its garrison. */
+    reinforcementKeepFraction: 0.5,
+    /** Integrity below which a district is treated as breached. */
+    breachIntegrity: 40,
+    /** Consecutive breached steps with no defender relief before a district can fall. */
+    fallAfterSiegeSteps: 12,
+};
+
+export const DISTRICT_DEFAULTS = {
+    capacityPerHome: 20,
+    homesPerDistrict: 6,
+    farmsPerDistrict: 4,
+    storehousesPerDistrict: 3,
+    barracksPerDistrict: 1,
+    wallsPerDistrict: 1,
+    frontGarrisonFraction: 0.8,
+    startingFood: 240,
+    startingMaterials: 180,
+    startingSupplies: 120,
+    foodDemandPerCivilian: 0.02,
+    foodDemandPerSoldier: 0.05,
+    foodPerFarmPerStep: 1.2,
+    materialsPerStep: 0.4,
+    suppliesPerStep: 0.3,
+    /** Repair per builder per step while a wall project is complete. */
+    integrityRepairPerStep: 0.6,
+};
+
+export const SECURITY_LEVELS = ["secure", "alert", "contested", "breached", "isolated", "lost"];
+
+export const GATE_STATES = ["open", "sealed", "broken"];
+
+export const TERRITORY_STATES = ["wild", "raided", "military", "kingdom"];
+
+/**
+ * Data-driven construction catalogue. `stages` is the number of staged increments;
+ * `cost` is paid per stage, so progress is always tied to spent resources.
+ */
+export const PROJECT_TYPES = {
+    walls: { stages: 6, cost: { materials: 18, food: 4, supplies: 2 }, buildersRequired: 6, permanent: true },
+    gate: { stages: 3, cost: { materials: 8, food: 2, supplies: 1 }, buildersRequired: 3, permanent: true },
+    road: { stages: 2, cost: { materials: 4, food: 1, supplies: 1 }, buildersRequired: 2, permanent: false },
+    homes: { stages: 4, cost: { materials: 10, food: 2, supplies: 1 }, buildersRequired: 4, permanent: false },
+    farms: { stages: 3, cost: { materials: 6, food: 0, supplies: 2 }, buildersRequired: 4, permanent: false },
+    storehouse: { stages: 3, cost: { materials: 9, food: 1, supplies: 1 }, buildersRequired: 3, permanent: false },
+    barracks: { stages: 4, cost: { materials: 12, food: 2, supplies: 3 }, buildersRequired: 4, permanent: false },
+};
+
+/** The standard build order for newly claimed land. */
+export const EXPANSION_PROJECT_PLAN = ["walls", "gate", "farms", "homes", "storehouse", "barracks", "road"];
+
+export const POPULATION_DEFAULTS = {
+    /** Civilians added per complete home above current population, per step, when food and safety allow. */
+    growthPerStepPerHome: 0.06,
+    trainingQueueCapacity: 12,
+    recruitsPerStepPerBarracks: 0.25,
+    trainingFoodCostPerRecruit: 6,
+    trainingSupplyCostPerRecruit: 3,
+    /** A district in alert or worse cannot recruit. */
+    recruitmentAllowedSecurity: ["secure"],
+};

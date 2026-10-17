@@ -1,0 +1,18 @@
+{
+    "name": "civilization-apocalypse-dev",
+    "version": "1.0.0",
+    "private": true,
+    "type": "module",
+    "description": "Dev-only tooling for the Civilization Apocalypse behavior pack. Not part of the shipped pack.",
+    "scripts": {
+        "validate": "node dev/validate-manifest.mjs",
+        "typecheck": "node node_modules/typescript/bin/tsc -p tsconfig.json",
+        "test": "node --test \"dev/test/*.test.mjs\"",
+        "verify": "node dev/verify.mjs"
+    },
+    "devDependencies": {
+        "@minecraft/common": "^1.2.0",
+        "@minecraft/server": "2.7.0",
+        "typescript": "^5.9.3"
+    }
+}

@@ -1,0 +1,5 @@
+node_modules/
+*.mcpack
+*.zip
+dist/
+*.log
