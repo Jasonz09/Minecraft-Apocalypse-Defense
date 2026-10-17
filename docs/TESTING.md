@@ -1,8 +1,8 @@
 # Testing
 
-**Minecraft Bedrock is not installed on this machine.** Everything below runs headless. No
-statement in this file claims in-game behaviour; the manual script at the bottom exists for
-the person who has a game.
+Minecraft Bedrock 1.26.5203 is now installed, but **no in-game run has been performed yet**.
+The gates run headless and claim no in-game behaviour. Use the manual script at the bottom and
+`docs/MINECRAFT_INTEGRATION.md` for the first real test.
 
 ## The four gates
 
@@ -11,9 +11,7 @@ npm install      # typescript + @minecraft/server@2.7.0 types + @minecraft/commo
 npm run verify   # runs every gate, reports each one even if an earlier one fails
 ```
 
-Current results: `manifest + packaging PASS (231 checks)`, `typecheck PASS (0 errors)`,
-`offline unit tests PASS (148 across 10 files)`, `headless end-to-end kingdom run PASS
-(52/52 stages)`.
+Current results are recorded in `docs/MINECRAFT_INTEGRATION.md`.
 
 | Command | Gate | What it actually proves |
 | --- | --- | --- |
@@ -34,9 +32,8 @@ Individual gates: `npm run validate`, `npm run typecheck`, `npm run test`.
   `main.js`, `events/welcome.js`, `commands/{status,inspect,debug,reply}.js`,
   `integration/{simulationLoop,buildAdapter}.js`. `integration.test.mjs` guards the split in
   both directions — the core must not import the runtime, and boundary files must.
-- The rollback branch in `tick.advanceKingdomStep` is verified by reading, not by an
-  executable case (no reachable system currently yields an invalid step). The validator that
-  triggers it, and the refusal-to-save, *are* tested.
+- The rollback branch in `tick.advanceKingdomStep` (validator rejection and a throwing system)
+  is covered by `dev/test/reliability-rollback.test.mjs` with injected faults.
 - Saved-state size is asserted as a blob budget (peak ≈15 KB over 400 steps). In-game,
   `world.getDynamicPropertyTotalByteCount()` is the instrument.
 

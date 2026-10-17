@@ -85,7 +85,18 @@ as "Civilization Apocalypse Behavior Pack".
 
 The zip root must be `manifest.json` — do not zip the enclosing folder itself.
 
-### Route B — copy into `behavior_packs` (Windows Bedrock)
+### Route B0 — dev deploy on the current Windows (GDK) install
+
+```bash
+node dev/deploy.mjs --dry-run
+node dev/deploy.mjs   # copies + sha256-verifies; touches only CivilizationApocalypse_BP
+```
+
+Target: `development_behavior_packs` under
+`%APPDATA%\Minecraft Bedrock\Users\Shared\games\com.mojang\`. Details in
+[docs/MINECRAFT_INTEGRATION.md](docs/MINECRAFT_INTEGRATION.md).
+
+### Route B — copy into `behavior_packs` (legacy Windows Store layout)
 
 ```
 %LOCALAPPDATA%\Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\LocalState\games\com.mojang\behavior_packs\

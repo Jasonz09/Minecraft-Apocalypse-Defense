@@ -95,7 +95,8 @@ function handleScenario(kingdomStore, args, event) {
         reply(formatErrorLines("Scenario refused", [`No readable kingdom in this world: ${String(loaded.reason)}`]), event);
         return;
     }
-    const [id, target, flag] = args;
+    const flag = args.find((arg) => arg.startsWith("--"));
+    const [id, target] = args.filter((arg) => !arg.startsWith("--"));
     if (id === undefined) {
         reply(
             formatErrorLines("Scenario refused", [

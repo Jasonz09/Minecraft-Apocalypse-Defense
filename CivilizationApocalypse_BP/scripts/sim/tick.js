@@ -57,10 +57,11 @@ function pruneCompletedProjects(kingdom) {
         const projects = /** @type {any[]} */ (district.projects ?? []);
         const open = projects.filter((project) => project.status !== "complete");
         const done = projects.filter((project) => project.status === "complete");
-        if (done.length > COMPLETED_PROJECT_HISTORY) {
-            done.length = COMPLETED_PROJECT_HISTORY;
-        }
-        district.projects = [...open, ...done];
+        // Keep the newest records; permanent defences (walls, gate) are never forgotten.
+        const permanent = done.filter((project) => project.kind === "walls" || project.kind === "gate");
+        const others = done.filter((project) => project.kind !== "walls" && project.kind !== "gate");
+        const recent = others.slice(-COMPLETED_PROJECT_HISTORY);
+        district.projects = [...open, ...done.filter((project) => permanent.includes(project) || recent.includes(project))];
     }
 }
 

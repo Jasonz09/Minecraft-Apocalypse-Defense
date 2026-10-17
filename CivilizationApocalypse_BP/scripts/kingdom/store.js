@@ -96,7 +96,8 @@ export function createKingdomStore(target) {
         if (version < KINGDOM_SCHEMA_VERSION) {
             const result = migrateKingdom(parsed);
             if (result.problems) {
-                return { kingdom: undefined, status: "corrupt", reason: `migration failed: ${result.problems.join("; ")}` };
+                // Refuse rather than reseed: a failed upgrade must never overwrite a player's save.
+                return { kingdom: undefined, status: "unsupported", reason: `migration failed, save left untouched: ${result.problems.join("; ")}` };
             }
             return { kingdom: result.kingdom, status: "migrated", fromVersion: version, path: result.path, reason: undefined };
         }

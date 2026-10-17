@@ -261,7 +261,14 @@ export function scheduleProject(district, kind, options = {}) {
     }
 
     const stageCount = intOr0(definition.stages);
-    const sequence = projects.filter((project) => project?.kind === name).length + 1;
+    // Highest existing suffix + 1, so ids stay unique after completed records are pruned.
+    const sequence = projects.reduce((highest, project) => {
+        if (project?.kind !== name) {
+            return highest;
+        }
+        const suffix = Number(String(project.id).split("-").pop());
+        return Math.max(highest, Number.isInteger(suffix) ? suffix : 0);
+    }, projects.filter((project) => project?.kind === name).length) + 1;
     const requestedBuilders = options.builders === undefined ? 0 : intOr0(options.builders);
     const project = {
         id: typeof options.id === "string" && options.id.length > 0

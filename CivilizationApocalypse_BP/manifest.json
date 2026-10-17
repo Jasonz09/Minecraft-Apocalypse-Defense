@@ -2,7 +2,7 @@
     "format_version": 2,
     "header": {
         "name": "Civilization Apocalypse Behavior Pack",
-        "description": "Kingdom simulation core: persistent districts, civilians and soldiers. Foundation build - no buildings, combat or NPC AI.",
+        "description": "Autonomous kingdom simulation: persistent districts, war, evacuation, expansion and construction records. No physical entities yet.",
         "uuid": "fd04cb50-dddc-4ebe-83fc-5b5375819bcb",
         "version": [1, 0, 0],
         "min_engine_version": [1, 26, 20]
