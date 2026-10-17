@@ -48,7 +48,14 @@ export function createKingdomStore(target) {
         } catch (_error) {
             version = undefined;
         }
-        target.setDynamicProperty(quarantineKey, JSON.stringify({ note, schemaVersion: version, payload: raw.slice(0, 20000) }));
+        // Truncate by the *serialised* size: escaping quotes can double the payload.
+        let keep = 20000;
+        let serialised = JSON.stringify({ note, schemaVersion: version, payload: raw.slice(0, keep) });
+        while (serialised.length > 30000 && keep > 0) {
+            keep = Math.floor(keep / 2);
+            serialised = JSON.stringify({ note, schemaVersion: version, payload: raw.slice(0, keep) });
+        }
+        target.setDynamicProperty(quarantineKey, serialised);
         return true;
     }
 

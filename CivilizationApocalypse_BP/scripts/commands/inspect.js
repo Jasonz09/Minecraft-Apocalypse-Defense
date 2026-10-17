@@ -33,6 +33,8 @@ export function registerInspectionCommands(kingdomStore) {
             const loaded = kingdomStore.load();
             if (loaded.kingdom) {
                 reply(formatTerritoryLines(loaded.kingdom), event);
+            } else {
+                reply(formatErrorLines("Territory report", [`No readable kingdom in this world: ${String(loaded.reason)}`]), event);
             }
             return;
         }

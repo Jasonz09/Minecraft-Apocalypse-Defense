@@ -54,7 +54,7 @@ both directions.
 
 | Item | Value |
 | --- | --- |
-| Game | Minecraft Bedrock — the pack asks for engine `1.21.114` or newer |
+| Game | Minecraft Bedrock — the pack asks for engine `1.26.20` or newer |
 | Script API | `@minecraft/server` 2.7.0 stable |
 | Experimental toggles | **None.** Stable 2.x does not need "Beta APIs" |
 | For `/scriptevent` | Cheats/op must be enabled in the world (it is a command) |

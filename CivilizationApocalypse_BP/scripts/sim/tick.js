@@ -124,15 +124,20 @@ export function advanceKingdomStep(kingdom) {
     kingdom.step = Number(kingdom.step) + 1;
 
     const /** @type {string[]} */ events = [];
-    events.push(...toEvents(runWarStep(kingdom)));
-    events.push(...toEvents(runEvacuationStep(kingdom)));
-    events.push(...runConstructionStep(kingdom));
-    events.push(...toEvents(runExpansionStep(kingdom)));
-    events.push(...runPolicyStep(kingdom));
-    events.push(...toEvents(runPopulationStep(kingdom)));
-    events.push(...runTrainingStep(kingdom));
-
-    const problems = findValidationProblems(kingdom);
+    /** @type {string[]} */
+    let problems;
+    try {
+        events.push(...toEvents(runWarStep(kingdom)));
+        events.push(...toEvents(runEvacuationStep(kingdom)));
+        events.push(...runConstructionStep(kingdom));
+        events.push(...toEvents(runExpansionStep(kingdom)));
+        events.push(...runPolicyStep(kingdom));
+        events.push(...toEvents(runPopulationStep(kingdom)));
+        events.push(...runTrainingStep(kingdom));
+        problems = findValidationProblems(kingdom);
+    } catch (error) {
+        problems = [`a simulation system threw: ${String(error)}`];
+    }
     if (problems.length > 0) {
         restore(kingdom, before);
         return { step: Number(kingdom.step), gameTime: formatGameTime(Number(kingdom.step)), events: [], problems };

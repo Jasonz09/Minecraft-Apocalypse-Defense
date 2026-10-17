@@ -40,6 +40,10 @@ export function startSimulationLoop(kingdomStore, options = {}) {
             // advanceKingdomStep already rolled the state back, so there is nothing to
             // persist - just surface why the hour was refused.
             report.problem = advanced.rejected.map((rejection) => rejection.problems.join("; ")).join(" | ");
+            /** @type {any} */ (globalThis).console?.warn?.(`[civ] simulation hour rejected and rolled back: ${String(report.problem)}`);
+            if (typeof options.onStep === "function") {
+                options.onStep(report);
+            }
             return;
         }
         if (report.ran === 0) {
