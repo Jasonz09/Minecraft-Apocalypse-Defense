@@ -197,7 +197,7 @@ npm run verify     # runs all four gates, reports every one even if an earlier o
 | --- | --- |
 | `npm run validate` | 231 checks: manifest structure, real unique UUIDs, entry file exists, the pinned API version equals the installed types version, every relative import carries a `.js` extension and resolves, and the pack root has no dev junk in it |
 | `npm run typecheck` | All 24 pack scripts checked with `checkJs` **strict** against the real 2.7.0 declarations |
-| `npm run test` | 141 offline unit tests over 8 files: starting values, population splits, derived totals, validation, seed-once, restart round-trip, migration, quarantine, siege/evacuation/construction/expansion/population/policy behaviour |
+| `npm run test` | 148 offline unit tests across 10 files: starting values, population splits, derived totals, validation, seed-once, restart round-trip, migration, quarantine, siege/evacuation/fallback/construction/expansion/population/policy behaviour |
 | `npm run e2e` | A headless 52-stage kingdom run: migrate a v1 save, hold the realm, take a siege, evacuate, reinforce, counterattack, win beyond the border, claim and plan new land, be refused by a shortage, build, recruit, reload, and replay identically |
 
 The typecheck gate was mutation-tested: renaming `initialSpawn` → `initial` (the old 1.x
@@ -258,7 +258,7 @@ Seams left for the next milestone:
 ## Verification status
 
 Four offline gates green: 231 manifest/packaging checks, strict typecheck against the real
-2.7.0 declarations, 141 unit tests, and a 52-stage headless end-to-end kingdom run.
+2.7.0 declarations, 148 unit tests, and a 52-stage headless end-to-end kingdom run.
 **Nothing has been run inside Minecraft** — it is not installed on the machine that built
 this. `docs/TESTING.md` carries the in-game script for when it is, and `docs/PROGRESS.md`
 lists the defects found and fixed during this milestone along with the remaining risks.

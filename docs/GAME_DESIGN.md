@@ -23,7 +23,7 @@ list of staged construction projects. Totals are always **derived** from the dis
 | Rule | Enforcement |
 | --- | --- |
 | Neighbouring districts reinforce automatically, without abandoning their own walls | `war.requestReinforcements` caps each donor at `policy.reinforcementKeepFraction` of its *home strength* (present troops + troops already away), and records the deficit honestly |
-| Soldiers keep defending; withdrawal is gradual | `war.resolveAssault` chips integrity per step; `recoverAfterDefense` repairs with materials and walks security back down the ladder |
+| Soldiers keep defending; withdrawal is gradual | `war.updateFallback` advances a per-district `pullback` (0 → 0.6, ±0.2/0.1 per step) that `assignDefenders` applies to the wall/reserve split; while giving ground at least one soldier stays on the wall, the population does not move, and walls are not demolished. `war.resolveAssault` chips integrity per step; `recoverAfterDefense` repairs with materials and walks security back down the ladder |
 | A breached wall is not a capture | `lost` requires `policy.fallAfterSiegeSteps` consecutive breached steps **with no able defenders**; the district record, its walls and its population survive being taken |
 | Civilians evacuate | `evacuation.runEvacuationStep` moves up to `MAX_EVACUEES_PER_STEP` per step down an open gate to a neighbour that is safe and has room |
 | Evacuation cannot exceed shelter or enter unsafe land | occupancy is shared: `civilians + refugees <= civilianCapacity`, enforced by the save validator and by `kingdom/state.js` `districtOccupancy`/`districtHeadroom`; growth is capped by the same room |

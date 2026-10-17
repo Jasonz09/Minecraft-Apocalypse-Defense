@@ -12,13 +12,14 @@ npm run verify   # runs every gate, reports each one even if an earlier one fail
 ```
 
 Current results: `manifest + packaging PASS (231 checks)`, `typecheck PASS (0 errors)`,
-`offline unit tests PASS (141)`, `headless end-to-end kingdom run PASS (52/52 stages)`.
+`offline unit tests PASS (148 across 10 files)`, `headless end-to-end kingdom run PASS
+(52/52 stages)`.
 
 | Command | Gate | What it actually proves |
 | --- | --- | --- |
 | `npm run validate` | manifest + packaging | Manifest structure, real unique UUIDs, entry file exists, the `@minecraft/server` pin **equals the installed types version** (so the code cannot be checked against one API and shipped against another), every relative import carries a `.js` extension and resolves (a missing extension is a silent pack-load failure), no dev junk inside the pack root |
 | `npm run typecheck` | strict `checkJs` | All 24 pack scripts are typed against the real 2.7.0 declarations: catches `initial` vs `initialSpawn`, `scriptEventReceived` vs `scriptEventReceive`, non-existent methods, implicit `any` |
-| `npm run test` | 141 unit tests across 8 files | Simulation behaviour, save/migration, invariants, reporting text, argument parsing |
+| `npm run test` | 148 unit tests across 10 files | Simulation behaviour, save/migration, invariants, reporting text, argument parsing |
 | `npm run e2e` | headless kingdom run | The whole gameplay sequence over a v1 save: migrate → peace → siege → evacuation → reinforcement → counterattack → victory → autonomous claim → shortage refusal → construction → recruitment → persistence → deterministic replay → readouts |
 
 Individual gates: `npm run validate`, `npm run typecheck`, `npm run test`.

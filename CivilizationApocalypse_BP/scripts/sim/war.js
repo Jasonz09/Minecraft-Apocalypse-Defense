@@ -217,10 +217,70 @@ function keepFraction(kingdom) {
  * ------------------------------------------------------------------ */
 
 /**
- * Automatic defensive assignment. Everything except a standing reserve holds the wall.
- * Re-runs cheaply and idempotently, and is the single place that rebuilds the split, so
- * every function that changes `soldiers` calls it in the same step and the save validator
- * can never see `front + reserve !== soldiers`.
+ * Gradual fallback. When the line is actually collapsing, troops give ground *inside* the
+ * district - they come off the wall and hold a fallback position - and they walk back to it
+ * once the attack is beaten. This is deliberately not abandonment: at least one soldier
+ * stays on the wall while the district has any, the population does not move (that is
+ * evacuation's job), and the district record is untouched.
+ */
+export const FALLBACK_RULES = {
+    /** Attackers must at least match the defenders before ground is given up. */
+    overwhelmedRatio: 1,
+    withdrawStep: 0.2,
+    recoverStep: 0.1,
+    maxPullback: 0.6,
+    minWallKeep: 1,
+};
+
+/**
+ * @param {any} district
+ * @returns {number} 0..maxPullback share of the front line held back
+ */
+export function fallbackPullback(district) {
+    return clamp(numberOf(district?.fallback?.pullback, 0), 0, Number(FALLBACK_RULES.maxPullback));
+}
+
+/**
+ * Advances one district's fallback state. Called once per district per step from
+ * runWarStep, before assignDefenders rebuilds the split from it.
+ *
+ * @param {any} kingdom
+ * @param {any} district
+ * @returns {string[]}
+ */
+export function updateFallback(kingdom, district) {
+    if (!district || typeof district !== "object" || toInt(district.soldiers) <= 0) {
+        return [];
+    }
+    const assault = Math.max(0, numberOf(district.assault, 0));
+    const strength = defensiveStrength(district);
+    const pullback = fallbackPullback(district);
+    const overwhelmed = assault >= strength * Number(FALLBACK_RULES.overwhelmedRatio) && strength > 0;
+    const next = overwhelmed
+        ? clamp(pullback + Number(FALLBACK_RULES.withdrawStep), 0, Number(FALLBACK_RULES.maxPullback))
+        : clamp(pullback - Number(FALLBACK_RULES.recoverStep), 0, Number(FALLBACK_RULES.maxPullback));
+
+    if (next === pullback) {
+        return [];
+    }
+
+    district.fallback = {
+        pullback: Math.round(next * 100) / 100,
+        position: next <= 0 ? "holding the wall" : next >= Number(FALLBACK_RULES.maxPullback) ? "contracted to the last fallback" : "in fallback positions",
+        sinceStep: numberOf(kingdom?.step, 0),
+    };
+    return [
+        overwhelmed
+            ? `${String(district.name)}: the line is breaking - ${String(Math.round(next * 100))}% of the garrison falls back off the wall (the district is not abandoned).`
+            : `${String(district.name)}: the attack has spent itself - the garrison closes back toward the wall (${String(Math.round(next * 100))}% held in depth).`,
+    ];
+}
+
+/**
+ * Automatic defensive assignment. Everything except a standing reserve holds the wall,
+ * less whatever the fallback state is holding back. Re-runs cheaply and idempotently, and
+ * is the single place that rebuilds the split, so every function that changes `soldiers`
+ * calls it in the same step and the save validator can never see `front + reserve !== soldiers`.
  *
  * @param {District} district
  * @returns {{ front: number, reserve: number, soldiers: number }}
@@ -232,7 +292,12 @@ export function assignDefenders(district) {
     const fraction = clamp(numberOf(DISTRICT_DEFAULTS.frontGarrisonFraction, 0.8), 0, 1);
     const soldiers = toInt(district.soldiers);
     district.soldiers = soldiers;
-    const front = Math.floor(soldiers * fraction);
+    let front = Math.floor(soldiers * fraction * (1 - fallbackPullback(district)));
+    if (fallbackPullback(district) > 0 && soldiers > 0 && front < Number(FALLBACK_RULES.minWallKeep)) {
+        // Only a district that is actually giving ground keeps a man on the wall; the
+        // ordinary split is left exactly as it was.
+        front = Number(FALLBACK_RULES.minWallKeep);
+    }
     const reserve = soldiers - front;
     if (!district.garrison || typeof district.garrison !== "object") {
         district.garrison = { front: 0, reserve: 0 };
@@ -943,6 +1008,7 @@ export function runWarStep(kingdom) {
     events.push(...updateAlertState(kingdom));
 
     for (const district of sortedDistricts(kingdom)) {
+        events.push(...updateFallback(kingdom, district));
         assignDefenders(district);
         district.defensiveIntegrity = integrityOf(district);
         if (typeof district.siegeSteps !== "number" || !Number.isFinite(district.siegeSteps)) {

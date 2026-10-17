@@ -43,8 +43,8 @@ land, drafting to a share of population, and development scheduling.
 
 ## Verification
 `npm run verify` runs four gates: manifest/packaging (**231 checks**), strict `checkJs`
-typecheck against `@minecraft/server` 2.7.0 (**0 errors**), unit tests (**141**), headless
-end-to-end kingdom run (**52/52 stages**).
+typecheck against `@minecraft/server` 2.7.0 (**0 errors**), unit tests (**148 across 10
+files**), headless end-to-end kingdom run (**52/52 stages**).
 
 ## Defects found while integrating this milestone, and fixed
 
@@ -75,6 +75,14 @@ end-to-end kingdom run (**52/52 stages**).
 7. Earlier phase-A fixes: an `any[]` typing pass, a validator assertion that failed a
    constants module for having no imports, and a purity guard that flagged a JSDoc *type*
    reference as a runtime import.
+8. **Found by the final review: "gradual fallback when a position is overwhelmed" was not
+   implemented.** The only `FALLBACK_*` symbols in `war.js` were unrelated config defaults,
+   and my own design notes had claimed the behaviour. Added `war.updateFallback` /
+   `fallbackPullback`, applied by `assignDefenders`, driven once per district from
+   `runWarStep`, plus `dev/test/fallback.test.mjs` (7 tests: gradual thinning, never
+   abandoning the wall, monotonic recovery, unchanged default split, savability, determinism).
+   The first version also floored the *default* one-soldier split and broke an existing war
+   test; the floor now applies only while a district is actually giving ground.
 
 ## Known limitations and open risks
 

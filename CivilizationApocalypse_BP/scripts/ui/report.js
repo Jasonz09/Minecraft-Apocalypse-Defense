@@ -71,6 +71,7 @@ export function formatDistrictLines(kingdom, district) {
         `Defensive integrity: ${String(Math.round(Number(district.defensiveIntegrity)))}% (walls standing: ${String(district.buildings.walls)})`,
         `Population: ${String(district.civilians)} of ${String(district.civilianCapacity)} shelter (${String(district.refugees)} refugees, ${String(districtHeadroom(district))} free)`,
         `Garrison: ${String(district.soldiers)} troops - ${String(district.garrison.front)} on the wall, ${String(district.garrison.reserve)} in reserve; training queue ${String(district.trainingQueue)}`,
+        `Position: ${String(district.fallback?.position ?? "holding the wall")}`,
         `Stores: food ${String(round(district.reserves.food))}, materials ${String(round(district.reserves.materials))}, supplies ${String(round(district.reserves.supplies))}`,
         `Buildings: homes ${String(district.buildings.homes)}, farms ${String(district.buildings.farms)}, storehouses ${String(district.buildings.storehouses)}, barracks ${String(district.buildings.barracks)}`,
         `Neighbors: ${neighborNames || "none"} | Evacuated to: ${String(district.evacuatedTo ?? "nobody")}`,
