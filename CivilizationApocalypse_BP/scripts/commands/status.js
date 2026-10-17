@@ -1,5 +1,5 @@
 import { SCRIPT_EVENT_IDS, SCRIPT_EVENT_NAMESPACE } from "../config.js";
-import { formatMissingKingdomLines, formatStatusLines } from "../ui/report.js";
+import { formatMissingKingdomLines, formatRefusedKingdomLines, formatStatusLines } from "../ui/report.js";
 import { reply } from "./reply.js";
 import { system } from "@minecraft/server";
 
@@ -21,7 +21,12 @@ export function registerStatusCommand(kingdomStore) {
         if (event.id !== SCRIPT_EVENT_IDS.status) {
             return;
         }
-        const { kingdom, reason } = kingdomStore.load();
-        reply(kingdom ? formatStatusLines(kingdom) : formatMissingKingdomLines(reason), event);
+        const { kingdom, reason, status } = kingdomStore.load();
+        const lines = kingdom
+            ? formatStatusLines(kingdom)
+            : status === "newer" || status === "unsupported"
+                ? formatRefusedKingdomLines(reason)
+                : formatMissingKingdomLines(reason);
+        reply(lines, event);
     }, { namespaces: [SCRIPT_EVENT_NAMESPACE] });
 }

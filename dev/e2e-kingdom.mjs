@@ -262,6 +262,66 @@ check("the refused claim created no district", starving.districts.length === dis
 check("the unfed land did not become kingdom territory", poorLand.status !== "kingdom", `status=${String(poorLand.status)}`);
 
 /* ------------------------------------------------------------------ *
+ * Stage 8b - a border victory is taken up by the kingdom itself, with
+ * no manual claim call anywhere in this stage
+ * ------------------------------------------------------------------ */
+
+const autonomous = state.createInitialKingdom();
+const prize = autonomous.territory[0];
+const gateway = state.districtById(autonomous, prize.adjacentDistrictId);
+gateway.soldiers = 60;
+gateway.garrison = { front: 48, reserve: 12 };
+gateway.civilians = 60;
+gateway.security = "secure";
+gateway.defensiveIntegrity = 100;
+gateway.reserves.food = 1200;
+gateway.reserves.materials = 1200;
+gateway.reserves.supplies = 900;
+expansion.recordExternalVictory(autonomous, prize.id, {});
+const districtsAtVictory = autonomous.districts.length;
+check("a victory leaves the land opened, not already claimed", prize.status === "raided", `status=${String(prize.status)}`);
+const autoProblems = runSteps(autonomous, 30, "auto-expand");
+check("the autonomous expansion run stayed sound", autoProblems.length === 0, autoProblems.slice(0, 3).join(" | "));
+check("military control was established without being asked for", prize.status !== "raided", `status=${String(prize.status)}`);
+check(
+    "the kingdom claims the opened land on its own",
+    autonomous.districts.length > districtsAtVictory,
+    `districts ${String(districtsAtVictory)} -> ${String(autonomous.districts.length)}, land status=${String(prize.status)}`,
+);
+check("the paused policy stops expansion dead", (() => {
+    const halted = state.createInitialKingdom();
+    const land = halted.territory[0];
+    const door = state.districtById(halted, land.adjacentDistrictId);
+    door.soldiers = 60;
+    door.garrison = { front: 48, reserve: 12 };
+    door.civilians = 60;
+    door.security = "secure";
+    door.reserves.food = 1200;
+    door.reserves.materials = 1200;
+    door.reserves.supplies = 900;
+    halted.policy.expansion = "paused";
+    expansion.recordExternalVictory(halted, land.id, {});
+    for (let step = 0; step < 20; step += 1) {
+        tick.advanceKingdomStep(halted);
+    }
+    return halted.districts.length === 5 && land.status !== "kingdom";
+})(), "paused must never claim land");
+
+// The kingdom sustains itself: stores are produced, not just spent.
+const storesBefore = gateway.reserves.supplies;
+runSteps(autonomous, 10, "economy");
+check("the realm produces supplies instead of only spending them", autonomous.districts.some((district) => district.reserves.supplies > 120), `gateway supplies ${String(Math.round(storesBefore))} -> ${String(Math.round(gateway.reserves.supplies))}`);
+check("the army trends toward its target rather than decaying", (() => {
+    const healthy = state.createInitialKingdom();
+    for (let step = 0; step < 200; step += 1) {
+        tick.advanceKingdomStep(healthy);
+    }
+    const soldiers = healthy.districts.reduce((sum, district) => sum + district.soldiers, 0);
+    const target = healthy.districts.reduce((sum, district) => sum + Math.round(district.civilians * 0.2), 0);
+    return soldiers > 100 && soldiers >= target * 0.5;
+})(), "200 peaceful steps must leave a real army");
+
+/* ------------------------------------------------------------------ *
  * Stage 9 - construction is staged and costs real resources
  * ------------------------------------------------------------------ */
 

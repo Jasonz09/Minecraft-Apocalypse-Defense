@@ -1,0 +1,105 @@
+# Testing
+
+**Minecraft Bedrock is not installed on this machine.** Everything below runs headless. No
+statement in this file claims in-game behaviour; the manual script at the bottom exists for
+the person who has a game.
+
+## The four gates
+
+```bash
+npm install      # typescript + @minecraft/server@2.7.0 types + @minecraft/common
+npm run verify   # runs every gate, reports each one even if an earlier one fails
+```
+
+Current results: `manifest + packaging PASS (231 checks)`, `typecheck PASS (0 errors)`,
+`offline unit tests PASS (141)`, `headless end-to-end kingdom run PASS (52/52 stages)`.
+
+| Command | Gate | What it actually proves |
+| --- | --- | --- |
+| `npm run validate` | manifest + packaging | Manifest structure, real unique UUIDs, entry file exists, the `@minecraft/server` pin **equals the installed types version** (so the code cannot be checked against one API and shipped against another), every relative import carries a `.js` extension and resolves (a missing extension is a silent pack-load failure), no dev junk inside the pack root |
+| `npm run typecheck` | strict `checkJs` | All 24 pack scripts are typed against the real 2.7.0 declarations: catches `initial` vs `initialSpawn`, `scriptEventReceived` vs `scriptEventReceive`, non-existent methods, implicit `any` |
+| `npm run test` | 141 unit tests across 8 files | Simulation behaviour, save/migration, invariants, reporting text, argument parsing |
+| `npm run e2e` | headless kingdom run | The whole gameplay sequence over a v1 save: migrate → peace → siege → evacuation → reinforcement → counterattack → victory → autonomous claim → shortage refusal → construction → recruitment → persistence → deterministic replay → readouts |
+
+Individual gates: `npm run validate`, `npm run typecheck`, `npm run test`.
+
+## What the gates cannot prove
+
+- That the pack loads, that chat renders, that any event fires, or that blocks place. All of
+  that needs the game.
+- **Pure JS vs runtime boundary.** Everything under `scripts/sim/`, `scripts/kingdom/`,
+  `scripts/ui/` and `scripts/commands/args.js` runs in Node and is covered. These files are
+  the Bedrock boundary and are **only** typechecked:
+  `main.js`, `events/welcome.js`, `commands/{status,inspect,debug,reply}.js`,
+  `integration/{simulationLoop,buildAdapter}.js`. `integration.test.mjs` guards the split in
+  both directions — the core must not import the runtime, and boundary files must.
+- The rollback branch in `tick.advanceKingdomStep` is verified by reading, not by an
+  executable case (no reachable system currently yields an invalid step). The validator that
+  triggers it, and the refusal-to-save, *are* tested.
+- Saved-state size is asserted as a blob budget (peak ≈15 KB over 400 steps). In-game,
+  `world.getDynamicPropertyTotalByteCount()` is the instrument.
+
+## Proving the typecheck gate is still live
+
+A green typecheck means nothing if `checkJs` stopped reading the files. Verify it:
+
+```bash
+node node_modules/typescript/bin/tsc -p tsconfig.json --listFiles | grep CivilizationApocalypse_BP   # must list every pack script
+```
+
+Then break something deliberately, re-run, restore, and re-run:
+
+```bash
+# in scripts/events/welcome.js: event.initialSpawn -> event.initial   (the old 1.x name)
+# in scripts/kingdom/store.js:  getDynamicProperty -> getDynamicPropertyX
+```
+
+Expected (these are the errors this project actually produced when run):
+
+```
+welcome.js(12,20): error TS2339: Property 'initial' does not exist on type 'PlayerSpawnAfterEvent'.
+store.js(15,28):  error TS2551: Property 'getDynamicPropertyX' does not exist on type 'World'. Did you mean 'getDynamicProperty'?
+```
+
+Restore from a copy (not `git checkout`) and confirm byte-identity with `cmp`.
+
+## In-game manual test script
+
+Requires a world with cheats enabled (needed for `/scriptevent`).
+
+1. **Install** per `README.md`, add the pack as a **Behavior Pack** to a world.
+2. **First join** — expect: `Welcome to the ruins. Civilization Apocalypse has been
+   founded.` then `Civilization Apocalypse: 5 districts, 400 civilians, 150 soldiers.` and
+   the hint to run `civ:status`.
+3. `/scriptevent civ:status` — the header, `Districts: 5`, `Civilians: 400`,
+   `Soldiers:  150`, five district lines, then `-- situation --` with the in-game day,
+   policy, refugee count, districts under attack, territory and project counts.
+4. `/scriptevent civ:district district-3` — full district card (security, integrity,
+   garrison split, stores, buildings, neighbours, projects).
+   `/scriptevent civ:district nope` must be **rejected** with the list of real ids.
+5. `/scriptevent civ:territory` — the five border lands and their status.
+6. `/scriptevent civ:policy` then `civ:policy paused`, then `civ:policy nonsense` (must be
+   rejected). Restore with `civ:policy balanced`.
+7. **Autonomy** — leave the world for a day of real play and return; `civ:status` should show
+   the step counter advanced, projects scheduled, and the army replacing its losses.
+8. **Persistence** — quit to title and rejoin. The greeting should read
+   `Welcome back, <name>.` (proof it loaded a save instead of re-seeding) and the numbers
+   must match what you left.
+9. **Debug scenarios** — `/scriptevent civ:debug:help`, `civ:debug:scenarios`, then
+   `civ:debug:scenario attack`. It must report a **dry run against a copy**; `civ:status`
+   afterwards must be unchanged. `civ:debug:scenario expansion` on a healthy border should
+   end `Districts: 5 -> 6` with the seven-project plan listed; add `--apply` to write it.
+   `civ:debug:tick 5` advances five hours; `civ:debug:tick 0`, `civ:debug:tick abc` and
+   `civ:debug:scenario not-a-scenario` must all be rejected.
+10. **Physical build demo (opt-in, unverified by me)** —
+    `/scriptevent civ:debug:build enable`, stand somewhere flat and empty,
+    `civ:debug:build anchor <x y z>`, `civ:debug:build preview`, then
+    `civ:debug:build run`. It should place a ring of blocks for the next unfinished stage,
+    report `skipped ... is not air` rather than replacing anything, and report `chunk is not
+    loaded` if you aim it at unloaded ground. `civ:debug:build disable` turns it off.
+11. **Migration** — if you still have a world from the first release, the join greeting must
+    say `Welcome back` and the totals must survive; a pre-migration copy is kept in the
+    `civ:kingdom-quarantine` dynamic property.
+
+If the scripts fail to load at all, check the content log for the module version message and
+follow the pin fix in `README.md` → Troubleshooting.

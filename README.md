@@ -1,14 +1,19 @@
-# Civilization Apocalypse — Bedrock Behavior Pack (foundation build)
+# Civilization Apocalypse — Bedrock Behavior Pack
 
-A Minecraft Bedrock Edition behavior pack that keeps a persistent **kingdom** in world
-storage: 5 districts, 400 civilians and 150 soldiers as starting simulation values.
+A Minecraft Bedrock Edition behavior pack holding a persistent, **autonomous** kingdom in
+world storage: 5 districts, 400 civilians and 150 soldiers as starting values, then war,
+evacuation, reinforcement, expansion, construction and recruitment simulated on top of them.
 
-These are **simulation numbers held in saved state — no civilians or soldiers are spawned
-as entities in this build.** Buildings, combat and NPC AI are deliberately not implemented.
+These are **simulation records held in saved state — no civilians or soldiers are spawned as
+entities, and no city is generated.** Combat, real mobs, NPC AI and physical building are
+deliberately not implemented in this milestone.
 
 - Language: JavaScript (no build step — the files in the pack are the source)
 - API: `@minecraft/server` **2.7.0** (stable, not beta)
 - Storage: world dynamic properties (`civ:kingdom`), which survive save/reload
+- Docs: [architecture](docs/ARCHITECTURE.md) ·
+  [game design](docs/GAME_DESIGN.md) · [progress](docs/PROGRESS.md) ·
+  [testing and the in-game script](docs/TESTING.md)
 
 ---
 
@@ -19,23 +24,29 @@ CivilizationApocalypse/
 ├── CivilizationApocalypse_BP/          <- the pack: zip THIS folder's contents to install
 │   ├── manifest.json
 │   └── scripts/
-│       ├── main.js                     entry point: wires the store to the two systems
-│       ├── config.js                   all tunable values (districts, populations, keys)
-│       ├── kingdom/state.js            pure state: defaults, splitting, validation, (de)serialize
-│       ├── kingdom/store.js            persistence over world dynamic properties
-│       ├── events/welcome.js           player-join welcome message
-│       ├── commands/status.js          /scriptevent civ:status handler
-│       └── ui/report.js                text formatting for the readouts
+│       ├── main.js                     entry point - subscriptions only, no world access
+│       ├── config.js                   every tunable value
+│       ├── kingdom/state.js            schema v2, derived totals, save validator
+│       ├── kingdom/store.js            persistence, migration statuses, quarantine
+│       ├── kingdom/migrations.js       v1 -> v2 upgrade registry
+│       ├── sim/                        rng, clock, war, evacuation, construction,
+│       │                               expansion, population, policies, tick, scenarios
+│       ├── events/welcome.js           player-join welcome
+│       ├── commands/                   args, reply, status, inspect, debug
+│       ├── integration/                simulationLoop (1 step/hour), buildAdapter (opt-in)
+│       └── ui/report.js                all player-facing text
 ├── dev/                                dev-only, never shipped in the pack
-│   ├── validate-manifest.mjs
-│   ├── verify.mjs
-│   └── test/kingdom.test.mjs
+│   ├── verify.mjs  validate-manifest.mjs  e2e-kingdom.mjs  probe-*.mjs
+│   └── test/*.test.mjs
+├── docs/                               ARCHITECTURE, GAME_DESIGN, PROGRESS, TESTING
 ├── package.json  tsconfig.json  README.md  .gitignore
 ```
 
-`state.js`, `store.js` and `report.js` contain no runtime import of `@minecraft/server`
-(the store takes the world object as an argument), which is what lets the whole
-simulation core be unit-tested in plain Node without launching the game.
+Everything under `scripts/sim/`, `scripts/kingdom/`, `scripts/ui/` and
+`scripts/commands/args.js` contains **no runtime import of `@minecraft/server`** - the store
+takes the world object as an argument - which is what lets the whole simulation be unit-tested
+and run end-to-end in plain Node without launching the game. A test guards that boundary in
+both directions.
 
 ---
 
@@ -132,7 +143,22 @@ Ironquarry: 80 civilians, 30 soldiers
 Whitethorn: 80 civilians, 30 soldiers
 Saltmere: 80 civilians, 30 soldiers
 Ashfall: 80 civilians, 30 soldiers
+-- situation --
+Time: Day 1, 05:00 (step 5), seed 20261017
+Policy: expansion balanced, reinforcements keep 50% at home
+Sheltered refugees: 0
+Districts under attack: none
+Territory: 0 claimed, 0 under military control, 5 unclaimed
+Active construction projects: 0
 ```
+
+**2b. Other readouts.** `/scriptevent civ:district district-3`, `civ:territory`,
+`civ:policy`. Invalid input is rejected rather than guessed at - try
+`/scriptevent civ:district nope`.
+
+**2c. The kingdom runs itself.** One simulation step is one in-game hour, driven by
+`system.runInterval`, not by the game tick. Watch it on demand with
+`/scriptevent civ:debug:tick 12` and see what changed in `civ:status`.
 
 **3. Persistence.** Quit to title, re-enter the world, run `/scriptevent civ:status` again
 → identical numbers. The join greeting now says `Welcome back, <name>.` instead of
@@ -164,14 +190,15 @@ dedicated server log) and look for script errors — see troubleshooting below.
 
 ```bash
 npm install        # typescript + @minecraft/server@2.7.0 types + @minecraft/common
-npm run verify     # runs all three gates, reports every one even if an earlier one fails
+npm run verify     # runs all four gates, reports every one even if an earlier one fails
 ```
 
 | Gate | What it proves |
 | --- | --- |
-| `npm run validate` | Manifest structure, real unique UUIDs, entry file exists, the pinned API version equals the installed types version, every relative import carries a `.js` extension and resolves (a missing extension is a silent pack-load failure), and the pack root has no dev junk in it |
-| `npm run typecheck` | Every pack script is checked with `checkJs` **strict** against the real 2.7.0 declarations |
-| `npm run test` | 14 offline unit tests on the simulation core: starting values, exact population splits, derived totals, validation rejects, seed-once, restart round-trip, corrupt-state recovery, and fail-closed saves |
+| `npm run validate` | 231 checks: manifest structure, real unique UUIDs, entry file exists, the pinned API version equals the installed types version, every relative import carries a `.js` extension and resolves, and the pack root has no dev junk in it |
+| `npm run typecheck` | All 24 pack scripts checked with `checkJs` **strict** against the real 2.7.0 declarations |
+| `npm run test` | 141 offline unit tests over 8 files: starting values, population splits, derived totals, validation, seed-once, restart round-trip, migration, quarantine, siege/evacuation/construction/expansion/population/policy behaviour |
+| `npm run e2e` | A headless 52-stage kingdom run: migrate a v1 save, hold the realm, take a siege, evacuate, reinforce, counterattack, win beyond the border, claim and plan new land, be refused by a shortage, build, recruit, reload, and replay identically |
 
 The typecheck gate was mutation-tested: renaming `initialSpawn` → `initial` (the old 1.x
 name) and `getDynamicProperty` → `getDynamicPropertyX` both produced errors at the right
@@ -201,31 +228,37 @@ Useful single gates: `npm run validate`, `npm run typecheck`, `npm run test`.
 
 ---
 
-## Deliberately not in this build
+## Deliberately not in this milestone
 
-Buildings/structures, combat, NPC or civilian AI, entity spawning of any kind, resource
-gathering, multiple kingdoms, UI screens, and any periodic simulation tick. There is no
-`system.runInterval` loop yet — the state is static until you act on it.
+Physical city generation, entity spawning of any kind, melee combat against real mobs, NPC
+or civilian AI, iron golems and wolves, multiple kingdoms, UI screens, and player-driven
+building. The kingdom is simulated as records: walls, districts and armies exist in saved
+state, not as blocks and entities in the world. The one exception is opt-in and off by
+default: `scripts/integration/buildAdapter.js` can materialise a project's next stage as
+blocks, and refuses to run until it is enabled and given an anchor by hand.
 
-Seams left for expansion:
+Seams left for the next milestone:
 
-- **New kingdom fields** — add them to `createInitialKingdom()` and to
-  `findValidationProblems()` in `kingdom/state.js`, then raise `KINGDOM_SCHEMA_VERSION`.
-  Loads reject a schema mismatch instead of silently misreading old saves.
-- **More commands/events** — add IDs to `SCRIPT_EVENT_IDS` in `config.js` and another
-  early-return branch in `commands/status.js`; the `civ` namespace filter already admits them.
-- **A simulation tick** — put it in a new `scripts/systems/*.js` and register it from
-  `main.js`; `computeTotals()` is the single source of truth for the population figures.
+- **New kingdom fields** — add them to `createV2Kingdom()` and to `findValidationProblems()`
+  in `kingdom/state.js`, then raise `KINGDOM_SCHEMA_VERSION` and register an upgrade in
+  `kingdom/migrations.js`. A schema mismatch is refused rather than silently misread, and the
+  original save is quarantined before anything is rewritten.
+- **New autonomous decisions** — `sim/policies.js` is the single place where the kingdom
+  chooses, bounded to one decision per district per step.
+- **More commands/events** — add IDs to `SCRIPT_EVENT_IDS` / `DEBUG_EVENT_IDS` in `config.js`;
+  the `civ` namespace filter already admits them.
+- **Physical building** — `collectBuildQueue()` is the read-only seam between a plan and the
+  world; only the adapter consumes it.
 - **Per-district storage** — `createKingdomStore()` takes the world object, so a second key
   (or an entity/block-scoped store) drops in without touching the state module.
 - **Real custom slash commands** — `/civ status` via `system.beforeEvents.startup` →
   `customCommandRegistry.registerCommand(...)` is available in 2.1.0+ if you'd rather not
   depend on `/scriptevent`.
 
-## Files created in this foundation
+## Verification status
 
-`CivilizationApocalypse_BP/manifest.json`, `scripts/main.js`, `scripts/config.js`,
-`scripts/kingdom/state.js`, `scripts/kingdom/store.js`, `scripts/events/welcome.js`,
-`scripts/commands/status.js`, `scripts/ui/report.js`, plus `package.json`,
-`tsconfig.json`, `dev/validate-manifest.mjs`, `dev/verify.mjs`,
-`dev/test/kingdom.test.mjs`, `README.md`, `.gitignore`.
+Four offline gates green: 231 manifest/packaging checks, strict typecheck against the real
+2.7.0 declarations, 141 unit tests, and a 52-stage headless end-to-end kingdom run.
+**Nothing has been run inside Minecraft** — it is not installed on the machine that built
+this. `docs/TESTING.md` carries the in-game script for when it is, and `docs/PROGRESS.md`
+lists the defects found and fixed during this milestone along with the remaining risks.

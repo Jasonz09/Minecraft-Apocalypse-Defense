@@ -5,17 +5,21 @@ import { advanceConstruction, assignBuilders } from "./construction.js";
 import { runEvacuationStep } from "./evacuation.js";
 import { runExpansionStep } from "./expansion.js";
 import { advanceTraining, runPopulationStep } from "./population.js";
+import { runPolicyStep } from "./policies.js";
 import { runWarStep } from "./war.js";
 
 /**
  * The simulation step, in one place. Order matters and is fixed:
- *   war -> evacuation -> construction -> expansion -> population
+ *   war -> evacuation -> construction -> expansion -> policies -> population -> training
  * Each system is pure JavaScript over the kingdom object, so this whole loop runs in
  * Node exactly as it runs in Minecraft.
  */
 
 /** Builders work while the district is standing; under active assault they man the walls instead. */
 const CONSTRUCTION_CAN_WORK_SECURITY = ["secure", "alert", "isolated"];
+
+/** How many finished projects a district keeps in the save as history. */
+const COMPLETED_PROJECT_HISTORY = 2;
 
 /**
  * Systems return either a string list or a report object; normalise both.
@@ -41,6 +45,26 @@ function byId(left, right) {
 }
 
 /**
+ * A finished project has already been applied to `district.buildings`, so keeping every
+ * completed record forever would grow the saved kingdom without limit. The last few are
+ * kept as history; the rest are dropped. Walls are never removed by this - the building
+ * count and the district's integrity are untouched.
+ *
+ * @param {any} kingdom
+ */
+function pruneCompletedProjects(kingdom) {
+    for (const district of kingdom.districts) {
+        const projects = /** @type {any[]} */ (district.projects ?? []);
+        const open = projects.filter((project) => project.status !== "complete");
+        const done = projects.filter((project) => project.status === "complete");
+        if (done.length > COMPLETED_PROJECT_HISTORY) {
+            done.length = COMPLETED_PROJECT_HISTORY;
+        }
+        district.projects = [...open, ...done];
+    }
+}
+
+/**
  * @param {any} kingdom
  * @returns {string[]}
  */
@@ -51,6 +75,7 @@ export function runConstructionStep(kingdom) {
         events.push(...toEvents(assignBuilders(district, kingdom, { canWork })));
         events.push(...toEvents(advanceConstruction(district, { canWork, kingdom })));
     }
+    pruneCompletedProjects(kingdom);
     return events;
 }
 
@@ -103,6 +128,7 @@ export function advanceKingdomStep(kingdom) {
     events.push(...toEvents(runEvacuationStep(kingdom)));
     events.push(...runConstructionStep(kingdom));
     events.push(...toEvents(runExpansionStep(kingdom)));
+    events.push(...runPolicyStep(kingdom));
     events.push(...toEvents(runPopulationStep(kingdom)));
     events.push(...runTrainingStep(kingdom));
 
