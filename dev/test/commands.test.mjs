@@ -53,6 +53,7 @@ test("every /scriptevent example in the pack, docs, README and tests names a rea
         const text = readFileSync(file, "utf8");
         for (const match of text.matchAll(/\/scriptevent\s+([^\s`"'<>|)\]/\\]+)/g)) {
             const id = match[1].replace(/[.,;:]+$/, "");
+            if (id.includes("${")) continue; // dynamic template, validated where the id is registered
             examples += 1;
             assert.match(id, VALID, `${file}: '/scriptevent ${id}' is not a valid id`);
             assert.ok(known.has(id), `${file}: '/scriptevent ${id}' is not a registered command`);

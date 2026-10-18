@@ -3,6 +3,7 @@ import { findValidationProblems } from "../kingdom/state.js";
 import { formatGameTime } from "./clock.js";
 import { advanceConstruction, assignBuilders } from "./construction.js";
 import { runEvacuationStep } from "./evacuation.js";
+import { runGateControlStep, validateGateRecords } from "./gatecontrol.js";
 import { runExpansionStep } from "./expansion.js";
 import { advanceTraining, runPopulationStep } from "./population.js";
 import { runPolicyStep } from "./policies.js";
@@ -129,13 +130,14 @@ export function advanceKingdomStep(kingdom) {
     let problems;
     try {
         events.push(...toEvents(runWarStep(kingdom)));
+        events.push(...toEvents(runGateControlStep(kingdom)));
         events.push(...toEvents(runEvacuationStep(kingdom)));
         events.push(...runConstructionStep(kingdom));
         events.push(...toEvents(runExpansionStep(kingdom)));
         events.push(...runPolicyStep(kingdom));
         events.push(...toEvents(runPopulationStep(kingdom)));
         events.push(...runTrainingStep(kingdom));
-        problems = findValidationProblems(kingdom);
+        problems = [...findValidationProblems(kingdom), ...validateGateRecords(kingdom)];
     } catch (error) {
         problems = [`a simulation system threw: ${String(error)}`];
     }

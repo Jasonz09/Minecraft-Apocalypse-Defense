@@ -43,6 +43,10 @@ export const PHYSICAL_EVENT_IDS = {
     status: "civ:district_status",
     abort: "civ:district_abort",
     scout: "civ:district_scout",
+    gateList: "civ:gate_list",
+    gateOpen: "civ:gate_open",
+    gateClose: "civ:gate_close",
+    gateAuto: "civ:gate_auto",
 };
 
 export const PHYSICAL = {

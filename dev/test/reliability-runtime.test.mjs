@@ -180,8 +180,8 @@ test("main.js: importing it during early execution does not touch world state an
 
 test("main.js: registers exactly the subscriptions the pack needs and one hourly interval", () => {
     assert.equal(earlySnapshot.spawn, 1, "one playerSpawn subscriber");
-    assert.equal(earlySnapshot.scriptEvents, 4, "status + inspection + debug + physical script-event subscribers");
-    assert.deepEqual(earlySnapshot.intervals, [SIM.stepTicks], "one interval at the in-game-hour cadence");
+    assert.equal(earlySnapshot.scriptEvents, 5, "status + inspection + debug + physical + gates script-event subscribers");
+    assert.deepEqual([...earlySnapshot.intervals].sort((a, b) => a - b), [40, SIM.stepTicks], "gate-adapter poll (40 ticks) plus one interval at the in-game-hour cadence");
     for (const { options } of mc.scriptEventSubscribers) {
         assert.deepEqual(options?.namespaces, ["civ"], "every script-event subscription is namespace-filtered");
     }
@@ -194,10 +194,11 @@ test("registration is idempotent: calling the register functions again adds no d
     (await load("commands", "inspect.js")).registerInspectionCommands(store);
     (await load("commands", "debug.js")).registerDebugCommands(store);
     (await load("commands", "physical.js")).registerPhysicalCommands(store);
+    (await load("commands", "gates.js")).registerGateCommands(store);
     assert.equal(mc.spawnSubscribers.length, 1);
-    assert.equal(mc.scriptEventSubscribers.length, 4);
+    assert.equal(mc.scriptEventSubscribers.length, 5);
     assert.equal(loop.isSimulationLoopRunning(), true);
-    assert.equal(mc.intervals.length, 1, "startSimulationLoop returns the existing handle");
+    assert.equal(mc.intervals.length, 2, "re-registering starts no extra interval (gate poll + simulation hour)");
 });
 
 // ---- welcome --------------------------------------------------------------------------
