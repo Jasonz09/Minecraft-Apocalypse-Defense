@@ -41,6 +41,10 @@ function guard(what) {
 
 mc.world = {
     afterEvents: { playerSpawn: { subscribe: (callback) => mc.spawnSubscribers.push(callback) } },
+    getDynamicPropertyIds() {
+        guard("world.getDynamicPropertyIds");
+        return [...mc.properties.keys()];
+    },
     getDynamicProperty(key) {
         guard(`world.getDynamicProperty(${key})`);
         return mc.properties.get(key);
@@ -106,7 +110,7 @@ export async function resolve(specifier, context, nextResolve) {
 register("data:text/javascript," + encodeURIComponent(hooksSource));
 
 const load = (...parts) => import(fileUrl(...parts));
-const { STORAGE_KEYS, KINGDOM_SCHEMA_VERSION, SIM } = await load("config.js");
+const { STORAGE_KEYS, KINGDOM_SCHEMA_VERSION, SIM, STARTER, STARTER_EVENT_IDS } = await load("config.js");
 const { createInitialKingdom, serializeKingdom, findValidationProblems } = await load("kingdom", "state.js");
 const report = await load("ui", "report.js");
 const { listScenarios } = await load("sim", "scenarios.js");
@@ -180,7 +184,7 @@ test("main.js: importing it during early execution does not touch world state an
 
 test("main.js: registers exactly the subscriptions the pack needs and one hourly interval", () => {
     assert.equal(earlySnapshot.spawn, 1, "one playerSpawn subscriber");
-    assert.equal(earlySnapshot.scriptEvents, 6, "status + inspection + debug + physical + gates + civ script-event subscribers");
+    assert.equal(earlySnapshot.scriptEvents, 7, "status + inspection + debug + physical + gates + civ + starter script-event subscribers");
     assert.deepEqual([...earlySnapshot.intervals].sort((a, b) => a - b), [40, SIM.stepTicks], "gate-adapter poll (40 ticks) plus one interval at the in-game-hour cadence");
     for (const { options } of mc.scriptEventSubscribers) {
         assert.deepEqual(options?.namespaces, ["civ"], "every script-event subscription is namespace-filtered");
@@ -196,8 +200,9 @@ test("registration is idempotent: calling the register functions again adds no d
     (await load("commands", "physical.js")).registerPhysicalCommands(store);
     (await load("commands", "gates.js")).registerGateCommands(store);
     (await load("commands", "civ.js")).registerCivCommands(store);
+    (await load("commands", "starter.js")).registerStarterCommands(store);
     assert.equal(mc.spawnSubscribers.length, 1);
-    assert.equal(mc.scriptEventSubscribers.length, 6);
+    assert.equal(mc.scriptEventSubscribers.length, 7);
     assert.equal(loop.isSimulationLoopRunning(), true);
     assert.equal(mc.intervals.length, 2, "re-registering starts no extra interval (gate poll + simulation hour)");
 });
@@ -607,4 +612,207 @@ test("loop: stop handle clears the run and allows a single restart", () => {
     stop();
     assert.equal(loop.isSimulationLoopRunning(), false);
     assert.ok(mc.clearedRuns.length > 0);
+});
+
+// ---- starter world arming -------------------------------------------------------------
+// The shipped world template is produced from a build world by `civ:starter_arm confirm`.
+// This exercises that boundary for real: the command reads every stored key, refuses unless
+// the city is genuinely built, then rewrites the kingdom and deletes development residue.
+const { PLAN_PREFIX, createPlanStore } = await load("civ", "planstore.js");
+const starter = await load("sim", "starter.js");
+
+/** Build a district.civ record the kingdom validator accepts, as the construction pipeline would. */
+const builtRecord = (/** @type {string} */ stage) => ({
+    status: "complete",
+    layout: "hearthgate-enlarged",
+    seed: 4242,
+    startedStep: 11,
+    anchor: { x: 0, z: 0 },
+    centre: { x: 12, z: -34 },
+    checksum: "sha256:dummy",
+    stage,
+});
+
+/** A development world where district-1 really was built: plan stored, months of test residue present. */
+function seedBuiltDevWorld() {
+    const kingdom = seed();
+    const built = kingdom.districts[0];
+    built.civ = builtRecord("dressing");
+    built.civilians = 91; // drifted during testing
+    built.soldiers = 3;
+    built.garrison = { front: 2, reserve: 1 };
+    built.refugees = 27;
+    mc.properties.set(STORAGE_KEYS.kingdom, serializeKingdom(kingdom));
+    const saved = createPlanStore(mc.world, { prefix: PLAN_PREFIX }).savePlan({ seed: 4242, districts: [1, 2, 3, 4, 5], cell: 4 });
+    assert.equal(saved.ok, true, saved.reason);
+    mc.properties.set("civ:demo-build", true);
+    mc.properties.set("civ:debug-note", "leftover from a test run");
+    mc.properties.set(STORAGE_KEYS.quarantine, "{\"payload\":\"a save that failed to load during testing\"}");
+    mc.properties.set("civ_gatereg", JSON.stringify({ v: 1, gates: [{ id: "gate-east", role: "unmanaged" }] }));
+    return kingdom;
+}
+
+const allStoredKeys = () => [...mc.properties.keys()];
+const text = (/** @type {any[]} */ messages) => messages.flat().join("\n");
+
+test("starter: the documented ids are the registered ids", () => {
+    assert.deepEqual(STARTER_EVENT_IDS, { status: "civ:starter_status", arm: "civ:starter_arm", verify: "civ:starter_verify" });
+    assert.equal(STARTER.keepKeyPrefixes.includes(PLAN_PREFIX), true, "the master plan must survive arming");
+});
+
+test("starter: arming without the literal word 'confirm' writes nothing", () => {
+    resetWorld();
+    seedBuiltDevWorld();
+    const before = mc.properties.get(STORAGE_KEYS.kingdom);
+    const player = makePlayer();
+    scriptEvent(STARTER_EVENT_IDS.arm, "", { player });
+    scriptEvent(STARTER_EVENT_IDS.arm, "yes", { player });
+    assert.equal(player.messages.length, 2);
+    assert.equal(mc.properties.get(STORAGE_KEYS.kingdom), before);
+    assert.equal(storedKingdom().starter, undefined);
+});
+
+test("starter: arming a built dev world resets the simulation and keeps the built city", () => {
+    resetWorld();
+    seedBuiltDevWorld();
+    const player = makePlayer();
+    scriptEvent(STARTER_EVENT_IDS.arm, "confirm", { player });
+
+    const armed = storedKingdom();
+    assert.deepEqual(findValidationProblems(armed), [], "the baseline the command writes must be a valid kingdom");
+    assert.equal(armed.starter.templateId, STARTER.templateId);
+    const expected = starter.STARTER_EXPECTED_POPULATION;
+    assert.deepEqual(
+        {
+            districts: armed.districts.length,
+            civilians: armed.districts.reduce((sum, d) => sum + d.civilians, 0),
+            soldiers: armed.districts.reduce((sum, d) => sum + d.soldiers, 0),
+            refugees: armed.districts.reduce((sum, d) => sum + (d.refugees ?? 0), 0),
+        },
+        { districts: expected.districts, civilians: expected.civilians, soldiers: expected.soldiers, refugees: 0 },
+        "test-time population must not ship",
+    );
+    assert.equal(armed.step, 0);
+
+    // The world itself: district-1's build record ships, so the city is not treated as unbuilt.
+    assert.equal(armed.districts[0].civ.status, "complete");
+    assert.equal(armed.districts[0].civ.layout, "hearthgate-enlarged");
+    assert.deepEqual(armed.districts[0].civ.centre, { x: 12, z: -34 });
+    assert.equal(armed.districts[1].civ, undefined, "an unbuilt district must not claim to be built");
+
+    // Development residue gone, world truth kept.
+    const keys = allStoredKeys();
+    assert.equal(keys.includes("civ:demo-build"), false);
+    assert.equal(keys.includes("civ:debug-note"), false);
+    assert.equal(keys.includes(STORAGE_KEYS.quarantine), false, "wipe prefixes are matched longest-first, so the quarantined blob goes and civ:kingdom stays");
+    assert.equal(keys.includes(STORAGE_KEYS.kingdom), true, "the armed kingdom must still be stored afterwards");
+    assert.equal(keys.some((key) => key.startsWith(`${PLAN_PREFIX}:`)), true, "the five-district plan must survive");
+    assert.equal(keys.includes("civ_gatereg"), true);
+    assert.match(text(player.messages), /export/i, "the reply must tell the developer what to do next");
+});
+
+test("starter: a second arming is refused and leaves the armed baseline alone", () => {
+    resetWorld();
+    seedBuiltDevWorld();
+    const player = makePlayer();
+    scriptEvent(STARTER_EVENT_IDS.arm, "confirm", { player });
+    const afterFirst = mc.properties.get(STORAGE_KEYS.kingdom);
+    scriptEvent(STARTER_EVENT_IDS.arm, "confirm", { player });
+    assert.equal(mc.properties.get(STORAGE_KEYS.kingdom), afterFirst, "re-arming must not rewrite a shipped world");
+    assert.match(text(player.messages.at(-1)), /already armed/i);
+});
+
+test("starter: an unbuilt world is refused, the save untouched", () => {
+    resetWorld();
+    seed();
+    const before = mc.properties.get(STORAGE_KEYS.kingdom);
+    const player = makePlayer();
+    scriptEvent(STARTER_EVENT_IDS.arm, "confirm", { player });
+    assert.equal(mc.properties.get(STORAGE_KEYS.kingdom), before);
+    assert.match(text(player.messages), /never built/i);
+});
+
+test("starter: a corrupt job queue and an unreadable plan both block arming (fail closed)", () => {
+    resetWorld();
+    seedBuiltDevWorld();
+    mc.properties.set("civ:jobs:meta", "{corrupt on purpose");
+    const before = mc.properties.get(STORAGE_KEYS.kingdom);
+    const player = makePlayer();
+    scriptEvent(STARTER_EVENT_IDS.arm, "confirm", { player });
+    assert.match(text(player.messages), /job queue reads as 'corrupt'/);
+    assert.equal(mc.properties.get(STORAGE_KEYS.kingdom), before);
+
+    resetWorld();
+    seedBuiltDevWorld();
+    mc.properties.set(`${PLAN_PREFIX}:meta`, "{not json");
+    const second = makePlayer();
+    scriptEvent(STARTER_EVENT_IDS.arm, "confirm", { player: second });
+    assert.match(text(second.messages), /master plan cannot be read/i);
+    assert.equal(storedKingdom().starter, undefined);
+});
+
+test("starter: a gate under a manual override, mid-move, or unreadable blocks arming", () => {
+    const cases = [
+        ["forced_closed", () => mc.properties.set("civ_gatereg", JSON.stringify({ v: 1, gates: [{ id: "gate-east", role: "unmanaged", mode: "forced_closed" }] })), /manual override/i],
+        ["mid-move", () => mc.properties.set("civ_gate_gate-east", JSON.stringify({ v: 1, id: "gate-east", actual: "open", to: "closed", rows: 0, attempts: 0, retryAt: 0, reason: null })), /still moving/i],
+        ["corrupt registry", () => mc.properties.set("civ_gatereg", "{not json"), /gate registry reads as 'corrupt'/i],
+        ["wrong shape registry", () => mc.properties.set("civ_gatereg", JSON.stringify([{ id: "gate-east" }])), /gate registry reads as 'invalid shape'/i],
+    ];
+    for (const [label, mutate, expected] of cases) {
+        resetWorld();
+        seedBuiltDevWorld();
+        mutate();
+        const before = mc.properties.get(STORAGE_KEYS.kingdom);
+        const player = makePlayer();
+        scriptEvent(STARTER_EVENT_IDS.arm, "confirm", { player });
+        assert.match(text(player.messages), expected, `${label} should block arming`);
+        assert.equal(mc.properties.get(STORAGE_KEYS.kingdom), before, `${label} must not write a baseline`);
+    }
+});
+
+test("starter: a district whose build is paused blocks arming, because arming deletes its resume handle", () => {
+    resetWorld();
+    const kingdom = seedBuiltDevWorld();
+    const paused = kingdom.districts[1];
+    paused.civ = { ...builtRecord("walls"), status: "paused", stage: "walls" };
+    mc.properties.set(STORAGE_KEYS.kingdom, serializeKingdom(kingdom));
+    const before = mc.properties.get(STORAGE_KEYS.kingdom);
+    const player = makePlayer();
+    scriptEvent(STARTER_EVENT_IDS.arm, "confirm", { player });
+    assert.match(text(player.messages), /build paused at 'walls'/);
+    assert.equal(mc.properties.get(STORAGE_KEYS.kingdom), before);
+});
+
+test("starter: a running generation session blocks arming, and the same world arms after it ends", async () => {
+    const civProgress = await load("integration", "civProgress.js");
+    resetWorld();
+    seedBuiltDevWorld();
+    civProgress.resetProgressForTests();
+    const token = civProgress.startProgress("plan", { kind: "plan", cancelled: false }, () => {});
+    const before = mc.properties.get(STORAGE_KEYS.kingdom);
+    const player = makePlayer();
+    scriptEvent(STARTER_EVENT_IDS.arm, "confirm", { player });
+    assert.match(text(player.messages), /generation session is still running .*plan session/);
+    assert.equal(mc.properties.get(STORAGE_KEYS.kingdom), before, "arming must not race a session that is about to save");
+    try {
+        civProgress.finishProgress(token, "done");
+        scriptEvent(STARTER_EVENT_IDS.arm, "confirm", { player });
+        assert.equal(storedKingdom().starter.templateId, STARTER.templateId, "the same world arms once the session has released the slot");
+    } finally {
+        civProgress.resetProgressForTests();
+    }
+});
+
+test("starter: status and verify are read-only and say what a built world would do", () => {
+    resetWorld();
+    seedBuiltDevWorld();
+    const before = allStoredKeys().sort().join(",");
+    const player = makePlayer();
+    scriptEvent(STARTER_EVENT_IDS.status, "", { player });
+    scriptEvent(STARTER_EVENT_IDS.verify, "", { player });
+    assert.equal(player.messages.length, 2);
+    assert.match(text(player.messages.slice(0, 1)), /Starter world/);
+    assert.match(text(player.messages.slice(1, 2)), /Starter verify/);
+    assert.equal(allStoredKeys().sort().join(","), before, "neither command may write");
+    assert.equal(allStoredKeys().includes(STORAGE_KEYS.kingdom), true);
 });

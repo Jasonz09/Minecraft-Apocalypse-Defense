@@ -487,6 +487,22 @@ export function findValidationProblems(value) {
     if (value.policy === null || typeof value.policy !== "object") {
         problems.push("kingdom.policy must be an object");
     }
+    if (value.starter !== undefined) {
+        const starter = value.starter;
+        if (starter === null || typeof starter !== "object") {
+            problems.push("kingdom.starter must be an object");
+        } else {
+            if (typeof starter.templateId !== "string" || starter.templateId.length === 0) {
+                problems.push("kingdom.starter.templateId must be a non-empty string");
+            }
+            if (!Number.isInteger(starter.armedAtStep) || starter.armedAtStep < 0) {
+                problems.push("kingdom.starter.armedAtStep must be a non-negative integer");
+            }
+            if (!Array.isArray(starter.templateVersion) || starter.templateVersion.length !== 3) {
+                problems.push("kingdom.starter.templateVersion must be a [major, minor, patch] triple");
+            }
+        }
+    }
 
     return problems;
 }

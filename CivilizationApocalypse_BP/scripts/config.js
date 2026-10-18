@@ -87,6 +87,37 @@ export const CIV = {
     heartbeatTicks: 200,
 };
 
+/**
+ * Starter-world arming. The shipped game is a world template: the civilization is already
+ * built, so the simulation must start from its published baseline instead of inheriting
+ * whatever a development world accumulated while the city was being generated and tested.
+ */
+export const STARTER_EVENT_IDS = {
+    status: "civ:starter_status",
+    arm: "civ:starter_arm",
+    verify: "civ:starter_verify",
+};
+
+export const STARTER = {
+    /** Must match starter/template.json in the repository; stamped into the shipped kingdom. */
+    templateId: "civapoc-starter",
+    templateVersion: [1, 0, 0],
+    /**
+     * Keys that carry the shipped world's own truth: the five-district master plan (so future
+     * expansion and rebuilding still works), the reset kingdom baseline, and the records of the
+     * gates that physically exist in the city.
+     */
+    keepKeyPrefixes: ["civ:kingdom", "civ:plan", "civ_gatereg", "civ_gate_"],
+    /**
+     * Development-only state that must not reach a player. One-colon prefixes throughout: the plan
+     * store keeps its quarantine copy under the plan prefix, and it rides along with the kept plan -
+     * see "Known limitations" in docs/STARTER_WORLD.md.
+     */
+    wipeKeyPrefixes: ["civ:kingdom-quarantine", "civ:jobs", "civ:debug", "civ:demo-", "civ_devgate"],
+    /** Districts that must be physically complete before a world may be armed. Mirrors template.json. */
+    builtRequired: ["district-1"],
+};
+
 export const PHYSICAL = {
     /** The only physical layout so far, and the district record it mirrors. */
     prototypeDistrict: "district-1",

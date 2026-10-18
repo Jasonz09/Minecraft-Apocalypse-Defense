@@ -1,0 +1,233 @@
+# Starter world - prebuilt kingdom as a Bedrock world template
+
+Status: **tooling and contract are implemented and verified offline. No `.mctemplate` exists yet,
+because the city it must contain has not been physically built in Minecraft.** District 1 is
+planner-ready; districts 2-5 are planned on the master map but have no registered build layout.
+Nothing in this document has been executed inside Minecraft - it is not installed on this machine.
+
+## 1. What "prebuilt" means here
+
+The shipped artifact is a **world template** (`.mctemplate`), not a behavior pack that builds a city
+on first join. A player picks the template in *Create New > Imported Templates*, and the kingdom is
+already standing: walls, gates, roads, homes, farms, barracks, in normal surrounding terrain.
+
+That forces one design decision this whole document revolves around:
+
+> **The world's geography and the world's progress are different things, and they are stored in the
+> same dynamic properties.**
+
+A build world accumulates months of development state - battles fought, population drift, refugees,
+quarantined blobs, half-finished job queues, a development gate unlock. A player must inherit the
+city, never that history. So arming splits saved state three ways (`scripts/sim/starter.js`):
+
+| kind | keys | why |
+| --- | --- | --- |
+| **reset** | `civ:kingdom` | the simulation goes back to the published baseline (5 districts / 400 civilians / 150 soldiers, `step` 0) **but keeps** each district's `civ` / `physical` records, because those say what is physically standing in the world |
+| **keep** | `civ:kingdom`, `civ:plan`, `civ_gatereg`, `civ_gate_*` | the five-district master plan and the gate registry, so procedural construction and gate control stay available for expansion and rebuilding |
+| **wipe** | `civ:kingdom-quarantine`, `civ:jobs`, `civ:debug`, `civ:demo-`, `civ_devgate` | development-only residue |
+
+Matching is **longest-prefix-wins**, which is what lets `civ:kingdom-quarantine` be wiped while
+`civ:kingdom` is kept. A key matched by neither list is reported as `unknown` and left alone: this
+tool has no business deleting another add-on's properties.
+
+Prefix lists live in **one** place - `starter/template.json` - and `config.js` `STARTER` mirrors them;
+`dev/test/template.test.mjs` fails if the two drift.
+
+## 2. Research findings (Bedrock world template format)
+
+Verified against primary sources ([Microsoft Learn: Create a World Template from an Exported
+World](https://learn.microsoft.com/en-us/minecraft/creator/documents/createaworldtemplate?view=minecraft-bedrock-stable),
+[Bedrock Edition level format](https://minecraft.wiki/w/Bedrock_Edition_level_format)):
+
+- A template is **an exported world, zipped, with `.mctemplate`**. The zip must contain the world's
+  *contents* at the root; zipping the containing folder makes it un-importable.
+- A template `manifest.json` is `format_version: 2`, `header.name = "pack.name"`,
+  `header.description = "pack.description"`, and **two different UUIDs** (header + one module of
+  `type: "world_template"`). Re-using a UUID that is already in `com.mojang` produces
+  *"Failed to import"* - which is why the shipped UUIDs are fixed in `starter/template.json` and the
+  validator refuses a template UUID that equals a pack UUID.
+- `texts/en_US.lang` supplies the UI name (`pack.name=` / `pack.description=`); `texts/languages.json`
+  lists the languages (`["en_US"]` minimum). Without them the template is literally named "pack.name".
+- Add-on packs ride along in `behavior_packs/<dir>` + `world_behavior_packs.json` (and
+  `resource_packs/...`). **Pack folder names inside a world template must be 10 characters or
+  shorter** (an Xbox path-length issue); ours is `CivApocBP`.
+- The random-seed variation deletes `db/` and sets `allow_random_seed: true`. **We deliberately do the
+  opposite**: the city *is* the `db/` content, so `db/` must be present and `allow_random_seed` must
+  not be set (`world.keepRandomSeed: false`).
+- `level.dat` is an 8-byte header (int32 version, int32 payload length) followed by **uncompressed
+  little-endian NBT** rooted at a compound. Java's gzip'd big-endian file is a different format.
+- Inside `Level`, **`Generator` is an Int, not a word**: 0 Old, 1 Infinite, 2 Flat, 5 Void, and the
+  seed is `RandomSeed` (Long). `SpawnX/Y/Z` are Ints. A validator that compares `Generator` to the
+  string `"infinite"` fails every export Minecraft has ever produced - the fixture in
+  `dev/test/template.test.mjs` therefore writes the numeric form, and the package gate maps
+  id→name and still accepts a string if some tool writes one.
+- `world_icon.jpeg` is optional for non-marketplace templates (800x450).
+
+What that means for our tooling:
+
+1. `db/` is a LevelDB of opaque binary logs. **Simulation state stored in dynamic properties cannot
+   be inspected offline**, so the packager will not pretend to check it. It requires a *build
+   receipt* (section 5) whose numbers came from the in-game `civ:starter_verify` output.
+2. The pack copies inside an exported world can be stale. The builder therefore takes
+   `behavior_packs/CivApocBP` **from the repository**, not from the export, so the shipped pack always
+   matches the commit that built the template.
+3. Packaging must not be delegated to the shell. Measured on this machine: PowerShell's
+   `Compress-Archive` writes entry names with **backslashes**
+   (`behavior_packs\CivApocBP\scripts\main.js`), while the ZIP application note mandates `/` - which is
+   what Minecraft reads. `dev/lib/zip.mjs` writes the archive itself: `/` separators, no wrapping
+   folder, no directory entries, fixed timestamps (so two builds of the same tree hash identically and
+   a rebuild can be proved not to have changed), stored-or-deflated whichever is smaller, and CRC-32
+   verified on read. A synthetic export run produced a 0.4 MB `.mctemplate` with 80 entries, no
+   backslashes, no wrapper, and `scripts/main.js` inside it byte-identical to the repository copy.
+
+## 3. Files
+
+| path | role |
+| --- | --- |
+| `starter/template.json` | the contract: template id/version/UUIDs, pack staging, required/optional/forbidden world files, keep/wipe prefixes, per-district layout ids and status |
+| `starter/build-receipt.example.json` | the human-signed proof that a world was built and armed (copy to `starter/build-receipt.json`) |
+| `CivilizationApocalypse_BP/scripts/sim/starter.js` | pure: key classification, baseline construction, arm refusal list, release read-out |
+| `CivilizationApocalypse_BP/scripts/commands/starter.js` | runtime boundary: `civ:starter_status`, `civ:starter_arm confirm`, `civ:starter_verify` |
+| `dev/lib/nbt.mjs` | offline `level.dat` reader/writer (no new dependency) |
+| `dev/lib/zip.mjs` | the template's own ZIP writer/reader: `/` separators, contents at the root, fixed timestamps so a rebuild is byte-identical, CRC verified on read, and entry names that try to escape the package (`../`, absolute, drive-letter) refused on the way in |
+| `dev/validate-template.mjs` | spec gate + package gate; runs as the fifth verify gate |
+| `dev/build-template.mjs` | export -> staged template -> `.mctemplate`; read-only on the source world, writes only under `dist/` |
+| `dev/test/template.test.mjs` | 13 tests: spec, mutations, NBT, staged package, failure cases, builder refusals, starter semantics |
+| `dev/test/reliability-runtime.test.mjs` | starter arming driven through the fake `@minecraft/server` |
+
+## 4. The commands, and what they refuse
+
+```
+/scriptevent civ:starter_status          read-only: keep/reset/wipe lists + what still blocks arming
+/scriptevent civ:starter_arm confirm     writes the baseline, wipes development residue
+/scriptevent civ:starter_verify          read-only: is this world consistent enough to export
+```
+
+`civ:starter_arm` is deliberately two words: without the literal `confirm` it explains itself and
+writes nothing. It then refuses unless **every** one of these holds (fail-closed, no override flag):
+
+- a kingdom is stored and readable (not quarantined, not a newer schema);
+- each `starter.builtRequired` district has `district.civ.status === "complete"` - an empty or
+  half-built template can never be packaged as the finished civilization;
+- no district is `building`, **or `paused`** (a paused build's only resume handle is the job queue,
+  which arming deletes), and no `district.physical` prototype build is in progress;
+- no planning/survey/build session holds the job slot (`districtBuilder.isBusy()`) or the progress
+  display (`civProgress.getProgress()`), because a live session would save development progress over
+  the baseline it just wrote;
+- the job queue reads `ok` **or** `absent` - a `corrupt`/`newer`/`unsupported` queue could still hold
+  unfinished work, so it blocks;
+- the gate registry `civ_gatereg` reads as `{v:1, gates:[…]}` and no listed gate carries a manual
+  `mode` override or an adapter record (`civ_gate_<id>`) with a destination still to reach. An
+  unreadable registry is a refusal, not an absence - `readGateRegistry()` turns corruption into "no
+  gates", which is exactly what a shippable world looks like;
+- the master plan is stored **and readable**; keys present but unreadable is reported as its own
+  failure, not as "not stored".
+
+Re-arming an already-armed world is refused, so a shipped template can't be silently rebuilt over
+play state. Arming never generates or removes a block, and nothing in this path runs on player join.
+The keep/wipe/builtRequired lists exist twice on purpose - `config.js` (what the game does) and
+`starter/template.json` (what the package gate checks) - and
+`dev/test/template.test.mjs › the release contract is the same in config.js and starter/template.json`
+fails if they ever drift.
+
+## 5. One-time repeatable workflow
+
+Stage 0 is in Minecraft; stages 1-4 are offline and already implemented.
+
+1. **Create a dedicated build world** (e.g. `CIVBUILD-hearthgate`), normal/infinite generator, cheats
+   on for `/scriptevent`. Never an existing world: the tooling never edits a live save.
+2. **Build district 1**: `/scriptevent civ:generate` (dry survey), then `civ:generate_plan`,
+   `civ:generate` to place, `civ:generate_status` / `civ:generate_resume` as the budgeted job walks
+   through its stages. Slope survey is a read-only scan and can time out - resume, don't restart.
+3. **Return the world to a shippable state**: every gate back to auto (`civ:gate_auto`), no job left
+   pending, `civ:generate_abort` anything unfinished.
+4. **Arm and read the receipt**: `/scriptevent civ:starter_status` → `/scriptevent civ:starter_arm
+   confirm` → `/scriptevent civ:starter_verify`. Copy `starter/build-receipt.example.json` to
+   `starter/build-receipt.json` and fill it from those two outputs (`armed`, `builtDistricts`,
+   population, `jobPending: 0`, the city `centre` and `radius`).
+5. **Export**: Play > Edit (that world) > General > File Management > **Export World**.
+6. **Package** (repository root, forward-slash paths work either way):
+   ```
+   node dev/build-template.mjs --world "<exported.mcworld or folder>" \
+        --receipt starter/build-receipt.json --zip
+   node dev/validate-template.mjs --world dist/templates/civapoc-starter \
+        --receipt starter/build-receipt.json
+   ```
+   `--dry-run` stages and validates without a receipt; `--out` must stay inside `dist/`, so an
+   accidental path can never write over a real Minecraft world.
+7. **Install for a test**: double-click `dist/templates/civapoc-starter.mctemplate` (importing the same
+   UUID twice needs the old copy removed from `com.mojang\world_templates` first), then
+   *Create New > Imported Templates*. The builder prints the artifact's `sha256`; record it with the
+   receipt, because the file is reproducible and so a later rebuild can be proved identical.
+
+The builder refuses a receipt that does not match `template.json` (`armed !== true`, wrong id,
+`builtDistricts` missing a `builtRequired` entry, `jobPending !== 0`, non-integer centre).
+
+## 6. Packaging checks (what `dev/validate-template.mjs` actually stops on)
+
+Spec gate: valid/distinct/collide-free UUIDs, `moduleType = world_template`, `packageExtension =
+mctemplate`, pack folder name ≤ 10 chars, pack source and manifest exist in the repo, `en_US` in
+languages, `keepRandomSeed: false`, keep/wipe prefixes not overlapping, `civ:plan` kept, five districts
+with unique ids/names/roles and unique `<name>-enlarged` layout ids, and `starterWorld: true` only for
+a district whose layout is registered in `districtplan.ENLARGED_LAYOUTS` and whose status is not
+`planned`. The last rule is the one that stops an incomplete template being called finished: today it
+passes because only district 1 is marked, and the run prints *"4 district(s) are prepared but not
+started"* rather than hiding it.
+
+Package gate: required files present (`level.dat`, `levelname.txt`, `db/CURRENT`), no forbidden residue
+(`db/*.tmp`, `db/DIM*/`, `level.dat_new`, `world_behavior_packs.json.bak`), `level.dat` parses as
+Bedrock NBT with an integer spawn inside the receipt radius, generator is `infinite`, the bound pack
+uuid exists in `behavior_packs/*/manifest.json`, the template `manifest.json` and `texts/` are correct,
+and the size stays under `maxWorldBytes` (256 MB).
+
+## 7. Getting to five districts
+
+`starter/template.json` already lists all five with their intended `-enlarged` layout ids, so the gap
+is code and build time, not contract:
+
+1. `ENLARGED_LAYOUTS` in `scripts/civ/districtplan.js` maps **only index 1** today. Each of 2-5 needs
+   its layout registered (the composer already does walls, gatehouses, road profiles, pads, stairs and
+   bridges from the master plan, so this is per-district composition + tuning, not new machinery).
+2. Flip the spec entry to `starterWorld: true` and a buildable status - the validator will refuse until
+   step 1 is real.
+3. Build them in the same world, in ring order (1-2-3-4-5), one `civ:generate` job per district, and
+   re-run `civ:starter_verify` afterwards: it must show 5 complete districts and 0 pending jobs.
+4. Inter-district wall/gate links come from the master plan's shared chains; the gate registry keeps
+   them closable, so the template still ships with `auto` gates.
+
+## 8. What must be tested in Minecraft (and nothing here claims it has been)
+
+- Import the template, create a world from it, and confirm the walls/roads/buildings are the ones that
+  were built - no generation runs at join.
+- `/scriptevent civ:status` on first join: 5 districts / 400 civilians / 150 soldiers, `step` near 0 -
+  i.e. the arming took, and `db/` really carried the armed properties.
+- `/scriptevent civ:starter_verify` says *Ready for export* and lists no wiped keys.
+- Rejoin after a quit: state persists and no `civ:jobs`/`civ:debug`/`civ:demo-` key reappears.
+- Expansion still works procedurally: `civ:generate_plan` for district 2 against the shipped plan.
+- The old 49x49 `district.physical` prototype world is untouched, and generation still refuses any
+  footprint overlapping an existing physical record.
+
+## 9. Known limitations
+
+- **No template has been built or imported.** Steps 1-4 of section 5 need Minecraft.
+- Offline tooling cannot read simulation state out of `db/`; the receipt is a signed human step, not a
+  cryptographic guarantee.
+- District 1's enlarged layout has been generated and validated as *data* only; it has never been
+  placed in a world, so build-time terrain surprises (rivers, cliffs, unloaded chunks at the survey
+  edge) are still open risks.
+- `world_resource_packs.json` is copied if present, but this pack ships no resource pack, so that path
+  is untested.
+- The wipe list is one-colon prefixes on purpose, so the plan store's quarantine copy (the bounded
+  duplicate it keeps under the plan prefix when plan data fails to load) rides along with the kept
+  `civ:plan` rule instead of being wiped. Writing that key as a wipe prefix needs a two-colon literal,
+  which the repo-wide "no `civ:` id may have two colons" guard refuses - and that guard is the more
+  valuable instrument. The copy is data that was already unreadable, so it is inert; if it ever
+  matters, give the plan store a one-colon quarantine key rather than teaching arming around the guard.
+- The `.mctemplate` zip is written by `dev/lib/zip.mjs` and audited offline (entry names, CRCs, no wrapping folder).
+  What is **not** known is whether Minecraft's importer is happy with it on every platform - that needs
+  one real double-click, and until then the artifact is claimed only as *format-correct*, not as
+  *import-verified*.
+
+Sources:
+- [Create a World Template from an Exported World - Microsoft Learn](https://learn.microsoft.com/en-us/minecraft/creator/documents/createaworldtemplate?view=minecraft-bedrock-stable)
+- [Bedrock Edition level format - Minecraft Wiki](https://minecraft.wiki/w/Bedrock_Edition_level_format)

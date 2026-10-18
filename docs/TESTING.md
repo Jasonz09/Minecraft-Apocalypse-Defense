@@ -4,7 +4,7 @@ Minecraft Bedrock 1.26.5203 is now installed, but **no in-game run has been perf
 The gates run headless and claim no in-game behaviour. Use the manual script at the bottom and
 `docs/MINECRAFT_INTEGRATION.md` for the first real test.
 
-## The four gates
+## The five gates
 
 ```bash
 npm install      # typescript + @minecraft/server@2.7.0 types + @minecraft/common
@@ -19,6 +19,7 @@ Current results: see `docs/PROGRESS.md` and `docs/ENLARGED_HEARTHGATE.md` (count
 | `npm run typecheck` | strict `checkJs` | All 24 pack scripts are typed against the real 2.7.0 declarations: catches `initial` vs `initialSpawn`, `scriptEventReceived` vs `scriptEventReceive`, non-existent methods, implicit `any` |
 | `npm run test` | 148 unit tests across 10 files | Simulation behaviour, save/migration, invariants, reporting text, argument parsing |
 | `npm run e2e` | headless kingdom run | The whole gameplay sequence over a v1 save: migrate → peace → siege → evacuation → reinforcement → counterattack → victory → autonomous claim → shortage refusal → construction → recruitment → persistence → deterministic replay → readouts |
+| `npm run template:validate` | starter-world template contract | `starter/template.json` against the real pack and planner: distinct, collide-free UUIDs, `world_template` module type, pack folder name ≤ 10 characters, `en_US` language, the keep/wipe prefix sets (the master plan must survive, `civ:kingdom-quarantine` must not), five unique districts with unique layout ids, and **no district marked `starterWorld` unless its enlarged layout is actually registered** - which is what stops an empty template being called finished |
 
 Individual gates: `npm run validate`, `npm run typecheck`, `npm run test`.
 
@@ -29,9 +30,14 @@ Individual gates: `npm run validate`, `npm run typecheck`, `npm run test`.
 - **Pure JS vs runtime boundary.** Everything under `scripts/sim/`, `scripts/kingdom/`,
   `scripts/ui/` and `scripts/commands/args.js` runs in Node and is covered. These files are
   the Bedrock boundary and are **only** typechecked:
-  `main.js`, `events/welcome.js`, `commands/{status,inspect,debug,reply}.js`,
+  `main.js`, `events/welcome.js`, `commands/{status,inspect,debug,reply,civ,gates,physical,starter}.js`,
   `integration/{simulationLoop,buildAdapter}.js`. `integration.test.mjs` guards the split in
-  both directions — the core must not import the runtime, and boundary files must.
+  both directions — the core must not import the runtime, and boundary files must. Most of them
+  are nevertheless *driven* offline: `dev/test/reliability-runtime.test.mjs` delivers real
+  scriptevents to the whole subscription set through a fake `@minecraft/server`, including the
+  `civ:starter_arm confirm` path, so registration, refusal branches and dynamic-property writes
+  are exercised - only the actual engine behaviour (chat rendering, block placement, chunk
+  loading) is not.
 - The rollback branch in `tick.advanceKingdomStep` (validator rejection and a throwing system)
   is covered by `dev/test/reliability-rollback.test.mjs` with injected faults.
 - Saved-state size is asserted as a blob budget (peak ≈15 KB over 400 steps). In-game,
@@ -98,6 +104,14 @@ Requires a world with cheats enabled (needed for `/scriptevent`).
 11. **Migration** — if you still have a world from the first release, the join greeting must
     say `Welcome back` and the totals must survive; a pre-migration copy is kept in the
     `civ:kingdom-quarantine` dynamic property.
+12. **Starter arming (a build world only, see `docs/STARTER_WORLD.md`)** —
+    `/scriptevent civ:starter_status` must list the keys that will be kept and wiped and, in an
+    unfinished world, name the blocker (`never built`, `still under construction`, `job queue
+    reads as 'corrupt'`, `plan cannot be read`). `civ:starter_arm` with no argument must write
+    nothing. After the city is genuinely finished, `civ:starter_arm confirm` must reset
+    `civ:status` to `5 districts / 400 civilians / 150 soldiers` while `civ:starter_verify`
+    reports district 1 as built, the master plan as stored and no wipeable keys left. Running
+    `civ:starter_arm confirm` a second time must be refused as `already armed`.
 
 If the scripts fail to load at all, check the content log for the module version message and
 follow the pin fix in `README.md` → Troubleshooting.

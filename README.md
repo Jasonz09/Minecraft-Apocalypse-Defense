@@ -126,6 +126,23 @@ powershell -NoProfile -Command "Get-ChildItem -Path $env:LOCALAPPDATA\Packages -
 
 `civ:generate_plan` (read-only) and `civ:generate` plan a five-district irregular civilization and build the enlarged Hearthgate in a NEW world. See [docs/ENLARGED_HEARTHGATE.md](docs/ENLARGED_HEARTHGATE.md).
 
+## Starter world template (prebuilt kingdom)
+
+The shipped game is meant to start inside an already-built kingdom, distributed as a Bedrock **world
+template** rather than generated on first join. `civ:starter_status` / `civ:starter_arm confirm` /
+`civ:starter_verify` turn a finished build world into one that carries the city but not the
+development history, and `npm run template:build` packages the export as a `.mctemplate`.
+
+**No template exists yet** - district 1 has never been built inside Minecraft, and districts 2-5 have
+no registered layout. Contract, tooling and offline checks are done; the world is not. See
+[docs/STARTER_WORLD.md](docs/STARTER_WORLD.md).
+
+### Route C — install a built template (once one exists)
+
+Double-click `dist/templates/civapoc-starter.mctemplate`, then
+**Play → Create New → Imported Templates**. Importing twice with the same UUID needs the previous
+copy removed from `com.mojang\world_templates`.
+
 ## Physical district (49x49 prototype)
 
 `/scriptevent civ:district_generate district-1` surveys a flat empty site centred on you (dry run);

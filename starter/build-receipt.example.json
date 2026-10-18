@@ -1,0 +1,17 @@
+{
+    "$comment": "Copy to starter/build-receipt.json and fill it from the in-game `civ:starter_verify` and `civ:starter_status` output of the build world, AFTER the city is finished. dev/build-template.mjs refuses to package without it.",
+    "templateId": "civapoc-starter",
+    "armed": true,
+    "builtDistricts": ["district-1"],
+    "civilians": 400,
+    "soldiers": 150,
+    "districts": 5,
+    "jobPending": 0,
+    "centre": { "x": 0, "z": 0 },
+    "radius": 220,
+    "keptKeys": ["civ:kingdom", "civ:plan"],
+    "wipedKeys": ["civ:jobs:meta"],
+    "worldName": "CIVBUILD-hearthgate",
+    "minecraftVersion": "record the build version you exported on",
+    "verifiedBy": "civ:starter_verify output pasted here, or your initials and the date"
+}

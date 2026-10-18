@@ -116,5 +116,36 @@ and a UI. Explicitly out of this milestone per the brief.
 First physical district (district-1) implemented and tested offline; see MINECRAFT_INTEGRATION.md. Next: in-game verification, then district 2-5 layouts, NPC/entity bridge.
 
 
-## Civilization layer (current)
+## Civilization layer
 Master planner, validator, terrain/site selection, layout, gates + walls, persistence/jobs, enlarged Hearthgate construction planner and runtime (`civ:generate`) are implemented and tested offline (637 tests at last full run; manifest 600 checks). Nothing in this layer has run in Minecraft. See ENLARGED_HEARTHGATE.md, CIVILIZATION_PLAN_DESIGN.md, ROADMAP.md, LEDGER_PLAN.md.
+
+
+## Starter world template (current)
+The shipped game is planned as a **prebuilt world template**, not a city generated on first join. Implemented and
+verified offline: `scripts/sim/starter.js` (pure key classification with longest-prefix-wins, the reset-but-keep-the-built-
+city baseline, the fail-closed arm refusal list, the release read-out), `scripts/commands/starter.js`
+(`civ:starter_status` / `civ:starter_arm confirm` / `civ:starter_verify`), the contract in `starter/template.json`, the
+hand-written Bedrock `level.dat` codec in `dev/lib/nbt.mjs`, `dev/validate-template.mjs` (now the fifth verify gate) and
+`dev/build-template.mjs` (export -> staged template -> `.mctemplate`, source world read-only, writes only under `dist/`)
+and `dev/lib/zip.mjs` (the archive is written by us: PowerShell's `Compress-Archive` was measured writing backslash entry
+separators, which is not what the ZIP format or Minecraft's importer expects, so the packager now produces `/` separators,
+no wrapping folder and byte-identical rebuilds - verified against a synthetic export, never against the game).
+Arming resets population/step to the published baseline while keeping each district's `civ`/`physical` record, the
+five-district master plan and the gate registry, and wiping jobs/debug/demo/devgate/quarantine/progress/survey residue;
+it refuses an incomplete district, a running build, a pending or unreadable job queue, a forced gate and an unreadable
+plan, and refuses to re-arm an armed world. Tests: 701 pass (18 new in `dev/test/template.test.mjs`, 10 new arming cases
+driven through the fake `@minecraft/server` in `dev/test/reliability-runtime.test.mjs`), manifest/packaging 638 checks,
+typecheck clean against 2.7.0, e2e 52/52, all five verify gates green (manifest/packaging 644 checks).
+An independent review round then found eight real defects, all fixed and each with a test that now fails
+if it comes back: the package gate compared `Level.Generator` to the string `"infinite"` while Bedrock writes
+an Int (every real export would have been rejected, and the fixture had been invented with the friendly type);
+`civ:starter_arm` never passed `planningRunning`/`builtRequired`, so the running-session refusal could not fire
+and a live generation session could re-save dev progress over the just-armed baseline; the gate check read
+invented `state`/`forced` fields instead of the registry's real `{v, gates:[{id, role, mode}]}` plus the
+`civ_gate_<id>` adapter records, so a forced or mid-move gate shipped; only `civ.status === "building"` blocked,
+so a paused half-district armed and then lost its only resume handle; `--out` was checked with a string prefix
+(`distX` passed, and the builder deletes its staging directory); a previous, larger export's `db` files could
+survive in `dist/work/source`; two packaging assertions could not fail (a missing template `manifest.json` was
+"reported" by checking `level.dat`, and a no-arg condition), and one test compared a list's length to itself. **No `.mctemplate` has been produced and nothing
+has run inside Minecraft**: district 1 has never been physically built, and `ENLARGED_LAYOUTS` registers only district 1,
+so districts 2-5 are contract-ready and build-blocked. See STARTER_WORLD.md.

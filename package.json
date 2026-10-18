@@ -9,6 +9,8 @@
         "typecheck": "node node_modules/typescript/bin/tsc -p tsconfig.json",
         "test": "node --test \"dev/test/*.test.mjs\"",
         "e2e": "node dev/e2e-kingdom.mjs",
+        "template:validate": "node dev/validate-template.mjs",
+        "template:build": "node dev/build-template.mjs",
         "verify": "node dev/verify.mjs"
     },
     "devDependencies": {

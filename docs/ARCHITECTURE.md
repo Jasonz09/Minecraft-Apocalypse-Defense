@@ -20,6 +20,8 @@ scripts/commands/debug.js          -> civ:debug_* (tick, scenarios, scenario, bu
 scripts/commands/reply.js          -> Player.sendMessage / world.sendMessage
 scripts/integration/simulationLoop.js -> system.runInterval(1000 ticks) + save
 scripts/integration/buildAdapter.js   -> Dimension.getBlock / setBlockType (opt-in)
+scripts/commands/starter.js         -> civ:starter_* (arm a finished build world for release;
+                                       the decisions themselves live in the pure sim/starter.js)
 ```
 
 `scripts/commands/args.js` holds the argument parsers separately from `reply.js` for
