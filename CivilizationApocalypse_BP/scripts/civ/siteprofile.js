@@ -1,4 +1,55 @@
 import { fnv1a, utf8Length } from "./planstore.js";
+import { WORK_LIMIT, markYield, newOps, runSync } from "./regions.js";
+
+/** @typedef {import("./regions.js").Ops} Ops */
+
+/** Hard cap of one stretch between yields (elementary operations). */
+export const MAX_RUN = 24000;
+
+/**
+ * Charge `n` elementary operations to `ops` and yield when the tick budget is used up. The check is made
+ * BEFORE the work, so no stretch between two yields exceeds MAX_RUN when one charge is below it.
+ *
+ * @param {Ops} ops @param {number} n
+ * @returns {Generator<void, void, void>}
+ */
+export function* pace(ops, n) {
+    if (ops.work - ops.lastYield + n > MAX_RUN) {
+        markYield(ops);
+        yield;
+    }
+    ops.work += n;
+    if (ops.work - ops.lastYield >= WORK_LIMIT) {
+        markYield(ops);
+        yield;
+    }
+}
+
+/** FNV-1a step over a string, continuing from hash state `h` (same maths as planstore.fnv1a). @param {number} h @param {string} text */
+export function fnvFeed(h, text) {
+    let x = h;
+    for (let i = 0; i < text.length; i += 1) {
+        x ^= text.charCodeAt(i);
+        x = Math.imul(x, 0x01000193) >>> 0;
+    }
+    return x >>> 0;
+}
+
+/**
+ * fnv1a(parts.join("")) without building the joined string, in bounded chunks.
+ * @param {string[]} parts @param {Ops} ops
+ * @returns {Generator<void, string, void>}
+ */
+export function* fnvPartsSteps(parts, ops) {
+    let h = 0x811c9dc5;
+    for (const part of parts) {
+        for (let at = 0; at < part.length; at += 1024) {
+            h = fnvFeed(h, part.slice(at, at + 1024));
+            yield* pace(ops, Math.min(1024, part.length - at) * 3);
+        }
+    }
+    return (h >>> 0).toString(16).padStart(8, "0");
+}
 
 /**
  * Persisted ground for the construction planner. Pure (no Minecraft imports).
@@ -307,6 +358,18 @@ const unzig = (z) => (z % 2 === 0 ? z / 2 : -(z + 1) / 2);
  * @returns {SiteGroundJSON}
  */
 export function exportSiteGround(field, region) {
+    return runSync(exportSiteGroundSteps(field, region, newOps()));
+}
+
+/**
+ * Cooperative form of exportSiteGround (one implementation): yields at least every ~20,000 operations.
+ *
+ * @param {{ at: (x: number, z: number) => any }} field
+ * @param {SiteRegion} region
+ * @param {Ops} ops
+ * @returns {Generator<void, SiteGroundJSON, void>}
+ */
+export function* exportSiteGroundSteps(field, region, ops) {
     const w = region.x1 - region.x0 + 1;
     const h = region.z1 - region.z0 + 1;
     if (!Number.isInteger(w) || !Number.isInteger(h) || w < 1 || h < 1 || w * h > 4_000_000) {
@@ -324,6 +387,7 @@ export function exportSiteGround(field, region) {
     let run = 0;
     let lastTree = -1;
     for (let z = 0; z < h; z += 1) {
+        yield* pace(ops, w * 14);
         for (let x = 0; x < w; x += 1) {
             const i = z * w + x;
             const cell = clipped.at(region.x0 + x, region.z0 + z);
@@ -376,7 +440,7 @@ export function exportSiteGround(field, region) {
     const gText = writer.finish();
     const kText = kinds.join("");
     const tText = trees.join("");
-    const hash = fnv1a(`${String(region.x0)},${String(region.z0)},${String(w)},${String(h)}|${gText}|${kText}|${tText}`);
+    const hash = yield* fnvPartsSteps([`${String(region.x0)},${String(region.z0)},${String(w)},${String(h)}|`, gText, "|", kText, "|", tText], ops);
     return { v: SITE_GROUND_VERSION, x0: region.x0, z0: region.z0, w, h, g: gText, k: kText, t: tText, hash };
 }
 
@@ -388,6 +452,17 @@ export function exportSiteGround(field, region) {
  * @returns {ClippedField & { region: SiteRegion, sameAs: (other: { at: (x: number, z: number) => any }) => boolean }}
  */
 export function importSiteGround(json) {
+    return runSync(importSiteGroundSteps(json, newOps()));
+}
+
+/**
+ * Cooperative form of importSiteGround (one implementation): yields at least every ~20,000 operations.
+ *
+ * @param {SiteGroundJSON | string} json
+ * @param {Ops} ops
+ * @returns {Generator<void, ClippedField & { region: SiteRegion, sameAs: (other: { at: (x: number, z: number) => any }) => boolean }, void>}
+ */
+export function* importSiteGroundSteps(json, ops) {
     const data = /** @type {SiteGroundJSON} */ (typeof json === "string" ? JSON.parse(json) : json);
     if (data === null || typeof data !== "object" || data.v !== SITE_GROUND_VERSION) {
         throw new Error("unsupported site ground version");
@@ -399,7 +474,7 @@ export function importSiteGround(json) {
     if (typeof data.g !== "string" || typeof data.k !== "string" || typeof data.t !== "string") {
         throw new Error("corrupt site ground: missing streams");
     }
-    const expect = fnv1a(`${String(x0)},${String(z0)},${String(w)},${String(h)}|${data.g}|${data.k}|${data.t}`);
+    const expect = yield* fnvPartsSteps([`${String(x0)},${String(z0)},${String(w)},${String(h)}|`, data.g, "|", data.k, "|", data.t], ops);
     if (expect !== data.hash) {
         throw new Error(`corrupt site ground: hash ${expect} does not match ${String(data.hash)}`);
     }
@@ -408,6 +483,7 @@ export function importSiteGround(json) {
     const reader = new BitReader(data.g);
     const rice = new RiceState();
     for (let z = 0; z < h; z += 1) {
+        yield* pace(ops, w * 14);
         for (let x = 0; x < w; x += 1) {
             const k = rice.k();
             let q = 0;
@@ -425,6 +501,7 @@ export function importSiteGround(json) {
         }
     }
     const kinds = new Uint8Array(count);
+    yield* pace(ops, Math.min(23000, (data.k.length + data.t.length) * 4 + (count >> 4)));
     const kv = readVars(data.k);
     let pos = 0;
     for (let i = 0; i < kv.length; i += 2) {

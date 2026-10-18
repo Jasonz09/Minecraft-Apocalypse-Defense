@@ -103,14 +103,26 @@ export function nextTick() {
     });
 }
 
+/** Which job token owns the current civilization ticking area (a stale job must never remove a newer job's hold). */
+/** @type {Job | undefined} */
+let holdOwner;
+
+/** @param {Job | undefined} owner */
+const cancelledNow = (owner) => owner !== undefined && owner.cancelled;
+
 /**
- * Keep the chunks of `rect` loaded (replaces the previous civilization ticking area).
+ * Keep the chunks of `rect` loaded (replaces the previous civilization ticking area). The hold belongs to `owner`;
+ * if the owner is cancelled while the engine is creating the area, the area is removed again here.
  * @param {Dimension} dimension
  * @param {Rect} rect at most a few chunks beyond TILE_SIZE per side
+ * @param {Job | undefined} [owner]
  * @param {string} [id]
  * @returns {Promise<{ held: boolean, note: string | undefined }>}
  */
-export async function holdArea(dimension, rect, id = CIV_TICKING_ID) {
+export async function holdArea(dimension, rect, owner = undefined, id = CIV_TICKING_ID) {
+    if (cancelledNow(owner)) {
+        return { held: false, note: "cancelled" };
+    }
     const manager = world.tickingAreaManager;
     const options = { dimension, from: { x: rect.x0, y: 64, z: rect.z0 }, to: { x: rect.x1, y: 64, z: rect.z1 } };
     try {
@@ -120,15 +132,31 @@ export async function holdArea(dimension, rect, id = CIV_TICKING_ID) {
         if (!manager.hasCapacity(options)) {
             return { held: false, note: "no ticking-area capacity; relying on chunks that are already loaded" };
         }
+        holdOwner = owner;
         await manager.createTickingArea(id, options);
+        if (cancelledNow(owner)) {
+            // an abort may already have released the (not yet existing) hold; remove the late area unless a newer job took over
+            if (holdOwner === undefined || holdOwner === owner) {
+                releaseArea(undefined, id);
+            }
+            return { held: false, note: "cancelled" };
+        }
         return { held: true, note: undefined };
     } catch (error) {
         return { held: false, note: `ticking area unavailable (${String(error)}); relying on chunks that are already loaded` };
     }
 }
 
-/** @param {string} [id] */
-export function releaseArea(id = CIV_TICKING_ID) {
+/**
+ * Remove the civilization ticking area. With an `owner` it only acts if that job still owns the hold;
+ * without one it is unconditional (restart / tests).
+ * @param {Job | undefined} [owner]
+ * @param {string} [id]
+ */
+export function releaseArea(owner = undefined, id = CIV_TICKING_ID) {
+    if (owner !== undefined && holdOwner !== owner) {
+        return;
+    }
     try {
         const manager = world.tickingAreaManager;
         if (manager.hasTickingArea(id)) {
@@ -137,6 +165,7 @@ export function releaseArea(id = CIV_TICKING_ID) {
     } catch (_error) {
         // nothing to release
     }
+    holdOwner = undefined;
 }
 
 /**
@@ -256,7 +285,7 @@ export async function scanCoarse(token, dimension, anchor, radius, step, options
     try {
         for (let index = 0; index < tiles.length; index += 1) {
             const tile = /** @type {{ rect: Rect, points: { x: number, z: number }[] }} */ (tiles[index]);
-            const held = await holdArea(dimension, tile.rect);
+            const held = await holdArea(dimension, tile.rect, token);
             if (token.cancelled) {
                 return { field, stats, cancelled: true };
             }
@@ -274,9 +303,7 @@ export async function scanCoarse(token, dimension, anchor, radius, step, options
             options.onTile?.(index + 1, tiles.length);
         }
     } finally {
-        if (!token.cancelled) {
-            releaseArea();
-        }
+        releaseArea(token);
     }
     return { field, stats, cancelled: false };
 }
@@ -313,7 +340,7 @@ export async function scanFull(token, dimension, rect, options = {}) {
     try {
         for (let index = 0; index < tiles.length; index += 1) {
             const area = /** @type {Rect} */ (tiles[index]);
-            const held = await holdArea(dimension, area);
+            const held = await holdArea(dimension, area, token);
             if (token.cancelled) {
                 return { field, stats, cancelled: true };
             }
@@ -331,9 +358,7 @@ export async function scanFull(token, dimension, rect, options = {}) {
             options.onTile?.(index + 1, tiles.length);
         }
     } finally {
-        if (!token.cancelled) {
-            releaseArea();
-        }
+        releaseArea(token);
     }
     return { field, stats, cancelled: false };
 }

@@ -41,6 +41,7 @@ const mc = {
     areaViolations: 0,
     areaMaxChunks: 0,
     noCapacity: false,
+    holdGate: undefined,
     unloaded: () => false,
     rejectStates: () => false,
     persistent: () => false,
@@ -185,6 +186,11 @@ mc.world = {
         },
         hasCapacity: () => !mc.noCapacity,
         async createTickingArea(id, options) {
+            if (mc.holdGate) {
+                const gate = mc.holdGate;
+                mc.holdGate = undefined;
+                await gate;
+            }
             const chunks = (Math.floor(options.to.x / 16) - Math.floor(options.from.x / 16) + 1) * (Math.floor(options.to.z / 16) - Math.floor(options.from.z / 16) + 1);
             mc.areaMaxChunks = Math.max(mc.areaMaxChunks, chunks);
             if (mc.areas.size > 0) mc.areaViolations += 1;
@@ -249,7 +255,12 @@ const siteplan = await load("civ", "districtplan.js");
 
 const store = createKingdomStore(mc.world);
 civCommands.registerCivCommands(store);
+const physicalCommands = await load("commands", "physical.js");
+physicalCommands.registerPhysicalCommands(store);
+const gateCommands = await load("commands", "gates.js");
+gateCommands.registerGateCommands(store);
 const handler = mc.subscribers[0];
+const defaultValidate = builder.seams.validatePlan;
 const jobsAfterRegister = mc.jobs.length;
 const writesAfterRegister = mc.writes;
 
@@ -288,7 +299,7 @@ function resetWorld(seed = 1, options = {}) {
     builder.resetCivForTests();
     builder.seams.maxPlanBytes = undefined;
     builder.seams.onOutcome = undefined;
-    builder.seams.validatePlan = (plan) => lastValidate(plan);
+    builder.seams.validatePlan = defaultValidate;
     mc.props.clear();
     mc.propWrites = 0;
     mc.crashProps = null;
@@ -307,6 +318,8 @@ function resetWorld(seed = 1, options = {}) {
     mc.areaViolations = 0;
     mc.areaMaxChunks = 0;
     mc.noCapacity = false;
+    mc.holdGate = undefined;
+    builder.seams.maxJobBytes = undefined;
     mc.unloaded = () => false;
     mc.rejectStates = () => false;
     mc.persistent = () => false;
@@ -318,12 +331,6 @@ function resetWorld(seed = 1, options = {}) {
     store.ensureInitial();
 }
 
-let lastValidate = (plan) => validateReal(plan);
-let validateReal;
-{
-    const { validatePlan } = await load("civ", "validate.js");
-    validateReal = (plan) => validatePlan(plan);
-}
 
 function makePlayer(x = 0, z = 0) {
     const messages = [];
@@ -338,7 +345,9 @@ function makePlayer(x = 0, z = 0) {
 }
 
 function send(id, message, source) {
-    handler.callback({ id, message, sourceType: source ? "Entity" : "Server", sourceEntity: source, initiator: source });
+    for (const subscriber of mc.subscribers) {
+        subscriber.callback({ id, message, sourceType: source ? "Entity" : "Server", sourceEntity: source, initiator: source });
+    }
 }
 
 const text = (player) => player.messages.join("\n");
@@ -454,7 +463,8 @@ test("classifyCivOp: live-block rules per op class", () => {
         assert.match(verdict.reason, /occupied/);
     }
     // a block this plan places at the same cell counts as ours
-    assert.equal(c(op("structure", "minecraft:stone_bricks"), "minecraft:oak_planks", ["minecraft:oak_planks"]).action, "place");
+    assert.equal(c(op("structure", "minecraft:stone_bricks"), "minecraft:stone_bricks", { final: "minecraft:stone_bricks", nonAir: ["minecraft:stone_bricks"] }).action, "built");
+    assert.equal(c(op("structure", "minecraft:glass"), "minecraft:stone_bricks", { final: "minecraft:stone_bricks", nonAir: ["minecraft:glass", "minecraft:stone_bricks"] }).action, "place", "replay over the FINAL planned block converges");
     // clear: only plants/trees/air
     assert.equal(c(op("clear", "minecraft:air"), "minecraft:short_grass").action, "place");
     assert.equal(c(op("clear", "minecraft:air"), "minecraft:air").action, "built");
@@ -535,6 +545,8 @@ function baseline() {
         assert.deepEqual(findValidationProblems(after), []);
         const stripped = structuredClone(after);
         delete districtById(stripped, "district-1").civ;
+        for (const d of stripped.districts) for (const g of d.gates ?? []) { delete g.physical; delete g.mode; }
+        for (const d of kingdomBefore.districts) for (const g of d.gates ?? []) { delete g.physical; delete g.mode; }
         assert.deepEqual(stripped, kingdomBefore, "the simulation state is untouched apart from the small district.civ record");
         const fp = worldFingerprint();
         return {
@@ -627,7 +639,9 @@ test("failure: nothing readable at all (whole world unloaded) -> zero writes", M
 
 test("failure: an invalid master plan stops the run", MIN_TIMEOUT, async () => {
     resetWorld(1);
-    builder.seams.validatePlan = () => ({ ok: false, problems: ["forced: walls leak"], metrics: {} });
+    builder.seams.validatePlan = function* () {
+        return { ok: false, problems: ["forced: walls leak"], metrics: {} };
+    };
     const player = makePlayer();
     await generate(player);
     assertUntouched(player, "validate");
@@ -695,7 +709,7 @@ test("civ:generate_plan is strictly read-only and prints the numbers", MIN_TIMEO
     assert.match(out, /Plan is valid/);
     assert.match(out, /District areas \d+ \/ \d+ \/ \d+ \/ \d+ \/ \d+ columns; compactness/);
     assert.match(out, /Walls \d+ blocks, \d+ gates, roads \d+ blocks, \d+ lots/);
-    assert.match(out, /Estimated \d+ block operations in \d+ slices, about [\d.]+ minutes\. Stored size \d+ \/ 120000 bytes/);
+    assert.match(out, /Estimated \d+ block operations in about \d+ slices \(survey \+ planning \+ build\), estimated minutes [\d.]+ at one slice per tick - an estimate until measured in Minecraft\. Stored size \d+ \/ 120000 bytes/);
     assert.match(out, /Nothing was written/);
     assert.ok(mc.reads > 0);
 });
@@ -736,6 +750,8 @@ test("one command: scan, plan, validate, store, then build - everything within b
     assert.equal(base.civ.stage, "complete");
     assert.deepEqual(civCommands.civRecordProblems(base.civ), []);
     assert.equal(base.civ.seed, PLAN_SEED);
+    assert.ok(base.outcome.stats.ops.maxRun <= 25000, `longest stretch between planning yields: ${base.outcome.stats.ops.maxRun} ops`);
+    assert.ok(base.outcome.stats.ops.yields > 100);
     assert.equal(base.civ.opsTotal, base.civ.ops);
 });
 
@@ -912,6 +928,7 @@ test("a clean resume from the stored plan builds the identical world", MIN_TIMEO
     send(CIV_EVENT_IDS.resume, "", player);
     await pump();
     assert.match(text(player), /Verified plan [0-9a-f]{8}/);
+    assert.ok(civCommands.lastResumeOps.maxRun <= 25000 && civCommands.lastResumeOps.yields > 10, `resume rebuild stretch ${civCommands.lastResumeOps.maxRun} ops, ${civCommands.lastResumeOps.yields} yields`);
     assert.match(text(player), /is built/);
     assertSameWorld(worldFingerprint(), base.fp, "resume");
 });
@@ -1103,25 +1120,45 @@ test("status and abort answer sensibly when nothing is running", MIN_TIMEOUT, as
     assert.equal(mc.writes, 0);
 });
 
-test("the gate linker runs once, after the gates stage, and its changes are saved", MIN_TIMEOUT, async () => {
+test("after a full run the kingdom gate records carry gate.physical and civ:gate_status reports them", MIN_TIMEOUT, async () => {
+    const run = await fullRun();
+    assert.match(text(run.player), /Gates registered with the simulation \(initially open\)/);
+    const kingdom = store.load().kingdom;
+    assert.deepEqual(findValidationProblems(kingdom), []);
+    const physical = kingdom.districts.flatMap((d) => (d.gates ?? []).filter((g) => g.physical !== undefined).map((g) => ({ district: d.id, gate: g })));
+    assert.ok(physical.length >= 2, `gates with physical data: ${physical.length}`);
+    for (const { gate } of physical) assert.ok(gate.physical.spec, "a physical spec");
+    assert.equal(civRecord().gates, true);
+    const asker = makePlayer();
+    send("civ:gate_status", physical[0].gate.id, asker);
+    await flush();
+    const answer = text(asker) + mc.messages.join("\n");
+    assert.ok(answer.includes(physical[0].gate.id), answer.slice(0, 600));
+    assert.doesNotMatch(answer, /no such gate|unknown gate/i);
+    // registering again (what a resume does when it completes) is idempotent
+    const before = JSON.stringify(store.load().kingdom.districts.map((d) => d.gates));
+    const { registerBuiltGates } = await load("integration", "civGates.js");
+    const again = registerBuiltGates(store, run.outcome.record, "minecraft:overworld");
+    assert.ok(again.ok);
+    assert.equal(JSON.stringify(store.load().kingdom.districts.map((d) => d.gates)), before);
+});
+
+test("the gate registrar is called after the gates stage and again when the build completes", MIN_TIMEOUT, async () => {
     resetWorld(1);
     const calls = [];
-    civCommands.setGateLinker((kingdom, record, plan) => {
-        const q = builder.getSession().queue;
-        calls.push({ gatesDone: jobsModule.stageSatisfied(q, "gates"), lotsDone: jobsModule.stageSatisfied(q, "lots"), gates: record.gates.length, planGates: plan.gates.length });
-        districtById(kingdom, "district-2").linkedByTest = true;
-        return { linked: record.gates.length };
+    civCommands.setGateLinker((s, record, dim) => {
+        const q = builder.getSession()?.queue;
+        calls.push({ gatesDone: q ? jobsModule.stageSatisfied(q, "gates") : true, lotsDone: q ? jobsModule.stageSatisfied(q, "lots") : true, dim, gates: record.gates.length });
+        return { ok: true, reason: null, changes: [], created: [], links: [] };
     });
     const player = makePlayer();
     await generate(player);
     assert.match(text(player), /is built/);
-    assert.equal(calls.length, 1);
+    assert.equal(calls.length, 2);
     assert.equal(calls[0].gatesDone, true);
-    assert.equal(calls[0].lotsDone, false, "called when the gates stage completed, not at the end");
-    assert.ok(calls[0].gates > 0);
-    assert.equal(districtById(store.load().kingdom, "district-2").linkedByTest, true);
-    assert.equal(civRecord().gates, true);
-    assert.match(text(player), /Gates registered with the simulation \(initially open\)/);
+    assert.equal(calls[0].lotsDone, false);
+    assert.equal(calls[1].lotsDone, true);
+    assert.equal(calls[0].dim, "minecraft:overworld");
 });
 
 test("state fallbacks are counted and reported", MIN_TIMEOUT, async () => {
@@ -1198,7 +1235,7 @@ test("abort during the survey and during planning stops cleanly with zero writes
         assert.equal(mc.writes, 0);
         assert.deepEqual(noCivData(), []);
         assert.equal(civRecord(), undefined);
-        assert.match(mc.messages.join(" ") + text(player), /Nothing was written/);
+        assert.match(mc.messages.join(" ") + text(player), /no block was written/);
         mc.messages.length = 0;
     }
 });
@@ -1235,3 +1272,218 @@ test("radius=400 (the maximum) scans further and still plans; radius is bounded 
     console.log(JSON.stringify({ radius400: { columns: outcome.stats.coarse.columns, reads: outcome.stats.coarse.reads, slices: outcome.stats.coarse.slices } }));
 });
 
+
+test("seed sweep: planning succeeds or refuses with a stated reason, across seeds and terrains", { timeout: 900000 }, async () => {
+    const terrains = [{}, { field: { relief: 7, hills: 60 } }, { field: { relief: 3, hills: 140, forest: 0.1 } }, { field: { relief: 5, hills: 90, lakes: [{ x: 300, z: 300, r: 60 }] } }];
+    const rows = [];
+    let ok = 0;
+    let total = 0;
+    for (let w = 0; w < terrains.length; w += 1) {
+        for (let seed = 1; seed <= 6; seed += 1) {
+            resetWorld(w + 1, terrains[w]);
+            const player = makePlayer();
+            send(CIV_EVENT_IDS.plan, `seed=${seed}`, player);
+            await pump();
+            total += 1;
+            const out = text(player);
+            if (/Plan is valid/.test(out)) ok += 1;
+            else rows.push(`terrain ${w} seed ${seed}: ${(/Stopped at (\S+)/.exec(out) ?? [])[1]} ${out.split("\n").slice(-4).join(" | ").slice(0, 260)}`);
+            assert.equal(mc.writes, 0);
+        }
+    }
+    console.log(JSON.stringify({ sweep: { ok, total, rate: ok / total } }));
+    for (const row of rows) console.log("  refused:", row);
+    assert.ok(ok / total >= 0.5, `success rate ${ok}/${total}`);
+});
+
+// ---------------------------------------------------------------------------- review fixes: abort coupling, hold ownership, 'ours', storage, warning, worldplan
+
+test("classifyCivOp: only the FINAL planned id counts as ours; an air op never removes a planned non-air block", () => {
+    const c = builder.classifyCivOp;
+    const op = (kind, id) => ({ x: 0, y: 0, z: 0, id, kind });
+    const planned = { final: "minecraft:stone_bricks", nonAir: ["minecraft:oak_planks", "minecraft:stone_bricks"] };
+    // oak_planks appears in the cell's planned set but is not the final id: a player's planks are NOT ours
+    assert.equal(c(op("structure", "minecraft:stone_bricks"), "minecraft:oak_planks", planned).action, "skip");
+    assert.equal(c(op("structure", "minecraft:glass"), "minecraft:stone_bricks", planned).action, "place");
+    // the player's chest where the plan itself has a chest: neither a cut nor an air structure op may remove it
+    const chestCell = { final: "minecraft:chest", nonAir: ["minecraft:chest"] };
+    assert.equal(c(op("cut", "minecraft:air"), "minecraft:chest", chestCell).action, "skip");
+    assert.equal(c(op("structure", "minecraft:air"), "minecraft:chest", chestCell).action, "skip");
+    assert.match(c(op("cut", "minecraft:air"), "minecraft:chest", chestCell).reason, /protected from removal/);
+    // natural ground is still cut as before
+    assert.equal(c(op("cut", "minecraft:air"), "minecraft:dirt", { final: "minecraft:dirt", nonAir: ["minecraft:dirt"] }).action, "place");
+});
+
+test("a player's chest on a cell where the plan places a chest survives the build", MIN_TIMEOUT, async () => {
+    const planned = await plannedOnly();
+    restoreProps(planned.props);
+    const { record } = rehydrateStored();
+    const chests = [];
+    for (let i = 0; i < record.lots.length && chests.length < 6; i += 1) {
+        for (const op of siteplan.siteOpsFor(record, "lots", i)) if (op.id === "minecraft:chest") chests.push(op);
+    }
+    assert.ok(chests.length > 0, "the plan places chests");
+    for (const op of chests) mc.placed.set(key(op.x, op.y, op.z), "minecraft:chest");
+    const player = makePlayer();
+    send(CIV_EVENT_IDS.resume, "", player);
+    await pump();
+    assert.match(text(player), /is built/);
+    for (const op of chests) assert.equal(typeAt(op.x, op.y, op.z), "minecraft:chest");
+});
+
+test("hold ownership: a cancelled job removes its own late ticking area, never a newer job's", MIN_TIMEOUT, async () => {
+    resetWorld(1);
+    const rect = { x0: 0, z0: 0, x1: 127, z1: 127 };
+    // (4) cancelled while the engine is still creating the area -> the area is removed once creation returns
+    const t1 = { kind: "civ-plan", jobId: undefined, cancelled: false };
+    let open;
+    mc.holdGate = new Promise((resolve) => {
+        open = resolve;
+    });
+    const pending = scan.holdArea(dimension, rect, t1);
+    t1.cancelled = true;
+    open();
+    const result = await pending;
+    assert.equal(result.held, false);
+    assert.equal(mc.areas.size, 0, "late area removed");
+    // (5) a stale owner's release cannot remove a newer job's hold
+    const t2 = { kind: "civ-plan", jobId: undefined, cancelled: false };
+    const t3 = { kind: "civ-plan", jobId: undefined, cancelled: false };
+    await scan.holdArea(dimension, rect, t2);
+    assert.equal(mc.areas.size, 1);
+    scan.releaseArea(t1);
+    assert.equal(mc.areas.size, 1, "stale release ignored");
+    await scan.holdArea(dimension, rect, t3);
+    scan.releaseArea(t2);
+    assert.equal(mc.areas.size, 1, "the previous owner cannot release the new hold");
+    scan.releaseArea(t3);
+    assert.equal(mc.areas.size, 0);
+    // a cancelled token never even asks the engine
+    const before = mc.areaLog.length;
+    t3.cancelled = true;
+    await scan.holdArea(dimension, rect, t3);
+    assert.equal(mc.areaLog.length, before);
+});
+
+test("abort while the first ticking area is being created leaves nothing behind", MIN_TIMEOUT, async () => {
+    resetWorld(1);
+    let open;
+    mc.holdGate = new Promise((resolve) => {
+        open = resolve;
+    });
+    const player = makePlayer();
+    send(CIV_EVENT_IDS.generate, GEN, player);
+    await pump();
+    assert.ok(districtBuilder.isBusy());
+    send(CIV_EVENT_IDS.abort, "", player);
+    open();
+    await pump();
+    assert.equal(districtBuilder.isBusy(), false);
+    assert.equal(mc.areas.size, 0);
+    assert.equal(mc.writes, 0);
+    assert.match(text(player) + mc.messages.join(" "), /no block was written/);
+});
+
+test("civ:district_abort on a running civilization build uses the shared abort path (paused, queue saved, areas released)", MIN_TIMEOUT, async () => {
+    resetWorld(1);
+    const player = makePlayer();
+    send(CIV_EVENT_IDS.generate, GEN, player);
+    await pump({ until: () => (builder.sessionStatus()?.pct ?? 0) >= 25 });
+    const written = mc.writes;
+    send("civ:district_abort", "", player);
+    await pump();
+    assert.equal(builder.hasSession(), false, "no stale 'Running' session");
+    assert.equal(districtBuilder.isBusy(), false);
+    assert.equal(mc.areas.size, 0);
+    assert.equal(mc.writes, written);
+    assert.equal(civRecord().status, "paused");
+    const stored = jobsModule.createJobStore(mc.world).loadQueue({ recoverRunning: false });
+    assert.equal(stored.queue.state, "paused");
+    assert.ok(jobsModule.progress(stored.queue).pct >= 24, "progress saved exactly, not up to 1500 ops behind");
+    assert.match(mc.messages.join("\n") + text(player), /operations are done; \d+ block\(s\) were placed/);
+    // and it resumes to the same world
+    const base = await baseline();
+    send(CIV_EVENT_IDS.resume, "", player);
+    await pump();
+    assert.match(text(player), /is built/);
+    void base;
+});
+
+test("civ:generate_abort stops only civilization jobs and says what it did", MIN_TIMEOUT, async () => {
+    resetWorld(1);
+    const player = makePlayer();
+    const token = districtBuilder.reserveJob("scout");
+    assert.ok(token);
+    send(CIV_EVENT_IDS.abort, "", player);
+    await flush();
+    assert.equal(districtBuilder.isBusy(), true, "the district job was not cancelled");
+    assert.equal(token.cancelled, false);
+    assert.match(mc.messages.join(" ") + text(player), /not a civilization job/);
+    districtBuilder.finishJob(token);
+});
+
+test("an oversize job queue is refused BEFORE the plan is stored (no orphan plan)", MIN_TIMEOUT, async () => {
+    resetWorld(1);
+    builder.seams.maxJobBytes = 400;
+    const player = makePlayer();
+    await generate(player);
+    assert.match(text(player), /job queue would need \d+ bytes but only 400/);
+    assert.equal(mc.writes, 0);
+    assert.deepEqual(noCivData(), [], "no plan and no queue left behind");
+    assert.equal(civRecord(), undefined);
+    assert.equal(districtBuilder.isBusy(), false);
+});
+
+test("the safety warning is shown by generate, plan and devgate", MIN_TIMEOUT, async () => {
+    const lineA = "Use only in a dedicated NEW test world.";
+    const lineB = "Natural-looking player builds (dirt, stone, sandstone, sand, gravel, clay, snow, moss) cannot be told apart from terrain and WOULD be modified; planks, bricks, glass, chests, ores, farmland etc. are always protected.";
+    assert.deepEqual(civCommands.CIV_SAFETY_WARNING, [lineA, lineB]);
+    resetWorld(1);
+    for (const id of [CIV_EVENT_IDS.plan, CIV_EVENT_IDS.generate]) {
+        resetWorld(1);
+        builder.seams.maxPlanBytes = 1000; // stop early: the warning comes first
+        const player = makePlayer();
+        send(id, GEN, player);
+        await pump();
+        assert.ok(text(player).includes(lineA) && text(player).includes(lineB), `${id} shows the warning`);
+    }
+    const player = makePlayer();
+    send(CIV_EVENT_IDS.devgate, "on", player);
+    send(CIV_EVENT_IDS.devgate, "", player);
+    await flush();
+    const all = mc.messages.join("\n") + text(player);
+    assert.equal(all.split(lineB).length - 1, 2, "both devgate replies carry the warning");
+    send(CIV_EVENT_IDS.devgate, "off", player);
+});
+
+test("worldplan.planWorldSteps and the runtime pipeline give the same plan and record checksum for the same seed", { timeout: 600000 }, async () => {
+    const worldplan = await load("civ", "worldplan.js");
+    resetWorld(1);
+    let outcome;
+    builder.seams.onOutcome = (o) => {
+        outcome = o;
+    };
+    const player = makePlayer();
+    send(CIV_EVENT_IDS.plan, GEN, player);
+    await pump();
+    assert.ok(outcome?.ok, text(player).slice(-500));
+    // the same inputs the pipeline used: the coarse survey and the full-resolution ground of its region
+    const token = { kind: "test", jobId: undefined, cancelled: false };
+    let coarse;
+    let fine;
+    scan.scanCoarse(token, dimension, { x: 0, z: 0 }, 536, 8).then((v) => (coarse = v));
+    await pump({ until: () => coarse !== undefined });
+    scan.scanFull(token, dimension, outcome.region).then((v) => (fine = v));
+    await pump({ until: () => fine !== undefined });
+    const result = worldplan.planWorld(coarse.field, {
+        seed: 1,
+        plan: { anchor: { x: outcome.site.x, z: outcome.site.z }, radius: builder.MASTER_PLAN_RADIUS },
+        site: { seed: 1, excludeFootprints: [] },
+        siteField: fine.field,
+        maxWorldAttempts: 1,
+    });
+    assert.ok(result.ok, result.problems.join(" | "));
+    assert.equal(JSON.stringify(result.plan), JSON.stringify(outcome.plan), "same master plan");
+    assert.equal(result.record.checksum, outcome.record.checksum, "same site record checksum");
+    assert.equal(JSON.stringify(result.ground), JSON.stringify(outcome.ground), "same stored ground");
+});

@@ -1,15 +1,21 @@
 import { CIV_LIMITS } from "./budget.js";
-import { IDS, planBridge, planPad, planRoadProfile } from "./foundations.js";
+import { IDS, planBridge, planPad, planRoadProfile, profileAt } from "./foundations.js";
 import { MinHeap, labelAt as planLabelAt, rasterizePath } from "./geom.js";
 import { fnv1a, utf8Length } from "./planstore.js";
 import { planWall, wallOpSegments, WALL } from "./walls.js";
-import { regionFromPlan, zoneDistrict } from "./zoning.js";
-import { HOUSE_KINDS, makeLots, rectGap, requiredGap } from "./lots.js";
+import { regionFromPlan } from "./zoning.js";
+import { zoneDistrictSteps } from "./zonesteps.js";
+import { HOUSE_KINDS, rectGap, requiredGap } from "./lots.js";
+import { makeLotsSteps } from "./lotsteps.js";
+import { WORK_LIMIT, markYield, newOps, runSync } from "./regions.js";
 import { cellsToToggle, fullGateBlocks, gatehouseBlocks, normalizeSpec } from "./gates.js";
 import { BLUEPRINTS2, expandBlueprint, rotateInBox, rotatedSize } from "../structures/blueprints2.js";
 import { encodeFacing, rotateDir } from "../structures/facing.js";
 import { normalizeOps, opSignature } from "./opnorm.js";
-import { clipField, exportSiteGround, importSiteGround, siteGroundRegion } from "./siteprofile.js";
+import { MAX_RUN, clipField, exportSiteGround, fnvFeed, importSiteGroundSteps, pace, siteGroundRegion } from "./siteprofile.js";
+
+/** @typedef {import("./regions.js").Ops} Ops */
+/** @typedef {{ region: { x0: number, z0: number, x1: number, z1: number }, w: number, h: number, g: Int16Array, k: Uint8Array, t: Uint8Array, idx: (x: number, z: number) => number, ground: (x: number, z: number) => number | undefined, sampler: (x: number, z: number) => { g: number, water?: number, hollow?: boolean }, vegetated: (x: number, z: number) => boolean, unusable: (x: number, z: number) => boolean, isLand: (x: number, z: number) => boolean }} Snapshot */
 
 /**
  * Enlarged irregular district construction planner - Phase C.
@@ -84,6 +90,13 @@ const F_GATE = 2;
 const F_STAIR = 4;
 const F_ROAD = 8;
 const F_LOT = 16;
+const F_APPR = 32;
+
+/** Loop chunk of the cooperative planner (iterations between work charges) and the hard cap of one stretch between yields. */
+const CHUNK = 512;
+const CHUNK_MASK = CHUNK - 1;
+/** Nodes the stair path search may visit per candidate length. */
+const STAIR_SEARCH_BUDGET = 1200;
 
 /** Lot kinds that are not buildings people enter: no door is required of them. */
 const OPEN_AIR_KINDS = new Set(["well", "pen", "garden", "market_stall", "market_square", "drill_ground", "customs_yard", "quarry_yard", "orchard", "farm_wheat", "farm_veg", "farm_irrigated", "farm_kitchen", "farm_allot"]);
@@ -94,18 +107,6 @@ const LAZY_OPS = new WeakMap();
 
 // ---------------------------------------------------------------------------------------------
 // small helpers
-
-/**
- * @param {string} key
- * @param {any[]} ops
- */
-function hashOps(key, ops) {
-    let text = key;
-    for (const op of ops) {
-        text += `${String(op.x)},${String(op.y)},${String(op.z)}|${String(op.id)}|${String(op.kind)}|${op.states === undefined ? "" : JSON.stringify(op.states)};`;
-    }
-    return fnv1a(text);
-}
 
 /** @param {any} a @param {any} b */
 function rectsOverlap(a, b) {
@@ -215,14 +216,16 @@ function pathCells(path, closed) {
 /**
  * @param {any} clipped a clipField() view
  * @param {{ x0: number, z0: number, x1: number, z1: number }} region
+ * @param {Ops} ops
  */
-function snapshotGround(clipped, region) {
+function* snapshotGroundSteps(clipped, region, ops) {
     const w = region.x1 - region.x0 + 1;
     const h = region.z1 - region.z0 + 1;
     const g = new Int16Array(w * h);
     const k = new Uint8Array(w * h);
     const t = new Uint8Array(w * h);
     for (let z = 0; z < h; z += 1) {
+        yield* pace(ops, w * 8);
         for (let x = 0; x < w; x += 1) {
             const cell = clipped.at(region.x0 + x, region.z0 + z);
             const code = /** @type {Record<string, number>} */ (KC)[cell.k] ?? 0;
@@ -377,20 +380,24 @@ export function exportSiteInputs(plan, index, field) {
 }
 
 /**
- * Rebuild the site record from the persisted inputs. Identical checksum, element hashes and op
- * streams to the original run (when given the same options; `siteOptionsOf(record)` returns them).
+ * Rebuild the site record from the persisted inputs, cooperatively. Identical checksum, element
+ * hashes and op streams to the original run (when given the same options; `siteOptionsOf(record)`
+ * returns them). Yields at least every ~20,000 elementary operations; abandoning it midway has no
+ * side effects.
  *
  * @param {any} plan
  * @param {number} index
  * @param {import("./siteprofile.js").SiteGroundJSON | string} groundJSON
- * @param {{ seed?: number, wallHeight?: number, streetWidth?: number, attempts?: number, excludeFootprints?: any[], expectChecksum?: string }} [options]
+ * @param {{ seed?: number, wallHeight?: number, streetWidth?: number, attempts?: number, excludeFootprints?: any[], expectChecksum?: string, ops?: Ops }} [options]
+ * @returns {Generator<void, { ok: boolean, record: any, problems: string[], notes: string[] }, void>}
  */
-export function rehydrateSite(plan, index, groundJSON, options = {}) {
+export function* rehydrateSiteSteps(plan, index, groundJSON, options = {}) {
     /** @type {string[]} */
     const problems = [];
+    const ops = options.ops ?? newOps();
     let ground;
     try {
-        ground = importSiteGround(groundJSON);
+        ground = yield* importSiteGroundSteps(groundJSON, ops);
     } catch (error) {
         return { ok: false, record: null, problems: [`stored ground is unusable: ${String(error instanceof Error ? error.message : error)}`], notes: /** @type {string[]} */ ([]) };
     }
@@ -405,12 +412,24 @@ export function rehydrateSite(plan, index, groundJSON, options = {}) {
     if (have.x0 !== want.x0 || have.z0 !== want.z0 || have.x1 !== want.x1 || have.z1 !== want.z1) {
         return { ok: false, record: null, problems: [`stored ground covers ${JSON.stringify(have)} but the plan needs ${JSON.stringify(want)}`], notes: /** @type {string[]} */ ([]) };
     }
-    const result = planDistrictSite(plan, index, ground, options);
+    const result = yield* planDistrictSiteSteps(plan, index, ground, { ...options, ops });
     for (const problem of result.problems) problems.push(problem);
     if (result.record !== null && options.expectChecksum !== undefined && result.record.checksum !== options.expectChecksum) {
         problems.push(`rehydrated checksum ${String(result.record.checksum)} differs from the stored ${options.expectChecksum}: the plan, ground, options or planner version changed`);
     }
     return { ok: problems.length === 0 && result.record !== null, record: result.record, problems, notes: result.notes };
+}
+
+/**
+ * Synchronous driver of rehydrateSiteSteps (one implementation).
+ *
+ * @param {any} plan
+ * @param {number} index
+ * @param {import("./siteprofile.js").SiteGroundJSON | string} groundJSON
+ * @param {{ seed?: number, wallHeight?: number, streetWidth?: number, attempts?: number, excludeFootprints?: any[], expectChecksum?: string }} [options]
+ */
+export function rehydrateSite(plan, index, groundJSON, options = {}) {
+    return runSync(rehydrateSiteSteps(plan, index, groundJSON, options));
 }
 
 /** @param {any} record */
@@ -422,7 +441,10 @@ export function isLiveSite(record) {
 // The planner
 
 /**
- * Build the complete construction plan for one district.
+ * Build the complete construction plan for one district, cooperatively: the generator yields at
+ * least every ~20,000 elementary operations (the civ/masterplan.js convention: pass `options.ops`
+ * and read `ops.maxRun` afterwards) and returns the result object. Abandoning it midway has no
+ * side effects. `planDistrictSite` is its synchronous driver, so there is ONE implementation.
  *
  * @param {any} plan a CivPlan from civ/masterplan.js
  * @param {number} index district index (1 = Hearthgate)
@@ -434,10 +456,13 @@ export function isLiveSite(record) {
  *   wallHeight?: number,
  *   streetWidth?: number,
  *   expectChecksum?: string,
+ *   ops?: Ops,
  *   validate?: (record: any) => string[],
  * }} [options]
+ * @returns {Generator<void, { ok: boolean, problems: string[], notes: string[], record: any }, void>}
  */
-export function planDistrictSite(plan, index, field, options = {}) {
+export function* planDistrictSiteSteps(plan, index, field, options = {}) {
+    const ops = options.ops ?? newOps();
     const /** @type {string[]} */ problems = [];
     const /** @type {string[]} */ notes = [];
 
@@ -460,7 +485,7 @@ export function planDistrictSite(plan, index, field, options = {}) {
     const seed = (options.seed ?? plan.seed ?? 1) | 0;
     const region = siteGroundRegion(plan, index);
     const clipped = clipField(field, region);
-    const G = snapshotGround(clipped, region);
+    const G = yield* snapshotGroundSteps(clipped, region, ops);
     const { ground, sampler, vegetated, unusable } = G;
     const district = /** @type {any[]} */ (plan.districts).find((entry) => entry?.index === index);
     const protectedRects = /** @type {any[]} */ (options.excludeFootprints ?? []);
@@ -508,13 +533,48 @@ export function planDistrictSite(plan, index, field, options = {}) {
 
     /**
      * Register one bounded job element. The producer is run once here; its output is normalised
-     * to canonical ops. Priority resolution later decides which ops survive.
+     * to canonical ops in bounded chunks. Priority resolution later decides which ops survive.
      *
      * @param {string} stage @param {string} kind @param {string} id @param {any} bbox
      * @param {() => any[]} produce @param {Record<string, any>} extra @param {number} rank
+     * @param {{ initial?: any[], rawSteps?: () => Generator<void, any[], void> }} [source] already produced ops, or a cooperative producer
+     * @returns {Generator<void, Element | null, void>}
      */
-    function addElement(stage, kind, id, bbox, produce, extra, rank) {
-        const norm = dedupeLast(normalizeOps(produce()));
+    function* addElement(stage, kind, id, bbox, produce, extra, rank, source = {}) {
+        /** @type {any[]} */
+        let raw;
+        if (source.initial !== undefined) raw = source.initial;
+        else if (source.rawSteps !== undefined) raw = yield* source.rawSteps();
+        else {
+            yield* pace(ops, 600);
+            raw = produce();
+            yield* pace(ops, Math.min(raw.length * 2, 4000));
+        }
+        /** @type {any[]} */
+        const normAll = [];
+        for (let s = 0; s < raw.length; s += CHUNK) {
+            const part = normalizeOps(raw.slice(s, s + CHUNK));
+            for (let k = 0; k < part.length; k += 1) normAll.push(part[k]);
+            yield* pace(ops, part.length * 5);
+        }
+        // keep the LAST op written to each coordinate
+        /** @type {Map<number, number>} */
+        const last = new Map();
+        for (let s = 0; s < normAll.length; s += CHUNK) {
+            const stop = Math.min(normAll.length, s + CHUNK);
+            for (let i = s; i < stop; i += 1) last.set(k3(normAll[i]), i);
+            yield* pace(ops, (stop - s) * 4);
+        }
+        /** @type {any[]} */
+        let norm = normAll;
+        if (last.size !== normAll.length) {
+            norm = [];
+            for (let s = 0; s < normAll.length; s += CHUNK) {
+                const stop = Math.min(normAll.length, s + CHUNK);
+                for (let i = s; i < stop; i += 1) if (last.get(k3(normAll[i])) === i) norm.push(normAll[i]);
+                yield* pace(ops, (stop - s) * 4);
+            }
+        }
         if (norm.length === 0) {
             return null;
         }
@@ -522,17 +582,21 @@ export function planDistrictSite(plan, index, field, options = {}) {
         const sigs = new Int32Array(norm.length);
         const cols = new Float64Array(norm.length);
         const surf = new Uint8Array(norm.length);
-        for (let i = 0; i < norm.length; i += 1) {
-            keys[i] = k3(norm[i]);
-            cols[i] = (norm[i].x + 65536) * 131072 + (norm[i].z + 65536);
-            surf[i] = WALK_KINDS.has(norm[i].kind) && !norm[i].id.endsWith("_wall") ? 1 : 0;
-            const sig = opSignature(norm[i]);
-            let n = sigIntern.get(sig);
-            if (n === undefined) {
-                n = sigIntern.size + 1;
-                sigIntern.set(sig, n);
+        for (let s = 0; s < norm.length; s += CHUNK) {
+            const stop = Math.min(norm.length, s + CHUNK);
+            for (let i = s; i < stop; i += 1) {
+                keys[i] = k3(norm[i]);
+                cols[i] = (norm[i].x + 65536) * 131072 + (norm[i].z + 65536);
+                surf[i] = WALK_KINDS.has(norm[i].kind) && !norm[i].id.endsWith("_wall") ? 1 : 0;
+                const sig = opSignature(norm[i]);
+                let n = sigIntern.get(sig);
+                if (n === undefined) {
+                    n = sigIntern.size + 1;
+                    sigIntern.set(sig, n);
+                }
+                sigs[i] = n;
             }
-            sigs[i] = n;
+            yield* pace(ops, (stop - s) * 8);
         }
         /** @type {Element} */
         const el = { stage, kind, id, bbox, rank, produce, extra, norm, keys, sigs, cols, surf, keep: null, drop: null, order: orderCounter };
@@ -540,9 +604,6 @@ export function planDistrictSite(plan, index, field, options = {}) {
         elements.push(el);
         return el;
     }
-
-    /** @param {string} stage @param {string} id */
-    const findElement = (stage, id) => elements.find((el) => el.stage === stage && el.id === id);
 
     /** @param {any} bbox @param {string} label */
     function conflicts(bbox, label) {
@@ -570,8 +631,9 @@ export function planDistrictSite(plan, index, field, options = {}) {
      * drops an op when a stronger element already claimed its coordinate, or when it repeats the
      * very same block. A stronger op arriving later simply overwrites (documented layering: the
      * lower op is a preparation step such as clear / cut / pad under a building).
+     * @returns {Generator<void, { dropped: number, overridden: number }, void>}
      */
-    function resolve() {
+    function* resolve() {
         /** @type {Map<number, { p: number, s: number }>} */
         const claims = new Map();
         let dropped = 0;
@@ -590,6 +652,7 @@ export function planDistrictSite(plan, index, field, options = {}) {
         const byStrength = elements.filter((e) => e.stage === "roads").sort((a, b) => a.rank - b.rank || a.order - b.order);
         for (const el of byStrength) {
             for (let i = 0; i < el.norm.length; i += 1) {
+                if ((i & CHUNK_MASK) === CHUNK_MASK) yield* pace(ops, CHUNK * 4);
                 if (el.surf[i] !== 1) continue;
                 const col = /** @type {number} */ (el.cols[i]);
                 const y = el.norm[i].y;
@@ -610,6 +673,7 @@ export function planDistrictSite(plan, index, field, options = {}) {
             const keep = new Uint8Array(el.norm.length);
             const lost = lostCols.get(el);
             for (let i = 0; i < el.norm.length; i += 1) {
+                if ((i & CHUNK_MASK) === CHUNK_MASK) yield* pace(ops, CHUNK * 6);
                 if (lost !== undefined && lost.has(/** @type {number} */ (el.cols[i]))) {
                     dropped += 1;
                     continue;
@@ -637,18 +701,9 @@ export function planDistrictSite(plan, index, field, options = {}) {
                 }
             }
             el.keep = keep;
+            yield* pace(ops, 40);
         }
         return { dropped, overridden };
-    }
-
-    /** @param {Element} el */
-    function keptOps(el) {
-        const keep = /** @type {Uint8Array} */ (el.keep);
-        const out = [];
-        for (let i = 0; i < el.norm.length; i += 1) {
-            if (keep[i] === 1) out.push(el.norm[i]);
-        }
-        return out;
     }
 
     // ---------------------------------------------------------------- reserved columns
@@ -666,18 +721,31 @@ export function planDistrictSite(plan, index, field, options = {}) {
         return i < 0 || ((/** @type {number} */ (rsv[i])) & flags) !== 0;
     };
 
-    const clearCols = (/** @type {[number, number][]} */ cells) =>
-        function produceClear() {
+    /**
+     * A producer written once as a cooperative generator and used twice: at plan time with the
+     * planner's counters (so it yields), and synchronously when ops are regenerated later.
+     * @param {(o: Ops) => Generator<void, any[], void>} gen
+     */
+    const dual = (gen) => ({ produce: () => runSync(gen(newOps())), rawSteps: () => gen(ops) });
+
+    /** Clear vegetation on the given columns. @param {[number, number][]} cells */
+    const clearCols = (cells) =>
+        dual(function* clearGen(o) {
             /** @type {any[]} */
             const out = [];
-            for (const [x, z] of cells) {
-                if (vegetated(x, z)) {
-                    const g = ground(x, z);
-                    if (g !== undefined) out.push({ x, y: g + 1, z, id: "minecraft:air", kind: "clear" });
+            for (let s = 0; s < cells.length; s += CHUNK) {
+                const stop = Math.min(cells.length, s + CHUNK);
+                for (let i = s; i < stop; i += 1) {
+                    const [x, z] = /** @type {[number, number]} */ (cells[i]);
+                    if (vegetated(x, z)) {
+                        const g = ground(x, z);
+                        if (g !== undefined) out.push({ x, y: g + 1, z, id: "minecraft:air", kind: "clear" });
+                    }
                 }
+                yield* pace(o, (stop - s) * 8);
             }
             return out;
-        };
+        });
 
     // ---------------------------------------------------------------- 1. walls
     /** @type {Map<string, any>} */
@@ -685,6 +753,11 @@ export function planDistrictSite(plan, index, field, options = {}) {
     for (const wall of districtWalls) {
         const gatesOnWall = districtGates.filter((gate) => String(gate.wallId) === String(wall.id));
         let built;
+        let approxCells = 0;
+        for (let k = 0; k + 1 < (Array.isArray(wall.path) ? wall.path.length : 0); k += 1) {
+            approxCells += Math.max(Math.abs(wall.path[k + 1][0] - wall.path[k][0]), Math.abs(wall.path[k + 1][1] - wall.path[k][1]));
+        }
+        yield* pace(ops, Math.min(23000, approxCells * 60 + 2000));
         try {
             built = planWall(wall.path, ground, {
                 closed: wall.closed === true,
@@ -700,22 +773,23 @@ export function planDistrictSite(plan, index, field, options = {}) {
         for (const [x, z] of cells) {
             bbox = bboxOf(Math.min(bbox.x0, x), Math.min(bbox.z0, z), Math.max(bbox.x1, x), Math.max(bbox.z1, z));
         }
+        yield* pace(ops, cells.length * 6 + built.columns.length * 4);
         if (conflicts(bbox, `wall ${String(wall.id)}`)) {
             continue;
         }
-        /** @type {() => any[]} */
-        const produce = () => {
+        const wallDual = dual(function* wallGen(o) {
             /** @type {any[]} */
             const out = [];
             for (const segment of wallOpSegments(built, CIV_LIMITS.maxBlocksPerSlice)) {
-                out.push(...segment.ops);
+                for (let k = 0; k < segment.ops.length; k += 1) out.push(segment.ops[k]);
+                yield* pace(o, segment.ops.length * 6 + 200);
             }
             return out;
-        };
+        });
         const noGate = gatesOnWall.length === 0;
         const partner = (/** @type {number[]} */ (wall.between ?? [])).find((label) => label !== index && label > 0);
         const sealed = wall.kind === "shared" && partner !== undefined && !isRingPair(index, partner);
-        addElement("walls", wall.kind === "shared" ? "shared-wall" : "outer-wall", String(wall.id), bbox, produce, {
+        yield* addElement("walls", wall.kind === "shared" ? "shared-wall" : "outer-wall", String(wall.id), bbox, wallDual.produce, {
             between: /** @type {number[]} */ (wall.between ?? []),
             closed: wall.closed === true,
             length: Math.round(built.estimate.length),
@@ -728,7 +802,7 @@ export function planDistrictSite(plan, index, field, options = {}) {
             groundMaxY: maxOf(built.ground),
             gates: gatesOnWall.length,
             sealed: sealed && noGate,
-        }, RANK.wall);
+        }, RANK.wall, { rawSteps: wallDual.rawSteps });
         for (const column of /** @type {any[]} */ (built.columns)) {
             const i = G.idx(column.x, column.z);
             if (i >= 0) {
@@ -738,7 +812,8 @@ export function planDistrictSite(plan, index, field, options = {}) {
             }
         }
         const clearList = cells.slice();
-        addElement("clear", "wall-band", `clear-${String(wall.id)}`, bbox, clearCols(clearList), { cells: clearList.length }, RANK.clear);
+        const clearDual = clearCols(clearList);
+        yield* addElement("clear", "wall-band", `clear-${String(wall.id)}`, bbox, clearDual.produce, { cells: clearList.length }, RANK.clear, { rawSteps: clearDual.rawSteps });
         wallBuilt.set(String(wall.id), built);
     }
 
@@ -798,20 +873,20 @@ export function planDistrictSite(plan, index, field, options = {}) {
             const passage = fullGateBlocks(spec, "open");
             return [...house, ...(Array.isArray(passage) ? passage : (/** @type {any} */ (passage)).ops ?? [])].map((op) => ({ ...op }));
         };
-        let ops;
+        let gateOps;
         try {
-            ops = produce();
+            gateOps = produce();
         } catch (error) {
             problems.push(`gate ${String(gate.id)} blocks could not be produced: ${String(error)}`);
             continue;
         }
-        const bbox = bboxOfOps([...ops, { x: spec.at.x, y: spec.y, z: spec.at.z }]);
+        const bbox = bboxOfOps([...gateOps, { x: spec.at.x, y: spec.y, z: spec.at.z }]);
         if (conflicts(bbox, `gate ${String(gate.id)}`)) {
             continue;
         }
         /** @type {[number, number][]} */
         const sill = [];
-        for (const op of ops) {
+        for (const op of gateOps) {
             reserve(op.x, op.z, F_GATE);
             if (op.role === "floor") sill.push([op.x, op.z]);
         }
@@ -820,7 +895,8 @@ export function planDistrictSite(plan, index, field, options = {}) {
         const inside = probe(1) ? 1 : probe(-1) ? -1 : 0;
         gateInfo.push({ id: String(gate.id), spec, sill, y: g, inside });
         for (const cell of cellsToToggle(spec)) closureClaims.push(k3(cell));
-        addElement("gates", `gate-${String(gate.purpose ?? "main")}`, String(gate.id), bbox, produce, {
+        yield* pace(ops, 4000);
+        yield* addElement("gates", `gate-${String(gate.purpose ?? "main")}`, String(gate.id), bbox, produce, {
             at: { x: Number(gate.at.x), z: Number(gate.at.z) },
             wallId: String(gate.wallId),
             between: /** @type {number[]} */ (gate.between ?? []),
@@ -836,13 +912,13 @@ export function planDistrictSite(plan, index, field, options = {}) {
     }
 
     // ---------------------------------------------------------------- 3. zoning and raw lots
-    const zones = zoneDistrict(zoneRegion, planRoads, {
+    const zones = yield* zoneDistrictSteps(zoneRegion, planRoads, {
         seed,
         walls: districtWalls,
         gates: districtGates,
         streetWidth: Number(options.streetWidth ?? SITE_RULES.streetWidth),
-    });
-    const lots = makeLots(zoneRegion, zones, planRoads, { seed, attempts: options.attempts ?? 4 });
+    }, ops);
+    const lots = yield* makeLotsSteps(zoneRegion, zones, planRoads, { seed, attempts: options.attempts ?? 4 }, ops);
     if (lots.composition?.ok !== true) {
         notes.push(`zoning composition incomplete: ${(/** @type {string[]} */ (lots.composition?.missing ?? [])).join(", ")}`);
     }
@@ -854,11 +930,12 @@ export function planDistrictSite(plan, index, field, options = {}) {
 
     // ---------------------------------------------------------------- 4. roads
     /**
-     * Road surface ops for a centreline. Returns canonical-ready raw ops and the refusals.
-     * Deterministic; reads the ground snapshot only.
-     * @param {[number, number][]} centre @param {number} width
+     * Road surface ops for a centreline, as a cooperative generator. Returns the raw ops and the
+     * refusals. Deterministic; reads the ground snapshot only.
+     * @param {[number, number][]} centre @param {number} width @param {Ops} o
+     * @returns {Generator<void, { ops: any[], refusals: string[] }, void>}
      */
-    const roadOpsFor = (centre, width) => {
+    function* roadOpsFor(centre, width, o) {
         /** @type {any[]} */
         const out = [];
         /** @type {string[]} */
@@ -876,11 +953,18 @@ export function planDistrictSite(plan, index, field, options = {}) {
                     const sample = sampler(x, z);
                     return { x, z, g: sample.g, water: false };
                 });
+                yield* pace(o, Math.min(23000, run.length * 24 + 100));
                 const surfaced = planRoadProfile(samples, { smooth: 2, maxStep: 1, maxDev: 3 });
                 if (surfaced.ok === true) {
                     run.forEach(([x, z], i) => where.set(`${String(x)},${String(z)}`, i));
-                    out.push(...surfaced.ops);
+                    let sinceCheck = 0;
+                    for (let k = 0; k < surfaced.ops.length; k += 1) out.push(surfaced.ops[k]);
                     for (const op of surfaced.ops) {
+                        sinceCheck += 1;
+                        if (sinceCheck >= 256) {
+                            sinceCheck = 0;
+                            yield* pace(o, 256 * 30);
+                        }
                         if (op.kind === "stair" || op.kind === "cut") continue;
                         const at = where.get(`${String(op.x)},${String(op.z)}`) ?? 0;
                         const next = run[Math.min(at + 1, run.length - 1)];
@@ -909,6 +993,7 @@ export function planDistrictSite(plan, index, field, options = {}) {
                 const span = centre.slice(Math.max(0, wetStart - 1), Math.min(centre.length, cursor + 1));
                 const axisAligned = span.length >= 3 && span.every(([x, z]) => x === span[0][0] || z === span[0][1]);
                 if (axisAligned) {
+                    yield* pace(o, span.length * 40 + 200);
                     const bridged = planBridge(span.map(([x, z]) => ({ x, z, g: sampler(x, z).g })), { width: Math.max(1, Math.min(7, width)) });
                     if (bridged.ok === true) out.push(...bridged.ops);
                     else for (const problem of bridged.problems) refusals.push(`no bridge: ${problem}`);
@@ -918,13 +1003,15 @@ export function planDistrictSite(plan, index, field, options = {}) {
             }
         }
         return { ops: out, refusals };
-    };
+    }
 
     /**
      * @param {any} road @param {number} width @param {string} idPrefix @param {number} rank
+     * @returns {Generator<void, void, void>}
      */
-    const addRoad = (road, width, idPrefix, rank) => {
+    function* addRoad(road, width, idPrefix, rank) {
         const raster = pathCells(/** @type {number[][]} */ (road.path ?? []), false);
+        yield* pace(ops, Math.min(23000, raster.length * 6 + 100));
         /** @type {[number, number][]} */
         const centre = [];
         let clippedAway = 0;
@@ -944,8 +1031,8 @@ export function planDistrictSite(plan, index, field, options = {}) {
             return;
         }
         /** @type {() => any[]} */
-        const produce = () => roadOpsFor(centre, width).ops;
-        const first = roadOpsFor(centre, width);
+        const produce = () => runSync(roadOpsFor(centre, width, newOps())).ops;
+        const first = yield* roadOpsFor(centre, width, ops);
         if (first.ops.length === 0) {
             notes.push(`${idPrefix}: nothing could be surfaced (${String(first.refusals.length)} refusals)`);
             for (const refusal of first.refusals) notes.push(`${idPrefix}: ${refusal}`);
@@ -964,10 +1051,11 @@ export function planDistrictSite(plan, index, field, options = {}) {
                 labels.add(label);
             }
         }
+        yield* pace(ops, Math.min(23000, centre.length * (districtGates.length * 4 + 10) + first.ops.length * 2));
         const touchesGate = districtGates.some((gate) =>
             centre.some(([x, z]) => Math.abs(x - gate.at.x) <= Math.max(2, Number(gate.width ?? 5)) && Math.abs(z - gate.at.z) <= Math.max(2, Number(gate.width ?? 5))),
         );
-        addElement("roads", `road-${String(road.kind ?? "street")}`, idPrefix, bbox, produce, {
+        yield* addElement("roads", `road-${String(road.kind ?? "street")}`, idPrefix, bbox, produce, {
             district: Number(road.district ?? index),
             width,
             length: centre.length,
@@ -977,21 +1065,23 @@ export function planDistrictSite(plan, index, field, options = {}) {
             outsideCells: outside,
             crossesTo: [...labels].sort(),
             throughGate: touchesGate,
-        }, rank);
-    };
+        }, rank, { initial: first.ops });
+    }
 
     /** @param {string} kind */
     const roadRankOf = (kind) => /** @type {Record<string, number>} */ (ROAD_RANK)[kind] ?? ROAD_RANK.street;
     for (const road of planRoads) {
-        addRoad(road, Number(road.width ?? (road.kind === "arterial" ? SITE_RULES.arterialWidth : SITE_RULES.streetWidth)), String(road.id), roadRankOf(String(road.kind)));
+        yield* addRoad(road, Number(road.width ?? (road.kind === "arterial" ? SITE_RULES.arterialWidth : SITE_RULES.streetWidth)), String(road.id), roadRankOf(String(road.kind)));
     }
     for (const street of [.../** @type {any[]} */ (zones.streets ?? []), .../** @type {any[]} */ (lots.extraStreets ?? [])]) {
-        addRoad(street, Number(street.width ?? SITE_RULES.streetWidth), String(street.id), ROAD_RANK.street);
+        yield* addRoad(street, Number(street.width ?? SITE_RULES.streetWidth), String(street.id), ROAD_RANK.street);
     }
     // The patrol lane is a real street: zoning routes house doors onto it (`frontage.via === "patrol"`).
-    const ringPath = traceRing(zones.grids);
-    if (ringPath.length >= 2) {
-        addRoad({ id: "patrol-lane", kind: "ring", district: index, path: ringPath }, Number(zones.patrol?.width ?? 2), "patrol-lane", ROAD_RANK.ring);
+    yield* pace(ops, 6000);
+    const ringRuns = traceRing(zones.grids);
+    for (let k = 0; k < ringRuns.length; k += 1) {
+        const id = k === 0 ? "patrol-lane" : `patrol-lane-${String(k + 1)}`;
+        yield* addRoad({ id, kind: "ring", district: index, path: ringRuns[k] }, Number(zones.patrol?.width ?? 2), id, ROAD_RANK.ring);
     }
 
     // ---------------------------------------------------------------- 5. walkable surface bookkeeping
@@ -1007,17 +1097,25 @@ export function planDistrictSite(plan, index, field, options = {}) {
     /** @type {Set<number>} */
     const failedAt = new Set();
 
-    /** Rebuild `surfY` and the road reservation from the resolved streams plus the declared nodes. */
-    function rebuildSurface() {
+    /**
+     * Rebuild `surfY` and the road reservation from the resolved streams plus the declared nodes.
+     * @returns {Generator<void, void, void>}
+     */
+    function* rebuildSurface() {
         surfY = new Int16Array(SIZE).fill(NOT_SURF);
-        for (let i = 0; i < SIZE; i += 1) rsv[i] = /** @type {number} */ (rsv[i]) & ~F_ROAD;
+        yield* pace(ops, SIZE >> 5);
+        for (let i = 0; i < SIZE; i += 1) {
+            if ((i & 4095) === 4095) yield* pace(ops, 4096);
+            rsv[i] = /** @type {number} */ (rsv[i]) & ~F_ROAD;
+        }
         for (const el of executionOrder()) {
             if (el.stage !== "roads" && !(el.stage === "dressing" && el.kind === "wall-stairs")) continue;
             const keep = /** @type {Uint8Array} */ (el.keep);
             for (let n = 0; n < el.norm.length; n += 1) {
+                if ((n & CHUNK_MASK) === CHUNK_MASK) yield* pace(ops, CHUNK * 8);
                 if (keep[n] !== 1) continue;
+                if (el.surf[n] !== 1) continue;
                 const op = el.norm[n];
-                if (!WALK_KINDS.has(op.kind) || op.id.endsWith("_wall")) continue;
                 const i = G.idx(op.x, op.z);
                 if (i < 0) continue;
                 surfY[i] = op.y;
@@ -1031,8 +1129,8 @@ export function planDistrictSite(plan, index, field, options = {}) {
     }
 
     // ---------------------------------------------------------------- 6. gate aprons (the walkable throat)
-    resolve();
-    rebuildSurface();
+    yield* resolve();
+    yield* rebuildSurface();
     for (const info of gateInfo) {
         for (const [x, z] of info.sill) nodes.push({ x, z, y: info.y, tag: `sill-${info.id}` });
         if (info.inside === 0) {
@@ -1087,14 +1185,15 @@ export function planDistrictSite(plan, index, field, options = {}) {
             notes.push(`gate ${info.id}: the inside apron is not buildable (${String(lanes.length)} lanes${tooSteep ? ", too much cut/fill" : ""})`);
             continue;
         }
-        const ops = produce();
-        const el = addElement("roads", "road-apron", `apron-${info.id}`, bboxOfOps(ops), produce, { gate: info.id, district: index, length: lanes.reduce((n, l) => n + l.cells.length, 0), surfaceMinY: Math.min(info.y, level2, level3), surfaceMaxY: Math.max(info.y, level2, level3), throughGate: true }, ROAD_RANK.apron);
+        yield* pace(ops, lanes.length * 80 + 100);
+        const ops2 = produce();
+        const el = yield* addElement("roads", "road-apron", `apron-${info.id}`, bboxOfOps(ops2), produce, { gate: info.id, district: index, length: lanes.reduce((n, l) => n + l.cells.length, 0), surfaceMinY: Math.min(info.y, level2, level3), surfaceMaxY: Math.max(info.y, level2, level3), throughGate: true }, ROAD_RANK.apron, { initial: ops2 });
         if (el === null) notes.push(`gate ${info.id}: apron produced nothing`);
     }
 
     // ---------------------------------------------------------------- 7. wall access stairs (interior face)
-    resolve();
-    rebuildSurface();
+    yield* resolve();
+    yield* rebuildSurface();
     /** @type {{ id: string, cells: [number, number, number][], dirs: string[], wallId: string }[]} */
     const stairRuns = [];
     {
@@ -1112,6 +1211,7 @@ export function planDistrictSite(plan, index, field, options = {}) {
             for (let at = Math.floor(stride / 2); at < cells.length && placedHere < wantHere; at += stride) {
                 let found = false;
                 for (let probe = 0; probe < Math.max(60, stride) && !found && at + probe < cells.length; probe += 1) {
+                    yield* pace(ops, 120 + topCells.length * 12);
                     const [cx, cz] = cells[at + probe];
                     for (const [nx, nz] of dirs) {
                         const ex = cx + nx * 2;
@@ -1123,10 +1223,10 @@ export function planDistrictSite(plan, index, field, options = {}) {
                         if (isReserved(ex, ez, F_WALL | F_GATE | F_STAIR | F_ROAD)) continue;
                         if (!(mineAt(ex + nx * 2, ez + nz * 2) && mineAt(ex + nx * 4, ez + nz * 4))) continue;
                         if (topCells.some(([tx, tz]) => Math.hypot(tx - ex, tz - ez) < 24)) continue;
-                        const run = stairRunFor(ex, ez, /** @type {number} */ (wallTopAt[edgeI]), nx, nz);
+                        const run = yield* stairRunFor(ex, ez, /** @type {number} */ (wallTopAt[edgeI]), nx, nz);
                         if (run !== null) {
                             const id = `stairs-${String(stairRuns.length + 1)}`;
-                            if (!tryStairs(id, wallId, run)) continue;
+                            if (!(yield* tryStairs(id, wallId, run))) continue;
                             topCells.push([ex, ez]);
                             found = true;
                             placedHere += 1;
@@ -1146,30 +1246,31 @@ export function planDistrictSite(plan, index, field, options = {}) {
      * cannot be joined (a stair nobody can reach is worse than no stair).
      *
      * @param {string} id @param {string} wallId @param {{ cells: [number, number, number][], dirs: string[] }} run
+     * @returns {Generator<void, boolean, void>}
      */
-    function tryStairs(id, wallId, run) {
+    function* tryStairs(id, wallId, run) {
         const snapshot = { n: elements.length, connectors: connectorCount, patches: patchCount, unconnected: unconnected.length, nodes: nodes.length };
         const cells = run.cells;
         const dirsOfRun = run.dirs;
         const first = cells[0];
         const last = cells[cells.length - 1];
         const produce = () => stairOps(cells, dirsOfRun, G);
-        const ops = produce();
-        const el = addElement("dressing", "wall-stairs", id, bboxOfOps(ops), produce, {
+        const stairOpsList = produce();
+        const el = yield* addElement("dressing", "wall-stairs", id, bboxOfOps(stairOpsList), produce, {
             wallId,
-            opCount: ops.length,
+            opCount: stairOpsList.length,
             rise: cells.length,
             side: "interior",
             bottom: { x: first[0], z: first[1], y: first[2] },
             top: { x: last[0], z: last[1], y: last[2] },
-        }, RANK.dress);
+        }, RANK.dress, { initial: stairOpsList });
         if (el === null) return false;
         for (const [x, z] of cells) reserve(x, z, F_STAIR);
         for (const [x, z, y] of cells) nodes.push({ x, z, y, tag: id });
-        resolve();
-        rebuildSurface();
-        connectNetwork(4);
-        const { comp, sizes } = components();
+        yield* resolve();
+        yield* rebuildSurface();
+        yield* connectNetwork(4);
+        const { comp, sizes } = yield* components();
         let main = 1;
         for (let c = 2; c < sizes.length; c += 1) {
             if (/** @type {number} */ (sizes[c]) > /** @type {number} */ (sizes[main])) main = c;
@@ -1189,21 +1290,21 @@ export function planDistrictSite(plan, index, field, options = {}) {
             if (i >= 0) rsv[i] = /** @type {number} */ (rsv[i]) & ~F_STAIR;
         }
         failedAt.clear();
-        resolve();
-        rebuildSurface();
+        yield* resolve();
+        yield* rebuildSurface();
         return false;
     }
 
     /**
      * A 4-connected stair path hugging the interior face of the wall that ends at (ex, ez) on
      * level `topY` and starts one level above the ground. Depth-first, tangents before moving
-     * away from the wall, deterministic. Each step rises one level; cells need cut <= 4, fill <= 6.
+     * away from the wall, deterministic. Each step rises one level; cells need cut <= 4, fill <= 12.
      *
      * @param {number} ex @param {number} ez @param {number} topY
      * @param {number} nx @param {number} nz normal pointing from the wall into the district
-     * @returns {{ cells: [number, number, number][], dirs: string[] } | null}
+     * @returns {Generator<void, { cells: [number, number, number][], dirs: string[] } | null, void>}
      */
-    function stairRunFor(ex, ez, topY, nx, nz) {
+    function* stairRunFor(ex, ez, topY, nx, nz) {
         const tangents = /** @type {[number, number][]} */ (nx === 0 ? [[1, 0], [-1, 0]] : [[0, 1], [0, -1]]);
         const moves = /** @type {[number, number][]} */ ([...tangents, [nx, nz]]);
         const usable = (/** @type {number} */ x, /** @type {number} */ z) => G.isLand(x, z) && !isReserved(x, z, F_WALL | F_GATE | F_STAIR | F_ROAD) && mineAt(x + nx * 2, z + nz * 2);
@@ -1212,7 +1313,8 @@ export function planDistrictSite(plan, index, field, options = {}) {
             /** @type {[number, number][]} */
             const path = [[ex, ez]];
             const seen = new Set([`${String(ex)},${String(ez)}`]);
-            let budget = 4000;
+            const budgetStart = STAIR_SEARCH_BUDGET;
+            let budget = budgetStart;
             /** @param {number} depth @returns {[number, number][] | null} */
             const walk = (depth) => {
                 if (depth === len) {
@@ -1238,6 +1340,7 @@ export function planDistrictSite(plan, index, field, options = {}) {
                 }
                 return null;
             };
+            yield* pace(ops, budgetStart * 6);
             const found = walk(1);
             if (found === null) continue;
             // bottom first, one level per cell
@@ -1266,29 +1369,32 @@ export function planDistrictSite(plan, index, field, options = {}) {
     }
 
     // ---------------------------------------------------------------- 8. connectivity: one walkable network
-    resolve();
-    rebuildSurface();
-
-
+    yield* resolve();
+    yield* rebuildSurface();
 
     /**
-     * Label 4-connected components of the walkable surface (|dy| <= 1 between neighbours).
+     * Label 8-connected components of the walkable surface (|dy| <= 1 between neighbours).
+     * @returns {Generator<void, { comp: Int32Array, sizes: number[] }, void>}
      */
-    function components() {
+    function* components() {
         const comp = new Int32Array(SIZE);
         const sizes = [0];
         let next = 0;
         /** @type {number[]} */
         const stack = [];
         for (let start = 0; start < SIZE; start += 1) {
+            if ((start & 4095) === 4095) yield* pace(ops, 4096);
             if (surfY[start] === NOT_SURF || comp[start] !== 0) continue;
             next += 1;
             let size = 0;
             comp[start] = next;
             stack.push(start);
+            let popped = 0;
             while (stack.length > 0) {
                 const c = /** @type {number} */ (stack.pop());
                 size += 1;
+                popped += 1;
+                if ((popped & 255) === 255) yield* pace(ops, 256 * 12);
                 const y = /** @type {number} */ (surfY[c]);
                 const x = c % G.w;
                 for (let dz = -1; dz <= 1; dz += 1) {
@@ -1319,14 +1425,17 @@ export function planDistrictSite(plan, index, field, options = {}) {
      * Cheapest free route from component `from` to the main component whose pinned height profile
      * is feasible; null when there is none.
      * @param {Int32Array} comp @param {number} from @param {number} main
+     * @returns {Generator<void, { path: number[], endNeighbour: number, startNeighbour: number } | null, void>}
      */
-    function routeToMain(comp, from, main) {
+    function* routeToMain(comp, from, main) {
         const dist = new Float64Array(SIZE).fill(Infinity);
         const prev = new Int32Array(SIZE).fill(-1);
         const root = new Int32Array(SIZE).fill(-1);
         const len = new Int32Array(SIZE);
         const heap = new MinHeap();
+        yield* pace(ops, SIZE >> 5);
         for (let c = 0; c < SIZE; c += 1) {
+            if ((c & 4095) === 4095) yield* pace(ops, 4096);
             if (comp[c] === from) {
                 dist[c] = 0;
                 root[c] = c;
@@ -1334,8 +1443,11 @@ export function planDistrictSite(plan, index, field, options = {}) {
             }
         }
         const blocked = F_WALL | F_GATE | F_STAIR | F_LOT;
+        let pops = 0;
         while (heap.size > 0) {
             const [d, c] = heap.pop();
+            pops += 1;
+            if ((pops & 63) === 63) yield* pace(ops, 64 * 60);
             if (d > /** @type {number} */ (dist[c])) continue;
             const cx = c % G.w;
             const cz = Math.floor(c / G.w);
@@ -1380,9 +1492,11 @@ export function planDistrictSite(plan, index, field, options = {}) {
      * free cell lies between: re-level the one touching cell of the main network to the middle
      * level (a stronger road element overrides the weaker one in that column).
      * @param {Int32Array} comp @param {number} from @param {number} main
+     * @returns {Generator<void, boolean, void>}
      */
-    function patchGap(comp, from, main) {
+    function* patchGap(comp, from, main) {
         for (let c = 0; c < SIZE; c += 1) {
+            if ((c & 4095) === 4095) yield* pace(ops, 4096);
             if (comp[c] !== from) continue;
             const x = c % G.w;
             const z = Math.floor(c / G.w);
@@ -1412,11 +1526,11 @@ export function planDistrictSite(plan, index, field, options = {}) {
                     return out;
                 };
                 patchCount += 1;
-                const ops = produce();
-                const el = addElement("roads", "road-connector", `patch-${String(patchCount)}`, bboxOfOps(ops), produce, { district: index, length: 1, surfaceMinY: yNew, surfaceMaxY: yNew, throughGate: false, patch: true }, 4.01);
+                const patchOps = produce();
+                const el = yield* addElement("roads", "road-connector", `patch-${String(patchCount)}`, bboxOfOps(patchOps), produce, { district: index, length: 1, surfaceMinY: yNew, surfaceMaxY: yNew, throughGate: false, patch: true }, 4.01, { initial: patchOps });
                 if (el !== null) {
-                    resolve();
-                    rebuildSurface();
+                    yield* resolve();
+                    yield* rebuildSurface();
                     return true;
                 }
             }
@@ -1426,10 +1540,11 @@ export function planDistrictSite(plan, index, field, options = {}) {
 
     /**
      * @param {number} maxConnectors
+     * @returns {Generator<void, void, void>}
      */
-    function connectNetwork(maxConnectors) {
+    function* connectNetwork(maxConnectors) {
         for (let round = 0; round < maxConnectors; round += 1) {
-            const { comp, sizes } = components();
+            const { comp, sizes } = yield* components();
             if (sizes.length <= 2) return;
             let main = 1;
             for (let c = 2; c < sizes.length; c += 1) {
@@ -1438,6 +1553,7 @@ export function planDistrictSite(plan, index, field, options = {}) {
             // Components worth connecting: anything holding a node, a stair, a road op, in size order.
             const firstCell = new Int32Array(sizes.length).fill(-1);
             for (let cell = 0; cell < SIZE; cell += 1) {
+                if ((cell & 4095) === 4095) yield* pace(ops, 4096);
                 const label = /** @type {number} */ (comp[cell]);
                 if (label > 0 && firstCell[label] < 0) firstCell[label] = cell;
             }
@@ -1446,6 +1562,7 @@ export function planDistrictSite(plan, index, field, options = {}) {
                 const i = G.idx(node.x, node.z);
                 if (i >= 0 && comp[i] > 0) nodeComps.add(comp[i]);
             }
+            yield* pace(ops, nodes.length * 4 + sizes.length * 4);
             const wanted = [];
             for (let c = 1; c < sizes.length; c += 1) {
                 if (c !== main && (/** @type {number} */ (sizes[c]) >= 3 || nodeComps.has(c)) && !failedAt.has(firstCell[c])) wanted.push(c);
@@ -1454,7 +1571,7 @@ export function planDistrictSite(plan, index, field, options = {}) {
             wanted.sort((a, b) => /** @type {number} */ (sizes[b]) - /** @type {number} */ (sizes[a]) || a - b);
             let connected = false;
             for (const target of wanted) {
-                const route = routeToMain(comp, target, main);
+                const route = yield* routeToMain(comp, target, main);
                 /** @type {[number, number][]} */
                 let cellsXZ = [];
                 let y0 = 0;
@@ -1465,10 +1582,11 @@ export function planDistrictSite(plan, index, field, options = {}) {
                     cellsXZ = route.path.map((c) => /** @type {[number, number]} */ ([region.x0 + (c % G.w), region.z0 + Math.floor(c / G.w)]));
                     y0 = /** @type {number} */ (surfY[route.startNeighbour]);
                     yN = /** @type {number} */ (surfY[route.endNeighbour]);
+                    yield* pace(ops, cellsXZ.length * 20 + 50);
                     ys = pinnedProfile(cellsXZ.map(([x, z]) => ground(x, z) ?? 0), y0, yN);
                 }
                 if (route === null || ys === null) {
-                    if (patchGap(comp, target, main)) {
+                    if (yield* patchGap(comp, target, main)) {
                         connected = true;
                         break;
                     }
@@ -1479,12 +1597,12 @@ export function planDistrictSite(plan, index, field, options = {}) {
                 const levels = ys;
                 const id = `connector-${String(connectorCount + 1)}`;
                 const produce = () => surfaceOps(cellsXZ, levels, G);
-                const ops = produce();
-                const el = addElement("roads", "road-connector", id, bboxOfOps(ops), produce, { district: index, length: cellsXZ.length, surfaceMinY: minOf(levels), surfaceMaxY: maxOf(levels), fromY: y0, toY: yN, throughGate: false }, ROAD_RANK.connector);
+                const connectorOps = produce();
+                const el = yield* addElement("roads", "road-connector", id, bboxOfOps(connectorOps), produce, { district: index, length: cellsXZ.length, surfaceMinY: minOf(levels), surfaceMaxY: maxOf(levels), fromY: y0, toY: yN, throughGate: false }, ROAD_RANK.connector, { initial: connectorOps });
                 if (el !== null) {
                     connectorCount += 1;
-                    resolve();
-                    rebuildSurface();
+                    yield* resolve();
+                    yield* rebuildSurface();
                     connected = true;
                     break;
                 }
@@ -1492,13 +1610,12 @@ export function planDistrictSite(plan, index, field, options = {}) {
             if (!connected) return;
         }
     }
-    connectNetwork(80);
+    yield* connectNetwork(80);
 
     // ---------------------------------------------------------------- 9. lots
     const lotList = /** @type {any[]} */ (lots.lots ?? []);
     /** @type {{ kind: string, x0: number, z0: number, x1: number, z1: number }[]} */
     const placedRects = [];
-    const lotCols = new Set();
     let relocated = 0;
     let rotated = 0;
     let placedLots = 0;
@@ -1508,7 +1625,7 @@ export function planDistrictSite(plan, index, field, options = {}) {
     const orderedLots = [...lotList].sort((a, b) => importance(a.kind) - importance(b.kind) || String(a.id).localeCompare(String(b.id)));
 
     for (const lot of orderedLots) {
-        const outcome = placeLot(lot);
+        const outcome = yield* placeLot(lot);
         if (outcome.ok === false) {
             notes.push(`lot ${String(lot.id)} has no buildable pad: ${outcome.reason}`);
         }
@@ -1516,9 +1633,9 @@ export function planDistrictSite(plan, index, field, options = {}) {
 
     /**
      * @param {any} lot
-     * @returns {{ ok: true } | { ok: false, reason: string }}
+     * @returns {Generator<void, { ok: true } | { ok: false, reason: string }, void>}
      */
-    function placeLot(lot) {
+    function* placeLot(lot) {
         const bp = BLUEPRINTS2[lot.blueprint];
         if (bp === undefined) {
             problems.push(`lot ${String(lot.id)} names unknown blueprint '${String(lot.blueprint)}'`);
@@ -1563,6 +1680,7 @@ export function planDistrictSite(plan, index, field, options = {}) {
                 }
             }
         }
+        yield* pace(ops, candidates.length * 6);
 
         let firstReason = "";
         /** @type {{ c: any, geo: any, lane: { frontage: [number, number], approach: [number, number][], fy: number } }[]} */
@@ -1570,6 +1688,7 @@ export function planDistrictSite(plan, index, field, options = {}) {
         for (const c of candidates) {
             if (viable.length >= SITE_RULES.lotSearchMaxCandidates) break;
             const geo = geometryOf(c.x, c.z, c.rot);
+            yield* pace(ops, (geo.w + 2) * (geo.d + 2) * 5 + placedRects.length * 10 + (maxLane + 2) * 12 + 40);
             const verdict = siteCheck(lot, geo, overRoads, maxLane);
             if (verdict.ok === false) {
                 if (firstReason === "") firstReason = verdict.reason;
@@ -1585,12 +1704,12 @@ export function planDistrictSite(plan, index, field, options = {}) {
         for (let tierIndex = 0; tierIndex < tiers.length; tierIndex += 1) {
             const limit = /** @type {number} */ (tiers[tierIndex]);
             for (const { c, geo, lane } of viable) {
-                const result = tryPadAt(geo, lane, limit);
+                const result = yield* tryPadAt(geo, lane, limit);
                 if (result.ok === false) {
                     if (reason === "") reason = result.reason;
                     continue;
                 }
-                commitLot(lot, bp, c, geo, lane, result, tierIndex);
+                yield* commitLot(lot, bp, c, geo, lane, result, tierIndex);
                 return { ok: true };
             }
         }
@@ -1611,7 +1730,7 @@ export function planDistrictSite(plan, index, field, options = {}) {
                 if (!G.isLand(x, z)) return { ok: false, reason: "water, lava or unloaded ground under the site" };
                 if (!mineAt(x, z)) return { ok: false, reason: "outside the district" };
                 if (isReserved(x, z, avoid)) return { ok: false, reason: "wall, gate, stair or road in the way" };
-                if (lotCols.has(`${String(x)},${String(z)}`)) return { ok: false, reason: "occupied by another lot" };
+                if (isReserved(x, z, F_LOT | F_APPR)) return { ok: false, reason: "occupied by another lot" };
             }
         }
         for (const other of placedRects) {
@@ -1629,7 +1748,7 @@ export function planDistrictSite(plan, index, field, options = {}) {
             if (surfY[i] !== NOT_SURF) {
                 return { ok: true, lane: { frontage: [x, z], approach, fy: /** @type {number} */ (surfY[i]) } };
             }
-            if (isReserved(x, z, F_WALL | F_GATE | F_STAIR) || lotCols.has(`${String(x)},${String(z)}`)) return { ok: false, reason: "door lane blocked" };
+            if (isReserved(x, z, F_WALL | F_GATE | F_STAIR | F_LOT | F_APPR)) return { ok: false, reason: "door lane blocked" };
             approach.push([x, z]);
             x += dx;
             z += dz;
@@ -1640,12 +1759,13 @@ export function planDistrictSite(plan, index, field, options = {}) {
     /**
      * Pad + approach feasibility at one cut/fill/wall limit.
      * @param {any} geo @param {{ frontage: [number, number], approach: [number, number][], fy: number }} lane @param {number} limit
-     * @returns {{ ok: true, pad: any, profile: any, baseY: number, ys: number[] } | { ok: false, reason: string }}
+     * @returns {Generator<void, { ok: true, pad: any, profile: any, baseY: number, ys: number[] } | { ok: false, reason: string }, void>}
      */
-    function tryPadAt(geo, lane, limit) {
+    function* tryPadAt(geo, lane, limit) {
         const r = geo.rect;
         let lo = -Infinity;
         let hi = Infinity;
+        yield* pace(ops, (geo.w * geo.d) * 5 + 40);
         for (let z = r.z0; z <= r.z1; z += 1) {
             for (let x = r.x0; x <= r.x1; x += 1) {
                 const g = ground(x, z);
@@ -1655,21 +1775,23 @@ export function planDistrictSite(plan, index, field, options = {}) {
             }
         }
         if (lo > hi) return { ok: false, reason: `terrain is too uneven for the pad at cut/fill ${String(limit)}` };
+        yield* pace(ops, (geo.w + 2) * (geo.d + 2) * 10);
         const profile = makeRectProfile(r.x0 - 1, r.z0 - 1, r.x1 + 1, r.z1 + 1, sampler);
         /** @param {number | undefined} forced */
-        const attempt = (forced) => planPad(profile, r, { maxCut: limit, maxFill: limit, maxWall: limit, ...(forced === undefined ? {} : { baseY: forced }) });
+        const attempt = (forced) => planPadSteps(profile, r, { maxCut: limit, maxFill: limit, maxWall: limit, ...(forced === undefined ? {} : { baseY: forced }) }, ops);
         const m = lane.approach.length + 1;
         const reachable = (/** @type {number} */ baseY) => Math.abs(baseY - lane.fy) <= m;
-        let pad = attempt(undefined);
+        let pad = yield* attempt(undefined);
         if (pad.ok === true && !reachable(pad.baseY)) {
             // pull the pad toward street level, within what the terrain allows
             const want = Math.max(lo, Math.min(hi, lane.fy));
-            pad = attempt(want);
+            pad = yield* attempt(want);
         }
         if (pad.ok !== true) return { ok: false, reason: pad.problems[0] ?? "no pad" };
         if (!reachable(pad.baseY)) return { ok: false, reason: `the door sits ${String(Math.abs(pad.baseY - lane.fy))} blocks from the street level over ${String(m)} cells` };
         // approach profile pinned between the door floor and the street
         const path = lane.approach;
+        yield* pace(ops, path.length * 20 + 40);
         const ys = path.length === 0 ? [] : pinnedProfile(path.map(([x, z]) => ground(x, z) ?? 0), pad.baseY, lane.fy);
         if (ys === null) return { ok: false, reason: "no ramp from the door to the street" };
         return { ok: true, pad, profile, baseY: pad.baseY, ys };
@@ -1679,18 +1801,17 @@ export function planDistrictSite(plan, index, field, options = {}) {
      * @param {any} lot @param {any} bp @param {any} c @param {any} geo
      * @param {{ frontage: [number, number], approach: [number, number][], fy: number }} lane
      * @param {{ pad: any, profile: any, baseY: number, ys: number[] }} result @param {number} tierIndex
+     * @returns {Generator<void, void, void>}
      */
-    function commitLot(lot, bp, c, geo, lane, result, tierIndex) {
+    function* commitLot(lot, bp, c, geo, lane, result, tierIndex) {
         const r = geo.rect;
         const { pad, baseY } = result;
         placedRects.push({ kind: lot.kind, ...r });
         for (let z = r.z0 - 1; z <= r.z1 + 1; z += 1) {
-            for (let x = r.x0 - 1; x <= r.x1 + 1; x += 1) {
-                lotCols.add(`${String(x)},${String(z)}`);
-                reserve(x, z, F_LOT);
-            }
+            for (let x = r.x0 - 1; x <= r.x1 + 1; x += 1) reserve(x, z, F_LOT);
         }
-        for (const [x, z] of lane.approach) lotCols.add(`${String(x)},${String(z)}`);
+        for (const [x, z] of lane.approach) reserve(x, z, F_APPR);
+        yield* pace(ops, (geo.w + 2) * (geo.d + 2) * 4);
         placedLots += 1;
         if (c.moved > 0) relocated += 1;
         if (c.rot !== lot.rot) rotated += 1;
@@ -1698,8 +1819,21 @@ export function planDistrictSite(plan, index, field, options = {}) {
 
         // the pad must not wall off the door lane: drop its ops on the approach columns
         const laneKeys = new Set(lane.approach.map(([x, z]) => `${String(x)},${String(z)}`));
-        const padProduce = () => pad.ops.filter((/** @type {any} */ op) => !laneKeys.has(`${String(op.x)},${String(op.z)}`)).map((/** @type {any} */ op) => (op.kind === "top" ? { ...op, kind: "pad" } : op));
-        addElement("lots", `pad-${String(lot.kind)}`, `pad-${String(lot.id)}`, r, padProduce, {
+        const padDual = dual(function* padGen(o) {
+            /** @type {any[]} */
+            const out = [];
+            for (let s = 0; s < pad.ops.length; s += CHUNK) {
+                const stop = Math.min(pad.ops.length, s + CHUNK);
+                for (let k = s; k < stop; k += 1) {
+                    const op = pad.ops[k];
+                    if (laneKeys.has(`${String(op.x)},${String(op.z)}`)) continue;
+                    out.push(op.kind === "top" ? { ...op, kind: "pad" } : op);
+                }
+                yield* pace(o, (stop - s) * 10);
+            }
+            return out;
+        });
+        yield* addElement("lots", `pad-${String(lot.kind)}`, `pad-${String(lot.id)}`, r, padDual.produce, {
             blueprint: bp.id,
             baseY,
             lot: String(lot.id),
@@ -1709,10 +1843,10 @@ export function planDistrictSite(plan, index, field, options = {}) {
             retain: pad.counts.retain,
             padStairs: pad.counts.stair,
             padTier: tierIndex,
-        }, RANK.pad);
+        }, RANK.pad, { rawSteps: padDual.rawSteps });
 
-        const buildingProduce = () => buildingOps(lot, bp, c.rot, c.x, c.z, baseY, geo);
-        const buildingEl = addElement("lots", `building-${String(lot.kind)}`, `building-${String(lot.id)}`, r, buildingProduce, {
+        const buildingDual = dual((o) => buildingOpsSteps(lot, bp, c.rot, c.x, c.z, baseY, geo, o));
+        const buildingEl = yield* addElement("lots", `building-${String(lot.kind)}`, `building-${String(lot.id)}`, r, buildingDual.produce, {
             blueprint: bp.id,
             rot: c.rot,
             door: geo.door,
@@ -1722,16 +1856,17 @@ export function planDistrictSite(plan, index, field, options = {}) {
             lot: String(lot.id),
             baseY,
             moved: c.moved,
-        }, RANK.structure);
+        }, RANK.structure, { rawSteps: buildingDual.rawSteps });
         if (buildingEl === null) problems.push(`lot ${String(lot.id)} produced no building blocks`);
 
         // door-to-street path, explicitly laid
         if (lane.approach.length > 0) {
             const cells = lane.approach;
             const ys = result.ys;
+            yield* pace(ops, cells.length * 14 + 40);
             const produce = () => surfaceOps(cells, ys, G);
-            const ops = produce();
-            addElement("roads", "road-approach", `approach-${String(lot.id)}`, bboxOfOps(ops), produce, { district: index, length: cells.length, surfaceMinY: minOf(ys), surfaceMaxY: maxOf(ys), lot: String(lot.id), throughGate: false }, ROAD_RANK.approach);
+            const approachOps = produce();
+            yield* addElement("roads", "road-approach", `approach-${String(lot.id)}`, bboxOfOps(approachOps), produce, { district: index, length: cells.length, surfaceMinY: minOf(ys), surfaceMaxY: maxOf(ys), lot: String(lot.id), throughGate: false }, ROAD_RANK.approach, { initial: approachOps });
         }
         nodes.push({ x: geo.exit.x, z: geo.exit.z, y: baseY, tag: `exit-${String(lot.id)}` });
 
@@ -1742,30 +1877,10 @@ export function planDistrictSite(plan, index, field, options = {}) {
             for (let x = r.x0 - 1; x <= r.x1 + 1; x += 1) plot.push([x, z]);
         }
         for (const cell of lane.approach) plot.push(cell);
-        addElement("clear", "lot-plot", `clear-${String(lot.id)}`, r, clearCols(plot), { cells: plot.length }, RANK.clear);
-        resolve();
-        rebuildSurface();
-    }
-
-    /**
-     * Building blocks (canonical-ready) with a guaranteed door and no floating pieces.
-     * @param {any} lot @param {any} bp @param {number} rot @param {number} ox @param {number} oz
-     * @param {number} baseY @param {any} geo
-     */
-    function buildingOps(lot, bp, rot, ox, oz, baseY, geo) {
-        /** @type {any[]} */
-        const out = [];
-        const cells = expandBlueprint(bp, rot);
-        let hasDoor = false;
-        for (const cell of cells) {
-            if (typeof cell.name === "string" && cell.name.startsWith("dr_")) hasDoor = true;
-            out.push({ x: ox + cell.x, y: baseY + cell.y, z: oz + cell.z, id: cell.id, name: cell.name, kind: "building", ...(cell.states !== undefined ? { states: { ...cell.states } } : {}) });
-        }
-        if (!hasDoor && !OPEN_AIR_KINDS.has(lot.kind) && bp.entrances[0] !== undefined) {
-            out.push(...doorOps(geo, baseY, out));
-        }
-        out.push(...supportOps(out, baseY, ox, oz, geo.rect));
-        return out;
+        const plotDual = clearCols(plot);
+        yield* addElement("clear", "lot-plot", `clear-${String(lot.id)}`, r, plotDual.produce, { cells: plot.length }, RANK.clear, { rawSteps: plotDual.rawSteps });
+        yield* resolve();
+        yield* rebuildSurface();
     }
 
     // ---------------------------------------------------------------- 10. HQ plaza (lowest priority dressing)
@@ -1776,19 +1891,20 @@ export function planDistrictSite(plan, index, field, options = {}) {
         z1: zoneRegion.hq.z + SITE_RULES.hqRadius,
     };
     if (!conflicts(hqRect, "HQ plaza")) {
+        yield* pace(ops, 4000);
         const hqProfile = makeRectProfile(hqRect.x0 - 1, hqRect.z0 - 1, hqRect.x1 + 1, hqRect.z1 + 1, sampler);
-        const hqPad = planPad(hqProfile, hqRect, { maxCut: 6, maxFill: 6, maxWall: 6 });
+        const hqPad = yield* planPadSteps(hqProfile, hqRect, { maxCut: 6, maxFill: 6, maxWall: 6 }, ops);
         if (hqPad.ok === true) {
-            addElement("dressing", "hq-plaza", "hq-plaza", hqRect, () => hqPad.ops.map((op) => (op.kind === "top" ? { ...op, kind: "pad" } : op)), { at: zoneRegion.hq, baseY: hqPad.baseY }, RANK.dress);
+            yield* addElement("dressing", "hq-plaza", "hq-plaza", hqRect, () => hqPad.ops.map((op) => (op.kind === "top" ? { ...op, kind: "pad" } : op)), { at: zoneRegion.hq, baseY: hqPad.baseY }, RANK.dress);
         } else {
             notes.push(`HQ plaza refused: ${(/** @type {string[]} */ (hqPad.problems)).join("; ")}`);
         }
     }
 
     // ---------------------------------------------------------------- 11. final network check (buildings may sit on a road)
-    resolve();
-    rebuildSurface();
-    connectNetwork(40);
+    yield* resolve();
+    yield* rebuildSurface();
+    yield* connectNetwork(40);
 
     // vegetation on every surfaced road column
     {
@@ -1797,7 +1913,9 @@ export function planDistrictSite(plan, index, field, options = {}) {
         const seen = new Set();
         for (const el of executionOrder()) {
             if (el.stage !== "roads") continue;
-            for (const op of el.norm) {
+            for (let n = 0; n < el.norm.length; n += 1) {
+                if ((n & CHUNK_MASK) === CHUNK_MASK) yield* pace(ops, CHUNK * 10);
+                const op = el.norm[n];
                 const key = `${String(op.x)},${String(op.z)}`;
                 if (!seen.has(key)) {
                     seen.add(key);
@@ -1805,11 +1923,13 @@ export function planDistrictSite(plan, index, field, options = {}) {
                 }
             }
         }
+        yield* pace(ops, Math.min(23000, cols.length * Math.ceil(Math.log2(cols.length + 2)) * 3));
         cols.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
-        addElement("clear", "road-band", "clear-roads", { x0: minOf(cols.map((c) => c[0])), z0: minOf(cols.map((c) => c[1])), x1: maxOf(cols.map((c) => c[0])), z1: maxOf(cols.map((c) => c[1])) }, clearCols(cols), { cells: cols.length }, RANK.clear);
+        const roadClear = clearCols(cols);
+        yield* addElement("clear", "road-band", "clear-roads", { x0: minOf(cols.map((c) => c[0])), z0: minOf(cols.map((c) => c[1])), x1: maxOf(cols.map((c) => c[0])), z1: maxOf(cols.map((c) => c[1])) }, roadClear.produce, { cells: cols.length }, RANK.clear, { rawSteps: roadClear.rawSteps });
     }
-    const resolution = resolve();
-    rebuildSurface();
+    const resolution = yield* resolve();
+    yield* rebuildSurface();
 
     // ---------------------------------------------------------------- finalise elements
     /** @type {Record<string, any[]>} */
@@ -1819,21 +1939,27 @@ export function planDistrictSite(plan, index, field, options = {}) {
     for (const el of executionOrder()) {
         const keep = /** @type {Uint8Array} */ (el.keep);
         const drop = new Set();
-        for (let i = 0; i < keep.length; i += 1) {
-            if (keep[i] === 0) drop.add(i);
+        /** @type {any[]} */
+        const finalOps = [];
+        for (let s = 0; s < keep.length; s += CHUNK) {
+            const stop = Math.min(keep.length, s + CHUNK);
+            for (let i = s; i < stop; i += 1) {
+                if (keep[i] === 0) drop.add(i);
+                else finalOps.push(el.norm[i]);
+            }
+            yield* pace(ops, (stop - s) * 5);
         }
-        const finalOps = keptOps(el);
         el.drop = drop;
         const produce = el.produce;
         /** @type {() => any[]} */
         const regenerate = () => {
-            const ops = dedupeLast(normalizeOps(produce()));
-            return drop.size === 0 ? ops : ops.filter((_, i) => !drop.has(i));
+            const regenerated = dedupeLast(normalizeOps(produce()));
+            return drop.size === 0 ? regenerated : regenerated.filter((_, i) => !drop.has(i));
         };
         if (finalOps.length === 0) {
             continue;
         }
-        const spec = { id: el.id, stage: el.stage, kind: el.kind, bbox: el.bbox, total: finalOps.length, hash: hashOps(`${el.stage}:${el.id}`, finalOps), ...el.extra };
+        const spec = { id: el.id, stage: el.stage, kind: el.kind, bbox: el.bbox, total: finalOps.length, hash: yield* hashOpsSteps(`${el.stage}:${el.id}`, finalOps, ops), ...el.extra };
         lazy.set(`${el.stage}:${el.id}`, regenerate);
         /** @type {any[]} */ (records[el.stage]).push(spec);
     }
@@ -1859,7 +1985,7 @@ export function planDistrictSite(plan, index, field, options = {}) {
     const totalOps = Object.values(counts).reduce((sum, value) => sum + Number(value), 0);
     const lotsOut = /** @type {any[]} */ (records["lots"]);
     const placedBuildings = lotsOut.filter((element) => String(element.id).startsWith("building-"));
-    const { sizes } = components();
+    const { sizes } = yield* components();
     const bigComponents = sizes.slice(1).filter((n) => n >= 3).length;
 
     /** @type {Record<string, any>} */
@@ -1934,21 +2060,155 @@ export function planDistrictSite(plan, index, field, options = {}) {
         notes.push(`walkable network: ${what} could not be joined to the main network`);
     }
 
+    yield* pace(ops, 4000);
     const serialised = JSON.stringify({ ...record, notes: undefined, problems: undefined });
-    const recordBytes = utf8Length(serialised);
+    yield* pace(ops, Math.min(23000, serialised.length >> 3));
+    const recordBytes = yield* utf8LengthSteps(serialised, ops);
     if (recordBytes > SITE_RULES.maxRecordBytes) {
         problems.push(`the district record is ${String(recordBytes)} bytes, above the ${String(SITE_RULES.maxRecordBytes)} budget`);
         return { ok: false, problems, notes, record: null };
     }
     record["recordBytes"] = recordBytes;
-    record["checksum"] = fnv1a(JSON.stringify({ ...record, checksum: undefined }));
+    const checksumText = JSON.stringify({ ...record, checksum: undefined });
+    yield* pace(ops, Math.min(23000, checksumText.length >> 3));
+    record["checksum"] = yield* fnvSteps(checksumText, ops);
 
     LAZY_OPS.set(record, lazy);
 
     if (typeof options.validate === "function") {
         for (const problem of options.validate(record)) problems.push(problem);
     }
+    markYield(ops);
     return { ok: problems.length === 0, problems, notes, record };
+}
+
+/**
+ * Synchronous driver of planDistrictSiteSteps (one implementation).
+ *
+ * @param {any} plan a CivPlan from civ/masterplan.js
+ * @param {number} index district index (1 = Hearthgate)
+ * @param {any} field height field exposing at(x, z) -> { g, k, tree }
+ * @param {Parameters<typeof planDistrictSiteSteps>[3]} [options]
+ */
+export function planDistrictSite(plan, index, field, options = {}) {
+    return runSync(planDistrictSiteSteps(plan, index, field, options));
+}
+
+// ---------------------------------------------------------------------------------------------
+// cooperative building blocks used by the planner
+
+/**
+ * `planPad` of civ/foundations.js as a cooperative generator: the same maths and the same output
+ * (a test compares them on real lots), with the heavy loops charged to `ops`.
+ *
+ * @param {import("./foundations.js").Profile} profile @param {{ x0: number, z0: number, x1: number, z1: number }} rect
+ * @param {{ maxCut?: number, maxFill?: number, maxWall?: number, baseY?: number }} limits
+ * @param {Ops} ops
+ * @returns {Generator<void, ReturnType<typeof planPad>, void>}
+ */
+export function* planPadSteps(profile, rect, limits, ops) {
+    const maxCut = limits.maxCut ?? 4;
+    const maxFill = limits.maxFill ?? 4;
+    const maxWall = limits.maxWall ?? 4;
+    const touched = { x0: rect.x0 - 1, z0: rect.z0 - 1, x1: rect.x1 + 1, z1: rect.z1 + 1 };
+    /** @param {string} problem */
+    const fail = (problem) => ({ ok: false, baseY: 0, ops: [], counts: { cut: 0, fill: 0, top: 0, retain: 0, stair: 0 }, problems: [problem], touched });
+    if (![rect.x0, rect.z0, rect.x1, rect.z1].every(Number.isInteger) || rect.x1 < rect.x0 || rect.z1 < rect.z0) return fail("pad rectangle is invalid");
+    /** @type {{ x: number, z: number, g: number }[]} */
+    const inner = [];
+    /** @type {{ x: number, z: number, g: number }[]} */
+    const apron = [];
+    for (let z = touched.z0; z <= touched.z1; z += 1) {
+        yield* pace(ops, (touched.x1 - touched.x0 + 1) * 10);
+        for (let x = touched.x0; x <= touched.x1; x += 1) {
+            const p = profileAt(profile, x, z);
+            if (p === null) return fail(`ground profile does not cover (${String(x)}, ${String(z)}) (pad + 1 block apron)`);
+            if (p.hollow) return fail(`hollow ground at (${String(x)}, ${String(z)})`);
+            if (p.water !== undefined) return fail(`water at (${String(x)}, ${String(z)})`);
+            const isInner = x >= rect.x0 && x <= rect.x1 && z >= rect.z0 && z <= rect.z1;
+            (isInner ? inner : apron).push({ x, z, g: p.g });
+        }
+    }
+    const gs = inner.map((c) => c.g);
+    const lo = Math.max(...gs) - maxCut;
+    const hi = Math.min(...gs) + maxFill;
+    if (limits.baseY === undefined && lo > hi) return fail(`terrain is too uneven for the pad: ground y=${String(Math.min(...gs))}..${String(Math.max(...gs))} exceeds cut ${String(maxCut)} / fill ${String(maxFill)}`);
+    yield* pace(ops, Math.min(23000, gs.length * Math.ceil(Math.log2(gs.length + 2)) * 4));
+    const sorted = [...gs].sort((a, b) => a - b);
+    const median = /** @type {number} */ (sorted[Math.floor(sorted.length / 2)]);
+    const range = limits.baseY !== undefined ? [limits.baseY] : Array.from({ length: hi - lo + 1 }, (_, i) => lo + i);
+    let best = -1;
+    let bestCost = Infinity;
+    for (const y of range) {
+        yield* pace(ops, inner.length * 3 + apron.length * 5 + 20);
+        if (inner.some((c) => c.g - y > maxCut || y - c.g > maxFill)) continue;
+        let cost = 0;
+        for (const c of inner) cost += Math.abs(c.g - y);
+        let wallOk = true;
+        for (const c of apron) {
+            const d = Math.abs(c.g - y);
+            if (d >= 2) {
+                if (d > maxWall) wallOk = false;
+                cost += d;
+            }
+        }
+        if (!wallOk) continue;
+        if (cost < bestCost || (cost === bestCost && Math.abs(y - median) < Math.abs(best - median))) {
+            best = y;
+            bestCost = cost;
+        }
+    }
+    if (bestCost === Infinity) return fail(`no pad height satisfies cut <= ${String(maxCut)}, fill <= ${String(maxFill)} and retaining walls <= ${String(maxWall)}`);
+    const baseY = best;
+
+    /** @type {any[]} */
+    const cuts = [];
+    /** @type {any[]} */
+    const fills = [];
+    /** @type {any[]} */
+    const retains = [];
+    /** @type {any[]} */
+    const tops = [];
+    /** @type {any[]} */
+    const stairs = [];
+    for (let s = 0; s < inner.length; s += CHUNK) {
+        const stop = Math.min(inner.length, s + CHUNK);
+        for (let k = s; k < stop; k += 1) {
+            const c = /** @type {{ x: number, z: number, g: number }} */ (inner[k]);
+            if (c.g > baseY) {
+                for (let y = c.g; y > baseY; y -= 1) cuts.push({ x: c.x, y, z: c.z, id: IDS.air, kind: "cut" });
+                tops.push({ x: c.x, y: baseY, z: c.z, id: IDS.grass, kind: "top" });
+            } else if (c.g < baseY) {
+                for (let y = c.g + 1; y < baseY; y += 1) fills.push({ x: c.x, y, z: c.z, id: IDS.dirt, kind: "fill" });
+                fills.push({ x: c.x, y: baseY, z: c.z, id: IDS.grass, kind: "fill" });
+            }
+        }
+        yield* pace(ops, (stop - s) * 14);
+    }
+    for (const c of apron) {
+        const diff = c.g - baseY;
+        const edgeX = c.x >= rect.x0 && c.x <= rect.x1;
+        const edgeZ = c.z >= rect.z0 && c.z <= rect.z1;
+        if (diff >= 2) {
+            for (let y = baseY + 1; y <= c.g; y += 1) retains.push({ x: c.x, y, z: c.z, id: IDS.retain, kind: "retain" });
+        } else if (diff <= -2) {
+            for (let y = c.g + 1; y <= baseY; y += 1) retains.push({ x: c.x, y, z: c.z, id: IDS.retain, kind: "retain" });
+        } else if ((edgeX || edgeZ) && Math.abs(diff) === 1) {
+            // direction pointing away from the pad
+            const away = edgeX ? (c.z < rect.z0 ? "north" : "south") : c.x < rect.x0 ? "west" : "east";
+            if (diff === 1) stairs.push({ x: c.x, y: c.g, z: c.z, id: IDS.stair, kind: "stair", dir: away });
+            else stairs.push({ x: c.x, y: baseY, z: c.z, id: IDS.stair, kind: "stair", dir: opposite(away) });
+        }
+    }
+    const total = cuts.length + fills.length + retains.length + tops.length + stairs.length;
+    yield* pace(ops, Math.min(23000, total * Math.ceil(Math.log2(total + 2)) * 3 + apron.length * 8));
+    cuts.sort((a, b) => b.y - a.y || a.x - b.x || a.z - b.z);
+    fills.sort((a, b) => a.y - b.y || a.x - b.x || a.z - b.z);
+    retains.sort((a, b) => a.y - b.y || a.x - b.x || a.z - b.z);
+    tops.sort((a, b) => a.x - b.x || a.z - b.z);
+    stairs.sort((a, b) => a.x - b.x || a.z - b.z);
+    const padOps = [...cuts, ...fills, ...retains, ...tops, ...stairs];
+    return { ok: true, baseY, ops: padOps, counts: { cut: cuts.length, fill: fills.length, top: tops.length, retain: retains.length, stair: stairs.length }, problems: [], touched };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -1957,7 +2217,7 @@ export function planDistrictSite(plan, index, field, options = {}) {
 /**
  * Surface ops along a cell list at the given levels (cut above, fill below, stair on every level change).
  *
- * @param {[number, number][]} cells @param {number[]} ys @param {ReturnType<typeof snapshotGround>} G
+ * @param {[number, number][]} cells @param {number[]} ys @param {Snapshot} G
  * @param {number} [startY] level of the surface the first cell continues from
  * @param {string} [startDir] direction of travel into the first cell
  */
@@ -1983,7 +2243,7 @@ function surfaceOps(cells, ys, G, startY = undefined, startDir = undefined) {
 
 /**
  * Flat surface at one level over a cell set; null when it would need more than 4 cut / 6 fill.
- * @param {[number, number][]} cells @param {number} y @param {ReturnType<typeof snapshotGround>} G
+ * @param {[number, number][]} cells @param {number} y @param {Snapshot} G
  */
 function surfaceOpsFlat(cells, y, G) {
     /** @type {any[]} */
@@ -2048,7 +2308,7 @@ function pinnedProfile(ground, startY, endY) {
  * Ops of an interior wall stair run (stair blocks rising one level per cell, supported below,
  * cut above where the ground stands higher).
  *
- * @param {[number, number, number][]} cells @param {string[]} dirs @param {ReturnType<typeof snapshotGround>} G
+ * @param {[number, number, number][]} cells @param {string[]} dirs @param {Snapshot} G
  */
 function stairOps(cells, dirs, G) {
     /** @type {any[]} */
@@ -2065,29 +2325,59 @@ function stairOps(cells, dirs, G) {
 }
 
 /**
- * A door (lower + upper) in the entrance cell of a building that came without one.
- * @param {any} geo @param {number} baseY @param {any[]} existing
+ * Building blocks (canonical-ready) with a guaranteed door and no floating pieces.
+ * @param {any} lot @param {any} bp @param {number} rot @param {number} ox @param {number} oz
+ * @param {number} baseY @param {any} geo @param {Ops} o
+ * @returns {Generator<void, any[], void>}
  */
-function doorOps(geo, baseY, existing) {
+function* buildingOpsSteps(lot, bp, rot, ox, oz, baseY, geo, o) {
+    /** @type {any[]} */
+    const out = [];
+    yield* pace(o, Math.min(23000, bp.size[0] * bp.size[1] * bp.size[2] * 3 + 200));
+    const cells = expandBlueprint(bp, rot);
+    let hasDoor = false;
+    for (let s = 0; s < cells.length; s += CHUNK) {
+        const stop = Math.min(cells.length, s + CHUNK);
+        for (let k = s; k < stop; k += 1) {
+            const cell = /** @type {any} */ (cells[k]);
+            if (typeof cell.name === "string" && cell.name.startsWith("dr_")) hasDoor = true;
+            out.push({ x: ox + cell.x, y: baseY + cell.y, z: oz + cell.z, id: cell.id, name: cell.name, kind: "building", ...(cell.states !== undefined ? { states: { ...cell.states } } : {}) });
+        }
+        yield* pace(o, (stop - s) * 6);
+    }
+    if (!hasDoor && !OPEN_AIR_KINDS.has(lot.kind) && bp.entrances[0] !== undefined) {
+        for (const door of doorOps(geo, baseY)) out.push(door);
+    }
+    const posts = yield* supportOpsSteps(out, baseY, geo.rect, o);
+    for (let k = 0; k < posts.length; k += 1) out.push(posts[k]);
+    return out;
+}
+
+/**
+ * A door (lower + upper) in the entrance cell of a building that came without one.
+ * @param {any} geo @param {number} baseY
+ */
+function doorOps(geo, baseY) {
     const dir = geo.facing;
     const lower = { x: geo.door.x, y: baseY + 1, z: geo.door.z, id: "minecraft:wooden_door", kind: "building", name: "door", states: encodeFacing({ kind: "door", dir, half: "lower" }) };
     const upper = { x: geo.door.x, y: baseY + 2, z: geo.door.z, id: "minecraft:wooden_door", kind: "building", name: "door", states: encodeFacing({ kind: "door", dir, half: "upper" }) };
-    // never leave a lintel block where the door's head goes: the door replaces whatever the blueprint put here
-    void existing;
     return [lower, upper];
 }
 
 /**
  * Posts under any building block that is not 6-connected to the pad (floating pieces).
- * @param {any[]} blocks @param {number} baseY @param {number} ox @param {number} oz
- * @param {{ x0: number, z0: number, x1: number, z1: number }} rect
+ * @param {any[]} blocks @param {number} baseY
+ * @param {{ x0: number, z0: number, x1: number, z1: number }} rect @param {Ops} o
+ * @returns {Generator<void, any[], void>}
  */
-function supportOps(blocks, baseY, ox, oz, rect) {
-    void ox;
-    void oz;
+function* supportOpsSteps(blocks, baseY, rect, o) {
     /** @type {Map<number, any>} */
     const at = new Map();
-    for (const op of blocks) at.set(k3(op), op);
+    for (let s = 0; s < blocks.length; s += CHUNK) {
+        const stop = Math.min(blocks.length, s + CHUNK);
+        for (let k = s; k < stop; k += 1) at.set(k3(blocks[k]), blocks[k]);
+        yield* pace(o, (stop - s) * 6);
+    }
     const solid = (/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ z) => {
         if (y <= baseY && x >= rect.x0 && x <= rect.x1 && z >= rect.z0 && z <= rect.z1) return true;
         return at.has(k3({ x, y, z }));
@@ -2102,8 +2392,11 @@ function supportOps(blocks, baseY, ox, oz, rect) {
             stack.push(op);
         }
     }
+    let popped = 0;
     while (stack.length > 0) {
         const c = stack.pop();
+        popped += 1;
+        if ((popped & 127) === 127) yield* pace(o, 128 * 40);
         for (const [dx, dy, dz] of /** @type {[number, number, number][]} */ ([[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]])) {
             const n = at.get(k3({ x: c.x + dx, y: c.y + dy, z: c.z + dz }));
             if (n !== undefined && !seen.has(k3(n))) {
@@ -2115,6 +2408,7 @@ function supportOps(blocks, baseY, ox, oz, rect) {
     /** @type {any[]} */
     const out = [];
     const floating = blocks.filter((op) => !seen.has(k3(op))).sort((a, b) => a.y - b.y || a.x - b.x || a.z - b.z);
+    yield* pace(o, Math.min(23000, floating.length * 12 + blocks.length * 2));
     for (const op of floating) {
         if (seen.has(k3(op))) continue;
         // drop a post straight down until something solid
@@ -2130,9 +2424,63 @@ function supportOps(blocks, baseY, ox, oz, rect) {
             seen.add(k3(p));
         }
         seen.add(k3(op));
-        out.push(...post);
+        for (const p of post) out.push(p);
     }
     return out;
+}
+
+/**
+ * @param {string} key @param {any[]} list @param {Ops} o
+ * @returns {Generator<void, string, void>}
+ */
+function* hashOpsSteps(key, list, o) {
+    let h = fnvFeed(0x811c9dc5, key);
+    for (let s = 0; s < list.length; s += 32) {
+        const stop = Math.min(list.length, s + 32);
+        let text = "";
+        for (let i = s; i < stop; i += 1) {
+            const op = list[i];
+            text += `${String(op.x)},${String(op.y)},${String(op.z)}|${String(op.id)}|${String(op.kind)}|${op.states === undefined ? "" : JSON.stringify(op.states)};`;
+        }
+        h = fnvFeed(h, text);
+        yield* pace(o, (stop - s) * 120);
+    }
+    return (h >>> 0).toString(16).padStart(8, "0");
+}
+
+/**
+ * fnv1a(text) in bounded chunks.
+ * @param {string} text @param {Ops} o
+ * @returns {Generator<void, string, void>}
+ */
+function* fnvSteps(text, o) {
+    let h = 0x811c9dc5;
+    for (let s = 0; s < text.length; s += 1024) {
+        h = fnvFeed(h, text.slice(s, s + 1024));
+        yield* pace(o, 1024 * 3);
+    }
+    return (h >>> 0).toString(16).padStart(8, "0");
+}
+
+/**
+ * utf8Length(text) in bounded chunks (slices never split a surrogate pair).
+ * @param {string} text @param {Ops} o
+ * @returns {Generator<void, number, void>}
+ */
+function* utf8LengthSteps(text, o) {
+    let total = 0;
+    let s = 0;
+    while (s < text.length) {
+        let stop = Math.min(text.length, s + 2048);
+        if (stop < text.length) {
+            const c = text.charCodeAt(stop - 1);
+            if (c >= 0xd800 && c <= 0xdbff) stop += 1;
+        }
+        total += utf8Length(text.slice(s, stop));
+        s = stop;
+        yield* pace(o, 2048 * 2);
+    }
+    return total;
 }
 
 /**
@@ -2141,7 +2489,8 @@ function supportOps(blocks, baseY, ox, oz, rect) {
  * fewest unvisited neighbours (so no cell is stranded), with a fixed tie-break.
  *
  * @param {any} grids zones.grids
- * @returns {[number, number][]}
+ * @returns {[number, number][][]} walks; a new walk starts wherever the contour is not connected, so no
+ *   polyline ever jumps across a gap (a straight line over a gap could leave the district)
  */
 function traceRing(grids) {
     if (grids === undefined || grids === null) return [];
@@ -2169,8 +2518,10 @@ function traceRing(grids) {
         return out;
     };
     const remaining = new Set(cells);
+    /** @type {[number, number][][]} */
+    const runs = [];
     /** @type {[number, number][]} */
-    const out = [];
+    let out = [];
     let current = Math.min(...cells);
     while (remaining.size > 0) {
         remaining.delete(current);
@@ -2190,6 +2541,11 @@ function traceRing(grids) {
                 }
             }
             if (best < 0) break;
+            const adjacent = bestD <= 2 && Math.abs((best % w) - cx) <= 1 && Math.abs(Math.floor(best / w) - cz) <= 1;
+            if (!adjacent) {
+                runs.push(out);
+                out = [];
+            }
             current = best;
             continue;
         }
@@ -2203,7 +2559,8 @@ function traceRing(grids) {
         });
         current = /** @type {number} */ (options[0]);
     }
-    return out;
+    runs.push(out);
+    return runs.filter((run) => run.length >= 2);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -2291,7 +2648,7 @@ export function siteJobSpecs(record) {
     for (const stage of STAGES) {
         specs[stage] = /** @type {any[]} */ (record?.[stage] ?? []).map((element) => ({
             total: element.total,
-            hash: element.hash,
+            hash: Number.parseInt(String(element.hash), 16),
             inputs: { id: element.id, kind: element.kind, bbox: element.bbox },
         }));
     }
@@ -2310,6 +2667,20 @@ export function siteJobSpecs(record) {
  * @returns {string[]}
  */
 export function siteContainmentProblems(plan, index, record) {
+    return runSync(siteContainmentProblemsSteps(plan, index, record, newOps()));
+}
+
+/**
+ * Cooperative form of siteContainmentProblems (one implementation): regenerates one element at a time and
+ * yields between elements.
+ *
+ * @param {any} plan
+ * @param {number} index
+ * @param {any} record
+ * @param {Ops} [ops]
+ * @returns {Generator<void, string[], void>}
+ */
+export function* siteContainmentProblemsSteps(plan, index, record, ops = newOps()) {
     const /** @type {string[]} */ out = [];
     const gateCells = new Set();
     for (const gate of /** @type {any[]} */ (record?.gates ?? [])) {
@@ -2327,6 +2698,7 @@ export function siteContainmentProblems(plan, index, record) {
             const element = list[i];
             if (BOUNDARY_KINDS.has(String(element.kind))) continue;
             const stray = [];
+            yield* pace(ops, Math.min(23000, Number(element.total) * 20 + 100));
             for (const op of siteOpsFor(record, stage, i)) {
                 if (!mine(plan, op.x, op.z, index)) stray.push(`${String(op.x)},${String(op.z)}`);
             }
@@ -2340,6 +2712,7 @@ export function siteContainmentProblems(plan, index, record) {
         const element = roads[i];
         const isLink = String(element.kind) === "road-link" || Number(element.district) !== index;
         const outside = [];
+        yield* pace(ops, Math.min(23000, Number(element.total) * 20 + 100));
         for (const op of siteOpsFor(record, "roads", i)) {
             if (!mine(plan, op.x, op.z, index) && !gateCells.has(`${String(op.x)},${String(op.z)}`)) outside.push(op);
         }

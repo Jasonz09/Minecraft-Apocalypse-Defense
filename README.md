@@ -122,7 +122,11 @@ powershell -NoProfile -Command "Get-ChildItem -Path $env:LOCALAPPDATA\Packages -
 
 ---
 
-## Physical district (new)
+## Enlarged Hearthgate (new, unverified in game)
+
+`civ:generate_plan` (read-only) and `civ:generate` plan a five-district irregular civilization and build the enlarged Hearthgate in a NEW world. See [docs/ENLARGED_HEARTHGATE.md](docs/ENLARGED_HEARTHGATE.md).
+
+## Physical district (49x49 prototype)
 
 `/scriptevent civ:district_generate district-1` surveys a flat empty site centred on you (dry run);
 add `confirm` to build the walled district. Also `civ:district_status|resume|abort`. See

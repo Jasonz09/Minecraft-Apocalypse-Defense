@@ -1,6 +1,7 @@
 import { PHYSICAL, PHYSICAL_EVENT_IDS, SCRIPT_EVENT_NAMESPACE } from "../config.js";
 import { districtById } from "../kingdom/state.js";
 import { system, world } from "@minecraft/server";
+import { abortCivJob, civAbortLines } from "../integration/civBuilder.js";
 import { activeKind, cancelActiveJob, finishJob, holdChunks, isBusy, releaseChunks, reserveJob, startBuild, startScan } from "../integration/districtBuilder.js";
 import { startScout, startTerrainScan } from "../integration/terrainScan.js";
 import { planDistrict, planHash } from "../structures/planner.js";
@@ -503,6 +504,12 @@ function handleStatus(kingdomStore, event) {
  * @param {ScriptEvent} event
  */
 function handleAbort(event) {
+    const civJob = abortCivJob();
+    if (civJob !== undefined) {
+        releaseChunks();
+        reply(civAbortLines(civJob, "civ:generate_resume"), event);
+        return;
+    }
     if (cancelActiveJob()) {
         releaseChunks();
         reply(["Physical job stopped. Placed blocks stay; run /scriptevent civ:district_resume to continue a build."], event);

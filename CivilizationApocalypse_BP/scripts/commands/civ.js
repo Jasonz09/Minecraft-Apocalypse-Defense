@@ -1,10 +1,12 @@
 import { system, world } from "@minecraft/server";
 import { CIV, CIV_EVENT_IDS, SCRIPT_EVENT_NAMESPACE } from "../config.js";
 import { createJobStore, progress } from "../civ/jobs.js";
+import { markYield, newOps } from "../civ/regions.js";
 import { siteGroundRegion } from "../civ/siteprofile.js";
-import { abortConstruction, describePlan, getSession, loadSavedRun, persistRun, planWorld, sessionStatus, startConstruction, PROTECT_MARGIN } from "../integration/civBuilder.js";
-import { releaseArea } from "../integration/civScan.js";
-import { activeKind, cancelActiveJob, finishJob, isBusy, reserveJob } from "../integration/districtBuilder.js";
+import { abortCivJob, civAbortLines, describePlan, loadSavedRunSteps, persistRun, planWorld, sessionStatus, startConstruction, PROTECT_MARGIN } from "../integration/civBuilder.js";
+import { registerBuiltGates } from "../integration/civGates.js";
+import { releaseArea, runJobAsync } from "../integration/civScan.js";
+import { activeKind, finishJob, isBusy, reserveJob } from "../integration/districtBuilder.js";
 import { districtById, findValidationProblems } from "../kingdom/state.js";
 import { formatErrorLines } from "../ui/report.js";
 import { parseArgs } from "./args.js";
@@ -30,38 +32,29 @@ import { reply } from "./reply.js";
 
 let registered = false;
 
+/** Safety notice shown by generate, plan and devgate (exact text is part of the contract). */
+export const CIV_SAFETY_WARNING = [
+    "Use only in a dedicated NEW test world.",
+    "Natural-looking player builds (dirt, stone, sandstone, sand, gravel, clay, snow, moss) cannot be told apart from terrain and WOULD be modified; planks, bricks, glass, chests, ores, farmland etc. are always protected.",
+];
+
 /** Half-extent of the 49 x 49 Hearthgate prototype footprint. */
 const PROTOTYPE_HALF = 24;
 
-/** Optional pure gate registration (agent X3). Can be injected; otherwise loaded dynamically if the module exists. */
-const hooks = {
-    /** @type {((kingdom: any, record: any, plan: any) => any) | undefined} */
-    registerPhysicalGates: undefined,
-    loaded: false,
-};
+/**
+ * Registers the built gates with the simulation and the gate adapter (integration/civGates.js, idempotent).
+ * Replaceable in tests only.
+ * @type {(store: KingdomStore, record: any, dimensionId: string) => { ok: boolean, reason: string | null, changes: any[], created: string[], links: any[] }}
+ */
+let gateRegistrar = registerBuiltGates;
 
-/** @param {((kingdom: any, record: any, plan: any) => any) | undefined} fn */
+/** @param {typeof gateRegistrar | undefined} fn test seam: undefined restores the real registrar */
 export function setGateLinker(fn) {
-    hooks.registerPhysicalGates = fn;
-    hooks.loaded = true;
+    gateRegistrar = fn ?? registerBuiltGates;
 }
 
-async function loadGateLinker() {
-    if (hooks.loaded) {
-        return hooks.registerPhysicalGates;
-    }
-    hooks.loaded = true;
-    try {
-        const spec = "../civ/gatelink.js";
-        const mod = await import(spec);
-        if (typeof mod.registerPhysicalGates === "function") {
-            hooks.registerPhysicalGates = mod.registerPhysicalGates;
-        }
-    } catch (_error) {
-        // the module (or dynamic import) is not available: gates simply stay unregistered
-    }
-    return hooks.registerPhysicalGates;
-}
+/** Operation meter of the most recent resume rebuild (tests assert no stretch exceeds the budget). */
+export let lastResumeOps = newOps();
 
 /**
  * @param {KingdomStore} kingdomStore
@@ -296,6 +289,7 @@ async function handleGenerate(kingdomStore, args, event, planOnly) {
     say(player, [
         `=== ${planOnly ? "Civilization plan (read-only)" : "Generating the civilization"} ===`,
         `Centre ${String(anchor.x)}, ${String(anchor.z)}; search radius ${String(options.radius)}; seed ${String(seed)}; ${String(exclusions.length)} protected footprint(s).`,
+        ...CIV_SAFETY_WARNING,
         planOnly ? "Nothing will be written." : "This one command authorises the whole build; progress is reported as it goes. Use civ:generate_abort to stop.",
     ]);
 
@@ -306,17 +300,17 @@ async function handleGenerate(kingdomStore, args, event, planOnly) {
     try {
         outcome = await planWorld({ token, dimension, anchor, radius: options.radius, seed, exclusions, say: sayHere });
     } catch (error) {
-        releaseArea();
+        releaseArea(token);
         finishJob(token);
         say(player, formatErrorLines("Planning failed - nothing was changed", [String(error)]));
         return;
     }
     if (token.cancelled) {
-        releaseArea();
+        releaseArea(token);
         return;
     }
     if (!outcome.ok) {
-        releaseArea();
+        releaseArea(token);
         finishJob(token);
         say(player, formatErrorLines(`Stopped at ${outcome.stage} - nothing was changed`, [...outcome.reasons, ...(outcome.stage === "site" && exclusions.length > 0 ? ["An existing district blocks the nearby ground: walk a few hundred blocks away or raise radius=."] : []), "No block was written."]));
         return;
@@ -326,10 +320,10 @@ async function handleGenerate(kingdomStore, args, event, planOnly) {
         `Site: window ${String(outcome.site.window.x0)},${String(outcome.site.window.z0)} to ${String(outcome.site.window.x1)},${String(outcome.site.window.z1)}, ${String(Math.round(outcome.site.distance))} blocks from you; district 1 centre ${String(summary.centre.x)}, ${String(summary.centre.z)}.`,
         `District areas ${summary.areas.join(" / ")} columns; compactness ${summary.compactness.map((c) => c.toFixed(2)).join(" / ")}; bbox fill ${summary.bboxFill.map((c) => c.toFixed(2)).join(" / ")}.`,
         `Walls ${String(summary.wallLength)} blocks, ${String(summary.gateCount)} gates, roads ${String(summary.roadLength)} blocks, ${String(summary.lots)} lots in district 1.`,
-        `Estimated ${String(summary.ops)} block operations in ${String(summary.slices)} slices, about ${String(summary.minutes)} minutes. Stored size ${String(summary.stored.bytes)} / ${String(summary.stored.limit)} bytes.`,
+        `Estimated ${String(summary.ops)} block operations in about ${String(summary.slices)} slices (survey + planning + build), estimated minutes ${String(summary.minutes)} at one slice per tick - an estimate until measured in Minecraft. Stored size ${String(summary.stored.bytes)} / ${String(summary.stored.limit)} bytes.`,
     ];
     if (planOnly) {
-        releaseArea();
+        releaseArea(token);
         finishJob(token);
         say(player, ["=== Plan is valid ===", ...planLines, `To build it: /scriptevent ${CIV_EVENT_IDS.generate}${options.radius === CIV.defaultSearchRadius ? "" : ` radius=${String(options.radius)}`} seed=${String(seed)}`, "Nothing was written."]);
         return;
@@ -338,14 +332,14 @@ async function handleGenerate(kingdomStore, args, event, planOnly) {
     // (f) persist everything BEFORE the first block
     const fresh = kingdomStore.load();
     if (!fresh.kingdom || !districtById(fresh.kingdom, "district-1")) {
-        releaseArea();
+        releaseArea(token);
         finishJob(token);
         say(player, formatErrorLines("Stopped - nothing was changed", ["The saved kingdom is no longer readable, so progress could not be recorded."]));
         return;
     }
     const persisted = persistRun(outcome);
     if (!persisted.ok || persisted.queue === undefined) {
-        releaseArea();
+        releaseArea(token);
         finishJob(token);
         say(player, formatErrorLines("Stopped - nothing was changed", [String(persisted.reason)]));
         return;
@@ -368,17 +362,13 @@ async function handleGenerate(kingdomStore, args, event, planOnly) {
     };
     const problems = civRecordProblems(civ);
     if (problems.length > 0 || !patchCiv(kingdomStore, civ)) {
-        releaseArea();
+        releaseArea(token);
         finishJob(token);
         say(player, formatErrorLines("Stopped - nothing was changed", problems.length > 0 ? problems : ["Could not record the build in the saved kingdom."]));
         return;
     }
-    const linker = await loadGateLinker();
-    if (token.cancelled) {
-        return;
-    }
     say(player, [...planLines, "Plan stored. Starting construction now."]);
-    beginConstruction(kingdomStore, player, token, dimension, outcome.plan, record, persisted.queue, linker, loaded.kingdom);
+    beginConstruction(kingdomStore, player, token, dimension, outcome.plan, record, persisted.queue, loaded.kingdom);
 }
 
 /**
@@ -389,31 +379,23 @@ async function handleGenerate(kingdomStore, args, event, planOnly) {
  * @param {any} plan
  * @param {any} record
  * @param {import("../civ/jobs.js").JobQueue} queue
- * @param {((kingdom: any, record: any, plan: any) => any) | undefined} linker
  * @param {any} kingdomForRects
  */
-function beginConstruction(kingdomStore, player, token, dimension, plan, record, queue, linker, kingdomForRects) {
+function beginConstruction(kingdomStore, player, token, dimension, plan, record, queue, kingdomForRects) {
     const region = siteGroundRegion(plan, 1);
-    let gatesRegistered = districtById(kingdomForRects, "district-1")?.civ?.gates === true;
+    let announced = false;
     const registerGates = () => {
-        if (gatesRegistered || linker === undefined) {
-            return;
-        }
-        const loaded = kingdomStore.load();
-        if (!loaded.kingdom) {
-            return;
-        }
         try {
-            const result = linker(loaded.kingdom, record, plan);
-            const problems = findValidationProblems(loaded.kingdom);
-            if (problems.length > 0) {
-                say(player, formatErrorLines("Gate registration skipped", problems.slice(0, 3)));
+            const result = gateRegistrar(kingdomStore, record, dimension.id);
+            if (!result.ok) {
+                say(player, formatErrorLines("Gate registration failed", [String(result.reason)]));
                 return;
             }
-            kingdomStore.save(loaded.kingdom);
-            gatesRegistered = true;
             patchCiv(kingdomStore, { gates: true });
-            say(player, [`Gates registered with the simulation (initially open)${result?.linked !== undefined ? `: ${String(result.linked)}` : ""}.`]);
+            if (!announced) {
+                announced = true;
+                say(player, [`Gates registered with the simulation (initially open): ${String(result.links.length)} gate(s), ${String(result.created.length)} adapter record(s) created.`]);
+            }
         } catch (error) {
             say(player, formatErrorLines("Gate registration failed", [String(error)]));
         }
@@ -498,19 +480,21 @@ async function handleResume(kingdomStore, event) {
     if (token.cancelled) {
         return;
     }
-    const restored = loadSavedRun(civ);
+    const resumeOps = newOps();
+    lastResumeOps = resumeOps;
+    const restored = await runJobAsync(token, loadSavedRunSteps(civ, resumeOps));
+    if (token.cancelled || restored === undefined) {
+        return;
+    }
+    markYield(resumeOps);
     if (!restored.ok) {
         finishJob(token);
         say(player, formatErrorLines(title, [...restored.reasons, "Nothing was changed."]));
         return;
     }
-    const linker = await loadGateLinker();
-    if (token.cancelled) {
-        return;
-    }
     patchCiv(kingdomStore, { status: "building" });
     say(player, [`Verified plan ${String(civ.checksum)}; ${String(restored.recovered)} interrupted element(s) recovered. Continuing.`]);
-    beginConstruction(kingdomStore, player, token, player.dimension, restored.plan, restored.record, restored.queue, linker, loaded.kingdom);
+    beginConstruction(kingdomStore, player, token, player.dimension, restored.plan, restored.record, restored.queue, loaded.kingdom);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -555,20 +539,17 @@ function handleStatus(kingdomStore, event) {
  * @param {ScriptEvent} event
  */
 function handleAbort(kingdomStore, event) {
+    void kingdomStore;
     if (!isBusy()) {
         reply(["No civilization job is running."], event);
         return;
     }
-    const stopped = abortConstruction();
-    const kind = activeKind();
-    cancelActiveJob();
-    releaseArea();
-    if (stopped !== undefined) {
-        patchCiv(kingdomStore, { status: "paused" });
-        reply([`Civilization build stopped${stopped.saved ? "" : " (progress could not be saved; the last saved point will be used)"}. Placed blocks stay; ${String(stopped.done)} of ${String(stopped.total)} operations are done.`, `Continue with /scriptevent ${CIV_EVENT_IDS.resume}.`], event);
-    } else if (getSession() === undefined) {
-        reply([`Stopped the ${String(kind)} job. Nothing was written.`], event);
+    const result = abortCivJob();
+    if (result === undefined) {
+        reply([`A ${String(activeKind())} job (not a civilization job) is running; civ:generate_abort only stops civilization jobs. Use /scriptevent civ:district_abort for that one.`], event);
+        return;
     }
+    reply(civAbortLines(result, CIV_EVENT_IDS.resume), event);
 }
 
 /**
@@ -579,8 +560,8 @@ function handleDevgate(args, event) {
     const value = args[0]?.toLowerCase();
     if (value === "on" || value === "off") {
         world.setDynamicProperty(CIV.devGateKey, value === "on");
-        reply([`Development gate ${value}. Districts 2-5 are not enabled in this build either way.`], event);
+        reply([`Development gate ${value}. Districts 2-5 are not enabled in this build either way.`, ...CIV_SAFETY_WARNING], event);
         return;
     }
-    reply([`Development gate is ${devGateOn() ? "on" : "off"}. Usage: /scriptevent ${CIV_EVENT_IDS.devgate} on|off`], event);
+    reply([`Development gate is ${devGateOn() ? "on" : "off"}. Usage: /scriptevent ${CIV_EVENT_IDS.devgate} on|off`, ...CIV_SAFETY_WARNING], event);
 }

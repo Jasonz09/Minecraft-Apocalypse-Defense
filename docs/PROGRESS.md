@@ -114,3 +114,7 @@ and a UI. Explicitly out of this milestone per the brief.
 
 ## Physical district prototype
 First physical district (district-1) implemented and tested offline; see MINECRAFT_INTEGRATION.md. Next: in-game verification, then district 2-5 layouts, NPC/entity bridge.
+
+
+## Civilization layer (current)
+Master planner, validator, terrain/site selection, layout, gates + walls, persistence/jobs, enlarged Hearthgate construction planner and runtime (`civ:generate`) are implemented and tested offline (637 tests at last full run; manifest 600 checks). Nothing in this layer has run in Minecraft. See ENLARGED_HEARTHGATE.md, CIVILIZATION_PLAN_DESIGN.md, ROADMAP.md, LEDGER_PLAN.md.

@@ -11,7 +11,7 @@ npm install      # typescript + @minecraft/server@2.7.0 types + @minecraft/commo
 npm run verify   # runs every gate, reports each one even if an earlier one fails
 ```
 
-Current results are recorded in `docs/MINECRAFT_INTEGRATION.md`.
+Current results: see `docs/PROGRESS.md` and `docs/ENLARGED_HEARTHGATE.md` (counts change as tests are added; run `npm run verify`). The older counts quoted elsewhere in this file are historical.
 
 | Command | Gate | What it actually proves |
 | --- | --- | --- |

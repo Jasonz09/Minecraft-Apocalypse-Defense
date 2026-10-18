@@ -992,7 +992,7 @@ test("the patrol ring, every gate throat, every wall stair and every door form O
         assert.deepEqual([...stray.entries()].slice(0, 5), [], `${spec.name}: walkable cells outside the main network`);
         assert.ok(net.sizes[net.main] > 3000, `${spec.name}: main network is only ${String(net.sizes[net.main])} cells`);
         // the ring reaches the arterials
-        const ring = [...net.owner].filter(([, id]) => id === "patrol-lane");
+        const ring = [...net.owner].filter(([, id]) => /^patrol-lane/.test(String(id)));
         assert.ok(ring.length > 300, `${spec.name}: patrol ring is only ${String(ring.length)} cells`);
         assert.ok(ring.every(([k]) => net.comp.get(k) === net.main));
         const arterials = new Set(c.record.roads.filter((r) => r.kind === "road-arterial").map((r) => r.id));
@@ -1301,4 +1301,260 @@ test("op totals per stage on the reference terrain (documented before/after of t
     assert.ok(st.byStage.gates < 4 * 1200, "gatehouses are no longer 70-block towers");
     assert.ok(st.byStage.gates > 4 * 150);
     assert.ok(st.totalOps < 96033);
+});
+
+/* =================================================================================================
+ * Round 3: cooperative (generator) planning, job-spec hashes, world pipeline, containment sweep.
+ * ================================================================================================= */
+
+const RG = await load("civ", "regions.js");
+const VAL = await load("civ", "validate.js");
+const VSTEPS = await load("civ", "validatesteps.js");
+const ZONING = await load("civ", "zoning.js");
+const ZSTEPS = await load("civ", "zonesteps.js");
+const LOTS = await load("civ", "lots.js");
+const LSTEPS = await load("civ", "lotsteps.js");
+const FOUND = await load("civ", "foundations.js");
+const WORLD = await load("civ", "worldplan.js");
+const MAX_STRETCH = 25000;
+
+/** Drive a cooperative generator to the end; report yields. */
+function drive(gen) {
+    let yields = 0;
+    for (;;) {
+        const r = gen.next();
+        if (r.done) return { value: r.value, yields };
+        yields += 1;
+    }
+}
+
+test("siteJobSpecs hashes are non-negative integers: civ/jobs.js createQueue stores finite hashes that change with the ops", () => {
+    const specs = D.siteJobSpecs(RECORD);
+    for (const stage of Object.keys(specs)) {
+        for (const spec of specs[stage]) {
+            assert.ok(Number.isInteger(spec.hash) && spec.hash >= 0, `${stage}: hash ${String(spec.hash)}`);
+        }
+    }
+    const queue = createQueue(specs, { planHash: String(RECORD.checksum) });
+    assert.ok(queue.hash.length > 100);
+    assert.ok(queue.hash.every((h) => Number.isFinite(h) && Number.isInteger(h) && h >= 0 && h < 36 ** 6), "createQueue stored a non-finite hash");
+    // change the ops of the walls (taller wall): element hashes must move
+    const taller = D.planDistrictSite(PLAN, 1, field, { seed: SEED, wallHeight: 8 });
+    assert.ok(taller.record !== null);
+    const queue2 = createQueue(D.siteJobSpecs(taller.record), { planHash: String(taller.record.checksum) });
+    let changed = 0;
+    const byId = new Map();
+    RECORD.walls.forEach((w, i) => byId.set(w.id, queue.hash[queue.stages.find((s) => s.name === "walls").start + i]));
+    taller.record.walls.forEach((w, i) => {
+        if (queue2.hash[queue2.stages.find((s) => s.name === "walls").start + i] !== byId.get(w.id)) changed += 1;
+    });
+    assert.ok(changed >= 3, `only ${String(changed)} wall hashes changed`);
+    // the fold itself: a hex string would have produced NaN
+    assert.ok(Number.isNaN("9a975bb9" % (36 ** 6)), "documents the original defect");
+});
+
+test("planDistrictSiteSteps yields at least every 25,000 operations and equals the synchronous driver", () => {
+    for (const spec of [CASES[0], CASES[1], CASES[5]]) {
+        const c = buildCase(spec);
+        const ops = RG.newOps();
+        const { value, yields } = drive(D.planDistrictSiteSteps(c.plan, 1, c.field, { seed: spec.seed, ops }));
+        assert.equal(value.ok, true, spec.name);
+        assert.equal(value.record.checksum, c.record.checksum, `${spec.name}: checksum differs from the synchronous form`);
+        assert.ok(yields > 500, `${spec.name}: only ${String(yields)} yields`);
+        assert.ok(ops.maxRun <= MAX_STRETCH, `${spec.name}: ${String(ops.maxRun)} operations between two yields`);
+        assert.ok(ops.maxRun > 1000);
+    }
+});
+
+test("abandoning a cooperative plan midway has no side effects", () => {
+    const c = buildCase(CASES[0]);
+    const planJSON = JSON.stringify(c.plan);
+    const options = { seed: c.seed, excludeFootprints: [{ x0: 1, z0: 1, x1: 2, z1: 2 }] };
+    const optionsJSON = JSON.stringify(options);
+    const reads = { n: 0 };
+    const spy = { bounds: c.field.bounds, at: (x, z) => { reads.n += 1; return c.field.at(x, z); } };
+    const gen = D.planDistrictSiteSteps(c.plan, 1, spy, options);
+    for (let i = 0; i < 700; i += 1) assert.equal(gen.next().done, false);
+    gen.return(undefined);
+    assert.equal(JSON.stringify(c.plan), planJSON, "the plan was modified");
+    assert.equal(JSON.stringify(options), optionsJSON, "the options were modified");
+    const again = D.planDistrictSite(c.plan, 1, c.field, { seed: c.seed });
+    assert.equal(again.record.checksum, c.record.checksum, "an abandoned run changed a later run");
+    const zonesGen = ZSTEPS.zoneDistrictSteps(ZONING.regionFromPlan(c.plan, 1), c.plan.roads.filter((r) => r.district === 1), { seed: c.seed }, RG.newOps());
+    for (let i = 0; i < 50; i += 1) zonesGen.next();
+    zonesGen.return(undefined);
+    assert.equal(JSON.stringify(c.plan), planJSON);
+});
+
+test("cooperative zoning, lots and pads equal their synchronous originals", () => {
+    for (const spec of [CASES[0], CASES[5]]) {
+        const c = buildCase(spec);
+        const region = ZONING.regionFromPlan(c.plan, 1);
+        const walls = c.plan.walls.filter((w) => w.between.includes(1));
+        const gates = c.plan.gates.filter((g) => walls.some((w) => w.id === g.wallId));
+        const roads = c.plan.roads.filter((r) => r.district === 1);
+        const options = { seed: spec.seed, walls, gates, streetWidth: 3 };
+        const strip = (z) => ({ ...z, zoneAt: undefined, zoneById: undefined, grids: undefined, elig: Array.from(z.elig), gateMask: Array.from(z.gateMask), G: { ins: Array.from(z.grids.ins), wall: Array.from(z.grids.wall), road: Array.from(z.grids.road), dist: Array.from(z.grids.dist) } });
+        const zones = ZONING.zoneDistrict(region, roads, options);
+        const zOps = RG.newOps();
+        const zonesSteps = drive(ZSTEPS.zoneDistrictSteps(region, roads, options, zOps)).value;
+        assert.deepEqual(strip(zonesSteps), strip(zones), `${spec.name}: zoning differs`);
+        assert.ok(zOps.maxRun <= MAX_STRETCH, `zoning stretch ${String(zOps.maxRun)}`);
+        const lots = LOTS.makeLots(region, zones, roads, { seed: spec.seed, attempts: 4 });
+        const lOps = RG.newOps();
+        const lotsSteps = drive(LSTEPS.makeLotsSteps(region, zones, roads, { seed: spec.seed, attempts: 4 }, lOps)).value;
+        const flat = (x) => ({ ...x, roadMask: Array.from(x.roadMask), laneMask: Array.from(x.laneMask) });
+        assert.deepEqual(flat(lotsSteps), flat(lots), `${spec.name}: lots differ`);
+        assert.ok(lOps.maxRun <= MAX_STRETCH, `lots stretch ${String(lOps.maxRun)}`);
+    }
+    // pads: the cooperative planPad gives the same answer as foundations.planPad on real lots and tight limits
+    const c = buildCase(CASES[0]);
+    const sampler = (x, z) => {
+        const cell = c.field.at(x, z);
+        return { g: Math.floor(cell.g), hollow: cell.k === "unloaded", ...(cell.k === "water" ? { water: Math.floor(cell.g) + 1 } : {}) };
+    };
+    let compared = 0;
+    for (let n = 0; n < 40; n += 1) {
+        const x0 = -60 + n * 3;
+        const z0 = -150 + n * 4;
+        const rect = { x0, z0, x1: x0 + 6 + (n % 5) * 4, z1: z0 + 6 + (n % 3) * 5 };
+        const profile = FOUND.makeProfile(rect.x0 - 1, rect.z0 - 1, rect.x1 - rect.x0 + 3, rect.z1 - rect.z0 + 3, sampler);
+        for (const limit of [3, 6]) {
+            const limits = { maxCut: limit, maxFill: limit, maxWall: limit };
+            const plain = FOUND.planPad(profile, rect, limits);
+            const ops = RG.newOps();
+            const steps = drive(D.planPadSteps(profile, rect, limits, ops)).value;
+            assert.deepEqual(steps, plain, `pad ${String(n)} limit ${String(limit)}`);
+            compared += 1;
+        }
+    }
+    assert.equal(compared, 80);
+});
+
+test("validatePlanSteps reproduces validatePlan exactly on valid and broken plans, in bounded stretches", () => {
+    const variants = [];
+    for (const spec of [CASES[0], CASES[1], CASES[5]]) variants.push([spec.name, buildCase(spec).plan]);
+    variants.push(["fixture 7", fixture.validFullPlan(7)]);
+    const base = () => structuredClone(PLAN);
+    let p = base(); p.gates.pop(); variants.push(["gate removed", p]);
+    p = base(); p.walls[0].path = p.walls[0].path.slice(0, 3); variants.push(["wall truncated", p]);
+    p = base(); p.districts[1].area += 500; p.stats.totalArea += 3; variants.push(["bad area", p]);
+    p = base(); p.routes.evac = []; variants.push(["no evac", p]);
+    p = base(); p.labels = [[1, 5]]; variants.push(["bad labels", p]);
+    p = base(); p.gates[0].at = { x: p.gates[0].at.x + 3, z: p.gates[0].at.z + 3 }; variants.push(["gate off wall", p]);
+    p = base(); p.anchor = { x: 1.5, z: 2 }; variants.push(["bad anchor", p]);
+    variants.push(["not an object", null]);
+    assert.ok(variants.length >= 12);
+    let invalid = 0;
+    for (const [name, plan] of variants) {
+        const sync = VAL.validatePlan(plan);
+        const ops = RG.newOps();
+        const { value, yields } = drive(VSTEPS.validatePlanSteps(plan, { ops }));
+        assert.deepEqual(value, sync, `${name}: cooperative validation differs`);
+        assert.ok(ops.maxRun <= MAX_STRETCH, `${name}: ${String(ops.maxRun)} operations between yields`);
+        if (!sync.ok) invalid += 1;
+        else assert.ok(yields > 100, `${name}: validated in ${String(yields)} slices`);
+    }
+    assert.ok(invalid >= 6, "the broken variants must really be rejected");
+    // abandoning leaves the plan untouched
+    const json = JSON.stringify(PLAN);
+    const gen = VSTEPS.validatePlanSteps(PLAN);
+    for (let i = 0; i < 80; i += 1) gen.next();
+    gen.return(undefined);
+    assert.equal(JSON.stringify(PLAN), json);
+});
+
+test("planWorldSteps chains master plan, validation, Hearthgate and ground in bounded stretches", () => {
+    for (const spec of [CASES[0], CASES[5]]) {
+        const c = buildCase(spec);
+        const ops = RG.newOps();
+        const { value: world, yields } = drive(WORLD.planWorldSteps(c.field, { seed: spec.seed, ops }));
+        assert.equal(world.ok, true, `${spec.name}: ${world.problems.slice(0, 3).join(" | ")}`);
+        assert.deepEqual(world.problems, []);
+        assert.ok(ops.maxRun <= MAX_STRETCH, `${spec.name}: ${String(ops.maxRun)} operations between yields`);
+        assert.ok(yields > 2000);
+        assert.equal(VAL.validatePlan(world.plan).ok, true, "the returned plan validates");
+        assert.equal(world.plan.seed, spec.seed);
+        assert.ok(world.record.checksum && world.ground.hash);
+        // the pair (plan, ground) is exactly what a restart needs
+        const reborn = D.rehydrateSite(JSON.parse(JSON.stringify(world.plan)), 1, JSON.parse(JSON.stringify(world.ground)), D.siteOptionsOf(world.record));
+        assert.equal(reborn.record.checksum, world.record.checksum);
+        // identical to the synchronous driver and to the separate steps
+        const sync = WORLD.planWorld(c.field, { seed: spec.seed });
+        assert.equal(sync.record.checksum, world.record.checksum);
+        assert.equal(world.record.checksum, c.record.checksum, "the world pipeline differs from planning the pieces one by one");
+    }
+    // a field that cannot hold a civilization fails with reasons, not an exception
+    const tiny = makeField(5, { size: 120 });
+    const failed = WORLD.planWorld(tiny, { seed: 5, maxWorldAttempts: 1 });
+    assert.equal(failed.ok, false);
+    assert.equal(failed.plan, null);
+    assert.ok(failed.problems.length >= 1);
+});
+
+test("rehydrateSiteSteps equals rehydrateSite and yields in bounded stretches (rough and flat)", () => {
+    for (const spec of [CASES[0], CASES[1], CASES[5]]) {
+        const c = buildCase(spec);
+        const ground = PROFILE.exportSiteGround(c.field, PROFILE.siteGroundRegion(c.plan, 1));
+        const ops = RG.newOps();
+        const { value, yields } = drive(D.rehydrateSiteSteps(JSON.parse(JSON.stringify(c.plan)), 1, JSON.parse(JSON.stringify(ground)), { ...D.siteOptionsOf(c.record), expectChecksum: c.record.checksum, ops }));
+        assert.equal(value.ok, true, `${spec.name}: ${value.problems.join(" | ")}`);
+        assert.equal(value.record.checksum, c.record.checksum);
+        assert.ok(ops.maxRun <= MAX_STRETCH, `${spec.name}: ${String(ops.maxRun)} operations between yields`);
+        assert.ok(yields > 500);
+    }
+});
+
+test("ground export and import are cooperative and bounded", () => {
+    const c = buildCase(CASES[0]);
+    const region = PROFILE.siteGroundRegion(c.plan, 1);
+    const ops = RG.newOps();
+    const json = drive(PROFILE.exportSiteGroundSteps(c.field, region, ops)).value;
+    assert.deepEqual(json, PROFILE.exportSiteGround(c.field, region));
+    assert.ok(ops.maxRun <= MAX_STRETCH);
+    const iops = RG.newOps();
+    const back = drive(PROFILE.importSiteGroundSteps(json, iops)).value;
+    assert.equal(back.sameAs(c.field), true);
+    assert.ok(iops.maxRun <= MAX_STRETCH);
+});
+
+/* ------------------------------------------------------------------ the containment sweep */
+
+test("sweep: master plans that validate produce an ok, contained site (sample of 24 seeds over five terrains)", async () => {
+    const kinds = [
+        (seed) => makeField(seed, { relief: 18, hills: 60 }),
+        (seed) => makeField(seed, { relief: 10, hills: 40 }),
+        (seed) => makeField(seed, { relief: 2, hills: 60 }),
+        (seed) => makeField(seed, { relief: 6, hills: 60, river: { z: ((seed * 37) % 120) - 60, width: 9, wiggle: 25 } }),
+        (seed) => makeField(seed, { relief: 8, hills: 50, lakes: [{ x: ((seed * 53) % 100) - 50, z: ((seed * 29) % 100) - 50, r: 30 }, { x: 70 - ((seed * 17) % 140), z: 60 - ((seed * 11) % 120), r: 22 }] }),
+    ];
+    let validated = 0;
+    let good = 0;
+    const failures = [];
+    for (let n = 0; n < 24; n += 1) {
+        const seed = 101 + n * 3;
+        const f = kinds[n % kinds.length](seed);
+        const planned2 = await M.planCivilizationAsync(f, { seed });
+        if (!planned2.ok) continue;
+        validated += 1;
+        const s = D.planDistrictSite(planned2.plan, 1, f, { seed });
+        const contained = s.record === null ? ["no record"] : D.siteContainmentProblems(planned2.plan, 1, s.record);
+        if (s.ok && contained.length === 0) good += 1;
+        else failures.push(`seed ${String(seed)}: ${[...s.problems, ...contained].slice(0, 2).join(" | ")}`);
+    }
+    assert.ok(validated >= 20, `only ${String(validated)} of 24 master plans validated`);
+    assert.ok(good / validated >= 0.95, `${String(good)}/${String(validated)} sites are ok: ${failures.join(" ; ")}`);
+});
+
+test("a patrol contour that falls apart is laid as separate lanes, never as one line across the gap", () => {
+    // seeds 21 and 42 have a contour in several pieces: a straight segment between pieces used to be drawn
+    for (const spec of [CASES[0], CASES[3]]) {
+        const c = buildCase(spec);
+        const lanes = c.record.roads.filter((e) => /^patrol-lane/.test(String(e.id)));
+        assert.ok(lanes.length >= 1);
+        assert.deepEqual(D.siteContainmentProblems(c.plan, 1, c.record), []);
+        if (lanes.length > 1) {
+            for (const lane of lanes) assert.equal(lane.outsideCells, 0, `${lane.id} leaves the district`);
+        }
+    }
 });

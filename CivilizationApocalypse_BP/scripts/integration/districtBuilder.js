@@ -56,6 +56,11 @@ export function isBusy() {
     return active !== undefined;
 }
 
+/** The token that owns the job slot, if any (lets other commands tell whose job is running). */
+export function activeToken() {
+    return active;
+}
+
 export function activeKind() {
     return active?.kind;
 }
