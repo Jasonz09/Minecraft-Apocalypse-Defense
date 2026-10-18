@@ -90,7 +90,7 @@ files**), headless end-to-end kingdom run (**52/52 stages**).
   headless. See `docs/TESTING.md` for the in-game script.
 - **`buildAdapter.js` is unexercised.** Its API use typechecks against 2.7.0, but block
   placement, unloaded-chunk refusal and "never overwrite non-air" have only been read, not
-  run. It stays behind `civ:debug:build enable` + an explicit anchor.
+  run. It stays behind `civ:debug_build enable` + an explicit anchor.
 - **The step-rollback branch is verified by inspection**, not by an executable case: no
   currently reachable system produces an invalid state, so there is nothing to trip it with
   short of injecting a fault. The guard it protects (validator rejects save) *is* tested.

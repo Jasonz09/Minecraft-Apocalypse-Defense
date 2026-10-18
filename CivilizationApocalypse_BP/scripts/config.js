@@ -26,11 +26,11 @@ export const SCRIPT_EVENT_IDS = {
  * fire from ordinary gameplay and every one of them is a deliberate, typed invocation.
  */
 export const DEBUG_EVENT_IDS = {
-    help: "civ:debug:help",
-    tick: "civ:debug:tick",
-    scenarios: "civ:debug:scenarios",
-    scenario: "civ:debug:scenario",
-    build: "civ:debug:build",
+    help: "civ:debug_help",
+    tick: "civ:debug_tick",
+    scenarios: "civ:debug_scenarios",
+    scenario: "civ:debug_scenario",
+    build: "civ:debug_build",
 };
 
 /**
@@ -38,10 +38,10 @@ export const DEBUG_EVENT_IDS = {
  * generating a district is a deliberate world edit, never a demo toggle.
  */
 export const PHYSICAL_EVENT_IDS = {
-    generate: "civ:district:generate",
-    resume: "civ:district:resume",
-    status: "civ:district:status",
-    abort: "civ:district:abort",
+    generate: "civ:district_generate",
+    resume: "civ:district_resume",
+    status: "civ:district_status",
+    abort: "civ:district_abort",
 };
 
 export const PHYSICAL = {

@@ -83,18 +83,18 @@ Requires a world with cheats enabled (needed for `/scriptevent`).
 8. **Persistence** — quit to title and rejoin. The greeting should read
    `Welcome back, <name>.` (proof it loaded a save instead of re-seeding) and the numbers
    must match what you left.
-9. **Debug scenarios** — `/scriptevent civ:debug:help`, `civ:debug:scenarios`, then
-   `civ:debug:scenario attack`. It must report a **dry run against a copy**; `civ:status`
-   afterwards must be unchanged. `civ:debug:scenario expansion` on a healthy border should
+9. **Debug scenarios** — `/scriptevent civ:debug_help`, `civ:debug_scenarios`, then
+   `civ:debug_scenario attack`. It must report a **dry run against a copy**; `civ:status`
+   afterwards must be unchanged. `civ:debug_scenario expansion` on a healthy border should
    end `Districts: 5 -> 6` with the seven-project plan listed; add `--apply` to write it.
-   `civ:debug:tick 5` advances five hours; `civ:debug:tick 0`, `civ:debug:tick abc` and
-   `civ:debug:scenario not-a-scenario` must all be rejected.
+   `civ:debug_tick 5` advances five hours; `civ:debug_tick 0`, `civ:debug_tick abc` and
+   `civ:debug_scenario not-a-scenario` must all be rejected.
 10. **Physical build demo (opt-in, unverified by me)** —
-    `/scriptevent civ:debug:build enable`, stand somewhere flat and empty,
-    `civ:debug:build anchor <x y z>`, `civ:debug:build preview`, then
-    `civ:debug:build run`. It should place a ring of blocks for the next unfinished stage,
+    `/scriptevent civ:debug_build enable`, stand somewhere flat and empty,
+    `civ:debug_build anchor <x y z>`, `civ:debug_build preview`, then
+    `civ:debug_build run`. It should place a ring of blocks for the next unfinished stage,
     report `skipped ... is not air` rather than replacing anything, and report `chunk is not
-    loaded` if you aim it at unloaded ground. `civ:debug:build disable` turns it off.
+    loaded` if you aim it at unloaded ground. `civ:debug_build disable` turns it off.
 11. **Migration** — if you still have a world from the first release, the join greeting must
     say `Welcome back` and the totals must survive; a pre-migration copy is kept in the
     `civ:kingdom-quarantine` dynamic property.

@@ -180,13 +180,13 @@ const plan = planDistrict(districtById((reset(), store.load().kingdom), "distric
 test("dry run surveys the site, writes nothing, records nothing, and tells the player how to confirm", async () => {
     reset();
     const player = makePlayer();
-    send("civ:district:generate", "", player);
+    send("civ:district_generate", "", player);
     await settle();
     assert.equal(mc.writes, 0);
     assert.equal(record(), undefined);
     assert.match(text(player), /survey \(dry run\)/);
     assert.match(text(player), /Site is clear: \d+ blocks to place/);
-    assert.match(text(player), /civ:district:generate district-1 confirm/);
+    assert.match(text(player), /civ:district_generate district-1 confirm/);
     assert.deepEqual(mc.tickingLog, ["create civ-district-build", "remove civ-district-build"], "chunks are held for the survey and released");
     assert.equal(isBusy(), false);
 });
@@ -194,7 +194,7 @@ test("dry run surveys the site, writes nothing, records nothing, and tells the p
 test("confirm builds the whole district, records it, and releases the chunks", async () => {
     reset();
     const player = makePlayer();
-    send("civ:district:generate", "district-1 confirm", player);
+    send("civ:district_generate", "district-1 confirm", player);
     await settle();
     const saved = record();
     assert.equal(saved.status, "complete");
@@ -220,7 +220,7 @@ test("confirm builds the whole district, records it, and releases the chunks", a
 
     // a second request does not build twice
     const before = mc.writes;
-    send("civ:district:generate", "district-1 confirm", player);
+    send("civ:district_generate", "district-1 confirm", player);
     await settle();
     assert.equal(mc.writes, before);
     assert.match(text(player), /already has a physical record/);
@@ -230,7 +230,7 @@ test("the simulation is untouched by generation: same state apart from the physi
     reset();
     const before = structuredClone(store.load().kingdom);
     const player = makePlayer();
-    send("civ:district:generate", "confirm", player);
+    send("civ:district_generate", "confirm", player);
     await settle();
     const after = structuredClone(store.load().kingdom);
     delete after.districts[0].physical;
@@ -247,7 +247,7 @@ test("an obstruction anywhere in the footprint refuses the site and changes noth
     reset();
     mc.blocks.set(key(105, 64 + 5, 205), "minecraft:oak_log");
     const player = makePlayer();
-    send("civ:district:generate", "district-1 confirm", player);
+    send("civ:district_generate", "district-1 confirm", player);
     await settle();
     assert.equal(mc.writes, 0);
     assert.equal(record(), undefined);
@@ -261,7 +261,7 @@ test("a player build on a planned cell refuses the site", async () => {
     const target = plan.blocks.find((block) => block.y === 0);
     mc.blocks.set(key(100 + target.x, 64, 200 + target.z), "minecraft:chest");
     const player = makePlayer();
-    send("civ:district:generate", "district-1 confirm", player);
+    send("civ:district_generate", "district-1 confirm", player);
     await settle();
     assert.equal(mc.writes, 0);
     assert.match(text(player), /Site refused/);
@@ -272,7 +272,7 @@ test("ground that is not natural terrain refuses the site (no building on water,
     reset();
     mc.blocks.set(key(110, GROUND_Y, 210), "minecraft:water");
     const player = makePlayer();
-    send("civ:district:generate", "district-1 confirm", player);
+    send("civ:district_generate", "district-1 confirm", player);
     await settle();
     assert.equal(mc.writes, 0);
     assert.match(text(player), /not natural terrain/);
@@ -281,7 +281,7 @@ test("ground that is not natural terrain refuses the site (no building on water,
 test("a cell occupied after the survey is refused at placement, never overwritten", async () => {
     reset();
     const player = makePlayer();
-    send("civ:district:generate", "district-1 confirm", player);
+    send("civ:district_generate", "district-1 confirm", player);
     // run only until the build job is queued (survey finished), then plant a player block
     for (let round = 0; round < 50 && !(mc.jobs.length === 0 && record()?.status === "building"); round += 1) {
         await Promise.resolve();
@@ -307,7 +307,7 @@ test("a cell occupied after the survey is refused at placement, never overwritte
 test("unloaded chunks pause the build with a saved cursor, and resume finishes it without redoing work", async () => {
     reset();
     const player = makePlayer();
-    send("civ:district:generate", "district-1 confirm", player);
+    send("civ:district_generate", "district-1 confirm", player);
     // after the survey passes, the east half of the footprint "unloads"
     let armed = false;
     mc.unloaded = (position) => armed && position.x > 112;
@@ -326,12 +326,12 @@ test("unloaded chunks pause the build with a saved cursor, and resume finishes i
     assert.equal(paused.status, "building");
     assert.ok(paused.placed > 0 && paused.placed < plan.blockCount, `cursor saved mid-way: ${String(paused.placed)}`);
     assert.match(text(player), /Build paused/);
-    assert.match(text(player), /civ:district:resume/);
+    assert.match(text(player), /civ:district_resume/);
     assert.equal(mc.tickingAreas.size, 0);
 
     mc.unloaded = () => false;
     const writesBefore = mc.writes;
-    send("civ:district:resume", "", player);
+    send("civ:district_resume", "", player);
     await settle();
     assert.equal(record().status, "complete");
     assert.ok(mc.writes - writesBefore < plan.blockCount, "resume does not redo finished work");
@@ -343,7 +343,7 @@ test("unloaded chunks pause the build with a saved cursor, and resume finishes i
 test("abort stops the job; blocks stay; resume completes", async () => {
     reset();
     const player = makePlayer();
-    send("civ:district:generate", "confirm", player);
+    send("civ:district_generate", "confirm", player);
     for (let guard = 0; guard < 2000; guard += 1) {
         await Promise.resolve();
         const job = mc.jobs[0];
@@ -353,14 +353,14 @@ test("abort stops the job; blocks stay; resume completes", async () => {
         } else await new Promise((done) => setImmediate(done));
         if (mc.writes > 500) break;
     }
-    send("civ:district:abort", "", player);
+    send("civ:district_abort", "", player);
     assert.equal(isBusy(), false);
     assert.equal(mc.jobs.length, 0);
     const kept = mc.writes;
     await settle();
     assert.equal(mc.writes, kept, "nothing more is placed after abort");
     assert.equal(record().status, "building");
-    send("civ:district:resume", "", player);
+    send("civ:district_resume", "", player);
     await settle();
     assert.equal(record().status, "complete");
 });
@@ -368,20 +368,20 @@ test("abort stops the job; blocks stay; resume completes", async () => {
 test("only one physical job at a time, and only for a real player on district-1", async () => {
     reset();
     const player = makePlayer();
-    send("civ:district:generate", "confirm", player);
+    send("civ:district_generate", "confirm", player);
     await Promise.resolve();
-    send("civ:district:generate", "confirm", player);
+    send("civ:district_generate", "confirm", player);
     assert.match(text(player), /already running/);
     cancelActiveJob();
     mc.jobs.length = 0;
 
     reset();
     const other = makePlayer();
-    send("civ:district:generate", "district-2 confirm", other);
+    send("civ:district_generate", "district-2 confirm", other);
     assert.match(text(other), /Only district-1 has a physical layout/);
 
     reset();
-    send("civ:district:generate", "confirm", { typeId: "minecraft:cow", location: { x: 0, y: 64, z: 0 }, dimension, sendMessage() {} });
+    send("civ:district_generate", "confirm", { typeId: "minecraft:cow", location: { x: 0, y: 64, z: 0 }, dimension, sendMessage() {} });
     assert.match(String(mc.worldMessages.flat().join("\n")), /Run this as a player/);
     assert.equal(mc.writes, 0);
 });
@@ -390,7 +390,7 @@ test("block states the engine rejects fall back to plain blocks instead of abort
     reset();
     mc.rejectStates = (id) => id === "minecraft:wooden_door";
     const player = makePlayer();
-    send("civ:district:generate", "confirm", player);
+    send("civ:district_generate", "confirm", player);
     await settle();
     assert.equal(record().status, "complete");
     assert.match(text(player), /state fallbacks [1-9]/);
@@ -400,30 +400,30 @@ test("block states the engine rejects fall back to plain blocks instead of abort
 test("status reports the record and no job; resume without a build is refused", async () => {
     reset();
     const player = makePlayer();
-    send("civ:district:status", "", player);
+    send("civ:district_status", "", player);
     assert.match(text(player), /Hearthgate: not generated/);
-    send("civ:district:resume", "", player);
+    send("civ:district_resume", "", player);
     assert.match(text(player), /no interrupted physical build/);
 });
 
 test("resume refuses when the blueprint changed since the build started", async () => {
     reset();
     const player = makePlayer();
-    send("civ:district:generate", "confirm", player);
+    send("civ:district_generate", "confirm", player);
     await settle();
     const loaded = store.load();
     districtById(loaded.kingdom, "district-1").physical = { ...record(), status: "building", planHash: "deadbeef" };
     store.save(loaded.kingdom);
-    send("civ:district:resume", "", player);
+    send("civ:district_resume", "", player);
     assert.match(text(player), /blueprint changed/);
 });
 
 test("abort during the survey then an immediate re-run never starts two builds", async () => {
     reset();
     const player = makePlayer();
-    send("civ:district:generate", "confirm", player);
-    send("civ:district:abort", "", player);
-    send("civ:district:generate", "confirm", player);
+    send("civ:district_generate", "confirm", player);
+    send("civ:district_abort", "", player);
+    send("civ:district_generate", "confirm", player);
     await settle();
     assert.equal(record().status, "complete");
     assert.equal(mc.writes, plan.blockCount, "exactly one build ran");
@@ -433,7 +433,7 @@ test("abort during the survey then an immediate re-run never starts two builds",
 test("a build resumes even after the simulation changed the live building counts", async () => {
     reset();
     const player = makePlayer();
-    send("civ:district:generate", "confirm", player);
+    send("civ:district_generate", "confirm", player);
     for (let guard = 0; guard < 2000; guard += 1) {
         await Promise.resolve();
         const job = mc.jobs[0];
@@ -443,11 +443,11 @@ test("a build resumes even after the simulation changed the live building counts
         } else await new Promise((done) => setImmediate(done));
         if (mc.writes > 800) break;
     }
-    send("civ:district:abort", "", player);
+    send("civ:district_abort", "", player);
     const loaded = store.load();
     districtById(loaded.kingdom, "district-1").buildings.homes = 2;
     store.save(loaded.kingdom);
-    send("civ:district:resume", "", player);
+    send("civ:district_resume", "", player);
     await settle();
     assert.equal(record().status, "complete");
     for (const block of plan.blocks) {

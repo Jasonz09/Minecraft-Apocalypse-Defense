@@ -313,7 +313,7 @@ export function startBuild(token, dimension, origin, plan, cursor, hooks) {
                     waiting += 1;
                     if (waiting > PHYSICAL.unloadedRetrySlices) {
                         finishJob(job);
-                        hooks.onStopped("a chunk in the footprint is not loaded - stay near the district and run civ:district:resume", state);
+                        hooks.onStopped("a chunk in the footprint is not loaded - stay near the district and run /scriptevent civ:district_resume", state);
                         return;
                     }
                     yield;

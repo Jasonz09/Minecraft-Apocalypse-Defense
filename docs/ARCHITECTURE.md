@@ -16,7 +16,7 @@ scripts/main.js                      entry, subscribes everything
 scripts/events/welcome.js          -> world.afterEvents.playerSpawn (initialSpawn)
 scripts/commands/status.js         -> system.afterEvents.scriptEventReceive (civ:status)
 scripts/commands/inspect.js        -> civ:district / civ:territory / civ:policy
-scripts/commands/debug.js          -> civ:debug:* (tick, scenarios, scenario, build)
+scripts/commands/debug.js          -> civ:debug_* (tick, scenarios, scenario, build)
 scripts/commands/reply.js          -> Player.sendMessage / world.sendMessage
 scripts/integration/simulationLoop.js -> system.runInterval(1000 ticks) + save
 scripts/integration/buildAdapter.js   -> Dimension.getBlock / setBlockType (opt-in)

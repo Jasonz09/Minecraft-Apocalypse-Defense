@@ -8,7 +8,7 @@ import { parseArgs, parseCount } from "./args.js";
 import { reply } from "./reply.js";
 
 /**
- * Debug and demonstration commands, all behind the `civ:debug:*` id prefix so they cannot
+ * Debug and demonstration commands, all behind the `civ:debug_*` id prefix so they cannot
  * be triggered by ordinary gameplay and every one is a deliberate typed invocation.
  *
  * Scenario runs are isolated by default: they execute against a detached copy of the
@@ -47,10 +47,10 @@ function helpLines() {
     return [
         "=== Civilization Apocalypse commands ===",
         "  gameplay: /scriptevent civ:status | civ:district <id> | civ:territory | civ:policy [mode]",
-        "  debug:    /scriptevent civ:debug:scenarios",
-        "            /scriptevent civ:debug:scenario <id> [target] [--apply]",
-        `            /scriptevent civ:debug:tick <1-${String(SIM.maxCatchUpSteps)}>`,
-        "            /scriptevent civ:debug:build status|enable|disable|anchor <x y z>|preview|run [limit]",
+        "  debug:    /scriptevent civ:debug_scenarios",
+        "            /scriptevent civ:debug_scenario <id> [target] [--apply]",
+        `            /scriptevent civ:debug_tick <1-${String(SIM.maxCatchUpSteps)}>`,
+        "            /scriptevent civ:debug_build status|enable|disable|anchor <x y z>|preview|run [limit]",
     ];
 }
 
@@ -67,7 +67,7 @@ function handleTick(kingdomStore, args, event) {
     }
     const parsed = parseCount(args[0], 1, 1, SIM.maxCatchUpSteps);
     if (parsed.error) {
-        reply(formatErrorLines("Tick refused", [`'${args[0] ?? ""}' ${parsed.error}`, `Usage: /scriptevent civ:debug:tick <1-${String(SIM.maxCatchUpSteps)}>`]), event);
+        reply(formatErrorLines("Tick refused", [`'${args[0] ?? ""}' ${parsed.error}`, `Usage: /scriptevent civ:debug_tick <1-${String(SIM.maxCatchUpSteps)}>`]), event);
         return;
     }
     const report = advanceKingdom(loaded.kingdom, parsed.value);
@@ -100,7 +100,7 @@ function handleScenario(kingdomStore, args, event) {
     if (id === undefined) {
         reply(
             formatErrorLines("Scenario refused", [
-                "Usage: /scriptevent civ:debug:scenario <id> [target] [--apply]",
+                "Usage: /scriptevent civ:debug_scenario <id> [target] [--apply]",
                 `Known: ${listScenarios().map((scenario) => scenario.id).join(", ")}`,
             ]),
             event,
@@ -156,7 +156,7 @@ function handleBuild(kingdomStore, args, event) {
         reply(
             [
                 `Physical build demo ${sub === "enable" ? "ENABLED" : "disabled"}.`,
-                "Nothing is placed until an anchor is set: /scriptevent civ:debug:build anchor <x y z>",
+                "Nothing is placed until an anchor is set: /scriptevent civ:debug_build anchor <x y z>",
             ],
             event,
         );
@@ -166,7 +166,7 @@ function handleBuild(kingdomStore, args, event) {
     if (sub === "anchor") {
         const coords = rest.map((part) => Number(part));
         if (coords.length !== 3 || !coords.every((value) => Number.isFinite(value))) {
-            reply(formatErrorLines("Anchor refused", ["Usage: /scriptevent civ:debug:build anchor <x y z>"]), event);
+            reply(formatErrorLines("Anchor refused", ["Usage: /scriptevent civ:debug_build anchor <x y z>"]), event);
             return;
         }
         setDemoAnchor(world, { x: Math.floor(coords[0]), y: Math.floor(coords[1]), z: Math.floor(coords[2]) });
@@ -189,13 +189,13 @@ function handleBuild(kingdomStore, args, event) {
     if (sub === "run") {
         if (!isDemoEnabled(world)) {
             reply(
-                formatErrorLines("Build refused", ["The physical build demo is off.", "Run /scriptevent civ:debug:build enable first - blocks are only placed when you opt in."]),
+                formatErrorLines("Build refused", ["The physical build demo is off.", "Run /scriptevent civ:debug_build enable first - blocks are only placed when you opt in."]),
                 event,
             );
             return;
         }
         if (getDemoAnchor(world) === undefined) {
-            reply(formatErrorLines("Build refused", ["No demo anchor is set. Use /scriptevent civ:debug:build anchor <x y z>."]), event);
+            reply(formatErrorLines("Build refused", ["No demo anchor is set. Use /scriptevent civ:debug_build anchor <x y z>."]), event);
             return;
         }
         const parsed = parseCount(rest[0], SIM.maxBlocksPerStep, 1, SIM.maxBlocksPerStep);

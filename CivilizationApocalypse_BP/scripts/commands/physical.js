@@ -18,10 +18,10 @@ let registered = false;
 /**
  * Physical district commands.
  *
- *   civ:district:generate [district-id] [confirm]   dry-run survey; with `confirm`, build
- *   civ:district:resume   [district-id]              finish an interrupted build
- *   civ:district:status                              record + job state
- *   civ:district:abort                               stop the running job (blocks stay)
+ *   civ:district_generate [district-id] [confirm]   dry-run survey; with `confirm`, build
+ *   civ:district_resume   [district-id]              finish an interrupted build
+ *   civ:district_status                              record + job state
+ *   civ:district_abort                               stop the running job (blocks stay)
  *
  * The district is centred on the invoking player's feet block. Nothing is written without
  * the word `confirm`, and a site with any obstruction or non-natural ground is refused.
@@ -109,7 +109,7 @@ function handleGenerate(kingdomStore, args, event, resume) {
     }
     const player = /** @type {Player} */ (found);
     if (isBusy()) {
-        say(player, formatErrorLines(title, [`A physical ${String(activeKind())} job is already running.`, "Wait for it, or run /scriptevent civ:district:abort."]));
+        say(player, formatErrorLines(title, [`A physical ${String(activeKind())} job is already running.`, "Wait for it, or run /scriptevent civ:district_abort."]));
         return;
     }
     const confirm = args.includes("confirm");
@@ -146,7 +146,7 @@ function handleGenerate(kingdomStore, args, event, resume) {
             return;
         }
     } else if (record) {
-        say(player, formatErrorLines(title, [`${district.name} already has a physical record (${String(record.status)}).`, record.status === "building" ? "Use /scriptevent civ:district:resume." : "Nothing is generated twice."]));
+        say(player, formatErrorLines(title, [`${district.name} already has a physical record (${String(record.status)}).`, record.status === "building" ? "Use /scriptevent civ:district_resume." : "Nothing is generated twice."]));
         return;
     }
 
@@ -192,7 +192,7 @@ function handleGenerate(kingdomStore, args, event, resume) {
                 say(player, formatErrorLines("Site refused - nothing was changed", [
                     `${String(scan.conflicts)} obstructed cell(s), ${String(scan.unloaded)} unloaded cell(s) in the footprint.`,
                     ...scan.samples,
-                    "Stand at the centre of a flat, empty area (a new superflat world is ideal) and try again.",
+                    "Natural terrain (hills, trees, water) is not supported yet - nothing was touched. Stand in a flat, empty clearing and try again.",
                 ]));
                 return;
             }
@@ -201,7 +201,7 @@ function handleGenerate(kingdomStore, args, event, resume) {
                 say(player, [
                     `Site is clear: ${String(scan.toPlace)} blocks to place, ${String(scan.alreadyBuilt)} already present.`,
                     "The ground surface under roads, floors and farms will be REPLACED. Nothing above ground is touched.",
-                    `To build here: /scriptevent civ:district:generate ${districtId} confirm`,
+                    `To build here: /scriptevent civ:district_generate ${districtId} confirm`,
                 ]);
                 return;
             }
@@ -263,7 +263,7 @@ function handleGenerate(kingdomStore, args, event, resume) {
                         `Placed ${String(state.placed)}, already present ${String(state.alreadyBuilt)}, refused ${String(state.refused)}, failed ${String(state.failed)}, state fallbacks ${String(state.degraded)}.`,
                         ...(state.degraded > 0 ? ["WARNING: some blocks were placed without their facing/state (doors, stairs or ladders may be wrong). Report the lines below."] : []),
                         ...state.samples,
-                        clean ? `Tour it: /tp @s ${String(origin.x)} ${String(origin.y + 1)} ${String(origin.z)}  (gates at +-23 on each axis)` : "Fix the obstructions and run /scriptevent civ:district:resume to retry the skipped cells.",
+                        clean ? `Tour it: /tp @s ${String(origin.x)} ${String(origin.y + 1)} ${String(origin.z)}  (gates at +-23 on each axis)` : "Fix the obstructions and run /scriptevent civ:district_resume to retry the skipped cells.",
                     ]);
                 } finally {
                     releaseChunks();
@@ -287,11 +287,11 @@ function handleStatus(kingdomStore, event) {
     for (const district of /** @type {any[]} */ (loaded.kingdom.districts)) {
         const record = district.physical;
         if (!record) {
-            lines.push(`${String(district.name)}: not generated${district.id === PHYSICAL.prototypeDistrict ? ` (/scriptevent civ:district:generate ${String(district.id)})` : ""}`);
+            lines.push(`${String(district.name)}: not generated${district.id === PHYSICAL.prototypeDistrict ? ` (/scriptevent civ:district_generate ${String(district.id)})` : ""}`);
         } else {
             lines.push(`${String(district.name)}: ${String(record.status)} - ${String(record.placed)}/${String(record.total)} blocks, centre ${String(record.origin.x)}, ${String(record.origin.y)}, ${String(record.origin.z)} (${String(record.dimension)}), layout ${String(record.layout)} v${String(record.version)}`);
             if (record.status === "building" && !isBusy()) {
-                lines.push("  interrupted - run /scriptevent civ:district:resume");
+                lines.push("  interrupted - run /scriptevent civ:district_resume");
             }
         }
     }
@@ -305,7 +305,7 @@ function handleStatus(kingdomStore, event) {
 function handleAbort(event) {
     if (cancelActiveJob()) {
         releaseChunks();
-        reply(["Physical job stopped. Placed blocks stay; run civ:district:resume to continue a build."], event);
+        reply(["Physical job stopped. Placed blocks stay; run /scriptevent civ:district_resume to continue a build."], event);
     } else {
         reply(["No physical job is running."], event);
     }

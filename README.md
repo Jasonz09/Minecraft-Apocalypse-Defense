@@ -124,8 +124,8 @@ powershell -NoProfile -Command "Get-ChildItem -Path $env:LOCALAPPDATA\Packages -
 
 ## Physical district (new)
 
-`/scriptevent civ:district:generate district-1` surveys a flat empty site centred on you (dry run);
-add `confirm` to build the walled district. Also `civ:district:status|resume|abort`. See
+`/scriptevent civ:district_generate district-1` surveys a flat empty site centred on you (dry run);
+add `confirm` to build the walled district. Also `civ:district_status|resume|abort`. See
 [docs/MINECRAFT_INTEGRATION.md](docs/MINECRAFT_INTEGRATION.md). Use a NEW superflat test world.
 
 ## Test script
@@ -175,7 +175,7 @@ Active construction projects: 0
 
 **2c. The kingdom runs itself.** One simulation step is one in-game hour, driven by
 `system.runInterval`, not by the game tick. Watch it on demand with
-`/scriptevent civ:debug:tick 12` and see what changed in `civ:status`.
+`/scriptevent civ:debug_tick 12` and see what changed in `civ:status`.
 
 **3. Persistence.** Quit to title, re-enter the world, run `/scriptevent civ:status` again
 → identical numbers. The join greeting now says `Welcome back, <name>.` instead of

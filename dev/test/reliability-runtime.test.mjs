@@ -307,7 +307,7 @@ test("events outside the civ namespace never reach any handler", () => {
     assert.deepEqual(mc.worldMessages, []);
 });
 
-test("civ:district: usage, unknown id, and a known id each reply once and never write", () => {
+test("civ:district_ usage, unknown id, and a known id each reply once and never write", () => {
     resetWorld();
     const kingdom = seed();
     const before = mc.properties.get(STORAGE_KEYS.kingdom);
@@ -324,7 +324,7 @@ test("civ:district: usage, unknown id, and a known id each reply once and never 
     assert.equal(mc.properties.get(STORAGE_KEYS.kingdom), before);
 });
 
-test("civ:district: with no readable kingdom the player gets an error, not silence", () => {
+test("civ:district_ with no readable kingdom the player gets an error, not silence", () => {
     resetWorld();
     const player = makePlayer();
     scriptEvent("civ:district", "x", { player });
@@ -365,37 +365,37 @@ test("civ:territory: with no readable kingdom the command explains itself", () =
     assert.equal(player.messages.length + mc.worldMessages.length, 1);
 });
 
-test("civ:debug:help and civ:debug:scenarios reply without needing a kingdom", () => {
+test("civ:debug_help and civ:debug_scenarios reply without needing a kingdom", () => {
     resetWorld();
     const player = makePlayer();
-    scriptEvent("civ:debug:help", "", { player });
-    scriptEvent("civ:debug:scenarios", "", { player });
+    scriptEvent("civ:debug_help", "", { player });
+    scriptEvent("civ:debug_scenarios", "", { player });
     assert.equal(player.messages.length, 2);
     assert.ok(player.messages[1].length > listScenarios().length);
 });
 
-test("civ:debug:tick: validates its argument (0, 25, abc, 1.5 refused, nothing saved)", () => {
+test("civ:debug_tick: validates its argument (0, 25, abc, 1.5 refused, nothing saved)", () => {
     resetWorld();
     seed();
     const before = mc.properties.get(STORAGE_KEYS.kingdom);
     const player = makePlayer();
     for (const bad of ["0", String(SIM.maxCatchUpSteps + 1), "abc", "1.5", "-3"]) {
-        scriptEvent("civ:debug:tick", bad, { player });
+        scriptEvent("civ:debug_tick", bad, { player });
     }
     assert.equal(player.messages.length, 5);
     assert.equal(mc.properties.get(STORAGE_KEYS.kingdom), before);
 });
 
-test("civ:debug:tick: a valid count advances the clock, persists, and replies", () => {
+test("civ:debug_tick: a valid count advances the clock, persists, and replies", () => {
     resetWorld();
     seed();
     const player = makePlayer();
-    scriptEvent("civ:debug:tick", "6", { player });
+    scriptEvent("civ:debug_tick", "6", { player });
     assert.equal(storedKingdom().step, 6);
     assert.match(player.messages[0][0], /Advanced 6 step/);
 });
 
-test("civ:debug:tick: when every step is rolled back nothing is saved and the reply says so", () => {
+test("civ:debug_tick: when every step is rolled back nothing is saved and the reply says so", () => {
     resetWorld();
     seed();
     const before = mc.properties.get(STORAGE_KEYS.kingdom);
@@ -404,52 +404,52 @@ test("civ:debug:tick: when every step is rolled back nothing is saved and the re
         state.territory[0].status = "bogus";
         return [];
     };
-    scriptEvent("civ:debug:tick", "3", { player });
+    scriptEvent("civ:debug_tick", "3", { player });
     assert.equal(mc.properties.get(STORAGE_KEYS.kingdom), before, "rejected steps are never persisted");
     const text = player.messages[0].join("\n");
     assert.match(text, /Advanced 0 step\(s\), 3 refused/);
     assert.match(text, /rolled back/);
 });
 
-test("civ:debug:scenario: a dry run (default) never changes the stored save", () => {
+test("civ:debug_scenario: a dry run (default) never changes the stored save", () => {
     resetWorld();
     seed();
     const before = mc.properties.get(STORAGE_KEYS.kingdom);
     const player = makePlayer();
     for (const scenario of listScenarios()) {
-        scriptEvent("civ:debug:scenario", scenario.id, { player });
+        scriptEvent("civ:debug_scenario", scenario.id, { player });
     }
     assert.equal(mc.properties.get(STORAGE_KEYS.kingdom), before);
     assert.ok(player.messages.length >= listScenarios().length);
 });
 
-test("civ:debug:scenario: unknown id and unknown flag are refused without writing", () => {
+test("civ:debug_scenario: unknown id and unknown flag are refused without writing", () => {
     resetWorld();
     seed();
     const before = mc.properties.get(STORAGE_KEYS.kingdom);
     const player = makePlayer();
-    scriptEvent("civ:debug:scenario", "", { player });
-    scriptEvent("civ:debug:scenario", "no-such-scenario", { player });
-    scriptEvent("civ:debug:scenario", `${listScenarios()[0].id} x --force`, { player });
+    scriptEvent("civ:debug_scenario", "", { player });
+    scriptEvent("civ:debug_scenario", "no-such-scenario", { player });
+    scriptEvent("civ:debug_scenario", `${listScenarios()[0].id} x --force`, { player });
     assert.equal(player.messages.length, 3);
     assert.equal(mc.properties.get(STORAGE_KEYS.kingdom), before);
 });
 
-test("civ:debug:build: enable/anchor/status/run gating behaves, and run refuses before opt-in", () => {
+test("civ:debug_build: enable/anchor/status/run gating behaves, and run refuses before opt-in", () => {
     resetWorld();
     seed();
     const player = makePlayer();
-    scriptEvent("civ:debug:build", "run", { player });
+    scriptEvent("civ:debug_build", "run", { player });
     assert.match(player.messages[0].join("\n"), /off/i);
-    scriptEvent("civ:debug:build", "enable", { player });
+    scriptEvent("civ:debug_build", "enable", { player });
     assert.equal(mc.properties.get("civ:demo-build"), true);
-    scriptEvent("civ:debug:build", "run", { player });
+    scriptEvent("civ:debug_build", "run", { player });
     assert.match(player.messages[2].join("\n"), /anchor/i);
-    scriptEvent("civ:debug:build", "anchor 1 2", { player });
+    scriptEvent("civ:debug_build", "anchor 1 2", { player });
     assert.match(player.messages[3].join("\n"), /Usage/);
-    scriptEvent("civ:debug:build", "anchor 10.7 64 -3.2", { player });
+    scriptEvent("civ:debug_build", "anchor 10.7 64 -3.2", { player });
     assert.deepEqual(mc.properties.get("civ:demo-anchor"), { x: 10, y: 64, z: -4 });
-    scriptEvent("civ:debug:build", "disable", { player });
+    scriptEvent("civ:debug_build", "disable", { player });
     assert.equal(mc.properties.get("civ:demo-build"), false);
 });
 
