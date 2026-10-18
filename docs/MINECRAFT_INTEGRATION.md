@@ -88,24 +88,23 @@ facing, blueprints, layout, planner, siteRules), `integration/districtBuilder.js
 (Bedrock boundary). The saved record gains an optional validated `district.physical`
 {layout, version, status, origin, dimension, placed, total, planHash, built}; no schema bump.
 
-## Generate it (NEW test world only)
-1. New world (Superflat is easiest for now; normal worlds work only on a flat, empty clearing), Creative, cheats on, with the Behavior Pack attached. Join once so the kingdom is seeded.
-2. Stand at the **centre of a flat, empty area** (about 55x55 blocks of clear grass; the district is centred on your feet).
-3. Survey (writes nothing): `/scriptevent civ:district_generate district-1`
-4. Build: `/scriptevent civ:district_generate district-1 confirm`
+## Generate it (NEW test world; normal terrain supported)
+1. New world (normal or Superflat), Creative, cheats on, Behavior Pack attached. Join once so the kingdom is seeded.
+2. Stand outdoors near grass. Optionally find a good spot (read-only): `/scriptevent civ:district_scout` (radius 8-48, default 32).
+3. Survey (read-only): `/scriptevent civ:district_generate district-1` (or `... district-1 at <x> <z>` from the scout).
+   It reports the real ground heights, the platform height and the terrain work (cut/fill/resurface/clear).
+4. Build: copy the exact command the survey prints, e.g. `/scriptevent civ:district_generate district-1 at X Z maxcut=4 maxfill=4 confirm terrain=<code>`.
+   Without the code, a site that needs terrain work is refused; if the world changed since the survey the code no longer matches.
 5. Others: `civ:district_status`, `civ:district_abort`, `civ:district_resume` (after an interruption or "paused").
-   `civ:district` now also shows a `Physical:` line once built.
+6. `maxcut=N` / `maxfill=N` (0-6) change how much earthwork is allowed.
 
-## What is verified (executed, offline)
-`npm test`: 253/253; `npm run verify` all gates green (manifest 279 checks, typecheck, e2e). Tests prove: deterministic plan
-(8,7xx blocks, inside 49x49, y -1..12); counts mirror the record (6/3/1/4 + 1 wall + 4 gates); wall ring complete except
-the four gate passages; every door/gate/wall-stair is road-connected (evacuation and reinforcement routes); every block
-id exists in the installed game data and every state *name* is valid; dry run writes nothing; obstructions, player builds
-and non-natural ground refuse the whole site; a cell occupied after the survey is never overwritten; pause on unloaded
-chunks, resume, abort, single job at a time, state-fallback; simulation continues unchanged over a built district.
-Independent reviewers: code review (4 confirmed/suspected issues fixed: unresumable build after sim changes, abort/re-run
-race, hook cleanup, gravel in roads) and a flood-fill geometry audit (all doors/towers/walkway reachable, no floating or
-unsupported blocks, roofs cover interiors).
+## Terrain rules (what is touched)
+Only inside the 49x49 footprint: grass/flowers/loose plants, natural trees (trunk on natural ground, non-persistent leaves,
+no player-made block touching), and natural ground (cut above / fill below one platform at the median ground height).
+Refused (nothing changes): water or lava in the footprint, any non-natural block (planks, chests, farmland, ...), ground
+hollow underneath, an isolated spike of ground (possible pillar), slopes beyond maxcut/maxfill, unloaded chunks, huge or
+suspicious tree-like structures (a log-only build with no leaves refuses), and water or lava touching the footprint's edge. Limitation: id-based detection cannot tell a player's garden, hedge or dirt/stone wall from
+terrain; the spike rule only catches pillars. Do not run it over such builds - always read the survey first.
 
 ## Still requires in-game testing
 - Facing/state conventions are inferred, not confirmed: stairs (`weirdo_direction` 0=E,1=W,2=S,3=N ascending), doors
@@ -117,6 +116,8 @@ unsupported blocks, roofs cover interiors).
 - Chests are empty; there are no beds (colour cannot be set from stable script); no NPCs or entities are spawned.
 
 ## Known limits
-Flat ground required: on normal terrain the generator refuses and changes nothing (design for hills/forests: NATURAL_TERRAIN_DESIGN.md; not built). Only `district-1`
+Terrain preparation is implemented (see Terrain rules); no undo; water/lava/caves refuse. Only `district-1`
 has a layout. Simulation gate/wall state does not drive the physical blocks. Entities in the footprint (item frames,
 armor stands) are not checked. A stuck build can always be re-surveyed with `resume`; an aborted district is left as is.
+
+Independent adversarial run (about 80 scenarios on a fake world): no block that was not natural ground, a plant or a natural tree changed inside the footprint, and nothing changed outside it. It cannot prove real-engine behaviour (block ids/states, liquid flow, gravity blocks, ticking areas).

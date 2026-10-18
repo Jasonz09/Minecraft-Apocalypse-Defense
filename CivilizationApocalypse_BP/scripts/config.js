@@ -42,6 +42,7 @@ export const PHYSICAL_EVENT_IDS = {
     resume: "civ:district_resume",
     status: "civ:district_status",
     abort: "civ:district_abort",
+    scout: "civ:district_scout",
 };
 
 export const PHYSICAL = {
@@ -52,11 +53,25 @@ export const PHYSICAL = {
     blocksPerSlice: 400,
     /** Cells inspected per job slice while scanning a site. */
     scanPerSlice: 1500,
+    /** Footprint columns read per job slice during a terrain survey. */
+    columnsPerSlice: 60,
     /** Progress is persisted (and reported) every this many placed blocks. */
     saveEvery: 1500,
     /** Consecutive slices to wait for an unloaded chunk before pausing the build. */
     unloadedRetrySlices: 40,
     tickingAreaId: "civ-district-build",
+    /** Terrain preparation limits (blocks cut from / filled onto the platform plane). */
+    maxCut: 4,
+    maxFill: 4,
+    capCut: 6,
+    capFill: 6,
+    /** Chunks are held this far beyond the footprint so trees overhanging it can be read. */
+    readApron: 8,
+    treeCap: 600,
+    scoutDefaultRadius: 32,
+    scoutMaxRadius: 48,
+    scoutStep: 8,
+    scoutResults: 3,
 };
 
 export const DEBUG_EVENT_PREFIX = "civ:debug";

@@ -1,6 +1,6 @@
-# Natural-terrain generation - design (NOT implemented yet)
+# Natural-terrain generation - design
 
-Status: design only. Today's generator (`civ:district_generate`) needs flat natural ground and an empty
+Status: phases 1-3 IMPLEMENTED offline-tested (pure terrain.js, read-only scout/survey, terraced build with approval code, phase-aware resume). Phase 4 undo (structure snapshot) and the in-game phase 5 are NOT done. Original text follows. Previously: design only. Today's generator (`civ:district_generate`) needs flat natural ground and an empty
 49x49x13 footprint; on hills, forests, water or near player builds it **refuses the whole site and
 changes nothing**. That safe refusal stays the default. Nothing below is built; it is the agreed approach.
 

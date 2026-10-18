@@ -377,6 +377,15 @@ export function findValidationProblems(value) {
                         problems.push(`${label}.physical.${field} must be a non-negative integer`);
                     }
                 }
+                if (physical.phase !== undefined && physical.phase !== "terrain" && physical.phase !== "structure") {
+                    problems.push(`${label}.physical.phase must be terrain or structure`);
+                }
+                if (physical.terrain !== undefined) {
+                    const terrain = physical.terrain;
+                    if (terrain === null || typeof terrain !== "object" || !["baseY", "cut", "fill", "top", "clear", "maxCut", "maxFill"].every((field) => Number.isInteger(terrain[field]))) {
+                        problems.push(`${label}.physical.terrain must hold integer baseY, cut, fill, top, clear, maxCut, maxFill`);
+                    }
+                }
                 if (physical.built !== undefined && (physical.built === null || typeof physical.built !== "object" || !Object.values(physical.built).every((count) => Number.isInteger(count) && /** @type {number} */ (count) >= 0))) {
                     problems.push(`${label}.physical.built must map building kinds to non-negative integers`);
                 }

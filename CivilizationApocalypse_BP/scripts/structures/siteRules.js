@@ -8,26 +8,12 @@
  * and there is deliberately no override.
  */
 
-export const NATURAL_GROUND = [
-    "minecraft:grass_block",
-    "minecraft:dirt",
-    "minecraft:coarse_dirt",
-    "minecraft:podzol",
-    "minecraft:grass_path",
-    "minecraft:sand",
-    "minecraft:red_sand",
-    "minecraft:gravel",
-    "minecraft:stone",
-    "minecraft:andesite",
-    "minecraft:diorite",
-    "minecraft:granite",
-    "minecraft:sandstone",
-    "minecraft:mycelium",
-    "minecraft:snow",
-    "minecraft:farmland",
-];
+import { NATURAL_GROUND as TERRAIN_GROUND, PLANTS } from "./terrain.js";
 
-export const REPLACEABLE = ["minecraft:air", "minecraft:short_grass", "minecraft:tallgrass", "minecraft:fern", "minecraft:snow_layer"];
+export const NATURAL_GROUND = TERRAIN_GROUND;
+
+/** Loose vegetation may be overwritten by structure blocks (terrain preparation normally clears it first). */
+export const REPLACEABLE = ["minecraft:air", ...PLANTS];
 
 /**
  * @param {{ plannedId?: string, y: number, existingId: string | undefined }} cell

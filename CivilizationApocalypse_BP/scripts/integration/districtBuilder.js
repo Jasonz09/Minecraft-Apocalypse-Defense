@@ -1,6 +1,7 @@
 import { BlockPermutation, system, world } from "@minecraft/server";
 import { PHYSICAL } from "../config.js";
 import { classifyCell } from "../structures/siteRules.js";
+import { classifyTerrainCell } from "../structures/terrain.js";
 
 /**
  * Bedrock boundary for the physical district: chunk holding, a read-only site scan, and a
@@ -237,10 +238,17 @@ export function startScan(token, dimension, origin, plan, onDone) {
 /**
  * @typedef {{
  *   cursor: number, total: number, placed: number, alreadyBuilt: number, refused: number,
- *   failed: number, degraded: number, samples: string[]
+ *   failed: number, degraded: number, samples: string[],
+ *   phase: "terrain" | "structure", progress: number, progressTotal: number, terrainTotal: number
  * }} BuildState
  * @typedef {{
+ *   centre: { x: number, z: number },
+ *   clear: { x: number, y: number, z: number }[],
+ *   ops: import("../structures/terrain.js").TerrainOp[]
+ * }} TerrainWork
+ * @typedef {{
  *   onSlice: (state: BuildState) => void,
+ *   onPhase?: (phase: "structure", state: BuildState) => void,
  *   onStopped: (reason: string, state: BuildState) => void,
  *   onDone: (state: BuildState) => void
  * }} BuildHooks
@@ -255,8 +263,9 @@ export function startScan(token, dimension, origin, plan, onDone) {
  * @param {Plan} plan
  * @param {number} cursor index into plan.blocks to start from
  * @param {BuildHooks} hooks
+ * @param {TerrainWork} [terrain] terrain preparation to apply before any structure block
  */
-export function startBuild(token, dimension, origin, plan, cursor, hooks) {
+export function startBuild(token, dimension, origin, plan, cursor, hooks, terrain) {
     if (active !== token || token.cancelled) {
         return undefined;
     }
@@ -264,7 +273,19 @@ export function startBuild(token, dimension, origin, plan, cursor, hooks) {
     job.kind = "build";
     cursor = Math.max(0, Math.min(cursor, plan.blocks.length));
     /** @type {BuildState} */
-    const state = { cursor, total: plan.blocks.length, placed: 0, alreadyBuilt: 0, refused: 0, failed: 0, degraded: 0, samples: [] };
+    const state = { cursor, total: plan.blocks.length, placed: 0, alreadyBuilt: 0, refused: 0, failed: 0, degraded: 0, samples: [], phase: "structure", progress: cursor, progressTotal: plan.blocks.length, terrainTotal: 0 };
+    /** @type {{ x: number, y: number, z: number, id: string, kind: "clear" | "cut" | "fill" | "top" }[]} */
+    const terrainList = terrain
+        ? [
+              ...terrain.clear.map((cell) => ({ x: cell.x, y: cell.y, z: cell.z, id: "minecraft:air", kind: /** @type {"clear"} */ ("clear") })),
+              ...terrain.ops.map((op) => ({ x: terrain.centre.x + op.x, y: op.y, z: terrain.centre.z + op.z, id: op.id, kind: op.kind })),
+          ]
+        : [];
+    if (terrainList.length > 0) {
+        state.phase = "terrain";
+        state.terrainTotal = terrainList.length;
+        state.progressTotal += terrainList.length;
+    }
     /** @type {Map<string, any>} */
     const permutations = new Map();
 
@@ -297,6 +318,66 @@ export function startBuild(token, dimension, origin, plan, cursor, hooks) {
         let sinceYield = 0;
         let waiting = 0;
         try {
+            // Phase 1: terrain preparation (clear vegetation/trees, cut, fill, resurface). Every cell is
+            // re-classified against the live world right before it is written.
+            for (let index = 0; index < terrainList.length; ) {
+                if (job.cancelled) {
+                    return;
+                }
+                const op = /** @type {{ x: number, y: number, z: number, id: string, kind: "clear" | "cut" | "fill" | "top" }} */ (terrainList[index]);
+                let target;
+                try {
+                    target = dimension.getBlock({ x: op.x, y: op.y, z: op.z });
+                } catch (_error) {
+                    target = undefined;
+                }
+                if (target === undefined || target.isValid === false) {
+                    waiting += 1;
+                    if (waiting > PHYSICAL.unloadedRetrySlices) {
+                        finishJob(job);
+                        hooks.onStopped("a chunk in the footprint is not loaded - stay near the district and run /scriptevent civ:district_resume", state);
+                        return;
+                    }
+                    yield;
+                    continue;
+                }
+                waiting = 0;
+                const verdict = classifyTerrainCell({ kind: op.kind, existingId: target.typeId, targetId: op.id });
+                if (verdict.built) {
+                    state.alreadyBuilt += 1;
+                } else if (!verdict.ok) {
+                    state.refused += 1;
+                    note(`(${String(op.x)}, ${String(op.y)}, ${String(op.z)}) terrain ${op.kind} refused: ${String(verdict.reason)}`);
+                } else {
+                    try {
+                        target.setPermutation(permutationFor({ x: op.x, y: op.y, z: op.z, id: op.id }));
+                        state.placed += 1;
+                    } catch (error) {
+                        state.failed += 1;
+                        note(`(${String(op.x)}, ${String(op.y)}, ${String(op.z)}) terrain ${op.kind}: ${String(error)}`);
+                    }
+                }
+                index += 1;
+                state.progress = index;
+                sinceYield += 1;
+                if (sinceYield >= PHYSICAL.blocksPerSlice) {
+                    sinceYield = 0;
+                    hooks.onSlice(state);
+                    yield;
+                }
+            }
+            if (state.refused > 0 || state.failed > 0) {
+                // The world changed under the survey: do not build a district on an unprepared platform.
+                finishJob(job);
+                hooks.onStopped(`${String(state.refused + state.failed)} terrain cell(s) changed or failed during preparation, so the structure was not started. Review the lines below, then run /scriptevent civ:district_resume (it re-surveys the remaining work)`, state);
+                return;
+            }
+            if (terrain !== undefined) {
+                state.phase = "structure";
+                state.progress = terrainList.length + state.cursor;
+                hooks.onPhase?.("structure", state);
+            }
+
             while (state.cursor < plan.blocks.length) {
                 if (job.cancelled) {
                     return;
@@ -337,6 +418,7 @@ export function startBuild(token, dimension, origin, plan, cursor, hooks) {
                     }
                 }
                 state.cursor += 1;
+                state.progress = state.terrainTotal + state.cursor;
 
                 sinceYield += 1;
                 if (sinceYield >= PHYSICAL.blocksPerSlice) {

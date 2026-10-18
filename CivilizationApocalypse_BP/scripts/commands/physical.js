@@ -2,9 +2,10 @@ import { PHYSICAL, PHYSICAL_EVENT_IDS, SCRIPT_EVENT_NAMESPACE } from "../config.
 import { districtById } from "../kingdom/state.js";
 import { system, world } from "@minecraft/server";
 import { activeKind, cancelActiveJob, finishJob, holdChunks, isBusy, releaseChunks, reserveJob, startBuild, startScan } from "../integration/districtBuilder.js";
+import { startScout, startTerrainScan } from "../integration/terrainScan.js";
 import { planDistrict, planHash } from "../structures/planner.js";
 import { formatErrorLines } from "../ui/report.js";
-import { parseArgs } from "./args.js";
+import { parseArgs, parseCount } from "./args.js";
 import { reply } from "./reply.js";
 
 /**
@@ -18,13 +19,17 @@ let registered = false;
 /**
  * Physical district commands.
  *
- *   civ:district_generate [district-id] [confirm]   dry-run survey; with `confirm`, build
- *   civ:district_resume   [district-id]              finish an interrupted build
- *   civ:district_status                              record + job state
- *   civ:district_abort                               stop the running job (blocks stay)
+ *   civ:district_scout   [radius]                     read-only: rank nearby building sites
+ *   civ:district_generate [district-id] [at x z] [maxcut=N] [maxfill=N] [confirm] [terrain=code]
+ *                                                     read-only survey; with `confirm`, build
+ *   civ:district_resume   [district-id]               finish an interrupted build
+ *   civ:district_status                               record + job state
+ *   civ:district_abort                                stop the running job (blocks stay)
  *
- * The district is centred on the invoking player's feet block. Nothing is written without
- * the word `confirm`, and a site with any obstruction or non-natural ground is refused.
+ * Surveys never write. The district is centred on the invoking player (or on `at x z`), the
+ * real ground height is read from the world, and natural terrain (grass, flowers, natural trees,
+ * moderate slopes) is prepared only after an explicit `confirm` - and, when terrain would change,
+ * only with the `terrain=<code>` the survey printed. Player builds are never touched.
  *
  * @param {KingdomStore} kingdomStore
  */
@@ -43,6 +48,8 @@ export function registerPhysicalCommands(kingdomStore) {
             handleStatus(kingdomStore, event);
         } else if (event.id === PHYSICAL_EVENT_IDS.abort) {
             handleAbort(event);
+        } else if (event.id === PHYSICAL_EVENT_IDS.scout) {
+            handleScout(parseArgs(event.message), event);
         }
     }, { namespaces: [SCRIPT_EVENT_NAMESPACE] });
 }
@@ -95,6 +102,51 @@ function patchPhysical(kingdomStore, districtId, patch) {
 }
 
 /**
+ * Parse `[district-id] [at <x> <z>] [maxcut=N] [maxfill=N] [terrain=<code>] [confirm]`.
+ * @param {string[]} args
+ */
+function parseGenerateArgs(args) {
+    /** @type {{ districtId: string | undefined, confirm: boolean, at: { x: number, z: number } | undefined, terrain: string | undefined, maxCut: number, maxFill: number, error: string | undefined }} */
+    const out = { districtId: undefined, confirm: false, at: undefined, terrain: undefined, maxCut: PHYSICAL.maxCut, maxFill: PHYSICAL.maxFill, error: undefined };
+    for (let index = 0; index < args.length; index += 1) {
+        const arg = /** @type {string} */ (args[index]);
+        if (arg === "confirm") {
+            out.confirm = true;
+        } else if (arg === "at") {
+            const x = Number(args[index + 1]);
+            const z = Number(args[index + 2]);
+            if (!Number.isInteger(x) || !Number.isInteger(z)) {
+                out.error = "'at' needs two whole numbers: at <x> <z>";
+                return out;
+            }
+            out.at = { x, z };
+            index += 2;
+        } else if (arg.startsWith("terrain=")) {
+            out.terrain = arg.slice("terrain=".length);
+        } else if (arg.startsWith("maxcut=") || arg.startsWith("maxfill=")) {
+            const [name, raw] = arg.split("=");
+            const value = Number(raw);
+            const cap = name === "maxcut" ? PHYSICAL.capCut : PHYSICAL.capFill;
+            if (!Number.isInteger(value) || value < 0 || value > cap) {
+                out.error = `${String(name)} must be a whole number from 0 to ${String(cap)}`;
+                return out;
+            }
+            if (name === "maxcut") {
+                out.maxCut = value;
+            } else {
+                out.maxFill = value;
+            }
+        } else if (out.districtId === undefined && !arg.includes("=")) {
+            out.districtId = arg;
+        } else {
+            out.error = `unrecognised argument '${arg}'`;
+            return out;
+        }
+    }
+    return out;
+}
+
+/**
  * @param {KingdomStore} kingdomStore
  * @param {string[]} args
  * @param {ScriptEvent} event
@@ -104,7 +156,7 @@ function handleGenerate(kingdomStore, args, event, resume) {
     const title = resume ? "Resume refused" : "Generate refused";
     const found = playerOf(event);
     if (found === undefined) {
-        reply(formatErrorLines(title, ["Run this as a player: the district is centred on your feet."]), event);
+        reply(formatErrorLines(title, ["Run this as a player: the district is centred on your position."]), event);
         return;
     }
     const player = /** @type {Player} */ (found);
@@ -112,8 +164,13 @@ function handleGenerate(kingdomStore, args, event, resume) {
         say(player, formatErrorLines(title, [`A physical ${String(activeKind())} job is already running.`, "Wait for it, or run /scriptevent civ:district_abort."]));
         return;
     }
-    const confirm = args.includes("confirm");
-    const districtId = args.find((arg) => arg !== "confirm") ?? PHYSICAL.prototypeDistrict;
+    const parsed = parseGenerateArgs(args);
+    if (parsed.error !== undefined) {
+        say(player, formatErrorLines(title, [parsed.error, "Usage: /scriptevent civ:district_generate [district-id] [at <x> <z>] [maxcut=N] [maxfill=N] [confirm] [terrain=<code>]"]));
+        return;
+    }
+    const confirm = parsed.confirm;
+    const districtId = parsed.districtId ?? PHYSICAL.prototypeDistrict;
     if (districtId !== PHYSICAL.prototypeDistrict) {
         say(player, formatErrorLines(title, [`Only ${PHYSICAL.prototypeDistrict} has a physical layout so far.`]));
         return;
@@ -150,15 +207,17 @@ function handleGenerate(kingdomStore, args, event, resume) {
         return;
     }
 
-    const origin = resume
-        ? { x: record.origin.x, y: record.origin.y, z: record.origin.z }
-        : { x: Math.floor(player.location.x), y: Math.floor(player.location.y), z: Math.floor(player.location.z) };
     const dimension = player.dimension;
-    const startCursor = resume ? Number(record.placed) : 0;
+    const centre = resume
+        ? { x: Number(record.origin.x), z: Number(record.origin.z) }
+        : parsed.at ?? { x: Math.floor(player.location.x), z: Math.floor(player.location.z) };
+    const resumePhase = resume ? (record.phase === "terrain" && record.terrain ? "terrain" : "structure") : "terrain";
+    const limits = resume && record.terrain ? { maxCut: Number(record.terrain.maxCut), maxFill: Number(record.terrain.maxFill) } : { maxCut: parsed.maxCut, maxFill: parsed.maxFill };
+    const startCursor = resume && resumePhase === "structure" ? Number(record.placed) : 0;
 
     say(player, [
         `=== ${district.name}: ${resume ? "resuming" : confirm ? "generating" : "survey (dry run)"} ===`,
-        `Centre ${String(origin.x)}, ${String(origin.y)}, ${String(origin.z)} in ${dimension.id}; footprint ${String(plan.half * 2 + 1)} x ${String(plan.half * 2 + 1)}.`,
+        `Centre column ${String(centre.x)}, ${String(centre.z)} in ${dimension.id}; footprint ${String(plan.half * 2 + 1)} x ${String(plan.half * 2 + 1)}; terrain limits: cut ${String(limits.maxCut)}, fill ${String(limits.maxFill)}.`,
         `Plan: ${String(plan.blockCount)} blocks - ${Object.entries(plan.counts.built).map(([kind, count]) => `${String(count)} ${kind}`).join(", ")}, 1 permanent curtain wall, ${String(plan.gates.length)} gates.`,
         ...plan.notes,
         "Surveying the site (nothing is written yet)...",
@@ -179,41 +238,89 @@ function handleGenerate(kingdomStore, args, event, resume) {
     };
 
     void (async () => {
-        const held = await holdChunks(dimension, origin, plan.half);
+        const held = await holdChunks(dimension, { x: centre.x, y: Math.floor(player.location.y), z: centre.z }, plan.half + PHYSICAL.readApron);
         if (token.cancelled) {
+            if (!isBusy()) {
+                releaseChunks();
+            }
             return;
         }
         if (held.note) {
             say(player, [`Note: ${held.note}`]);
         }
-        startScan(token, dimension, origin, plan, (scan) => {
-            if (scan.unloaded > 0 || scan.conflicts > 0) {
+        if (resume && resumePhase === "structure") {
+            const origin = { x: Number(record.origin.x), y: Number(record.origin.y), z: Number(record.origin.z) };
+            startScan(token, dimension, origin, plan, (scan) => {
+                if (scan.unloaded > 0 || scan.conflicts > 0) {
+                    finish();
+                    say(player, formatErrorLines("Resume refused - nothing was changed", [`${String(scan.conflicts)} obstructed cell(s), ${String(scan.unloaded)} unloaded cell(s).`, ...scan.samples]));
+                    return;
+                }
+                beginBuild(origin, undefined);
+            });
+            return;
+        }
+        startTerrainScan(token, dimension, centre, plan.half, limits, resume ? Number(record.terrain.baseY) : undefined, (scan) => {
+            if (!scan.ok) {
                 finish();
                 say(player, formatErrorLines("Site refused - nothing was changed", [
-                    `${String(scan.conflicts)} obstructed cell(s), ${String(scan.unloaded)} unloaded cell(s) in the footprint.`,
+                    scan.unloaded > 0 ? `${String(scan.unloaded)} footprint column(s) are not loaded - stay near the site.` : `${String(scan.problems.length)} problem(s) in the footprint.`,
                     ...scan.samples,
-                    "Natural terrain (hills, trees, water) is not supported yet - nothing was touched. Stand in a flat, empty clearing and try again.",
+                    "Nothing was touched. Try /scriptevent civ:district_scout to find a nearby suitable spot.",
                 ]));
                 return;
             }
-            if (!confirm && !resume) {
+            const origin = { x: centre.x, y: scan.baseY + 1, z: centre.z };
+            const changes = scan.counts.cut + scan.counts.fill + scan.counts.top + scan.counts.clear;
+            say(player, [
+                `Ground found at y=${String(scan.groundMin)}..${String(scan.groundMax)}; platform at y=${String(scan.baseY)} (centre ${String(origin.x)}, ${String(origin.y)}, ${String(origin.z)}).`,
+                changes === 0
+                    ? `Site is clear: ${String(plan.blockCount)} blocks to place.`
+                    : `Terrain work: cut ${String(scan.counts.cut)}, fill ${String(scan.counts.fill)}, resurface ${String(scan.counts.top)}, clear ${String(scan.counts.clear)} (${String(scan.counts.plants)} plant blocks, ${String(scan.counts.treeBlocks)} natural tree blocks). Then ${String(plan.blockCount)} blocks to place.`,
+            ]);
+            if (!resume && !confirm) {
                 finish();
+                const atArg = ` at ${String(centre.x)} ${String(centre.z)}`;
+                const limitArg = ` maxcut=${String(limits.maxCut)} maxfill=${String(limits.maxFill)}`;
                 say(player, [
-                    `Site is clear: ${String(scan.toPlace)} blocks to place, ${String(scan.alreadyBuilt)} already present.`,
-                    "The ground surface under roads, floors and farms will be REPLACED. Nothing above ground is touched.",
-                    `To build here: /scriptevent civ:district_generate ${districtId} confirm`,
+                    "Nothing was changed. Only natural ground, grass, flowers and natural trees inside the footprint would be touched; no player build is ever overwritten.",
+                    changes === 0
+                        ? `To build here: /scriptevent civ:district_generate ${districtId}${atArg}${limitArg} confirm`
+                        : `To prepare the terrain and build: /scriptevent civ:district_generate ${districtId}${atArg}${limitArg} confirm terrain=${scan.fingerprint}`,
                 ]);
                 return;
             }
-            beginBuild();
+            if (resume && record.terrain && (scan.counts.cut > Number(record.terrain.cut) || scan.counts.fill > Number(record.terrain.fill) || scan.counts.top > Number(record.terrain.top) || scan.counts.clear > Number(record.terrain.clear))) {
+                finish();
+                say(player, formatErrorLines("Resume refused - nothing was changed", [
+                    "The terrain now needs more work than the survey you approved (new growth or changes).",
+                    `approved: cut ${String(record.terrain.cut)}, fill ${String(record.terrain.fill)}, resurface ${String(record.terrain.top)}, clear ${String(record.terrain.clear)}`,
+                ]));
+                return;
+            }
+            if (!resume && changes > 0 && parsed.terrain !== scan.fingerprint) {
+                finish();
+                say(player, formatErrorLines("Confirm refused - nothing was changed", [
+                    parsed.terrain === undefined ? "This site needs terrain changes, which need explicit approval." : "The world no longer matches the survey you approved.",
+                    "Run the survey again (without confirm) and use the exact command it prints.",
+                ]));
+                return;
+            }
+            beginBuild(origin, scan);
         });
     })().catch((error) => {
         finish();
         say(player, formatErrorLines("Survey failed", [String(error)]));
     });
 
-    function beginBuild() {
+    /**
+     * @param {{ x: number, y: number, z: number }} origin
+     * @param {import("../integration/terrainScan.js").TerrainScan | undefined} scan
+     */
+    function beginBuild(origin, scan) {
+        const work = scan !== undefined && scan.ok && scan.counts.cut + scan.counts.fill + scan.counts.top + scan.counts.clear > 0 ? scan : undefined;
         if (!resume) {
+            const survey = /** @type {import("../integration/terrainScan.js").TerrainScan} */ (scan);
             const saved = patchPhysical(kingdomStore, districtId, {
                 layout: PHYSICAL.layoutId,
                 version: plan.version,
@@ -224,6 +331,18 @@ function handleGenerate(kingdomStore, args, event, resume) {
                 total: plan.blockCount,
                 planHash: hash,
                 built: plan.counts.built,
+                phase: work ? "terrain" : "structure",
+                terrain: {
+                    mode: work ? "terraced" : "flat",
+                    baseY: survey.baseY,
+                    cut: survey.counts.cut,
+                    fill: survey.counts.fill,
+                    top: survey.counts.top,
+                    clear: survey.counts.clear,
+                    maxCut: limits.maxCut,
+                    maxFill: limits.maxFill,
+                    fp: survey.fingerprint,
+                },
             });
             if (!saved) {
                 finish();
@@ -231,25 +350,28 @@ function handleGenerate(kingdomStore, args, event, resume) {
                 return;
             }
         }
-        say(player, [`Building ${String(plan.blockCount - startCursor)} blocks. Stay within ~40 blocks; progress is reported as it goes.`]);
+        say(player, [`Building ${String(plan.blockCount - startCursor)} structure blocks${work ? " after terrain preparation" : ""}. Stay within ~40 blocks; progress is reported as it goes.`]);
         let lastSaved = startCursor;
         let lastReported = -1;
         startBuild(token, dimension, origin, plan, startCursor, {
             onSlice(state) {
-                if (state.cursor - lastSaved >= PHYSICAL.saveEvery) {
+                if (state.phase === "structure" && state.cursor - lastSaved >= PHYSICAL.saveEvery) {
                     lastSaved = state.cursor;
                     patchPhysical(kingdomStore, districtId, { placed: state.cursor });
                 }
-                const percent = Math.floor((state.cursor / state.total) * 100 / 25) * 25;
+                const percent = Math.floor(((state.progress / state.progressTotal) * 100) / 25) * 25;
                 if (percent > lastReported && percent < 100) {
                     lastReported = percent;
-                    say(player, [`  ${String(percent)}% (${String(state.cursor)} / ${String(state.total)})`]);
+                    say(player, [`  ${String(percent)}% (${state.phase}: ${String(state.progress)} / ${String(state.progressTotal)})`]);
                 }
+            },
+            onPhase() {
+                patchPhysical(kingdomStore, districtId, { phase: "structure" });
             },
             onStopped(reason, state) {
                 try {
-                    patchPhysical(kingdomStore, districtId, { placed: state.cursor });
-                    say(player, formatErrorLines("Build paused", [reason, `${String(state.cursor)} of ${String(state.total)} blocks handled.`, ...state.samples]));
+                    patchPhysical(kingdomStore, districtId, { placed: state.phase === "structure" ? state.cursor : 0, phase: state.phase });
+                    say(player, formatErrorLines("Build paused", [reason, `${String(state.progress)} of ${String(state.progressTotal)} steps handled.`, ...state.samples]));
                 } finally {
                     releaseChunks();
                 }
@@ -257,7 +379,7 @@ function handleGenerate(kingdomStore, args, event, resume) {
             onDone(state) {
                 try {
                     const clean = state.refused === 0 && state.failed === 0;
-                    patchPhysical(kingdomStore, districtId, clean ? { status: "complete", placed: state.total } : { status: "building", placed: 0 });
+                    patchPhysical(kingdomStore, districtId, clean ? { status: "complete", placed: state.total, phase: "structure" } : { status: "building", placed: 0, phase: "structure" });
                     say(player, [
                         clean ? `=== ${district.name} is built ===` : "=== Build finished with problems ===",
                         `Placed ${String(state.placed)}, already present ${String(state.alreadyBuilt)}, refused ${String(state.refused)}, failed ${String(state.failed)}, state fallbacks ${String(state.degraded)}.`,
@@ -269,8 +391,83 @@ function handleGenerate(kingdomStore, args, event, resume) {
                     releaseChunks();
                 }
             },
-        });
+        }, work ? { centre, clear: work.clear, ops: work.ops } : resume && resumePhase === "terrain" ? { centre, clear: [], ops: [] } : undefined);
     }
+}
+
+/**
+ * Read-only: rank nearby sites.
+ * @param {string[]} args
+ * @param {ScriptEvent} event
+ */
+function handleScout(args, event) {
+    const player = playerOf(event);
+    if (player === undefined) {
+        reply(formatErrorLines("Scout refused", ["Run this as a player: the search is centred on you."]), event);
+        return;
+    }
+    if (isBusy()) {
+        say(player, formatErrorLines("Scout refused", [`A physical ${String(activeKind())} job is already running.`, "Wait for it, or run /scriptevent civ:district_abort."]));
+        return;
+    }
+    const radius = parseCount(args[0], PHYSICAL.scoutDefaultRadius, 8, PHYSICAL.scoutMaxRadius);
+    if (radius.error) {
+        say(player, formatErrorLines("Scout refused", [`'${String(args[0])}' ${radius.error}`, `Usage: /scriptevent civ:district_scout [radius 8-${String(PHYSICAL.scoutMaxRadius)}]`]));
+        return;
+    }
+    const reserved = reserveJob("scout");
+    if (reserved === undefined) {
+        say(player, formatErrorLines("Scout refused", ["A physical job is already running."]));
+        return;
+    }
+    const token = reserved;
+    const dimension = player.dimension;
+    const centre = { x: Math.floor(player.location.x), z: Math.floor(player.location.z) };
+    const half = 24;
+    const limits = { maxCut: PHYSICAL.maxCut, maxFill: PHYSICAL.maxFill };
+    say(player, [`=== Scouting within ${String(radius.value)} blocks (read-only) ===`, "Reading the ground around you..."]);
+
+    const finish = () => {
+        if (!token.cancelled) {
+            finishJob(token);
+            releaseChunks();
+        }
+    };
+    void (async () => {
+        const held = await holdChunks(dimension, { x: centre.x, y: Math.floor(player.location.y), z: centre.z }, radius.value + half + PHYSICAL.readApron);
+        if (token.cancelled) {
+            if (!isBusy()) {
+                releaseChunks();
+            }
+            return;
+        }
+        if (held.note) {
+            say(player, [`Note: ${held.note}`]);
+        }
+        startScout(token, dimension, centre, radius.value, half, limits, (result) => {
+            finish();
+            if (result.sites.length === 0) {
+                const top = Object.entries(result.reasons).sort((a, b) => b[1] - a[1]).slice(0, 3);
+                say(player, formatErrorLines("No suitable site found", [
+                    `${String(result.evaluated)} candidate site(s) checked${result.unloaded > 0 ? `, ${String(result.unloaded)} unloaded column(s)` : ""}.`,
+                    ...top.map(([reason, count]) => `  ${String(count)}x ${reason}`),
+                    "Move to a grassy, gently sloping area away from water and buildings, or try a larger radius.",
+                ]));
+                return;
+            }
+            say(player, [
+                `Best ${String(result.sites.length)} site(s) from ${String(result.evaluated)} checked (cut/fill = blocks of earthwork):`,
+                ...result.sites.flatMap((site, index) => [
+                    `${String(index + 1)}) centre ${String(site.x)}, ${String(site.z)}  ground ~y=${String(site.baseY)}  cut ${String(site.cut)}, fill ${String(site.fill)}, tree blocks ~${String(site.trees)}, ${String(Math.round(site.distance))} blocks away`,
+                    `   survey: /scriptevent civ:district_generate district-1 at ${String(site.x)} ${String(site.z)}`,
+                ]),
+                "A survey is read-only and prints the exact confirm command.",
+            ]);
+        });
+    })().catch((error) => {
+        finish();
+        say(player, formatErrorLines("Scout failed", [String(error)]));
+    });
 }
 
 /**
@@ -287,9 +484,12 @@ function handleStatus(kingdomStore, event) {
     for (const district of /** @type {any[]} */ (loaded.kingdom.districts)) {
         const record = district.physical;
         if (!record) {
-            lines.push(`${String(district.name)}: not generated${district.id === PHYSICAL.prototypeDistrict ? ` (/scriptevent civ:district_generate ${String(district.id)})` : ""}`);
+            lines.push(`${String(district.name)}: not generated${district.id === PHYSICAL.prototypeDistrict ? ` (survey first: /scriptevent civ:district_generate ${String(district.id)})` : ""}`);
         } else {
-            lines.push(`${String(district.name)}: ${String(record.status)} - ${String(record.placed)}/${String(record.total)} blocks, centre ${String(record.origin.x)}, ${String(record.origin.y)}, ${String(record.origin.z)} (${String(record.dimension)}), layout ${String(record.layout)} v${String(record.version)}`);
+            lines.push(`${String(district.name)}: ${String(record.status)}${record.phase ? ` (${String(record.phase)} phase)` : ""} - ${String(record.placed)}/${String(record.total)} blocks, centre ${String(record.origin.x)}, ${String(record.origin.y)}, ${String(record.origin.z)} (${String(record.dimension)}), layout ${String(record.layout)} v${String(record.version)}`);
+            if (record.terrain) {
+                lines.push(`  terrain: ${String(record.terrain.mode)}, platform y=${String(record.terrain.baseY)}, cut ${String(record.terrain.cut)}, fill ${String(record.terrain.fill)}, clear ${String(record.terrain.clear)}`);
+            }
             if (record.status === "building" && !isBusy()) {
                 lines.push("  interrupted - run /scriptevent civ:district_resume");
             }
