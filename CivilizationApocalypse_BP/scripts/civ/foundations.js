@@ -27,7 +27,7 @@ export const IDS = Object.freeze({
     wall: "minecraft:stone_bricks",
     deck: "minecraft:stone_bricks",
     rail: "minecraft:stone_brick_wall",
-    road: "minecraft:dirt_path",
+    road: "minecraft:grass_path",
 });
 
 /**

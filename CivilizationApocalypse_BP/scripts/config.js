@@ -47,6 +47,31 @@ export const PHYSICAL_EVENT_IDS = {
     gateOpen: "civ:gate_open",
     gateClose: "civ:gate_close",
     gateAuto: "civ:gate_auto",
+    gateStatus: "civ:gate_status",
+    gateTest: "civ:gate_test",
+};
+
+/**
+ * One-command civilization generation (explicit invocation only, never automatic).
+ * NOTE: a space-separated command like "civ generate" is not a valid id - ids are namespace:name with exactly ONE colon.
+ */
+export const CIV_EVENT_IDS = {
+    generate: "civ:generate",
+    plan: "civ:generate_plan",
+    status: "civ:generate_status",
+    abort: "civ:generate_abort",
+    resume: "civ:generate_resume",
+    devgate: "civ:generate_devgate",
+};
+
+export const CIV = {
+    /** Search radius in blocks (argument radius=N may raise it up to maxSearchRadius). */
+    defaultSearchRadius: 220,
+    maxSearchRadius: 400,
+    /** World dynamic property that unlocks building districts 2-5 (development only). */
+    devGateKey: "civ_devgate",
+    /** Ticks between construction slices (1 = every tick). */
+    sliceEveryTicks: 1,
 };
 
 export const PHYSICAL = {

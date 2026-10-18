@@ -360,6 +360,29 @@ export function findValidationProblems(value) {
                 }
             });
         }
+        if (district.civ !== undefined) {
+            const civ = district.civ;
+            const integer = (/** @type {any} */ value) => Number.isInteger(value);
+            if (civ === null || typeof civ !== "object") {
+                problems.push(`${label}.civ must be an object`);
+            } else {
+                if (!["building", "paused", "complete"].includes(civ.status)) {
+                    problems.push(`${label}.civ.status must be building, paused or complete`);
+                }
+                if (!integer(civ.seed) || !integer(civ.startedStep) || civ.startedStep < 0) {
+                    problems.push(`${label}.civ.seed and startedStep must be integers`);
+                }
+                for (const field of ["anchor", "centre"]) {
+                    const point = civ[field];
+                    if (point === null || typeof point !== "object" || !integer(point.x) || !integer(point.z)) {
+                        problems.push(`${label}.civ.${field} must hold integer x and z`);
+                    }
+                }
+                if (typeof civ.checksum !== "string" || civ.checksum.length === 0 || typeof civ.stage !== "string") {
+                    problems.push(`${label}.civ needs a checksum and a stage`);
+                }
+            }
+        }
         if (district.physical !== undefined) {
             const physical = district.physical;
             const origin = physical?.origin;

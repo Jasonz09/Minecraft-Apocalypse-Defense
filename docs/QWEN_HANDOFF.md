@@ -160,7 +160,7 @@ Three throwaway diagnostics also landed in `dev/` and are **safe for you to dele
 2. Pick the canonical op-id form, then write `integration/civBuilder.js`: consume
    `siteOpSlices(record, { stages })`, classify each op through `structures/siteRules.js` +
    `terrain.js` (your existing per-cell safety path), and drive it with `jobs.createQueue(siteJobSpecs(record))`.
-   Keep `civ:district:generate` dry-run/confirm semantics and refuse when `record.problems` is non-empty.
+   Keep `civ:district_generate` dry-run/confirm semantics and refuse when `record.problems` is non-empty.
 3. Add a `planstore` round-trip test for the district record (57 KB → 2 chunks at 30,000 chars) — I
    did not exercise chunking, only the byte budget.
 4. Decide items 5.3 (the ungated 1↔3 wall) and 5.4 (terracing) and reflect them in

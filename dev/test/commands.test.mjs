@@ -12,7 +12,7 @@ const scripts = join(root, "CivilizationApocalypse_BP", "scripts");
 const config = await import(pathToFileURL(join(scripts, "config.js")).href);
 
 const VALID = /^[a-z][a-z0-9_]*:[a-z][a-z0-9_]*$/;
-const groups = { SCRIPT_EVENT_IDS: config.SCRIPT_EVENT_IDS, DEBUG_EVENT_IDS: config.DEBUG_EVENT_IDS, PHYSICAL_EVENT_IDS: config.PHYSICAL_EVENT_IDS };
+const groups = { SCRIPT_EVENT_IDS: config.SCRIPT_EVENT_IDS, DEBUG_EVENT_IDS: config.DEBUG_EVENT_IDS, PHYSICAL_EVENT_IDS: config.PHYSICAL_EVENT_IDS, CIV_EVENT_IDS: config.CIV_EVENT_IDS };
 const allIds = Object.values(groups).flatMap((group) => Object.values(group));
 
 function walk(dir, out = []) {
@@ -26,7 +26,7 @@ function walk(dir, out = []) {
 }
 
 test("every registered id has exactly one colon, a lowercase name and the civ namespace", () => {
-    assert.ok(allIds.length >= 13, `expected the full command set, saw ${String(allIds.length)}`);
+    assert.ok(allIds.length >= 19, `expected the full command set, saw ${String(allIds.length)}`);
     for (const id of allIds) {
         assert.match(id, VALID, `${id} is not a valid scriptevent id`);
         assert.equal(id.split(":").length, 2, `${id} must have exactly one colon`);

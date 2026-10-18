@@ -1,0 +1,586 @@
+import { system, world } from "@minecraft/server";
+import { CIV, CIV_EVENT_IDS, SCRIPT_EVENT_NAMESPACE } from "../config.js";
+import { createJobStore, progress } from "../civ/jobs.js";
+import { siteGroundRegion } from "../civ/siteprofile.js";
+import { abortConstruction, describePlan, getSession, loadSavedRun, persistRun, planWorld, sessionStatus, startConstruction, PROTECT_MARGIN } from "../integration/civBuilder.js";
+import { releaseArea } from "../integration/civScan.js";
+import { activeKind, cancelActiveJob, finishJob, isBusy, reserveJob } from "../integration/districtBuilder.js";
+import { districtById, findValidationProblems } from "../kingdom/state.js";
+import { formatErrorLines } from "../ui/report.js";
+import { parseArgs } from "./args.js";
+import { reply } from "./reply.js";
+
+/**
+ * One-command civilization generation for a dedicated NEW Creative test world.
+ *
+ *   civ:generate [radius=N] [seed=N]   scan, plan, validate, store, then build district 1 - ONE invocation authorises it all
+ *   civ:generate_plan [radius=N] [seed=N]   the same scan/plan/validate, strictly read-only, prints the numbers
+ *   civ:generate_status                 record, job queue and live counts
+ *   civ:generate_abort                  stop; placed blocks stay and the queue is kept
+ *   civ:generate_resume                 continue from the stored plan and queue (also after a restart)
+ *   civ:generate_devgate on|off         development flag; districts 2-5 are NOT built by this milestone
+ *
+ * Nothing here runs at import or activation, and nothing starts without one of these typed commands.
+ *
+ * @typedef {ReturnType<typeof import("../kingdom/store.js").createKingdomStore>} KingdomStore
+ * @typedef {import("@minecraft/server").ScriptEventCommandMessageAfterEvent} ScriptEvent
+ * @typedef {import("@minecraft/server").Player} Player
+ * @typedef {{ x0: number, z0: number, x1: number, z1: number }} Rect
+ */
+
+let registered = false;
+
+/** Half-extent of the 49 x 49 Hearthgate prototype footprint. */
+const PROTOTYPE_HALF = 24;
+
+/** Optional pure gate registration (agent X3). Can be injected; otherwise loaded dynamically if the module exists. */
+const hooks = {
+    /** @type {((kingdom: any, record: any, plan: any) => any) | undefined} */
+    registerPhysicalGates: undefined,
+    loaded: false,
+};
+
+/** @param {((kingdom: any, record: any, plan: any) => any) | undefined} fn */
+export function setGateLinker(fn) {
+    hooks.registerPhysicalGates = fn;
+    hooks.loaded = true;
+}
+
+async function loadGateLinker() {
+    if (hooks.loaded) {
+        return hooks.registerPhysicalGates;
+    }
+    hooks.loaded = true;
+    try {
+        const spec = "../civ/gatelink.js";
+        const mod = await import(spec);
+        if (typeof mod.registerPhysicalGates === "function") {
+            hooks.registerPhysicalGates = mod.registerPhysicalGates;
+        }
+    } catch (_error) {
+        // the module (or dynamic import) is not available: gates simply stay unregistered
+    }
+    return hooks.registerPhysicalGates;
+}
+
+/**
+ * @param {KingdomStore} kingdomStore
+ */
+export function registerCivCommands(kingdomStore) {
+    if (registered) {
+        return;
+    }
+    registered = true;
+    system.afterEvents.scriptEventReceive.subscribe((event) => {
+        const id = event.id;
+        if (id === CIV_EVENT_IDS.generate) {
+            void handleGenerate(kingdomStore, parseArgs(event.message), event, false);
+        } else if (id === CIV_EVENT_IDS.plan) {
+            void handleGenerate(kingdomStore, parseArgs(event.message), event, true);
+        } else if (id === CIV_EVENT_IDS.status) {
+            handleStatus(kingdomStore, event);
+        } else if (id === CIV_EVENT_IDS.abort) {
+            handleAbort(kingdomStore, event);
+        } else if (id === CIV_EVENT_IDS.resume) {
+            void handleResume(kingdomStore, event);
+        } else if (id === CIV_EVENT_IDS.devgate) {
+            handleDevgate(parseArgs(event.message), event);
+        }
+    }, { namespaces: [SCRIPT_EVENT_NAMESPACE] });
+}
+
+// ---------------------------------------------------------------------------------------------
+// Pure helpers (exported for tests)
+
+/**
+ * @param {string[]} args
+ * @returns {{ radius: number, seed: number | undefined, districts: string | undefined, error: string | undefined }}
+ */
+export function parseCivArgs(args) {
+    /** @type {{ radius: number, seed: number | undefined, districts: string | undefined, error: string | undefined }} */
+    const out = { radius: CIV.defaultSearchRadius, seed: undefined, districts: undefined, error: undefined };
+    for (const arg of args) {
+        const match = /^([a-z]+)=(.*)$/i.exec(arg);
+        if (match === null) {
+            out.error = `unrecognised argument '${arg}'`;
+            return out;
+        }
+        const name = String(match[1]).toLowerCase();
+        const raw = String(match[2]);
+        if (name === "radius") {
+            const value = Number(raw);
+            if (!/^\d+$/.test(raw) || value < 24 || value > CIV.maxSearchRadius) {
+                out.error = `radius must be a whole number from 24 to ${String(CIV.maxSearchRadius)}`;
+                return out;
+            }
+            out.radius = value;
+        } else if (name === "seed") {
+            const value = Number(raw);
+            if (!/^-?\d+$/.test(raw) || !Number.isSafeInteger(value)) {
+                out.error = "seed must be a whole number";
+                return out;
+            }
+            out.seed = value | 0;
+        } else if (name === "districts") {
+            out.districts = raw;
+        } else {
+            out.error = `unknown argument '${name}='`;
+            return out;
+        }
+    }
+    return out;
+}
+
+/**
+ * Rectangles of every existing physical district footprint (the 49 x 49 prototype and any recorded civilization).
+ * @param {any} kingdom
+ * @param {number} pad
+ * @returns {Rect[]}
+ */
+export function protectedRects(kingdom, pad) {
+    /** @type {Rect[]} */
+    const rects = [];
+    for (const district of /** @type {any[]} */ (kingdom?.districts ?? [])) {
+        const origin = district?.physical?.origin;
+        if (origin !== undefined && Number.isInteger(origin.x) && Number.isInteger(origin.z)) {
+            const half = PROTOTYPE_HALF + pad;
+            rects.push({ x0: origin.x - half, z0: origin.z - half, x1: origin.x + half, z1: origin.z + half });
+        }
+    }
+    return rects;
+}
+
+/**
+ * Validate the small `district.civ` record (integrator: call from kingdom/state.js findValidationProblems).
+ * @param {any} civ
+ * @param {string} [label]
+ * @returns {string[]}
+ */
+export function civRecordProblems(civ, label = "district.civ") {
+    /** @type {string[]} */
+    const problems = [];
+    if (civ === undefined) {
+        return problems;
+    }
+    if (civ === null || typeof civ !== "object") {
+        return [`${label} must be an object`];
+    }
+    if (!["building", "paused", "complete"].includes(civ.status)) {
+        problems.push(`${label}.status must be building, paused or complete`);
+    }
+    if (!Number.isInteger(civ.seed)) {
+        problems.push(`${label}.seed must be an integer`);
+    }
+    for (const field of ["anchor", "centre"]) {
+        const point = civ[field];
+        if (point === null || typeof point !== "object" || !Number.isInteger(point.x) || !Number.isInteger(point.z)) {
+            problems.push(`${label}.${field} must hold integer x and z`);
+        }
+    }
+    if (typeof civ.checksum !== "string" || civ.checksum.length === 0) {
+        problems.push(`${label}.checksum must be a non-empty string`);
+    }
+    if (typeof civ.stage !== "string") {
+        problems.push(`${label}.stage must be a string`);
+    }
+    if (!Number.isInteger(civ.startedStep) || civ.startedStep < 0) {
+        problems.push(`${label}.startedStep must be a non-negative integer`);
+    }
+    return problems;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Plumbing
+
+/** @param {ScriptEvent} event @returns {Player | undefined} */
+function playerOf(event) {
+    const source = event.sourceEntity ?? event.initiator;
+    return source !== undefined && source.typeId === "minecraft:player" ? /** @type {Player} */ (source) : undefined;
+}
+
+/** @param {Player} player @param {string[]} lines */
+function say(player, lines) {
+    try {
+        if (player.isValid) {
+            player.sendMessage(lines);
+            return;
+        }
+    } catch (_error) {
+        // fall through to a broadcast
+    }
+    world.sendMessage(lines);
+}
+
+/** @param {KingdomStore} store @param {Record<string, any>} patch */
+function patchCiv(store, patch) {
+    const loaded = store.load();
+    if (!loaded.kingdom) {
+        return false;
+    }
+    const district = districtById(loaded.kingdom, "district-1");
+    if (!district) {
+        return false;
+    }
+    district.civ = { ...(district.civ ?? {}), ...patch };
+    store.save(loaded.kingdom);
+    return true;
+}
+
+function devGateOn() {
+    try {
+        return world.getDynamicProperty(CIV.devGateKey) === true;
+    } catch (_error) {
+        return false;
+    }
+}
+
+/** @param {Record<string, number>} byReason */
+function topReasons(byReason) {
+    return Object.entries(byReason).sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).slice(0, 5).map(([reason, count]) => `  ${String(count)}x ${reason}`);
+}
+
+// ---------------------------------------------------------------------------------------------
+// civ:generate / civ:generate_plan
+
+/**
+ * @param {KingdomStore} kingdomStore
+ * @param {string[]} args
+ * @param {ScriptEvent} event
+ * @param {boolean} planOnly
+ */
+async function handleGenerate(kingdomStore, args, event, planOnly) {
+    const title = planOnly ? "Plan refused" : "Generate refused";
+    const player = playerOf(event);
+    if (player === undefined) {
+        reply(formatErrorLines(title, ["Run this as a player: the search is centred on you."]), event);
+        return;
+    }
+    const options = parseCivArgs(args);
+    if (options.error !== undefined) {
+        say(player, formatErrorLines(title, [options.error, `Usage: /scriptevent ${planOnly ? CIV_EVENT_IDS.plan : CIV_EVENT_IDS.generate} [radius=24-${String(CIV.maxSearchRadius)}] [seed=N]`]));
+        return;
+    }
+    if (options.districts !== undefined) {
+        say(player, formatErrorLines(title, devGateOn()
+            ? ["Building districts 2-5 is not enabled in this build (the development gate is on, but only district 1 exists as a construction plan)."]
+            : ["Building districts 2-5 is not available yet. Only district 1 (Hearthgate, enlarged) is built by this command."]));
+        return;
+    }
+    if (isBusy()) {
+        say(player, formatErrorLines(title, [`A ${String(activeKind())} job is already running.`, `Wait for it, or run /scriptevent ${CIV_EVENT_IDS.abort}.`]));
+        return;
+    }
+    if (player.dimension.id !== "minecraft:overworld") {
+        say(player, formatErrorLines(title, [`Run this in the overworld (you are in ${player.dimension.id}).`]));
+        return;
+    }
+    const loaded = kingdomStore.load();
+    const district = loaded.kingdom ? districtById(loaded.kingdom, "district-1") : undefined;
+    if (!loaded.kingdom || !district) {
+        say(player, formatErrorLines(title, [`No readable kingdom in this world: ${String(loaded.reason)}`]));
+        return;
+    }
+    if (!planOnly && district.civ !== undefined) {
+        say(player, formatErrorLines(title, [`Hearthgate (enlarged) already exists here (${String(district.civ.status)}).`, `Use /scriptevent ${CIV_EVENT_IDS.status}, or ${CIV_EVENT_IDS.resume} to continue an interrupted build. Nothing is generated twice.`]));
+        return;
+    }
+    const token = reserveJob(planOnly ? "civ-plan" : "civ-scan");
+    if (token === undefined) {
+        say(player, formatErrorLines(title, ["A job is already running."]));
+        return;
+    }
+    const seed = options.seed ?? ((Number.isInteger(loaded.kingdom.seed) ? loaded.kingdom.seed : 1) | 0);
+    const dimension = player.dimension;
+    const anchor = { x: Math.floor(player.location.x), z: Math.floor(player.location.z) };
+    const exclusions = protectedRects(loaded.kingdom, PROTECT_MARGIN);
+    say(player, [
+        `=== ${planOnly ? "Civilization plan (read-only)" : "Generating the civilization"} ===`,
+        `Centre ${String(anchor.x)}, ${String(anchor.z)}; search radius ${String(options.radius)}; seed ${String(seed)}; ${String(exclusions.length)} protected footprint(s).`,
+        planOnly ? "Nothing will be written." : "This one command authorises the whole build; progress is reported as it goes. Use civ:generate_abort to stop.",
+    ]);
+
+    /** @param {string[]} lines */
+    const sayHere = (lines) => say(player, lines);
+    /** @type {import("../integration/civBuilder.js").PlanOutcome} */
+    let outcome;
+    try {
+        outcome = await planWorld({ token, dimension, anchor, radius: options.radius, seed, exclusions, say: sayHere });
+    } catch (error) {
+        releaseArea();
+        finishJob(token);
+        say(player, formatErrorLines("Planning failed - nothing was changed", [String(error)]));
+        return;
+    }
+    if (token.cancelled) {
+        releaseArea();
+        return;
+    }
+    if (!outcome.ok) {
+        releaseArea();
+        finishJob(token);
+        say(player, formatErrorLines(`Stopped at ${outcome.stage} - nothing was changed`, [...outcome.reasons, ...(outcome.stage === "site" && exclusions.length > 0 ? ["An existing district blocks the nearby ground: walk a few hundred blocks away or raise radius=."] : []), "No block was written."]));
+        return;
+    }
+    const summary = describePlan(outcome);
+    const planLines = [
+        `Site: window ${String(outcome.site.window.x0)},${String(outcome.site.window.z0)} to ${String(outcome.site.window.x1)},${String(outcome.site.window.z1)}, ${String(Math.round(outcome.site.distance))} blocks from you; district 1 centre ${String(summary.centre.x)}, ${String(summary.centre.z)}.`,
+        `District areas ${summary.areas.join(" / ")} columns; compactness ${summary.compactness.map((c) => c.toFixed(2)).join(" / ")}; bbox fill ${summary.bboxFill.map((c) => c.toFixed(2)).join(" / ")}.`,
+        `Walls ${String(summary.wallLength)} blocks, ${String(summary.gateCount)} gates, roads ${String(summary.roadLength)} blocks, ${String(summary.lots)} lots in district 1.`,
+        `Estimated ${String(summary.ops)} block operations in ${String(summary.slices)} slices, about ${String(summary.minutes)} minutes. Stored size ${String(summary.stored.bytes)} / ${String(summary.stored.limit)} bytes.`,
+    ];
+    if (planOnly) {
+        releaseArea();
+        finishJob(token);
+        say(player, ["=== Plan is valid ===", ...planLines, `To build it: /scriptevent ${CIV_EVENT_IDS.generate}${options.radius === CIV.defaultSearchRadius ? "" : ` radius=${String(options.radius)}`} seed=${String(seed)}`, "Nothing was written."]);
+        return;
+    }
+
+    // (f) persist everything BEFORE the first block
+    const fresh = kingdomStore.load();
+    if (!fresh.kingdom || !districtById(fresh.kingdom, "district-1")) {
+        releaseArea();
+        finishJob(token);
+        say(player, formatErrorLines("Stopped - nothing was changed", ["The saved kingdom is no longer readable, so progress could not be recorded."]));
+        return;
+    }
+    const persisted = persistRun(outcome);
+    if (!persisted.ok || persisted.queue === undefined) {
+        releaseArea();
+        finishJob(token);
+        say(player, formatErrorLines("Stopped - nothing was changed", [String(persisted.reason)]));
+        return;
+    }
+    const record = outcome.record;
+    const civ = {
+        status: "building",
+        seed,
+        anchor: { x: outcome.plan.anchor.x, z: outcome.plan.anchor.z },
+        centre: summary.centre,
+        checksum: record.checksum,
+        stage: "clear",
+        startedStep: Number.isInteger(fresh.kingdom.step) ? fresh.kingdom.step : 0,
+        dimension: dimension.id,
+        hq: summary.hq,
+        ops: 0,
+        opsTotal: summary.ops,
+        placed: 0,
+        skipped: 0,
+    };
+    const problems = civRecordProblems(civ);
+    if (problems.length > 0 || !patchCiv(kingdomStore, civ)) {
+        releaseArea();
+        finishJob(token);
+        say(player, formatErrorLines("Stopped - nothing was changed", problems.length > 0 ? problems : ["Could not record the build in the saved kingdom."]));
+        return;
+    }
+    const linker = await loadGateLinker();
+    if (token.cancelled) {
+        return;
+    }
+    say(player, [...planLines, "Plan stored. Starting construction now."]);
+    beginConstruction(kingdomStore, player, token, dimension, outcome.plan, record, persisted.queue, linker, loaded.kingdom);
+}
+
+/**
+ * @param {KingdomStore} kingdomStore
+ * @param {Player} player
+ * @param {import("../integration/civBuilder.js").Job} token
+ * @param {import("@minecraft/server").Dimension} dimension
+ * @param {any} plan
+ * @param {any} record
+ * @param {import("../civ/jobs.js").JobQueue} queue
+ * @param {((kingdom: any, record: any, plan: any) => any) | undefined} linker
+ * @param {any} kingdomForRects
+ */
+function beginConstruction(kingdomStore, player, token, dimension, plan, record, queue, linker, kingdomForRects) {
+    const region = siteGroundRegion(plan, 1);
+    let gatesRegistered = districtById(kingdomForRects, "district-1")?.civ?.gates === true;
+    const registerGates = () => {
+        if (gatesRegistered || linker === undefined) {
+            return;
+        }
+        const loaded = kingdomStore.load();
+        if (!loaded.kingdom) {
+            return;
+        }
+        try {
+            const result = linker(loaded.kingdom, record, plan);
+            const problems = findValidationProblems(loaded.kingdom);
+            if (problems.length > 0) {
+                say(player, formatErrorLines("Gate registration skipped", problems.slice(0, 3)));
+                return;
+            }
+            kingdomStore.save(loaded.kingdom);
+            gatesRegistered = true;
+            patchCiv(kingdomStore, { gates: true });
+            say(player, [`Gates registered with the simulation (initially open)${result?.linked !== undefined ? `: ${String(result.linked)}` : ""}.`]);
+        } catch (error) {
+            say(player, formatErrorLines("Gate registration failed", [String(error)]));
+        }
+    };
+    startConstruction({
+        token,
+        dimension,
+        plan,
+        record,
+        queue,
+        region,
+        protectedRects: protectedRects(kingdomForRects, 1),
+        say: (lines) => say(player, lines),
+        saveCiv: (patch) => patchCiv(kingdomStore, patch),
+        onStageComplete(stage) {
+            if (stage === "gates") {
+                registerGates();
+            }
+        },
+        onEnd(result) {
+            if (result.status === "complete") {
+                registerGates();
+                const spot = result.spot;
+                say(player, [
+                    "=== Hearthgate (enlarged) is built ===",
+                    `Operations: estimated ${String(result.opsPlanned)}, processed ${String(result.opsDone)}; blocks placed ${String(result.counts.placed)}, already present ${String(result.counts.built)}, skipped ${String(result.counts.skipped)}, failed ${String(result.counts.failed)}, state fallbacks ${String(result.counts.stateFallbacks)}.`,
+                    ...(result.counts.skipped > 0 ? ["Skipped (never overwritten):", ...topReasons(result.counts.byReason)] : []),
+                    `Natural trees cleared ${String(result.counts.treesCleared)} (${String(result.counts.treeCells)} blocks); ${String(result.counts.skippedTrees)} tree(s) left alone.`,
+                    ...(result.counts.stateFallbacks > 0 ? ["WARNING: some blocks were placed without their facing/state. Report the lines below."] : []),
+                    ...result.counts.samples.slice(0, 4),
+                    spot === undefined ? "" : `Centre: ${String(spot.x)}, ${String(spot.z)}.  Tour it: /tp @s ${String(spot.x)} ${String(spot.y)} ${String(spot.z)}`,
+                    `Slices: ${String(result.slices.slices)} (max ${String(result.slices.maxOps)} ops, ${String(result.slices.maxReads)} reads per slice).`,
+                ].filter((line) => line.length > 0));
+            } else {
+                say(player, formatErrorLines("Build paused", [String(result.reason), `${String(result.opsDone)} of ${String(result.opsPlanned)} operations are done and saved.`, `Continue with /scriptevent ${CIV_EVENT_IDS.resume}.`, ...result.counts.samples.slice(0, 3)]));
+            }
+        },
+    });
+}
+
+// ---------------------------------------------------------------------------------------------
+// civ:generate_resume
+
+/**
+ * @param {KingdomStore} kingdomStore
+ * @param {ScriptEvent} event
+ */
+async function handleResume(kingdomStore, event) {
+    const title = "Resume refused";
+    const player = playerOf(event);
+    if (player === undefined) {
+        reply(formatErrorLines(title, ["Run this as a player."]), event);
+        return;
+    }
+    if (isBusy()) {
+        say(player, formatErrorLines(title, [`A ${String(activeKind())} job is already running.`]));
+        return;
+    }
+    const loaded = kingdomStore.load();
+    const district = loaded.kingdom ? districtById(loaded.kingdom, "district-1") : undefined;
+    const civ = district?.civ;
+    if (!loaded.kingdom || !district || civ === undefined) {
+        say(player, formatErrorLines(title, ["There is no generated civilization to resume."]));
+        return;
+    }
+    if (civ.status === "complete") {
+        say(player, formatErrorLines(title, ["The civilization is already complete."]));
+        return;
+    }
+    if (civ.dimension !== undefined && civ.dimension !== player.dimension.id) {
+        say(player, formatErrorLines(title, [`The build is in ${String(civ.dimension)}; you are in ${player.dimension.id}.`]));
+        return;
+    }
+    const token = reserveJob("civ-resume");
+    if (token === undefined) {
+        say(player, formatErrorLines(title, ["A job is already running."]));
+        return;
+    }
+    say(player, ["=== Resuming the civilization build ===", "Reloading the stored plan and job queue; verifying the checksum..."]);
+    // yield one tick so the message lands before the heavy rebuild
+    await new Promise((resolve) => system.runTimeout(() => resolve(undefined), 1));
+    if (token.cancelled) {
+        return;
+    }
+    const restored = loadSavedRun(civ);
+    if (!restored.ok) {
+        finishJob(token);
+        say(player, formatErrorLines(title, [...restored.reasons, "Nothing was changed."]));
+        return;
+    }
+    const linker = await loadGateLinker();
+    if (token.cancelled) {
+        return;
+    }
+    patchCiv(kingdomStore, { status: "building" });
+    say(player, [`Verified plan ${String(civ.checksum)}; ${String(restored.recovered)} interrupted element(s) recovered. Continuing.`]);
+    beginConstruction(kingdomStore, player, token, player.dimension, restored.plan, restored.record, restored.queue, linker, loaded.kingdom);
+}
+
+// ---------------------------------------------------------------------------------------------
+// status / abort / devgate
+
+/**
+ * @param {KingdomStore} kingdomStore
+ * @param {ScriptEvent} event
+ */
+function handleStatus(kingdomStore, event) {
+    const loaded = kingdomStore.load();
+    const district = loaded.kingdom ? districtById(loaded.kingdom, "district-1") : undefined;
+    if (!loaded.kingdom || !district) {
+        reply(formatErrorLines("Civilization status", [`No readable kingdom in this world: ${String(loaded.reason)}`]), event);
+        return;
+    }
+    const civ = district.civ;
+    const lines = ["=== Civilization generation ==="];
+    if (civ === undefined) {
+        lines.push(`Not generated. /scriptevent ${CIV_EVENT_IDS.plan} (read-only) or ${CIV_EVENT_IDS.generate} in a NEW Creative world.`);
+    } else {
+        lines.push(`Hearthgate (enlarged): ${String(civ.status)}, stage ${String(civ.stage)}, plan ${String(civ.checksum)}, seed ${String(civ.seed)}, anchor ${String(civ.anchor?.x)}, ${String(civ.anchor?.z)}, centre ${String(civ.centre?.x)}, ${String(civ.centre?.z)}, started at step ${String(civ.startedStep)}.`);
+        const live = sessionStatus();
+        if (live !== undefined) {
+            lines.push(`Running (${live.status}): ${live.stage} ${String(live.pct)}% (${String(live.done)} / ${String(live.total)} ops); placed ${String(live.counts.placed)}, skipped ${String(live.counts.skipped)}, failed ${String(live.counts.failed)}.`);
+        } else {
+            const stored = createJobStore(world).loadQueue({ recoverRunning: false });
+            if (stored.status === "ok" && stored.queue !== undefined) {
+                const overall = progress(stored.queue);
+                lines.push(`Stored queue: ${String(overall.pct)}% (${String(overall.totalOps - overall.remainingOps)} / ${String(overall.totalOps)} ops), state ${stored.queue.state}${civ.status !== "complete" ? `; continue with /scriptevent ${CIV_EVENT_IDS.resume}` : ""}.`);
+            } else {
+                lines.push(`Stored queue: ${stored.status}${stored.reason ? ` (${stored.reason})` : ""}.`);
+            }
+        }
+    }
+    lines.push(isBusy() ? `Job slot: ${String(activeKind())}` : "No job running.", `Districts 2-5: not enabled in this build (dev gate ${devGateOn() ? "on" : "off"}).`);
+    reply(lines, event);
+}
+
+/**
+ * @param {KingdomStore} kingdomStore
+ * @param {ScriptEvent} event
+ */
+function handleAbort(kingdomStore, event) {
+    if (!isBusy()) {
+        reply(["No civilization job is running."], event);
+        return;
+    }
+    const stopped = abortConstruction();
+    const kind = activeKind();
+    cancelActiveJob();
+    releaseArea();
+    if (stopped !== undefined) {
+        patchCiv(kingdomStore, { status: "paused" });
+        reply([`Civilization build stopped${stopped.saved ? "" : " (progress could not be saved; the last saved point will be used)"}. Placed blocks stay; ${String(stopped.done)} of ${String(stopped.total)} operations are done.`, `Continue with /scriptevent ${CIV_EVENT_IDS.resume}.`], event);
+    } else if (getSession() === undefined) {
+        reply([`Stopped the ${String(kind)} job. Nothing was written.`], event);
+    }
+}
+
+/**
+ * @param {string[]} args
+ * @param {ScriptEvent} event
+ */
+function handleDevgate(args, event) {
+    const value = args[0]?.toLowerCase();
+    if (value === "on" || value === "off") {
+        world.setDynamicProperty(CIV.devGateKey, value === "on");
+        reply([`Development gate ${value}. Districts 2-5 are not enabled in this build either way.`], event);
+        return;
+    }
+    reply([`Development gate is ${devGateOn() ? "on" : "off"}. Usage: /scriptevent ${CIV_EVENT_IDS.devgate} on|off`], event);
+}

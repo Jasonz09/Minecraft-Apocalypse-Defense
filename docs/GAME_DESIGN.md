@@ -56,3 +56,6 @@ Physical city generation, entity spawning of any kind, melee combat resolution a
 mobs, player-controlled building, multiple kingdoms, UI screens, and any AI for named
 characters. The demo build adapter places blocks only when explicitly opted in — see
 `docs/TESTING.md`.
+
+## Roadmap
+Population as visible entities, the zombie invasion director and the long-term siege balance fix are recorded in [ROADMAP.md](ROADMAP.md).

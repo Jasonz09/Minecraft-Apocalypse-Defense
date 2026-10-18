@@ -1349,3 +1349,36 @@ test("resolveGateReference: exact, unique fragment, ambiguous, empty", () => {
     assert.ok(resolveGateReference(kingdom, undefined).error);
     assert.ok(resolveGateReference(kingdom, "").error);
 });
+
+/* ------------------------------------------------------------------ *
+ * 6. Companion units, plan ids and the new commands (X3)
+ * ------------------------------------------------------------------ */
+
+test("new command ids are registered, one colon each, and handled by the gate module", () => {
+    for (const id of ["civ:gate_status", "civ:gate_test"]) {
+        assert.match(id, /^[a-z][a-z0-9_]*:[a-z][a-z0-9_]*$/);
+        assert.equal(id.split(":").length, 2);
+    }
+});
+
+test("resolveGateReference understands plan ids: a companion resolves to its simulation gate, an unmanaged gate to itself; old behaviour is unchanged without a registry", () => {
+    const kingdom = ring();
+    gate(kingdom, 5, 1).mode = "auto";
+    gate(kingdom, 5, 1).physical = {
+        state: "open",
+        spec: { at: { x: 1, z: 1 }, axis: "x", y: 64 },
+        link: { planId: "gate-5", purpose: "main" },
+        companions: [{ id: "gate-6", purpose: "reinforce", spec: { at: { x: 90, z: 1 }, axis: "x", y: 64 } }],
+    };
+    const registry = { v: 1, gates: [{ id: "gate-7", between: [1, 0], purpose: "evac", role: "unmanaged", simGateId: null, spec: { at: { x: 5, z: 5 }, axis: "z", y: 64 } }] };
+    assert.deepEqual(resolveGateReference(kingdom, "gate-6", registry), { id: G(5, 1), error: undefined, kind: "sim", alias: "gate-6" });
+    assert.deepEqual(resolveGateReference(kingdom, "gate-5", registry), { id: G(5, 1), error: undefined, kind: "sim", alias: "gate-5" });
+    assert.deepEqual(resolveGateReference(kingdom, "gate-7", registry), { id: "gate-7", error: undefined, kind: "unmanaged" });
+    assert.equal(resolveGateReference(kingdom, G(5, 1), registry).alias, undefined);
+    assert.equal(resolveGateReference(kingdom, "1-district-2").id, GATE_ID);
+    assert.match(resolveGateReference(kingdom, "", registry).error, /gate-7/);
+    assert.ok(resolveGateReference(kingdom, "gate", registry).error, "ambiguous fragment is refused");
+    const lines = formatGateLines(kingdom, { registry, recordOf: () => ({ actual: "closed" }) }).join("\n");
+    assert.match(lines, /moves together: gate-5 \(main\), gate-6 \(reinforce\)/);
+    assert.match(lines, /gate-7 {2}evac {2}districts 1-0 {2}mode auto {2}blocks: closed/);
+});
