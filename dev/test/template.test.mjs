@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -225,43 +224,46 @@ test("an export without a receipt is refused, and with one the template stages a
     }
 });
 
-test("the packaged template is a spec-shaped zip: '/' separators, contents at the root, reproducible", () => {
+test("an incomplete starter can be STAGED but cannot be released; staged files make reproducible ZIPs", () => {
     const source = stageWorld({ extra: { "db/LOCK": "", "db/000009.tmp": "stale leveldb junk" } });
     const out = join(projectRoot, "dist", "test-templates");
     const builder = join(projectRoot, "dev", "build-template.mjs");
     const receiptPath = join(projectRoot, "starter", "build-receipt.example.json");
     const artifact = join(out, `${SPEC.templateId}.${SPEC.packageExtension}`);
     try {
-        const first = spawnSync(process.execPath, [builder, "--world", source, "--out", out, "--receipt", receiptPath, "--zip"], { encoding: "utf8" });
-        assert.equal(first.status, 0, `${first.stdout}\n${first.stderr}`);
+        const blocked = spawnSync(process.execPath, [builder, "--world", source, "--out", out, "--receipt", receiptPath, "--zip"], { encoding: "utf8" });
+        assert.notEqual(blocked.status, 0, "one built district cannot ship as the completed five-district game");
+        assert.match(`${blocked.stdout}${blocked.stderr}`, /five-district release is NOT ready/i);
+        assert.equal(existsSync(artifact), false, "refused release should not leave a misleading .mctemplate");
+
+        const stagedRun = spawnSync(process.execPath, [builder, "--world", source, "--out", out, "--receipt", receiptPath], { encoding: "utf8" });
+        assert.equal(stagedRun.status, 0, `${stagedRun.stdout}\n${stagedRun.stderr}`);
+        const staged = join(out, SPEC.templateId);
+        const first = writeZip(staged, artifact);
         const bytes = readFileSync(artifact);
         const entries = listZip(bytes);
         const names = entries.map((entry) => entry.name);
 
-        assert.equal(names.filter((name) => name.includes("\\")).length, 0, "ZIP requires forward slashes; PowerShell's Compress-Archive writes backslashes and Minecraft must read this");
-        assert.equal(names.filter((name) => name.startsWith(`${SPEC.templateId}/`)).length, 0, "zipping the containing folder makes the template un-importable");
-        assert.ok(!!entries.find((entry) => entry.name === "manifest.json"));
-        assert.ok(!!entries.find((entry) => entry.name === "db/CURRENT"), "without db/ there is no city to ship");
-        assert.ok(!!entries.find((entry) => entry.name === "texts/en_US.lang"));
-        assert.ok(!!entries.find((entry) => entry.name === `behavior_packs/${SPEC.packs[0].packageDir}/scripts/main.js`));
+        assert.equal(names.filter((name) => name.includes("\\")).length, 0, "ZIP requires forward slashes");
+        assert.equal(names.filter((name) => name.startsWith(`${SPEC.templateId}/`)).length, 0, "ZIP must not wrap the containing folder");
+        assert.ok(entries.some((entry) => entry.name === "manifest.json"));
+        assert.ok(entries.some((entry) => entry.name === "db/CURRENT"));
+        assert.ok(entries.some((entry) => entry.name === "texts/en_US.lang"));
+        assert.ok(entries.some((entry) => entry.name === `behavior_packs/${SPEC.packs[0].packageDir}/scripts/main.js`));
         assert.equal(names.filter((name) => name.startsWith("db/") && (name.endsWith(".tmp") || name.endsWith("LOCK"))).length, 0);
-
-        // What went in must come back out unchanged, including the binary level.dat.
-        const staged = join(out, SPEC.templateId);
-        assert.deepEqual(
-            names.slice().sort(),
-            collectEntries(staged).map((entry) => entry.name).sort(),
-            "the archive must hold exactly the validated staged tree",
-        );
+        assert.deepEqual(names.slice().sort(), collectEntries(staged).map((entry) => entry.name).sort());
         const level = readZipEntry(bytes, entries.find((entry) => entry.name === "level.dat"));
         assert.deepEqual(level, readFileSync(join(staged, "level.dat")));
-        assert.equal(levelSection(readLevelDat(level).data).Generator, 1, "and it still reads as an infinite generator after the round trip");
+        assert.equal(levelSection(readLevelDat(level).data).Generator, 1);
+        const again = writeZip(staged, artifact);
+        assert.equal(first.sha256, again.sha256, "same staged tree must produce byte-identical ZIPs");
 
-        const hashes = [createHash("sha256").update(bytes).digest("hex")];
-        const again = spawnSync(process.execPath, [builder, "--world", source, "--out", out, "--receipt", receiptPath, "--zip"], { encoding: "utf8" });
-        assert.equal(again.status, 0, `${again.stdout}\n${again.stderr}`);
-        hashes.push(createHash("sha256").update(readFileSync(artifact)).digest("hex"));
-        assert.equal(hashes[0], hashes[1], "the same staged tree must produce byte-identical packages, or a rebuilt template cannot be compared by hash");
+        // And the staging itself is reproducible: a rebuild from the same export must hash the same,
+        // which is the only way a shipped artifact can be proved unchanged later.
+        const restage = spawnSync(process.execPath, [builder, "--world", source, "--out", out, "--receipt", receiptPath], { encoding: "utf8" });
+        assert.equal(restage.status, 0, `${restage.stdout}\n${restage.stderr}`);
+        const rebuilt = writeZip(staged, artifact);
+        assert.equal(rebuilt.sha256, first.sha256, "re-staging the same export must reproduce the same package bytes");
     } finally {
         rmSync(source, { recursive: true, force: true });
         rmSync(out, { recursive: true, force: true });
@@ -347,6 +349,9 @@ test("an exported .mcworld is read back by our own reader, and hostile entry nam
         rmSync(extracted, { recursive: true, force: true });
         rmSync(out, { recursive: true, force: true });
         rmSync(mcworld, { force: true });
+        // The builder's extraction workspace lives under dist/ and is reused; a test that leaves a
+        // populated one behind makes the next run's "stale export" protection untestable.
+        rmSync(join(projectRoot, "dist", "work"), { recursive: true, force: true });
     }
 });
 

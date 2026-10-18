@@ -11,6 +11,7 @@
         "e2e": "node dev/e2e-kingdom.mjs",
         "template:validate": "node dev/validate-template.mjs",
         "template:build": "node dev/build-template.mjs",
+        "template:release-check": "node dev/check-release.mjs",
         "verify": "node dev/verify.mjs"
     },
     "devDependencies": {

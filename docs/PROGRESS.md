@@ -149,3 +149,20 @@ survive in `dist/work/source`; two packaging assertions could not fail (a missin
 "reported" by checking `level.dat`, and a no-arg condition), and one test compared a list's length to itself. **No `.mctemplate` has been produced and nothing
 has run inside Minecraft**: district 1 has never been physically built, and `ENLARGED_LAYOUTS` registers only district 1,
 so districts 2-5 are contract-ready and build-blocked. See STARTER_WORLD.md.
+
+A second handoff (ChatGPT, 2026-10-18) then added the **release gate** on top of that commit, merged the same
+day with no loss of the repairs above (its builder and test diffs were additions only): `dev/lib/release-readiness.mjs`
++ `npm run template:release-check` require all five districts marked `starterWorld: true, status: "built"`, listed
+in `starter.builtRequired`, and receipted with the 400/150 baseline, zero pending jobs and a real `verifiedBy`;
+`--zip` is refused while it fails, staging a development preview still works, and a `--out` overlapping the source
+world or `dist/work` is refused before the builder deletes anything. It exits **1** today (0/5 built, no receipt),
+which is the intended state, and is deliberately not a verify gate. Integrating it also meant refusing one claim in
+that handoff - the 49x49 prototype was never built in-game either; see `docs/CHATGPT_HANDOFF_2026-10-18.md`.
+A review pass over the merged gate then found three more holes, all closed with tests: `--zip` was the only
+guarded route (a staged tree could be zipped by hand, and a stray single-district `.mctemplate` from an
+earlier probe was already sitting in `dist/templates/`), so a blocked staging now writes
+`DEVELOPMENT-PREVIEW.txt` into the tree and `template:release-check` reports any archive found in `dist/`
+as non-releasable; the gate read only `template.json`, never the pack's own `STARTER.builtRequired`, so a
+five-district spec with a one-district pack printed READY; and the two receipt validators disagreed.
+Suite now 711 tests, all five verify gates green, `template:release-check` exits 1 with 25 blockers.
+

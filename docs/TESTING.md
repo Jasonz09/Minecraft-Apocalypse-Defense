@@ -23,6 +23,12 @@ Current results: see `docs/PROGRESS.md` and `docs/ENLARGED_HEARTHGATE.md` (count
 
 Individual gates: `npm run validate`, `npm run typecheck`, `npm run test`.
 
+Release tooling (not verify gates, because they are expected to differ): `npm run template:validate`
+(passes - the contract is sound), `npm run template:release-check` (**exits nonzero today** - none of
+the five districts is physically built and no signed receipt exists; that refusal is the feature, see
+`docs/STARTER_WORLD.md`), and `node dev/build-template.mjs --world <export> --receipt <receipt>` which
+stages a development preview and refuses `--zip` until the release check would pass.
+
 ## What the gates cannot prove
 
 - That the pack loads, that chat renders, that any event fires, or that blocks place. All of

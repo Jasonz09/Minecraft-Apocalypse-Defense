@@ -1,7 +1,8 @@
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { extractZip, writeZip } from "./lib/zip.mjs";
+import { fullReleaseProblems, starterConfigProblems } from "./lib/release-readiness.mjs";
 import { validateTemplateDir } from "./validate-template.mjs";
 
 /**
@@ -20,6 +21,8 @@ import { validateTemplateDir } from "./validate-template.mjs";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const spec = JSON.parse(readFileSync(join(projectRoot, "starter", "template.json"), "utf8"));
+/** The pack's own release rules: STARTER.builtRequired is what `civ:starter_arm confirm` enforces in the world. */
+const { STARTER } = await import(pathToFileURL(join(projectRoot, "CivilizationApocalypse_BP", "scripts", "config.js")).href);
 
 /** Files copied straight out of the exported world. Everything else is dropped on purpose. */
 const WORLD_FILES = ["level.dat", "level.dat_old", "levelname.txt", "world_icon.jpeg", "world_behavior_packs.json", "world_resource_packs.json", "world_behavior_pack_history.json", "world_resource_pack_history.json"];
@@ -113,8 +116,37 @@ if (!insideDist) {
 }
 
 const staged = join(outRoot, spec.templateId);
+// These guards run BEFORE any staging cleanup; the builder recursively removes
+// its own staging directory and must never accidentally remove a source world.
+const overlaps = (a, b) => {
+    const r = relative(a, b);
+    return r === "" || (!r.startsWith("..") && !isAbsolute(r));
+};
+if (overlaps(outRoot, workDir) || overlaps(workDir, outRoot)) {
+    fail(["--out overlaps the temporary extraction directory dist/work; choose dist/templates or a distinct directory under dist/"]);
+    process.exit(1);
+}
+const inputPath = resolve(String(options.world));
+if (overlaps(inputPath, staged) || overlaps(staged, inputPath)) {
+    fail(["refusing --out: its staging directory overlaps the source world"]);
+    process.exit(1);
+}
 const receiptPath = typeof options.receipt === "string" ? resolve(options.receipt) : null;
 const receipt = receiptPath && existsSync(receiptPath) ? JSON.parse(readFileSync(receiptPath, "utf8")) : null;
+
+// A development world with Hearthgate only may be STAGED for inspection, but the published template
+// must contain all five physically completed districts. The pack that ARMS the world has to agree
+// with the spec that ships it: template.json alone could be edited to say "five built" while
+// `civ:starter_arm confirm` still accepted one, and this gate would print READY.
+const releaseProblems = [...fullReleaseProblems(spec, receipt), ...starterConfigProblems(spec, STARTER)];
+if (releaseProblems.length > 0 && options.zip === true) {
+    fail([
+        "full five-district release is NOT ready; refusing to create a misleading .mctemplate:",
+        ...releaseProblems,
+        "Finish and verify all five districts in Minecraft, update starter/template.json, config.js STARTER.builtRequired and the build receipt together, then retry.",
+    ]);
+    process.exit(1);
+}
 
 console.log(`source world: ${options.world}`);
 const source = materialiseSource(resolve(String(options.world)), workDir);
@@ -205,6 +237,28 @@ writeFileSync(join(staged, "texts", "en_US.lang"), `pack.name=${spec.displayName
 writeFileSync(join(staged, "texts", "languages.json"), `${JSON.stringify(spec.languages, null, 4)}\n`);
 
 console.log(`staged ${String(copiedFiles)} files`);
+
+// A staged tree that cannot be released says so from inside. Hand-zipping this folder is not
+// something the tooling can prevent; the disclaimer is what makes that route self-reporting.
+const marker = join(staged, "DEVELOPMENT-PREVIEW.txt");
+if (existsSync(marker)) rmSync(marker);
+if (releaseProblems.length > 0) {
+    writeFileSync(marker, [
+        "THIS IS NOT A RELEASE.",
+        "",
+        "Staged from a development world by dev/build-template.mjs. npm run template:release-check",
+        "refuses to package this as the starting kingdom for these reasons:",
+        "",
+        ...releaseProblems.map((problem) => `  - ${problem}`),
+        "",
+        "Distributing an archive made from this folder misrepresents the game: the five-district",
+        "civilization has not been built, armed and verified.",
+        "",
+    ].join("\n"));
+    console.log(`release blockers: ${String(releaseProblems.length)} (staged as DEVELOPMENT PREVIEW, ${releaseProblems[0]})`);
+} else {
+    console.log("release gate: clear - this tree is eligible for --zip packaging");
+}
 
 const result = validateTemplateDir(staged, spec, { receipt });
 for (const note of result.notes) console.log(`note   ${note}`);

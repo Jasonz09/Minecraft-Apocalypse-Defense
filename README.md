@@ -131,11 +131,17 @@ powershell -NoProfile -Command "Get-ChildItem -Path $env:LOCALAPPDATA\Packages -
 The shipped game is meant to start inside an already-built kingdom, distributed as a Bedrock **world
 template** rather than generated on first join. `civ:starter_status` / `civ:starter_arm confirm` /
 `civ:starter_verify` turn a finished build world into one that carries the city but not the
-development history, and `npm run template:build` packages the export as a `.mctemplate`.
+development history, and `npm run template:build` stages the export as a reviewable template.
 
-**No template exists yet** - district 1 has never been built inside Minecraft, and districts 2-5 have
-no registered layout. Contract, tooling and offline checks are done; the world is not. See
-[docs/STARTER_WORLD.md](docs/STARTER_WORLD.md).
+Two lanes, deliberately: staging a **development preview** always works, while `--zip` - producing a
+`.mctemplate` to hand out - is refused until `npm run template:release-check` passes, which requires all
+five districts marked built in `starter/template.json`, required by the in-game arming list, and covered
+by a signed build receipt.
+
+**No template exists yet** - district 1 has never been built inside Minecraft, districts 2-5 have no
+registered layout, and `npm run template:release-check` currently exits nonzero (0/5 districts, no
+receipt). That refusal is the expected state, not a failure to work around. Contract, tooling and
+offline checks are done; the world is not. See [docs/STARTER_WORLD.md](docs/STARTER_WORLD.md).
 
 ### Route C — install a built template (once one exists)
 

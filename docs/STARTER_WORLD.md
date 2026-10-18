@@ -3,7 +3,10 @@
 Status: **tooling and contract are implemented and verified offline. No `.mctemplate` exists yet,
 because the city it must contain has not been physically built in Minecraft.** District 1 is
 planner-ready; districts 2-5 are planned on the master map but have no registered build layout.
-Nothing in this document has been executed inside Minecraft - it is not installed on this machine.
+Nothing in this workflow has been executed inside Minecraft. Bedrock is installed on this machine, but
+`docs/TESTING.md` records that **no in-game run has ever been performed** - not the enlarged Hearthgate
+build, not the 49x49 prototype (offline-only per `docs/PHYSICAL_DISTRICT_DESIGN.md` and
+`docs/PROGRESS.md`), and not an imported template.
 
 ## 1. What "prebuilt" means here
 
@@ -91,8 +94,11 @@ What that means for our tooling:
 | `dev/lib/nbt.mjs` | offline `level.dat` reader/writer (no new dependency) |
 | `dev/lib/zip.mjs` | the template's own ZIP writer/reader: `/` separators, contents at the root, fixed timestamps so a rebuild is byte-identical, CRC verified on read, and entry names that try to escape the package (`../`, absolute, drive-letter) refused on the way in |
 | `dev/validate-template.mjs` | spec gate + package gate; runs as the fifth verify gate |
-| `dev/build-template.mjs` | export -> staged template -> `.mctemplate`; read-only on the source world, writes only under `dist/` |
-| `dev/test/template.test.mjs` | 13 tests: spec, mutations, NBT, staged package, failure cases, builder refusals, starter semantics |
+| `dev/lib/release-readiness.mjs` | the stricter five-district **release** gate: all five marked built and required, all five in the signed receipt, the published baseline, zero pending jobs, the city centre/radius/version the spawn check needs, real verification notes - and `starterConfigProblems`, which demands the pack's `config.js STARTER` rules say the same thing |
+| `dev/check-release.mjs` | read-only CLI for that gate (`npm run template:release-check`); exits nonzero while the civilization is unfinished, and names any `.mctemplate` already in `dist/templates/` as non-releasable |
+| `dev/build-template.mjs` | export -> staged template -> `.mctemplate`; read-only on the source world, writes only under `dist/`, refuses a `--out` that overlaps the source or its own extraction workspace, refuses `--zip` until the release gate passes, and stamps `DEVELOPMENT-PREVIEW.txt` into any tree the gate blocks |
+| `dev/test/template.test.mjs` | 18 tests: spec, mutations, NBT, staged package, failure cases, builder refusals, starter semantics |
+| `dev/test/release-readiness.test.mjs` | 10 tests: the current one-district spec is refused, a completed five-district spec passes, and omitted / duplicated / falsely-built districts, placeholder and incomplete receipts, and a pack that disagrees with the spec each name their own refusal; plus a non-destructive overlap test with a real source directory and the preview-marker test |
 | `dev/test/reliability-runtime.test.mjs` | starter arming driven through the fake `@minecraft/server` |
 
 ## 4. The commands, and what they refuse
@@ -132,7 +138,8 @@ fails if they ever drift.
 
 ## 5. One-time repeatable workflow
 
-Stage 0 is in Minecraft; stages 1-4 are offline and already implemented.
+Steps 1-5 happen inside Minecraft in a dedicated build world and have **not** been performed; steps 6-7
+are offline and implemented, and step 8 needs the game again.
 
 1. **Create a dedicated build world** (e.g. `CIVBUILD-hearthgate`), normal/infinite generator, cheats
    on for `/scriptevent`. Never an existing world: the tooling never edits a live save.
@@ -146,16 +153,25 @@ Stage 0 is in Minecraft; stages 1-4 are offline and already implemented.
    `starter/build-receipt.json` and fill it from those two outputs (`armed`, `builtDistricts`,
    population, `jobPending: 0`, the city `centre` and `radius`).
 5. **Export**: Play > Edit (that world) > General > File Management > **Export World**.
-6. **Package** (repository root, forward-slash paths work either way):
+6. **Stage it as a development preview** (repository root; this never ships anything):
    ```
    node dev/build-template.mjs --world "<exported.mcworld or folder>" \
-        --receipt starter/build-receipt.json --zip
+        --receipt starter/build-receipt.json
    node dev/validate-template.mjs --world dist/templates/civapoc-starter \
         --receipt starter/build-receipt.json
    ```
-   `--dry-run` stages and validates without a receipt; `--out` must stay inside `dist/`, so an
-   accidental path can never write over a real Minecraft world.
-7. **Install for a test**: double-click `dist/templates/civapoc-starter.mctemplate` (importing the same
+   `--dry-run` stages and validates without a receipt; `--out` must stay inside `dist/` and may not
+   overlap the source world or `dist/work`, so an accidental path can neither write over a real
+   Minecraft world nor have the builder delete one.
+7. **Ask the release gate before shipping anything**:
+   ```
+   npm run template:release-check
+   ```
+   It exits nonzero until all five districts are marked built, required and receipted. Only then does
+   adding `--zip` to step 6 produce `dist/templates/civapoc-starter.mctemplate`; with fewer than five
+   districts the packager refuses, because a one-district archive named as the starting kingdom would
+   misrepresent the game.
+8. **Install for a test**: double-click `dist/templates/civapoc-starter.mctemplate` (importing the same
    UUID twice needs the old copy removed from `com.mojang\world_templates` first), then
    *Create New > Imported Templates*. The builder prints the artifact's `sha256`; record it with the
    receipt, because the file is reproducible and so a later rebuild can be proved identical.
@@ -180,7 +196,59 @@ Bedrock NBT with an integer spawn inside the receipt radius, generator is `infin
 uuid exists in `behavior_packs/*/manifest.json`, the template `manifest.json` and `texts/` are correct,
 and the size stays under `maxWorldBytes` (256 MB).
 
-## 7. Getting to five districts
+## 7. Full-release gate: a staged preview is not a release
+
+**Development staging is not the finished product.** The existing starter spec currently marks
+only Hearthgate (`district-1`) as a starter-world district; physical districts 2–5 are not built.
+The earlier packager could create a `.mctemplate` when just Hearthgate was marked complete.
+That was suitable for an experiment but misleading as a five-district release.
+
+Before publishing, run:
+
+```shell
+npm run template:release-check
+```
+
+It reports the five required districts and explains why release is blocked. The regular
+`node dev/build-template.mjs --world <export> --receipt <receipt>` command can still **stage** a
+development world for review, but **adding `--zip` now refuses to create a release archive** until:
+
+- All five original districts are explicitly marked `starterWorld: true, status: "built"` in
+  `starter/template.json` and listed exactly once in `starter.builtRequired`.
+- All five have genuinely been built and verified in a dedicated Minecraft world (and their
+  layouts are registered by the planner). The in-game `civ:starter_arm confirm` must also
+  enforce all five in the updated mirrored `STARTER.builtRequired` configuration.
+- `starter/build-receipt.json` confirms all five as built, 400 civilians, 150 soldiers, five
+  districts, zero queued construction jobs, a matching template id, the city `centre`/`radius` the
+  spawn check is measured against, the world name and Minecraft build, and real verification notes.
+
+Three things were added while reviewing the merge, because the gate as first written could still be
+printed "READY" over a one-district world:
+
+1. `starterConfigProblems` compares the shipped spec with the **pack's own** `config.js STARTER`
+   rules. `starter/template.json` is only a declaration; `STARTER.builtRequired` is what
+   `civ:starter_arm confirm` actually enforces in the world, and the two lists diverging is exactly
+   how a Hearthgate-only save could arrive stamped as the five-district release.
+2. A staging run that fails the gate still writes the tree, but writes
+   `DEVELOPMENT-PREVIEW.txt` **inside** it, naming the blockers. Anyone who then zips the folder by
+   hand - which no offline tool can prevent - ships the disclaimer with it.
+3. `npm run template:release-check` lists any `.mctemplate` already sitting in `dist/templates/` with
+   its size, timestamp and sha256 prefix and calls it non-releasable while the gate fails. One was
+   found during review, left behind by an earlier probe run of this very tooling.
+
+The receipt is **an attestation, not cryptographic proof of saved world contents**. A valid ZIP
+still needs testing after import into Bedrock; the offline tools cannot confirm all block data or
+kingdom dynamic properties inside the LevelDB. Never simply change `starterWorld` flags to get
+through the gate without physically building and checking those districts.
+
+Do not distribute an older artifact just because it is still present: the release check reports it
+rather than deleting it, because deleting files this tool did not create in this session is not its
+call.
+
+The packager now also refuses a staging path that overlaps the source world or its own temporary
+extraction directory; this prevents destructive cleanup caused by a bad `--out` argument.
+
+## 8. Getting to five districts
 
 `starter/template.json` already lists all five with their intended `-enlarged` layout ids, so the gap
 is code and build time, not contract:
@@ -195,7 +263,7 @@ is code and build time, not contract:
 4. Inter-district wall/gate links come from the master plan's shared chains; the gate registry keeps
    them closable, so the template still ships with `auto` gates.
 
-## 8. What must be tested in Minecraft (and nothing here claims it has been)
+## 9. What must be tested in Minecraft (and nothing here claims it has been)
 
 - Import the template, create a world from it, and confirm the walls/roads/buildings are the ones that
   were built - no generation runs at join.
@@ -207,7 +275,7 @@ is code and build time, not contract:
 - The old 49x49 `district.physical` prototype world is untouched, and generation still refuses any
   footprint overlapping an existing physical record.
 
-## 9. Known limitations
+## 10. Known limitations
 
 - **No template has been built or imported.** Steps 1-4 of section 5 need Minecraft.
 - Offline tooling cannot read simulation state out of `db/`; the receipt is a signed human step, not a
