@@ -1,5 +1,5 @@
 import { BlockPermutation, world } from "@minecraft/server";
-import { PHYSICAL } from "../config.js";
+import { CIV, PHYSICAL } from "../config.js";
 import { CIV_LIMITS } from "../civ/budget.js";
 import { SITE_PLAN_VERSION, planDistrictSiteSteps, rehydrateSiteSteps, siteContainmentProblemsSteps, siteJobSpecs, siteOpCount, siteOpsFor, siteOptionsOf } from "../civ/districtplan.js";
 import * as jobs from "../civ/jobs.js";
@@ -12,7 +12,8 @@ import { SITE_DEFAULTS, overlapsExclusion, rankSites, scanRadiusFor } from "../c
 import { validatePlanSteps } from "../civ/validatesteps.js";
 import { classifyTerrainCell, isLeaves, isLog, isNaturalGround, isPlant, isTreePart } from "../structures/terrain.js";
 import { activeToken, cancelActiveJob, finishJob } from "./districtBuilder.js";
-import { CIV_TICKING_ID, holdArea, nextTick, releaseArea, runJobAsync, scanCoarse, scanFull } from "./civScan.js";
+import { CIV_TICKING_ID, countTiles, holdArea, nextTick, releaseArea, runJobAsync, scanFull, scanProgressive, tileSizeNow } from "./civScan.js";
+import { finishProgress, getProgress, heartbeat, nowTick, resetProgressForTests, setPhase, touch } from "./civProgress.js";
 
 /**
  * Bedrock boundary for the one-command civilization workflow, WRITE side, plus the planning
@@ -63,8 +64,8 @@ export const PROTECT_MARGIN = 12;
 /** Sanity ceiling for the op count of one district. */
 export const MAX_SANE_OPS = 400000;
 /** Largest bounding box (blocks per side) of one construction window; the held tile is 128. */
-const WINDOW_MAX_SPAN = 100;
-const HOLD_SIZE = 128;
+/** Largest span (blocks) of one construction window; the held tile must also fit 8 blocks of apron on every side. */
+const windowMaxSpan = () => Math.max(4, Math.min(100, tileSizeNow() - 28));
 const WORLD_MIN_Y = -64;
 const WORLD_MAX_Y = 319;
 
@@ -163,7 +164,7 @@ const inRect = (rect, x, z) => x >= rect.x0 && x <= rect.x1 && z >= rect.z0 && z
 /**
  * @typedef {{
  *   token: Job, dimension: Dimension, anchor: { x: number, z: number }, radius: number, seed: number,
- *   exclusions: Rect[], say: (lines: string[]) => void, maxPlanBytes?: number
+ *   exclusions: Rect[], say: (lines: string[]) => void, maxPlanBytes?: number, progress?: import("./civProgress.js").Progress
  * }} PlanContext
  * @typedef {{
  *   ok: boolean, cancelled?: boolean, stage: string, reasons: string[],
@@ -188,38 +189,83 @@ export async function planWorld(ctx) {
         return out;
     };
 
-    // (a) coarse nearest-first survey
+    // (a) progressive nearest-first survey, ring by ring, stopping as soon as a site is found
     // The master plan reaches MASTER_PLAN_RADIUS from the site centre, beyond the 480-block analysis window: keep that much clear.
+    const progress = ctx.progress;
     const clearance = Math.max(SITE_DEFAULTS.exclusionMargin, PROTECT_MARGIN, MASTER_PLAN_RADIUS - SITE_DEFAULTS.windowSize / 2 + 24);
     const rankOptions = { searchRadius: ctx.radius, exclusions: ctx.exclusions, exclusionMargin: clearance };
-    const scanRadius = Math.max(scanRadiusFor(rankOptions), ctx.radius + MASTER_PLAN_RADIUS + 16);
-    ctx.say([`[1/6] Surveying the terrain within ${String(scanRadius)} blocks of you (read-only, every ${String(SITE_DEFAULTS.step)}th column)...`]);
-    let lastTile = 0;
-    const coarse = await scanCoarse(token, ctx.dimension, ctx.anchor, scanRadius, SITE_DEFAULTS.step, {
-        onTile(done, total) {
-            if (done - lastTile >= Math.max(1, Math.floor(total / 4)) && done < total) {
-                lastTile = done;
-                ctx.say([`      survey ${String(Math.floor((done * 100) / total))}%`]);
+    const reach = MASTER_PLAN_RADIUS + 16;
+    const scanRadius = Math.max(scanRadiusFor(rankOptions), ctx.radius + reach);
+    /** @type {number[]} */
+    const rings = [];
+    for (let ring = reach + 24; ring < scanRadius; ring += 64) {
+        rings.push(ring);
+    }
+    rings.push(scanRadius);
+    const tileSide = tileSizeNow();
+    const chunksPerTile = (tileSide / 16) ** 2;
+    const firstTiles = countTiles(ctx.anchor, /** @type {number} */ (rings[0]), tileSide);
+    const allTiles = countTiles(ctx.anchor, scanRadius, tileSide);
+    setPhase(progress, 1, "survey");
+    ctx.say([
+        `[1/6] Surveying the terrain around you (read-only, every ${String(SITE_DEFAULTS.step)}th column), nearest first, ring by ring, stopping as soon as a suitable site is found.`,
+        `      Up to ${String(allTiles * chunksPerTile)} chunks (first ring ${String(firstTiles * chunksPerTile)}, in ${String(tileSide)}-block tiles) may have to be generated and loaded; in a fresh world that can take minutes (an estimate until measured in Minecraft). Progress is reported at least every ${String(Math.round(CIV.heartbeatTicks / 20))} s.`,
+    ]);
+    /** @type {ReturnType<typeof rankSites> | undefined} */
+    let ranking;
+    let lastTileTick = nowTick();
+    const coarse = await scanProgressive(token, ctx.dimension, ctx.anchor, scanRadius, SITE_DEFAULTS.step, {
+        rings,
+        progress,
+        onTile() {
+            const now = nowTick();
+            if (progress !== undefined && now - lastTileTick > 100) {
+                heartbeat(progress, true);
             }
+            lastTileTick = now;
+        },
+        evaluate(field, ring, last) {
+            const searchRadius = last ? ctx.radius : Math.min(ctx.radius, ring - reach);
+            if (!last && searchRadius < 24) {
+                return false;
+            }
+            setPhase(progress, 2, "ranking sites");
+            const ranked = rankSites(field, ctx.anchor, { ...rankOptions, searchRadius });
+            ranking = ranked;
+            setPhase(progress, 1, "survey");
+            // A site closer than the part of the radius that is fully scanned cannot be beaten by anything unscanned
+            // (score = distance + prep), so the answer equals the full-radius answer.
+            const settled = last || (ranked.site !== null && ranked.site.score <= searchRadius);
+            ctx.say([`      ring ${String(Math.round(ring))} scanned (${String(field.columnsRead)} columns): ${ranked.site !== null ? (settled ? "suitable site found" : "a site exists but a closer one could still be hiding, scanning on") : "no suitable site yet"}.`]);
+            return settled;
         },
     });
     out.stats.coarse = coarse.stats;
+    out.stats.survey = { tilesScanned: coarse.stats.attempted, tilesTotal: coarse.tilesTotal, chunksScanned: coarse.stats.chunksScanned, scannedRadius: coarse.scannedRadius, fullRadius: scanRadius, early: coarse.early, rings: coarse.stats.ringsDone };
     if (coarse.cancelled) {
         out.cancelled = true;
         return fail("cancelled", ["cancelled"]);
+    }
+    if (coarse.stats.aborted !== undefined) {
+        return fail("stalled", [coarse.stats.aborted]);
     }
     if (coarse.field.columnsRead === 0) {
         return fail("scan", ["no terrain could be read around you (every column was unloaded)"]);
     }
 
-    // (b) rank sites away from every protected footprint
-    ctx.say([`[2/6] Ranking sites (${String(coarse.field.columnsRead)} columns read, ${String(coarse.stats.unloaded)} unloaded)...`]);
-    const ranking = rankSites(coarse.field, ctx.anchor, rankOptions);
-    out.stats.ranking = { evaluated: ranking.evaluated, reads: ranking.reads };
-    if (ranking.site === null) {
-        return fail("site", ranking.reasons.slice(0, 8));
+    // (b) the ranking of the last evaluated ring decides
+    setPhase(progress, 2, "ranking sites");
+    ctx.say([`[2/6] Surveyed ${String(coarse.stats.attempted)} of ${String(coarse.tilesTotal)} tiles (${String(coarse.stats.chunksScanned)} chunks, ${String(coarse.field.columnsRead)} columns read, ${String(coarse.stats.unloaded)} unloaded${coarse.early ? ", stopped early" : ""}).`]);
+    if (ranking === undefined) {
+        return fail("site", ["no ring could be evaluated"]);
     }
-    out.site = ranking.site;
+    const found = /** @type {ReturnType<typeof rankSites>} */ (ranking);
+    out.stats.ranking = { evaluated: found.evaluated, reads: found.reads };
+    if (found.site === null) {
+        return fail("site", found.reasons.slice(0, 8));
+    }
+    const siteFound = found.site;
+    out.site = siteFound;
 
     // (c)-(f) master plan, validation, full-resolution ground, district plan: every heavy step is a budgeted generator
     // charged to ONE operation meter (no stretch between yields may exceed ~25,000 elementary operations).
@@ -230,8 +276,9 @@ export async function planWorld(ctx) {
     out.stats.history = history;
     for (let attempt = 0; attempt < WORLD_ATTEMPTS; attempt += 1) {
         const planSeed = (ctx.seed + 7919 * attempt) | 0;
-        ctx.say([`[3/6] Site found ${String(Math.round(ranking.site.distance))} blocks away; planning five districts${attempt > 0 ? ` (retry ${String(attempt)}, seed ${String(planSeed)})` : ""}...`]);
-        const made = await runJobAsync(token, planMasterSteps(coarse.field, { seed: planSeed, anchor: { x: ranking.site.x, z: ranking.site.z }, radius: MASTER_PLAN_RADIUS, ops }));
+        setPhase(progress, 3, "master plan");
+        ctx.say([`[3/6] Site found ${String(Math.round(siteFound.distance))} blocks away; planning five districts${attempt > 0 ? ` (retry ${String(attempt)}, seed ${String(planSeed)})` : ""}...`]);
+        const made = await runJobAsync(token, planMasterSteps(coarse.field, { seed: planSeed, anchor: { x: siteFound.x, z: siteFound.z }, radius: MASTER_PLAN_RADIUS, ops }), progress);
         if (token.cancelled || made === undefined) {
             out.cancelled = true;
             return fail("cancelled", ["cancelled"]);
@@ -262,9 +309,11 @@ export async function planWorld(ctx) {
         const region = siteGroundRegion(plan, 1);
         out.region = region;
         const columns = (region.x1 - region.x0 + 1) * (region.z1 - region.z0 + 1);
+        setPhase(progress, 4, "ground survey");
         ctx.say([`[4/6] Reading district 1 at full resolution (${String(columns)} columns)...`]);
         let lastTile = 0;
         const fine = await scanFull(token, ctx.dimension, region, {
+            progress,
             onTile(done, total) {
                 if (done - lastTile >= Math.max(1, Math.floor(total / 4)) && done < total) {
                     lastTile = done;
@@ -277,13 +326,17 @@ export async function planWorld(ctx) {
             out.cancelled = true;
             return fail("cancelled", ["cancelled"]);
         }
+        if (fine.stats.aborted !== undefined) {
+            return fail("stalled", [fine.stats.aborted]);
+        }
         if (fine.stats.unloaded > 0) {
             return fail("unloaded", [`${String(fine.stats.unloaded)} column(s) of district 1 could not be read (chunks not loaded); nothing was guessed and nothing was changed`]);
         }
 
+        setPhase(progress, 5, "district plan");
         ctx.say(["[5/6] Planning walls, gates, roads and buildings..."]);
         const clipped = clipField(fine.field, region);
-        const done = await runJobAsync(token, planSiteSteps(plan, clipped, region, fine.field, { seed: planSeed, excludeFootprints: ctx.exclusions, ops }));
+        const done = await runJobAsync(token, planSiteSteps(plan, clipped, region, fine.field, { seed: planSeed, excludeFootprints: ctx.exclusions, ops }), progress);
         if (token.cancelled || done === undefined) {
             out.cancelled = true;
             return fail("cancelled", ["cancelled"]);
@@ -302,6 +355,7 @@ export async function planWorld(ctx) {
         out.record = record;
         const ground = done.ground;
 
+        setPhase(progress, 6, "storage check");
         ctx.say(["[6/6] Checking the plan fits the world's storage..."]);
         const payload = { version: PLAN_VERSION, plan, ground, siteChecksum: record.checksum, siteOptions: siteOptionsOf(record), seed: ctx.seed, planSeed, anchor: { x: plan.anchor.x, z: plan.anchor.z }, site: { layoutId: record.layoutId, version: SITE_PLAN_VERSION } };
         const maxBytes = ctx.maxPlanBytes ?? seams.maxPlanBytes;
@@ -542,7 +596,7 @@ export function* loadSavedRunSteps(civ, ops) {
  *   saveCiv: (patch: Record<string, any>) => boolean,
  *   onStageComplete?: (stage: string) => void,
  *   onEnd: (result: EndResult) => void,
- *   saveEveryOps?: number,
+ *   saveEveryOps?: number, progress?: import("./civProgress.js").Progress,
  * }} ConstructionOptions
  * @typedef {{ status: "complete" | "paused" | "failed", reason?: string, counts: Counts, spot?: { x: number, y: number, z: number }, opsPlanned: number, opsDone: number, slices: SliceStats }} EndResult
  * @typedef {{ slices: number, maxOps: number, maxWrites: number, maxReads: number }} SliceStats
@@ -577,6 +631,7 @@ export function hasSession() {
 /** Forget every in-memory trace (tests simulate a restart with this; the stores are untouched). */
 export function resetCivForTests() {
     session = undefined;
+    resetProgressForTests();
     releaseArea(undefined);
 }
 
@@ -1009,7 +1064,7 @@ function chooseWindow(s) {
             return { work, box: undefined };
         }
         const box = windowBox(s, work.items);
-        if (box.x1 - box.x0 + 1 <= WINDOW_MAX_SPAN && box.z1 - box.z0 + 1 <= WINDOW_MAX_SPAN) {
+        if (box.x1 - box.x0 + 1 <= windowMaxSpan() && box.z1 - box.z0 + 1 <= windowMaxSpan()) {
             return { work, box };
         }
         if (maxOps === 1) {
@@ -1023,7 +1078,7 @@ function chooseWindow(s) {
 function holdRectFor(box) {
     const cx = Math.floor((box.x0 + box.x1) / 2);
     const cz = Math.floor((box.z0 + box.z1) / 2);
-    const half = HOLD_SIZE / 2;
+    const half = tileSizeNow() / 2;
     return { x0: cx - half, z0: cz - half, x1: cx + half - 1, z1: cz + half - 1 };
 }
 
@@ -1115,6 +1170,10 @@ function* constructionJob(s) {
         if (decile > s.lastPct && overall.pct < 100) {
             s.lastPct = decile;
             s.opts.say([`  ${s.lastStage}: ${String(Math.floor(overall.pct))}% (${String(overall.totalOps - overall.remainingOps)} / ${String(overall.totalOps)} ops, ${String(s.counts.skipped)} skipped)`]);
+        }
+        if (s.opts.progress !== undefined) {
+            touch(s.opts.progress);
+            s.opts.progress.percent = overall.pct;
         }
         endSlice(s);
         yield;
@@ -1217,7 +1276,10 @@ async function run(s) {
             }
             if (result.status === "need-hold") {
                 const rect = holdRectFor(result.box);
-                const held = await holdArea(s.dimension, rect, s.token);
+                const held = await holdArea(s.dimension, rect, s.token, CIV_TICKING_ID, s.opts.progress);
+                if (!s.token.cancelled && (held.status === "stalled" || held.status === "shrink" || held.status === "error")) {
+                    return await end("paused", `the chunks around ${String(rect.x0)},${String(rect.z0)} would not load (${String(held.note)}); nothing is lost - run /scriptevent civ:generate_resume when the area loads`);
+                }
                 if (s.token.cancelled) {
                     releaseArea(s.token);
                     return /** @type {EndResult} */ ({ status: "paused", counts: s.counts, opsPlanned: 0, opsDone: 0, slices: s.slice });
@@ -1311,9 +1373,11 @@ export function abortConstruction() {
  * Only a job whose token kind starts with "civ-" is touched. A running construction is paused with its queue and
  * district.civ saved; any civilization job releases its own ticking area and the job slot.
  *
+ * @param {"cancelled" | "failed" | "stalled"} [finalState] how the session is recorded
+ * @param {string} [error]
  * @returns {{ kind: string, stopped: ReturnType<typeof abortConstruction> } | undefined} undefined when no civilization job owns the slot
  */
-export function abortCivJob() {
+export function abortCivJob(finalState = "cancelled", error = undefined) {
     const token = activeToken();
     if (token === undefined || !token.kind.startsWith("civ-")) {
         return undefined;
@@ -1321,6 +1385,7 @@ export function abortCivJob() {
     const stopped = abortConstruction();
     cancelActiveJob();
     releaseArea(token);
+    finishProgress(getProgress(), finalState, error);
     return { kind: token.kind, stopped };
 }
 

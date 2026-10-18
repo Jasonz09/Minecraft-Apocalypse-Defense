@@ -62,6 +62,7 @@ export const CIV_EVENT_IDS = {
     abort: "civ:generate_abort",
     resume: "civ:generate_resume",
     devgate: "civ:generate_devgate",
+    diag: "civ:generate_diag",
 };
 
 export const CIV = {
@@ -72,6 +73,18 @@ export const CIV = {
     devGateKey: "civ_devgate",
     /** Ticks between construction slices (1 = every tick). */
     sliceEveryTicks: 1,
+    /** Ticks to wait for one ticking area to finish loading before it is removed and retried. */
+    holdTimeoutTicks: 1200,
+    /** Retries of a stalled tile (so 1 + holdRetries attempts) before it is marked stalled. */
+    holdRetries: 1,
+    /** Back-off (ticks) before retrying a hold whose identifier still exists; at most 3 times. */
+    idBackoffTicks: 5,
+    /** Whole-planning deadline in ticks (30 minutes). */
+    planDeadlineTicks: 36000,
+    /** No progress at all for this many ticks marks the session stalled and cancels it safely. */
+    stallTicks: 3600,
+    /** A chat heartbeat at least this often while planning. */
+    heartbeatTicks: 200,
 };
 
 export const PHYSICAL = {

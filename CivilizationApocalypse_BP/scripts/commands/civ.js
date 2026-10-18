@@ -1,12 +1,13 @@
 import { system, world } from "@minecraft/server";
-import { CIV, CIV_EVENT_IDS, SCRIPT_EVENT_NAMESPACE } from "../config.js";
+import { CIV, CIV_EVENT_IDS, PHYSICAL, SCRIPT_EVENT_NAMESPACE } from "../config.js";
 import { createJobStore, progress } from "../civ/jobs.js";
 import { markYield, newOps } from "../civ/regions.js";
 import { siteGroundRegion } from "../civ/siteprofile.js";
 import { abortCivJob, civAbortLines, describePlan, loadSavedRunSteps, persistRun, planWorld, sessionStatus, startConstruction, PROTECT_MARGIN } from "../integration/civBuilder.js";
 import { registerBuiltGates } from "../integration/civGates.js";
-import { releaseArea, runJobAsync } from "../integration/civScan.js";
-import { activeKind, finishJob, isBusy, reserveJob } from "../integration/districtBuilder.js";
+import { describeProgress, describeRunning, finishProgress, formatTicks, getLastRun, getProgress, nowTick, setPhase, startMonitor, startProgress } from "../integration/civProgress.js";
+import { CIV_TICKING_ID, releaseArea, runJobAsync, tileSizeNow } from "../integration/civScan.js";
+import { activeKind, activeToken, finishJob, isBusy, releaseChunks, reserveJob } from "../integration/districtBuilder.js";
 import { districtById, findValidationProblems } from "../kingdom/state.js";
 import { formatErrorLines } from "../ui/report.js";
 import { parseArgs } from "./args.js";
@@ -78,6 +79,8 @@ export function registerCivCommands(kingdomStore) {
             void handleResume(kingdomStore, event);
         } else if (id === CIV_EVENT_IDS.devgate) {
             handleDevgate(parseArgs(event.message), event);
+        } else if (id === CIV_EVENT_IDS.diag) {
+            handleDiag(event);
         }
     }, { namespaces: [SCRIPT_EVENT_NAMESPACE] });
 }
@@ -232,6 +235,64 @@ function topReasons(byReason) {
     return Object.entries(byReason).sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).slice(0, 5).map(([reason, count]) => `  ${String(count)}x ${reason}`);
 }
 
+/**
+ * If no job owns the slot, remove ticking areas an earlier (crashed / aborted) run may have left behind.
+ * @param {(lines: string[]) => void} tell
+ */
+function sweepAbandonedHolds(tell) {
+    if (isBusy()) {
+        return;
+    }
+    try {
+        const manager = world.tickingAreaManager;
+        /** @type {string[]} */
+        const found = [];
+        if (manager.hasTickingArea(CIV_TICKING_ID)) {
+            releaseArea(undefined);
+            found.push(CIV_TICKING_ID);
+        }
+        if (manager.hasTickingArea(PHYSICAL.tickingAreaId)) {
+            releaseChunks();
+            found.push(PHYSICAL.tickingAreaId);
+        }
+        if (found.length > 0) {
+            tell([`Removed abandoned ticking area(s) left by an earlier run: ${found.join(", ")}.`]);
+        }
+    } catch (_error) {
+        // nothing to sweep
+    }
+}
+
+/** Phrase for a refusal because the slot is taken. */
+function runningPhrase() {
+    const running = getProgress();
+    return `A ${String(activeKind())} job is already running${running !== undefined ? ` (${describeRunning(running)})` : ""}.`;
+}
+
+/**
+ * The monitor found the session stalled or past its deadline: say why, cancel it safely, release everything.
+ * @param {Player} player
+ * @param {import("../integration/civProgress.js").Progress} prog
+ * @param {"stalled" | "deadline"} reason
+ */
+function onTrouble(player, prog, reason) {
+    const message = reason === "deadline"
+        ? `Planning ran past its deadline of ${formatTicks(CIV.planDeadlineTicks)} (phase ${String(prog.phaseIndex)}/${String(prog.phases)} ${prog.phaseName}).`
+        : `No progress for ${formatTicks(CIV.stallTicks)} (phase ${String(prog.phaseIndex)}/${String(prog.phases)} ${prog.phaseName}, tile ${String(prog.tilesDone)}/${String(prog.tilesTotal)}).`;
+    if (prog.kind === "build") {
+        prog.lastError = message + " (not cancelled)";
+        say(player, formatErrorLines("Build is not making progress", [message, "The build was NOT cancelled - it may recover once the chunks load. See /scriptevent civ:generate_status, or stop it with /scriptevent civ:generate_abort (progress is kept and can be resumed)."]));
+        return;
+    }
+    prog.lastError = message;
+    say(player, formatErrorLines(`Planning ${reason === "deadline" ? "timed out" : "stalled"} - cancelled, nothing was changed`, [message, "A chunk may not be loading in this world. Move to an area whose chunks are already generated or try a smaller radius=, then run the command again. /scriptevent civ:generate_diag shows the engine's limits."]));
+    if (activeToken() === prog.token) {
+        abortCivJob(reason === "deadline" ? "failed" : "stalled", message);
+    } else {
+        finishProgress(prog, reason === "deadline" ? "failed" : "stalled", message);
+    }
+}
+
 // ---------------------------------------------------------------------------------------------
 // civ:generate / civ:generate_plan
 
@@ -260,9 +321,10 @@ async function handleGenerate(kingdomStore, args, event, planOnly) {
         return;
     }
     if (isBusy()) {
-        say(player, formatErrorLines(title, [`A ${String(activeKind())} job is already running.`, `Wait for it, or run /scriptevent ${CIV_EVENT_IDS.abort}.`]));
+        say(player, formatErrorLines(title, [runningPhrase(), `Wait for it, check /scriptevent ${CIV_EVENT_IDS.status}, or stop it with /scriptevent ${CIV_EVENT_IDS.abort}.`]));
         return;
     }
+    sweepAbandonedHolds((lines) => say(player, lines));
     if (player.dimension.id !== "minecraft:overworld") {
         say(player, formatErrorLines(title, [`Run this in the overworld (you are in ${player.dimension.id}).`]));
         return;
@@ -295,11 +357,16 @@ async function handleGenerate(kingdomStore, args, event, planOnly) {
 
     /** @param {string[]} lines */
     const sayHere = (lines) => say(player, lines);
+    const prog = startProgress("plan", token, sayHere);
+    startMonitor(prog, (reason) => onTrouble(player, prog, reason));
+    let handedOver = false;
+    try {
     /** @type {import("../integration/civBuilder.js").PlanOutcome} */
     let outcome;
     try {
-        outcome = await planWorld({ token, dimension, anchor, radius: options.radius, seed, exclusions, say: sayHere });
+        outcome = await planWorld({ token, dimension, anchor, radius: options.radius, seed, exclusions, say: sayHere, progress: prog });
     } catch (error) {
+        prog.lastError = String(error);
         releaseArea(token);
         finishJob(token);
         say(player, formatErrorLines("Planning failed - nothing was changed", [String(error)]));
@@ -310,6 +377,7 @@ async function handleGenerate(kingdomStore, args, event, planOnly) {
         return;
     }
     if (!outcome.ok) {
+        prog.lastError = `${outcome.stage}: ${String(outcome.reasons[0])}`;
         releaseArea(token);
         finishJob(token);
         say(player, formatErrorLines(`Stopped at ${outcome.stage} - nothing was changed`, [...outcome.reasons, ...(outcome.stage === "site" && exclusions.length > 0 ? ["An existing district blocks the nearby ground: walk a few hundred blocks away or raise radius=."] : []), "No block was written."]));
@@ -368,7 +436,20 @@ async function handleGenerate(kingdomStore, args, event, planOnly) {
         return;
     }
     say(player, [...planLines, "Plan stored. Starting construction now."]);
-    beginConstruction(kingdomStore, player, token, dimension, outcome.plan, record, persisted.queue, loaded.kingdom);
+    handedOver = true;
+    prog.kind = "build";
+    setPhase(prog, 6, "building");
+    beginConstruction(kingdomStore, player, token, dimension, outcome.plan, record, persisted.queue, loaded.kingdom, prog);
+    } catch (error) {
+        prog.lastError = String(error);
+        say(player, formatErrorLines("Failed - nothing was changed unless stated", [String(error), "The job slot and the ticking area were released."]));
+    } finally {
+        if (!handedOver) {
+            releaseArea(token);
+            finishJob(token);
+            finishProgress(prog, token.cancelled ? "cancelled" : prog.lastError !== undefined ? "failed" : prog.state === "stalled" ? "stalled" : "done");
+        }
+    }
 }
 
 /**
@@ -380,8 +461,9 @@ async function handleGenerate(kingdomStore, args, event, planOnly) {
  * @param {any} record
  * @param {import("../civ/jobs.js").JobQueue} queue
  * @param {any} kingdomForRects
+ * @param {import("../integration/civProgress.js").Progress} [prog]
  */
-function beginConstruction(kingdomStore, player, token, dimension, plan, record, queue, kingdomForRects) {
+function beginConstruction(kingdomStore, player, token, dimension, plan, record, queue, kingdomForRects, prog = undefined) {
     const region = siteGroundRegion(plan, 1);
     let announced = false;
     const registerGates = () => {
@@ -410,12 +492,14 @@ function beginConstruction(kingdomStore, player, token, dimension, plan, record,
         protectedRects: protectedRects(kingdomForRects, 1),
         say: (lines) => say(player, lines),
         saveCiv: (patch) => patchCiv(kingdomStore, patch),
+        progress: prog,
         onStageComplete(stage) {
             if (stage === "gates") {
                 registerGates();
             }
         },
         onEnd(result) {
+            finishProgress(prog, result.status === "complete" ? "done" : "failed", result.status === "complete" ? undefined : result.reason);
             if (result.status === "complete") {
                 registerGates();
                 const spot = result.spot;
@@ -451,9 +535,10 @@ async function handleResume(kingdomStore, event) {
         return;
     }
     if (isBusy()) {
-        say(player, formatErrorLines(title, [`A ${String(activeKind())} job is already running.`]));
+        say(player, formatErrorLines(title, [runningPhrase()]));
         return;
     }
+    sweepAbandonedHolds((lines) => say(player, lines));
     const loaded = kingdomStore.load();
     const district = loaded.kingdom ? districtById(loaded.kingdom, "district-1") : undefined;
     const civ = district?.civ;
@@ -471,30 +556,49 @@ async function handleResume(kingdomStore, event) {
     }
     const token = reserveJob("civ-resume");
     if (token === undefined) {
-        say(player, formatErrorLines(title, ["A job is already running."]));
+        say(player, formatErrorLines(title, [runningPhrase()]));
         return;
     }
     say(player, ["=== Resuming the civilization build ===", "Reloading the stored plan and job queue; verifying the checksum..."]);
-    // yield one tick so the message lands before the heavy rebuild
-    await new Promise((resolve) => system.runTimeout(() => resolve(undefined), 1));
-    if (token.cancelled) {
-        return;
+    const prog = startProgress("resume", token, (lines) => say(player, lines));
+    setPhase(prog, 1, "rebuilding the plan from storage");
+    startMonitor(prog, (reason) => onTrouble(player, prog, reason));
+    let handedOver = false;
+    try {
+        // yield one tick so the message lands before the heavy rebuild
+        await new Promise((resolve) => system.runTimeout(() => resolve(undefined), 1));
+        if (token.cancelled) {
+            return;
+        }
+        const resumeOps = newOps();
+        lastResumeOps = resumeOps;
+        const restored = await runJobAsync(token, loadSavedRunSteps(civ, resumeOps), prog);
+        if (token.cancelled || restored === undefined) {
+            return;
+        }
+        markYield(resumeOps);
+        if (!restored.ok) {
+            prog.lastError = String(restored.reasons[0]);
+            finishJob(token);
+            say(player, formatErrorLines(title, [...restored.reasons, "Nothing was changed."]));
+            return;
+        }
+        patchCiv(kingdomStore, { status: "building" });
+        say(player, [`Verified plan ${String(civ.checksum)}; ${String(restored.recovered)} interrupted element(s) recovered. Continuing.`]);
+        handedOver = true;
+        prog.kind = "build";
+        setPhase(prog, 6, "building");
+        beginConstruction(kingdomStore, player, token, player.dimension, restored.plan, restored.record, restored.queue, loaded.kingdom, prog);
+    } catch (error) {
+        prog.lastError = String(error);
+        say(player, formatErrorLines("Resume failed", [String(error), "The job slot and the ticking area were released."]));
+    } finally {
+        if (!handedOver) {
+            releaseArea(token);
+            finishJob(token);
+            finishProgress(prog, token.cancelled ? "cancelled" : prog.lastError !== undefined ? "failed" : "done");
+        }
     }
-    const resumeOps = newOps();
-    lastResumeOps = resumeOps;
-    const restored = await runJobAsync(token, loadSavedRunSteps(civ, resumeOps));
-    if (token.cancelled || restored === undefined) {
-        return;
-    }
-    markYield(resumeOps);
-    if (!restored.ok) {
-        finishJob(token);
-        say(player, formatErrorLines(title, [...restored.reasons, "Nothing was changed."]));
-        return;
-    }
-    patchCiv(kingdomStore, { status: "building" });
-    say(player, [`Verified plan ${String(civ.checksum)}; ${String(restored.recovered)} interrupted element(s) recovered. Continuing.`]);
-    beginConstruction(kingdomStore, player, token, player.dimension, restored.plan, restored.record, restored.queue, loaded.kingdom);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -513,8 +617,26 @@ function handleStatus(kingdomStore, event) {
     }
     const civ = district.civ;
     const lines = ["=== Civilization generation ==="];
+    sweepAbandonedHolds((swept) => lines.push(...swept));
+    const running = getProgress();
+    const finished = getLastRun();
+    if (running !== undefined && running.kind === "build") {
+        const live = sessionStatus();
+        if (live !== undefined) running.percent = live.pct;
+    }
+    if (running !== undefined) {
+        lines.push("Active session:", ...describeProgress(running).map((line) => "  " + line.trimStart()));
+    } else if (finished !== undefined) {
+        lines.push("Last run:", ...describeProgress(finished).map((line) => "  " + line.trimStart()));
+    }
     if (civ === undefined) {
-        lines.push(`Not generated. /scriptevent ${CIV_EVENT_IDS.plan} (read-only) or ${CIV_EVENT_IDS.generate} in a NEW Creative world.`);
+        if (running !== undefined) {
+            lines.push(`Nothing is stored yet: a ${running.kind} session is running (see above).`);
+        } else if (finished !== undefined) {
+            lines.push(`Nothing is stored: the last run did not produce a civilization (see above). /scriptevent ${CIV_EVENT_IDS.plan} (read-only) or ${CIV_EVENT_IDS.generate} to try again.`);
+        } else {
+            lines.push(`Not generated. /scriptevent ${CIV_EVENT_IDS.plan} (read-only) or ${CIV_EVENT_IDS.generate} in a NEW Creative world.`);
+        }
     } else {
         lines.push(`Hearthgate (enlarged): ${String(civ.status)}, stage ${String(civ.stage)}, plan ${String(civ.checksum)}, seed ${String(civ.seed)}, anchor ${String(civ.anchor?.x)}, ${String(civ.anchor?.z)}, centre ${String(civ.centre?.x)}, ${String(civ.centre?.z)}, started at step ${String(civ.startedStep)}.`);
         const live = sessionStatus();
@@ -530,7 +652,7 @@ function handleStatus(kingdomStore, event) {
             }
         }
     }
-    lines.push(isBusy() ? `Job slot: ${String(activeKind())}` : "No job running.", `Districts 2-5: not enabled in this build (dev gate ${devGateOn() ? "on" : "off"}).`);
+    lines.push(isBusy() ? `Job slot: ${String(activeKind())}${running !== undefined ? " (" + describeRunning(running) + ")" : ""}` : "No job running.", `Districts 2-5: not enabled in this build (dev gate ${devGateOn() ? "on" : "off"}).`);
     reply(lines, event);
 }
 
@@ -541,7 +663,9 @@ function handleStatus(kingdomStore, event) {
 function handleAbort(kingdomStore, event) {
     void kingdomStore;
     if (!isBusy()) {
-        reply(["No civilization job is running."], event);
+        const swept = /** @type {string[]} */ ([]);
+        sweepAbandonedHolds((lines) => swept.push(...lines));
+        reply(["No civilization job is running.", ...swept], event);
         return;
     }
     const result = abortCivJob();
@@ -550,6 +674,47 @@ function handleAbort(kingdomStore, event) {
         return;
     }
     reply(civAbortLines(result, CIV_EVENT_IDS.resume), event);
+}
+
+/**
+ * Cheap diagnostics for real-game problems: the engine's chunk limits, whether a tile would fit, what we own.
+ * @param {ScriptEvent} event
+ */
+function handleDiag(event) {
+    const lines = ["=== Civilization diagnostics ==="];
+    try {
+        const manager = world.tickingAreaManager;
+        lines.push(`Ticking-area limit (maxChunkCount): ${String(manager.maxChunkCount)}; chunks in use pack-wide (chunkCount): ${String(manager.chunkCount)}; survey tile ${String(tileSizeNow())} x ${String(tileSizeNow())} blocks.`);
+        const player = playerOf(event);
+        if (player !== undefined) {
+            const px = Math.floor(player.location.x / 128) * 128;
+            const pz = Math.floor(player.location.z / 128) * 128;
+            try {
+                lines.push(`hasCapacity for a 64-chunk tile at ${String(px)},${String(pz)}: ${String(manager.hasCapacity({ dimension: player.dimension, from: { x: px, y: 64, z: pz }, to: { x: px + 127, y: 64, z: pz + 127 } }))}.`);
+            } catch (error) {
+                lines.push(`hasCapacity failed: ${String(error)}`);
+            }
+            try {
+                const loadedHere = /** @type {any} */ (player.dimension).isChunkLoaded?.(player.location);
+                lines.push(`Your chunk is loaded: ${String(loadedHere)}.`);
+            } catch (error) {
+                lines.push(`isChunkLoaded failed: ${String(error)}`);
+            }
+        }
+        for (const id of [CIV_TICKING_ID, PHYSICAL.tickingAreaId]) {
+            const present = manager.hasTickingArea(id);
+            lines.push(`Ticking area '${id}': ${present ? `present, fully loaded: ${String(manager.getTickingArea(id)?.isFullyLoaded)}` : "none"}.`);
+        }
+    } catch (error) {
+        lines.push(`Ticking-area manager unavailable: ${String(error)}`);
+    }
+    const running = getProgress();
+    const finished = getLastRun();
+    lines.push(isBusy() ? `Job slot: ${String(activeKind())}${running !== undefined ? " (" + describeRunning(running) + ")" : ""}` : "No job running.");
+    const last = running ?? finished;
+    lines.push(last?.lastError !== undefined ? `Last session error: ${last.lastError}` : "Last session error: none.");
+    lines.push(`Tick ${String(nowTick())}. Timeouts: hold ${String(CIV.holdTimeoutTicks)} ticks x ${String(1 + CIV.holdRetries)}, stall ${String(CIV.stallTicks)}, deadline ${String(CIV.planDeadlineTicks)}.`);
+    reply(lines, event);
 }
 
 /**

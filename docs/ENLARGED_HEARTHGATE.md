@@ -50,3 +50,27 @@ Chunk loading and ticking-area timing; the Bedrock interpreter speed vs the scri
 ladders, lever) and `persistent_bit`; real terrain behaviour (rivers, caves, villages, biomes); gate closing against real
 mobs; actual throughput; lots the layout could not site on some seeds (orchard, command hall, extra guard posts); stairs and
 roof eaves are architecture, not extra supports. Districts 2-5, entity population, invasions: see ROADMAP.md.
+
+## Planner hang investigation (2026-10-18) - survey progress, timeouts, diagnostics
+Symptom (real game, new normal world): `civ:generate_plan` printed its first survey line, then nothing for a long time;
+`civ:generate_status` said "Not generated" and "Job slot: civ-plan".
+CONFIRMED from code, typings and an offline reproduction: ticking-area loads were awaited with no timeout (the API promise
+resolves only when every chunk is loaded and ticking, and has no failure reason for a stall); the survey was 100 serial 128x128
+tiles (about 6,400 chunks, about 6,280 of them ungenerated in a fresh world) with progress only every 25 tiles; status read
+only `district.civ`, so an active planning session was invisible. HYPOTHESES (need real-game evidence): fresh-world chunk
+generation is simply very slow, or an area promise never settles for some tiles. The string "[1/3]" in the report does not
+exist in this repo (it prints "[n/6]"); the exact in-game text still needs to be confirmed.
+Changes (all offline-tested only): per-tile hold timeout (1200 ticks, 1 retry, tile shrinking on `OverChunkLimit`, stall abort
+with a clear message), progressive nearest-first survey that stops when a site is found, a progress registry with 10-second
+heartbeats, `civ:generate_status` showing the active/last session (phase, tiles, chunks, elapsed, "no progress for N s",
+last error), stall (3 min) and deadline (30 min) protection, cleanup of abandoned ticking areas, duplicate-job refusal showing
+phase and age, and a new `civ:generate_diag` (maxChunkCount, chunkCount, capacity, your chunk, owned areas, last error).
+
+### Retest the read-only planner in a NEW normal Creative world
+1. New normal Creative world, cheats on, Behavior Pack attached (the redeployed pack). Join, stay near spawn.
+2. `/scriptevent civ:generate_diag` - note maxChunkCount and whether a 64-chunk tile has capacity.
+3. `/scriptevent civ:generate_plan` - expect an up-front chunk estimate, then a heartbeat at least every ~10 s.
+4. While it runs, `/scriptevent civ:generate_status` - expect phase n/6, tile i/N, chunks scanned/pending, elapsed time.
+5. If nothing progresses for 3 minutes the run stops itself and says why (tile coordinates, maxChunkCount). Send me that text
+   and the `civ:generate_diag` output. `/scriptevent civ:generate_abort` cancels and clears a stuck session.
+6. Nothing is written to the world by `civ:generate_plan`; do not run `civ:generate` until the plan finishes.
