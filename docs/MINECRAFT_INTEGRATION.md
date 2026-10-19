@@ -19,12 +19,22 @@ tests added during integration). **None of this proves in-game behaviour.**
 - `@minecraft/server` 2.7.0 is a stable module (published 2026-05-05; shipped with game 1.26.20),
   no Beta APIs/experiments needed. `min_engine_version` raised to `[1,26,20]`.
 - No deprecated/beta APIs used; world access happens only inside event/interval callbacks.
-- Dynamic property string limit ≈32,767 (community-documented, not official). Saved state plateaus ≈15 KB.
+- Dynamic property string limit ≈32,767 (community-documented, not official). Measured in the fake world after
+  building all five districts: the kingdom blob is 6,611 characters (its five `district.civ` pointers are 1,546 B),
+  the master plan plus five site payloads are 155,697 B in 13 keys with no value over the store's 30,000-char chunk
+  size, and the five queues 11,029 B in 10 keys, plus 2,725 B of gate registry and 15 small per-gate keys -
+  every one of them inside its own store's budget, none of them one giant string.
+
 
 ## Deployment
 `node dev/deploy.mjs` copies `CivilizationApocalypse_BP` into the dev folder and verifies sha256 of
 every file. It refuses to replace a folder with a different manifest UUID and never touches worlds
-or other packs. Deployed: 25 files, byte-identical (re-run to confirm after any change).
+or other packs. Deployed as of commit 4b5691e: **73 files**, each re-checked with
+`git hash-object --path <pack path> <deployed file>` against the blob id stored in that commit - 0
+mismatches, 0 missing, 0 extra; header UUID `fd04cb50-dddc-4ebe-83fc-5b5375819bcb`, the same as the
+source manifest. Re-run `node dev/deploy.mjs` after any change and confirm the same 73/0/0/0.
+Deploying is not running: Minecraft has still never loaded this pack, so nothing here validates the
+engine. See docs/TESTING.md for the in-game checklist.
 
 ## Bugs fixed during integration
 1. A system exception inside a step left the in-memory kingdom half-mutated → now rolled back and reported.
