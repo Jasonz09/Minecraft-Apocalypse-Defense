@@ -2,7 +2,7 @@
     "$comment": "Copy to starter/build-receipt.json and fill it from the in-game `civ:starter_verify` and `civ:starter_status` output of the build world, AFTER the city is finished. dev/build-template.mjs refuses to package without it.",
     "templateId": "civapoc-starter",
     "armed": true,
-    "builtDistricts": ["district-1"],
+    "builtDistricts": ["district-1", "district-2", "district-3", "district-4", "district-5"],
     "civilians": 400,
     "soldiers": 150,
     "districts": 5,

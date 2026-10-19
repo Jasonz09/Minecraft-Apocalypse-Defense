@@ -27,15 +27,13 @@ function finished() {
     return { spec, receipt };
 }
 
-test("existing one-district starter spec is NOT a releasable five-district template", () => {
+test("a planner-ready spec is STILL not a releasable five-district template", () => {
     const problems = fullReleaseProblems(current, example);
     const text = problems.join(" | ");
-    // Name the reasons instead of counting them: a check that only requires "some problem exists"
-    // stays green when the wrong rule trips, and reddens when an unrelated rule is added.
-    for (const id of ["district-2", "district-3", "district-4", "district-5"]) {
-        assert.match(text, new RegExp(`${id} is not marked starterWorld`), `${id} must be reported as unbuilt`);
-        assert.match(text, new RegExp(`${id} is not in starter\\.builtRequired`), `${id} must be missing from the spec requirement`);
-        assert.match(text, new RegExp(`${id} is not in the signed build receipt`), `${id} must be missing from the receipt`);
+    // All five layouts are registered and marked starter districts, and the example receipt lists all
+    // five - yet nothing has been built in Minecraft, so "status: planner-ready" must keep it red.
+    for (const id of ["district-1", "district-2", "district-3", "district-4", "district-5"]) {
+        assert.match(text, new RegExp(`${id} is not marked starterWorld`), `${id} must be reported as not physically built`);
     }
     assert.match(text, /verifiedBy must record actual in-game verification/, "the example receipt is a placeholder and must never pass");
 });
@@ -109,7 +107,7 @@ test("the release gate refuses when the game would arm fewer districts than the 
     // The hole this closes: template.json + receipt can say "five built" while `civ:starter_arm
     // confirm` still accepts a Hearthgate-only world, and the gate would print READY.
     const cases = [
-        ["the pack still requires only district-1", (starter) => {}, /builtRequired .*does not match template\.json/],
+        ["the pack would arm only Hearthgate", (starter) => { starter.builtRequired = ["district-1"]; }, /builtRequired .*does not match template\.json/],
         ["keep list drifted", (starter) => { starter.keepKeyPrefixes = ["civ:kingdom"]; }, /keepKeyPrefixes drifted/],
         ["wipe list drifted", (starter) => { starter.wipeKeyPrefixes = ["civ:jobs"]; }, /wipeKeyPrefixes drifted/],
         ["template id differs", (starter) => { starter.templateId = "something-else"; }, /templateId .*!= template\.json/],

@@ -633,15 +633,19 @@ const builtRecord = (/** @type {string} */ stage) => ({
     stage,
 });
 
-/** A development world where district-1 really was built: plan stored, months of test residue present. */
-function seedBuiltDevWorld() {
+/** A development world where the whole five-district city really was built: plan stored, test residue everywhere. */
+function seedBuiltDevWorld({ districts = 5 } = {}) {
     const kingdom = seed();
-    const built = kingdom.districts[0];
-    built.civ = builtRecord("dressing");
-    built.civilians = 91; // drifted during testing
-    built.soldiers = 3;
-    built.garrison = { front: 2, reserve: 1 };
-    built.refugees = 27;
+    const layouts = ["hearthgate", "ironquarry", "whitethorn", "saltmere", "ashfall"];
+    for (let index = 0; index < districts; index += 1) {
+        const built = kingdom.districts[index];
+        built.civ = { ...builtRecord("dressing"), layout: `${layouts[index]}-enlarged`, centre: { x: 12 + index * 200, z: -34 - index * 120 } };
+    }
+    const built0 = kingdom.districts[0];
+    built0.civilians = 91; // drifted during testing
+    built0.soldiers = 3;
+    built0.garrison = { front: 2, reserve: 1 };
+    built0.refugees = 27;
     mc.properties.set(STORAGE_KEYS.kingdom, serializeKingdom(kingdom));
     const saved = createPlanStore(mc.world, { prefix: PLAN_PREFIX }).savePlan({ seed: 4242, districts: [1, 2, 3, 4, 5], cell: 4 });
     assert.equal(saved.ok, true, saved.reason);
@@ -694,11 +698,21 @@ test("starter: arming a built dev world resets the simulation and keeps the buil
     );
     assert.equal(armed.step, 0);
 
-    // The world itself: district-1's build record ships, so the city is not treated as unbuilt.
+    // The world itself: every district's build record ships, so the city is not treated as unbuilt.
     assert.equal(armed.districts[0].civ.status, "complete");
     assert.equal(armed.districts[0].civ.layout, "hearthgate-enlarged");
     assert.deepEqual(armed.districts[0].civ.centre, { x: 12, z: -34 });
-    assert.equal(armed.districts[1].civ, undefined, "an unbuilt district must not claim to be built");
+    assert.deepEqual(
+        armed.districts.map((d) => [d.civ?.layout, d.civ?.status]),
+        [
+            ["hearthgate-enlarged", "complete"],
+            ["ironquarry-enlarged", "complete"],
+            ["whitethorn-enlarged", "complete"],
+            ["saltmere-enlarged", "complete"],
+            ["ashfall-enlarged", "complete"],
+        ],
+        "the five build records are world content and must survive arming",
+    );
 
     // Development residue gone, world truth kept.
     const keys = allStoredKeys();
@@ -709,6 +723,16 @@ test("starter: arming a built dev world resets the simulation and keeps the buil
     assert.equal(keys.some((key) => key.startsWith(`${PLAN_PREFIX}:`)), true, "the five-district plan must survive");
     assert.equal(keys.includes("civ_gatereg"), true);
     assert.match(text(player.messages), /export/i, "the reply must tell the developer what to do next");
+});
+
+test("starter: four of five districts is not a starting kingdom, and says which one is missing", () => {
+    resetWorld();
+    seedBuiltDevWorld({ districts: 4 });
+    const before = mc.properties.get(STORAGE_KEYS.kingdom);
+    const player = makePlayer();
+    scriptEvent(STARTER_EVENT_IDS.arm, "confirm", { player });
+    assert.match(text(player.messages), /district-5 is not physically complete/);
+    assert.equal(mc.properties.get(STORAGE_KEYS.kingdom), before, "a partial city must not be armed as the release");
 });
 
 test("starter: a second arming is refused and leaves the armed baseline alone", () => {

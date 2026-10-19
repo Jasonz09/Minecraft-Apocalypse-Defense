@@ -33,13 +33,13 @@
         "templateId": "civapoc-starter",
         "keepKeyPrefixes": ["civ:kingdom", "civ:plan", "civ_gatereg", "civ_gate_"],
         "wipeKeyPrefixes": ["civ:kingdom-quarantine", "civ:jobs", "civ:debug", "civ:demo-", "civ_devgate"],
-        "builtRequired": ["district-1"]
+        "builtRequired": ["district-1", "district-2", "district-3", "district-4", "district-5"]
     },
     "districts": [
         { "index": 1, "id": "district-1", "name": "Hearthgate", "role": "command", "layoutId": "hearthgate-enlarged", "starterWorld": true, "status": "planner-ready" },
-        { "index": 2, "id": "district-2", "name": "Ironquarry", "role": "industrial", "layoutId": "ironquarry-enlarged", "starterWorld": false, "status": "planned" },
-        { "index": 3, "id": "district-3", "name": "Whitethorn", "role": "agricultural", "layoutId": "whitethorn-enlarged", "starterWorld": false, "status": "planned" },
-        { "index": 4, "id": "district-4", "name": "Saltmere", "role": "commercial", "layoutId": "saltmere-enlarged", "starterWorld": false, "status": "planned" },
-        { "index": 5, "id": "district-5", "name": "Ashfall", "role": "residential", "layoutId": "ashfall-enlarged", "starterWorld": false, "status": "planned" }
+        { "index": 2, "id": "district-2", "name": "Ironquarry", "role": "industrial", "layoutId": "ironquarry-enlarged", "starterWorld": true, "status": "planner-ready" },
+        { "index": 3, "id": "district-3", "name": "Whitethorn", "role": "agricultural", "layoutId": "whitethorn-enlarged", "starterWorld": true, "status": "planner-ready" },
+        { "index": 4, "id": "district-4", "name": "Saltmere", "role": "commercial", "layoutId": "saltmere-enlarged", "starterWorld": true, "status": "planner-ready" },
+        { "index": 5, "id": "district-5", "name": "Ashfall", "role": "residential", "layoutId": "ashfall-enlarged", "starterWorld": true, "status": "planner-ready" }
     ]
 }

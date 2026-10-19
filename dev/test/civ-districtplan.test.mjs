@@ -4,7 +4,8 @@ import test from "node:test";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 /**
- * Phase C - the enlarged, irregular Hearthgate construction planner.
+ * The enlarged, irregular district construction planner: Hearthgate and, from round 4 on, all five
+ * districts (Ironquarry, Whitethorn, Saltmere, Ashfall) planned from the same master CivPlan.
  *
  * Everything here is checked with INDEPENDENT geometry (own flood fills, own gap maths) so a
  * bug in civ/districtplan.js cannot be confirmed by the same bug in its own test helpers.
@@ -613,12 +614,58 @@ test("a district plan that would land on a protected footprint refuses instead o
     assert.ok(Number(blocked.record.stats.buildings) < full, "the protected area was built in anyway");
 });
 
-test("districts 2-5 are refused: Phase C covers Hearthgate only", async () => {
-    for (const index of [2, 3, 4, 5]) {
-        const result = D.planDistrictSite(PLAN, index, field, { seed: SEED });
-        assert.equal(result.ok, false, `district ${String(index)} must not be planned yet`);
-        assert.match(result.problems.join(" "), /Phase C plans Hearthgate only/);
+/* ------------------------------------------------------------------ five-district harness
+ * Round 4 (districts 2-5) and the layout test above share one memoised set of site records. The
+ * helper is a hoisted function declaration and only reads `CASES`/`buildCase` when a test RUNS, so
+ * it can be used by tests registered before those definitions appear further down the file.
+ */
+const fiveCache = new Map();
+
+/** @param {number} seed @param {number} relief @returns {{ name: string, seed: number, relief: number, field: any, plan: any, site: any, record: any, records: any[] }} */
+function fiveDistricts(seed, relief) {
+    const name = `seed ${String(seed)} ${relief >= 10 ? "rough" : "flat"}`;
+    let hit = fiveCache.get(name);
+    if (hit === undefined) {
+        const c = buildCase({ name, seed, relief });
+        const records = [c.record];
+        for (const index of [2, 3, 4, 5]) {
+            const site = D.planDistrictSite(c.plan, index, c.field, { seed });
+            assert.ok(site.ok, `${name}: district ${String(index)} failed: ${site.problems.slice(0, 3).join(" | ")}`);
+            records.push(site.record);
+        }
+        hit = { ...c, name, records };
+        fiveCache.set(name, hit);
     }
+    return hit;
+}
+
+test("every district has an enlarged layout: the Hearthgate-only refusal is gone", () => {
+    assert.deepEqual({ ...D.ENLARGED_LAYOUTS }, {
+        1: "hearthgate-enlarged",
+        2: "ironquarry-enlarged",
+        3: "whitethorn-enlarged",
+        4: "saltmere-enlarged",
+        5: "ashfall-enlarged",
+    });
+    const five = fiveDistricts(SEED, 18);
+    for (const index of [2, 3, 4, 5]) {
+        const record = five.records[index - 1];
+        const district = /** @type {any[]} */ (PLAN.districts).find((entry) => entry.index === index);
+        assert.equal(record.layoutId, D.ENLARGED_LAYOUTS[index], `district ${String(index)} layout`);
+        assert.equal(record.districtIndex, index);
+        assert.equal(record.districtId, district.id);
+        assert.equal(record.name, district.name);
+        assert.equal(record.role, district.role);
+        assert.equal(record.version, 2);
+        assert.ok(district.area >= 30000 && district.area <= 45000, `${record.name}: area ${String(district.area)}`);
+        assert.ok(Number(record.stats.buildings) >= 20, `${record.name}: only ${String(record.stats.buildings)} buildings`);
+        assert.ok(D.siteOpCount(record) > 40000, `${record.name}: only ${String(D.siteOpCount(record))} ops`);
+        assert.ok(Number(record.recordBytes) <= CIV_LIMITS.maxPlanBytes, `${record.name}: ${String(record.recordBytes)} record bytes`);
+    }
+    // the five records are distinct, complete and carry no problem at all
+    const checksums = five.records.map((record) => record.checksum);
+    assert.equal(new Set(checksums).size, 5, JSON.stringify(checksums));
+    for (const record of five.records) assert.deepEqual(record.problems, [], `${record.name} problems`);
 });
 
 /* ------------------------------------------------------------------ 8. determinism + bounds */
@@ -1557,4 +1604,665 @@ test("a patrol contour that falls apart is laid as separate lanes, never as one 
             for (const lane of lanes) assert.equal(lane.outsideCells, 0, `${lane.id} leaves the district`);
         }
     }
+});
+
+/* =================================================================================================
+ * Round 4: districts 2-5 - Ironquarry (industrial), Whitethorn (agricultural), Saltmere (commercial)
+ * and Ashfall (residential) - get the same enlarged site plan from the SAME master CivPlan.
+ * Everything below is the Hearthgate battery run over all five districts, with independent geometry
+ * (own flood fills, own gap maths, own decode of the plan's run-length labels).
+ * ================================================================================================= */
+
+const FAC = await load("civ", "facilities.js");
+const WT = await load("civ", "walls.js");
+const LT = await load("civ", "lots.js");
+/** Seeds the whole battery runs on: two rough terrains and one flat one. */
+const BATTERY = [
+    { seed: 21, relief: 18 },
+    { seed: 7, relief: 18 },
+    { seed: 12, relief: 2 },
+];
+const DISTRICT_NAMES = ["Hearthgate", "Ironquarry", "Whitethorn", "Saltmere", "Ashfall"];
+const DISTRICT_ROLES = ["command", "industrial", "agricultural", "commercial", "residential"];
+
+/** Independent label grid of any CivPlan, decoded straight from its run-length list. */
+const planGrids = new Map();
+/** @param {any} plan */
+function gridOf(plan) {
+    let hit = planGrids.get(plan);
+    if (hit === undefined) {
+        const decoded = decodeCacheFor(plan);
+        const cell = Number(plan.cell);
+        hit = {
+            /** @param {number} x @param {number} z */
+            labelAt: (x, z) => {
+                const gx = Math.floor((x - plan.grid.x0) / cell);
+                const gz = Math.floor((z - plan.grid.z0) / cell);
+                if (gx < 0 || gz < 0 || gx >= plan.grid.w || gz >= plan.grid.h) return -1;
+                return decoded[gz * plan.grid.w + gx];
+            },
+            decoded,
+        };
+        planGrids.set(plan, hit);
+    }
+    return hit;
+}
+/** @param {any} plan */
+function decodeCacheFor(plan) {
+    const w = plan.grid.w;
+    const h = plan.grid.h;
+    /** @type {number[]} */
+    const labels = new Array(w * h).fill(0);
+    let cursor = 0;
+    for (const [label, run] of /** @type {any[]} */ (plan.labels)) {
+        for (let i = 0; i < run && cursor < labels.length; i += 1) {
+            labels[cursor] = label;
+            cursor += 1;
+        }
+    }
+    return labels;
+}
+
+/** All ops of one stage of any record, streamed through the public API (memoised per record). */
+const opCache = new WeakMap();
+/** @param {any} record @param {string} stage @returns {any[]} */
+function opsIn(record, stage) {
+    let perRecord = opCache.get(record);
+    if (perRecord === undefined) {
+        perRecord = new Map();
+        opCache.set(record, perRecord);
+    }
+    let hit = perRecord.get(stage);
+    if (hit === undefined) {
+        const list = /** @type {any[]} */ (record[stage] ?? []);
+        /** @type {any[]} */
+        const out = [];
+        for (let i = 0; i < list.length; i += 1) out.push(...D.siteOpsFor(record, stage, i));
+        hit = out;
+        perRecord.set(stage, out);
+    }
+    return hit;
+}
+
+/** @param {any} record @param {string} stage @returns {Set<string>} */
+function columnsIn(record, stage) {
+    const set = new Set();
+    for (const op of opsIn(record, stage)) set.add(key(op.x, op.z));
+    return set;
+}
+
+/** Columns of ONE element, streamed on its own (memoised). */
+const elementCache = new WeakMap();
+/** @param {any} record @param {string} stage @param {number} position @returns {Set<string>} */
+function elementColumnsIn(record, stage, position) {
+    let perRecord = elementCache.get(record);
+    if (perRecord === undefined) {
+        perRecord = new Map();
+        elementCache.set(record, perRecord);
+    }
+    const id = `${stage}:${String(position)}`;
+    let hit = perRecord.get(id);
+    if (hit === undefined) {
+        hit = new Set();
+        for (const op of D.siteOpsFor(record, stage, position)) hit.add(key(op.x, op.z));
+        perRecord.set(id, hit);
+    }
+    return hit;
+}
+
+/**
+ * Seal the district (its wall band plus the gate blocks that close each opening) and flood fill
+ * 4-connected from the district centroid inside a window around it.
+ * @param {any} plan @param {any} record
+ */
+function sealedFlood(plan, record) {
+    const index = Number(record.districtIndex);
+    const district = /** @type {any[]} */ (plan.districts).find((entry) => entry.index === index);
+    const barrier = new Set([...columnsIn(record, "walls"), ...columnsIn(record, "gates")]);
+    const limit = 40;
+    const win = { x0: district.bbox.x0 - limit, z0: district.bbox.z0 - limit, x1: district.bbox.x1 + limit, z1: district.bbox.z1 + limit };
+    const w = win.x1 - win.x0 + 1;
+    const h = win.z1 - win.z0 + 1;
+    const blocked = new Uint8Array(w * h);
+    for (const k of barrier) {
+        const [x, z] = k.split(",").map(Number);
+        if (x < win.x0 || z < win.z0 || x > win.x1 || z > win.z1) continue;
+        blocked[(z - win.z0) * w + (x - win.x0)] = 1;
+    }
+    const comps = VAL.labelComponents(blocked, w, h, false);
+    const start = (district.centroid.z - win.z0) * w + (district.centroid.x - win.x0);
+    const home = comps.comp[start];
+    let interior = 0;
+    let border = 0;
+    for (let p = 0; p < w * h; p += 1) {
+        if (comps.comp[p] !== home) continue;
+        interior += 1;
+        const x = p % w;
+        const z = Math.floor(p / w);
+        if (x === 0 || z === 0 || x === w - 1 || z === h - 1) border += 1;
+    }
+    // the barrier itself: one 4-connected piece, or the ring would have a hole in it
+    const ringComps = VAL.labelComponents(Uint8Array.from(blocked, (v) => (v === 1 ? 0 : 1)), w, h, false);
+    return { district, interior, border, comps: comps.count, ringComps: ringComps.count, barrier, win, blocked, w, h };
+}
+
+/** @param {any} record */
+function buildingKinds(record) {
+    return FAC.mixOf(record).kinds;
+}
+
+/* ------------------------------------------------------------------ enclosure */
+
+test("all five districts seal themselves: a closed 4-connected barrier with no way out but a gate", () => {
+    for (const spec of BATTERY) {
+        const five = fiveDistricts(spec.seed, spec.relief);
+        for (const record of five.records) {
+            const index = Number(record.districtIndex);
+            const tag = `${five.name} d${String(index)} ${String(record.role)}`;
+            const sealed = sealedFlood(five.plan, record);
+            assert.ok(sealed.barrier.size > 1000, `${tag}: only ${String(sealed.barrier.size)} boundary columns`);
+            assert.equal(sealed.border, 0, `${tag}: the sealed fill reaches the edge of the survey window`);
+            assert.equal(sealed.comps, 2, `${tag}: the barrier does not split the window into inside and outside (${String(sealed.comps)} components)`);
+            assert.equal(sealed.ringComps, 1, `${tag}: the wall ring is in ${String(sealed.ringComps)} pieces`);
+            assert.ok(sealed.interior >= 0.9 * Number(record.area), `${tag}: only ${String(sealed.interior)} of ${String(record.area)} enclosed`);
+            // every wall the master plan gives this district is built, once, and covers its centreline
+            const own = /** @type {any[]} */ (five.plan.walls).filter((wall) => (/** @type {any[]} */ (wall.between)).includes(index));
+            assert.equal(record.walls.length, own.length, `${tag}: ${String(record.walls.length)} wall elements for ${String(own.length)} planned`);
+            assert.deepEqual([...new Set(record.walls.map((w2) => w2.id))].sort(), own.map((w2) => String(w2.id)).sort(), `${tag}: wall ids`);
+            for (const wall of own) {
+                const cells = GEOM.rasterizePath(wall.path, wall.closed === true);
+                const gaps = cells.filter(([x, z]) => !sealed.barrier.has(key(x, z)));
+                assert.deepEqual(gaps.slice(0, 4), [], `${tag}: wall ${wall.id} has ${String(gaps.length)} uncovered centreline cells`);
+            }
+            assert.deepEqual(D.siteContainmentProblems(five.plan, index, record), [], `${tag}: containment`);
+            // The built band is terrain-following, not a square stamp of the centreline, so a handful of
+            // stamped cells at inside corners legitimately get no block. That denies a walker nothing
+            // only while every such cell is flanked by built band cells on at least two sides.
+            let unstamped = 0;
+            for (const wall of own) {
+                for (const [x, z] of GEOM.stamp(GEOM.rasterizePath(wall.path, wall.closed === true), Number(wall.thickness ?? 3))) {
+                    const k = key(x, z);
+                    if (sealed.barrier.has(k)) continue;
+                    unstamped += 1;
+                    let flanked = 0;
+                    for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (sealed.barrier.has(key(x + dx, z + dz))) flanked += 1;
+                    assert.ok(flanked >= 2, `${tag}: band cell ${k} has only ${String(flanked)} built neighbours - a walkable gap in the wall`);
+                }
+            }
+            assert.ok(unstamped <= 30, `${tag}: ${String(unstamped)} stamped band cells unbuilt - the wall shape changed`);
+            // terrain following: pads where the ground needs them, stairs, cut/fill/retaining
+            assert.ok(Number(record.stats.pads) >= 1, `${tag}: not one pad element`);
+            if (spec.relief >= 10) assert.ok(Number(record.stats.pads) >= 0.5 * Number(record.stats.buildings), `${tag}: ${String(record.stats.pads)} pads for ${String(record.stats.buildings)} buildings on rough ground`);
+            const kindsSeen = new Set();
+            for (const stage of D.SITE_STAGES) for (const op of opsIn(record, stage)) kindsSeen.add(op.kind);
+            for (const must of ["clear", "wall", "gate", "road", "stair", "cut", "fill", "pad", "structure", "footing"]) {
+                assert.ok(kindsSeen.has(must), `${tag}: no '${must}' op at all`);
+            }
+            if (spec.relief >= 10) assert.ok(kindsSeen.has("retaining"), `${tag}: no retaining wall on rough ground`);
+            const stairs = opsIn(record, "roads").filter((op) => op.kind === "stair");
+            assert.ok(stairs.length > 0, `${tag}: no stair op on a sloped site`);
+            if (spec.relief >= 10) assert.ok(stairs.length > 100, `${tag}: only ${String(stairs.length)} road stairs on rough ground`);
+            const prep = opsIn(record, "lots").filter((op) => op.kind === "cut" || op.kind === "fill" || op.kind === "retaining").length;
+            assert.ok(prep > (spec.relief >= 10 ? 500 : 100), `${tag}: only ${String(prep)} pad cut/fill/retaining ops`);
+            for (const element of /** @type {any[]} */ (record.lots)) {
+                if (String(element.id).startsWith("pad-")) {
+                    assert.ok(Number.isInteger(element.baseY), `${tag}: ${element.id} has no level base height`);
+                    assert.ok(Number(element.total) > 0, `${tag}: ${element.id} pads nothing`);
+                }
+            }
+        }
+    }
+});
+
+/* ------------------------------------------------------------------ gates */
+
+test("every district builds every gate planned on its walls, once, fortified and road-served", () => {
+    for (const spec of BATTERY) {
+        const five = fiveDistricts(spec.seed, spec.relief);
+        for (const record of five.records) {
+            const index = Number(record.districtIndex);
+            const tag = `${five.name} d${String(index)} ${String(record.role)}`;
+            const myWalls = new Set(/** @type {any[]} */ (five.plan.walls).filter((wall) => (/** @type {any[]} */ (wall.between)).includes(index)).map((wall) => String(wall.id)));
+            const wanted = /** @type {any[]} */ (five.plan.gates).filter((gate) => myWalls.has(String(gate.wallId))).map((gate) => String(gate.id)).sort();
+            const built = record.gates.map((gate) => String(gate.id)).sort();
+            assert.deepEqual(built, wanted, `${tag}: built gates ${JSON.stringify(built)} vs planned ${JSON.stringify(wanted)}`);
+            assert.equal(new Set(built).size, built.length, `${tag}: a gate was built twice`);
+            assert.ok(record.gates.length >= 2, `${tag}: only ${String(record.gates.length)} gates`);
+            const roadCells = columnsIn(record, "roads");
+            /** @type {Map<string, Set<string>>} */
+            const wallCellsByWall = new Map();
+            record.walls.forEach((element, i) => wallCellsByWall.set(element.id, elementColumnsIn(record, "walls", i)));
+            const ownWall = new Map(/** @type {any[]} */ (record.walls).map((element) => [element.id, element]));
+            const ringNeighbours = [index === 1 ? 5 : index - 1, index === 5 ? 1 : index + 1];
+            const labelAt = gridOf(five.plan).labelAt;
+            let outerGated = 0;
+            for (const gate of record.gates) {
+                assert.ok(ownWall.has(gate.wallId), `${tag}: gate ${gate.id} names an unplanned wall`);
+                const band = wallCellsByWall.get(gate.wallId);
+                assert.ok(band !== undefined && band.size > 0, `${tag}: gate ${gate.id} names a wall with no columns`);
+                let nearest = Infinity;
+                for (const k of band) {
+                    const [x, z] = k.split(",").map(Number);
+                    nearest = Math.min(nearest, Math.hypot(x - gate.at.x, z - gate.at.z));
+                }
+                assert.ok(nearest <= 8, `${tag}: gate ${gate.id} is ${nearest.toFixed(1)} blocks from its wall`);
+                let nearRoad = 0;
+                for (const [dx, dz] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [2, 0], [-2, 0], [0, 2], [0, -2], [3, 0], [-3, 0], [0, 3], [0, -3]]) {
+                    if (roadCells.has(key(gate.at.x + dx, gate.at.z + dz))) nearRoad += 1;
+                }
+                assert.ok(nearRoad > 0, `${tag}: gate ${gate.id} has no road`);
+                assert.ok(Number(gate.width) >= 3, `${tag}: gate ${gate.id} is ${String(gate.width)} wide`);
+                assert.ok(Number(gate.total) > 150, `${tag}: gate ${gate.id} has no gatehouse (${String(gate.total)} ops)`);
+                const ops = D.siteOpsById(record, "gates", gate.id);
+                assert.ok(ops.some((op) => op.id === "minecraft:iron_bars"), `${tag}: ${gate.id} has no portcullis slot`);
+                assert.ok(ops.some((op) => op.id === "minecraft:lever"), `${tag}: ${gate.id} has no lever`);
+                assert.equal(gate.wallTopHeight, 7, `${tag}: ${gate.id} wall top`);
+                // a gate may only face its own district, wilderness, or a ring neighbour
+                const box = WT.gateFootprintBox({ at: gate.at, axis: gate.axis });
+                const faces = new Set();
+                for (let x = box.x0; x <= box.x1; x += 1) for (let z = box.z0; z <= box.z1; z += 1) faces.add(labelAt(x, z));
+                assert.ok(faces.has(index), `${tag}: ${gate.id} does not touch its own district`);
+                for (const label of faces) {
+                    if (label === index || label === 0) continue;
+                    assert.ok(ringNeighbours.includes(label), `${tag}: ${gate.id} opens onto district ${String(label)}, which is not a ring neighbour of ${String(index)}`);
+                }
+                if (ownWall.get(gate.wallId).kind === "outer-wall") outerGated += 1;
+            }
+            assert.ok(outerGated >= 1, `${tag}: no outer-wall gate: the district cannot be supplied or evacuated from outside`);
+            // ring shared walls carry a closable gate; other shared walls are sealed, towered, gateless
+            const byWall = new Map();
+            for (const gate of record.gates) byWall.set(gate.wallId, (byWall.get(gate.wallId) ?? 0) + 1);
+            for (const element of record.walls) {
+                if (element.kind !== "shared-wall") continue;
+                const partner = (/** @type {number[]} */ (element.between)).find((label) => label !== index && label > 0);
+                if (Math.abs(Number(partner) - index) === 1 || Math.abs(Number(partner) - index) === 4) {
+                    assert.ok(Number(byWall.get(element.id) ?? 0) >= 1, `${tag}: ring wall ${element.id} (shared with ${String(partner)}) has no gate`);
+                    assert.notEqual(element.sealed, true, `${tag}: ring wall ${element.id} is recorded sealed`);
+                } else {
+                    assert.equal(byWall.get(element.id) ?? 0, 0, `${tag}: ${element.id} (shared with ${String(partner)}) is not a ring pair but carries a gate`);
+                    assert.equal(element.sealed, true, `${tag}: ${element.id} should be sealed`);
+                    assert.ok(record.sealedWalls.includes(element.id), `${tag}: ${element.id} is not listed as sealed`);
+                    assert.ok(Number(element.towers) >= 2, `${tag}: sealed wall ${element.id} has no towers`);
+                    assert.ok(record.notes.some((note) => String(note).includes(element.id) && String(note).includes("NO gate by decision")), `${tag}: ${element.id} is sealed without saying so`);
+                }
+            }
+        }
+    }
+});
+
+test("shared walls survive both districts: nothing is removed, re-gated or built twice differently", () => {
+    for (const spec of BATTERY) {
+        const five = fiveDistricts(spec.seed, spec.relief);
+        /** @type {Map<number, Set<string>>} */
+        const centre = new Map();
+        for (const wall of /** @type {any[]} */ (five.plan.walls)) {
+            centre.set(Number(wall.id.replace(/\D+/g, "")), new Set(GEOM.rasterizePath(wall.path, wall.closed === true).map(([x, z]) => key(x, z))));
+        }
+        for (const wall of /** @type {any[]} */ (five.plan.walls)) {
+            const sides = (/** @type {number[]} */ (wall.between)).filter((label) => label > 0);
+            if (sides.length !== 2) continue;
+            const [left, right] = sides;
+            const a = five.records[left - 1];
+            const b = five.records[right - 1];
+            const tag = `${five.name} wall ${wall.id} (${String(left)}|${String(right)})`;
+            const ia = a.walls.findIndex((element) => element.id === wall.id);
+            const ib = b.walls.findIndex((element) => element.id === wall.id);
+            assert.ok(ia >= 0 && ib >= 0, `${tag}: one side did not build it`);
+            assert.equal(a.walls.filter((element) => element.id === wall.id).length, 1, `${tag}: ${String(left)} built it twice`);
+            assert.equal(b.walls.filter((element) => element.id === wall.id).length, 1, `${tag}: ${String(right)} built it twice`);
+            const mine = new Map();
+            const theirs = new Map();
+            for (const op of D.siteOpsFor(a, "walls", ia)) mine.set(`${String(op.x)},${String(op.y)},${String(op.z)}`, op.id);
+            for (const op of D.siteOpsFor(b, "walls", ib)) theirs.set(`${String(op.x)},${String(op.y)},${String(op.z)}`, op.id);
+            const clashes = [];
+            for (const [k, id] of mine) if (theirs.has(k) && theirs.get(k) !== id) clashes.push(`${k}: ${id} vs ${theirs.get(k)}`);
+            assert.deepEqual(clashes.slice(0, 4), [], `${tag}: the two sides write different blocks to ${String(clashes.length)} shared coordinates`);
+            // both sides seal the same centreline, so neither thins or deletes the shared wall
+            const cells = centre.get(Number(wall.id.replace(/\D+/g, "")));
+            for (const record of [a, b]) {
+                const barrier = new Set([...columnsIn(record, "walls"), ...columnsIn(record, "gates")]);
+                const gaps = [...cells].filter((k) => !barrier.has(k));
+                assert.deepEqual(gaps.slice(0, 4), [], `${tag}: district ${String(record.districtIndex)} leaves ${String(gaps.length)} centreline gaps`);
+            }
+            // the gate decision is identical on both sides
+            const gatesOf = (record) => record.gates.filter((gate) => gate.wallId === wall.id).map((gate) => `${String(gate.id)}:${String(gate.purpose)}`).sort().join(",");
+            assert.equal(gatesOf(a), gatesOf(b), `${tag}: the two districts disagree about the gates on this wall`);
+            assert.equal(Boolean(a.walls[ia].sealed), Boolean(b.walls[ib].sealed), `${tag}: sealed decision differs`);
+            assert.equal(a.sealedWalls.includes(wall.id), b.sealedWalls.includes(wall.id), `${tag}: sealed list differs`);
+        }
+    }
+});
+
+/* ------------------------------------------------------------------ roads and walkability */
+
+test("each district is one walkable network: arterials, streets, patrol ring, gate throats and every door", () => {
+    for (const spec of BATTERY) {
+        const five = fiveDistricts(spec.seed, spec.relief);
+        for (const record of five.records) {
+            const index = Number(record.districtIndex);
+            const tag = `${five.name} d${String(index)} ${String(record.role)}`;
+            assert.ok(record.roads.length >= 20, `${tag}: only ${String(record.roads.length)} road elements`);
+            assert.equal(Number(record.stats.roadRefusals), 0, `${tag}: roads were refused`);
+            assert.ok(Number(record.stats.ringRoads) >= 1, `${tag}: no patrol ring road`);
+            assert.ok(Number(record.stats.patrolCells) >= 800, `${tag}: patrol ring is only ${String(record.stats.patrolCells)} cells`);
+            assert.equal(Number(record.stats.walkableComponents), 1, `${tag}: the walking surface is in ${String(record.stats.walkableComponents)} pieces`);
+            assert.ok(Number(record.stats.wallStairs) >= 3, `${tag}: only ${String(record.stats.wallStairs)} wall access stairs`);
+            const net = walkNetwork({ record });
+            const stray = new Map();
+            for (const [k, who] of net.owner) if (net.comp.get(k) !== net.main) stray.set(who, (stray.get(who) ?? 0) + 1);
+            assert.deepEqual([...stray.entries()].slice(0, 4), [], `${tag}: walkable cells outside the main network`);
+            assert.ok(net.sizes[net.main] > 3000, `${tag}: main network only ${String(net.sizes[net.main])} cells`);
+            const ring = [...net.owner].filter(([, who]) => /^patrol-lane/.test(String(who)));
+            assert.ok(ring.length > 300 && ring.every(([k]) => net.comp.get(k) === net.main), `${tag}: patrol ring not on the network`);
+            for (const gate of record.gates) {
+                assert.ok(net.sills.get(gate.id).every((op) => net.comp.get(key(op.x, op.z)) === net.main), `${tag}: ${gate.id} throat is cut off`);
+            }
+            const buildings = record.lots.filter((element) => String(element.id).startsWith("building-"));
+            for (const element of buildings) {
+                assert.equal(net.comp.get(key(element.exit.x, element.exit.z)), net.main, `${tag}: ${element.id} exit cannot reach the network`);
+                assert.ok(net.surf.has(key(element.frontage.x, element.frontage.z)), `${tag}: ${element.id} frontage is not surfaced`);
+                assert.ok(["road", "patrol"].includes(String(element.frontage?.via)), `${tag}: ${element.id} fronts ${String(element.frontage?.via)}`);
+            }
+            // bridges: water on the site is crossed, never filled into a road
+            const water = opsIn(record, "roads").filter((op) => op.kind === "bridge" || op.kind === "support").length;
+            const deck = opsIn(record, "roads").filter((op) => op.kind === "road").length;
+            assert.ok(deck > 500, `${tag}: only ${String(deck)} road ops`);
+            if (water > 0) assert.ok(water >= 4, `${tag}: ${String(water)} bridge ops is not a deck`);
+        }
+    }
+});
+
+/* ------------------------------------------------------------------ spacing and density */
+
+test("no district is overcrowded: required gaps hold and the density follows the role", () => {
+    /** @type {Record<string, number[]>} */
+    const openPerBuildingByRole = {};
+    for (const spec of BATTERY) {
+        const five = fiveDistricts(spec.seed, spec.relief);
+        for (const record of five.records) {
+            const tag = `${five.name} d${String(record.districtIndex)} ${String(record.role)}`;
+            const spacing = FAC.spacingOf(record);
+            assert.equal(spacing.overlaps, 0, `${tag}: ${String(spacing.overlaps)} overlapping building footprints`);
+            assert.equal(spacing.belowRequired, 0, `${tag}: ${String(spacing.belowRequired)} pairs closer than requiredGap (worst ${spacing.worst})`);
+            assert.ok(spacing.minGap >= LT.MIN_SPACING, `${tag}: closest pair is ${String(spacing.minGap)} (< MIN_SPACING ${String(LT.MIN_SPACING)})`);
+            // houses keep the wider street gap of civ/lots.js
+            const houses = record.lots.filter((element) => String(element.id).startsWith("building-") && LT.HOUSE_KINDS.includes(String(element.kind).replace("building-", "")));
+            const houseNeed = LT.requiredGap("house_s", "house_s");
+            for (let a = 0; a < houses.length; a += 1) {
+                for (let b = a + 1; b < houses.length; b += 1) {
+                    assert.ok(LT.rectGap(houses[a].bbox, houses[b].bbox) >= houseNeed, `${tag}: ${houses[a].id} and ${houses[b].id} are ${String(LT.rectGap(houses[a].bbox, houses[b].bbox))} apart, houses need ${String(houseNeed)}`);
+                }
+            }
+            const density = FAC.densityOf(record);
+            assert.ok(density.openColumnsPerBuilding >= FAC.DENSITY.minOpenColumnsPerBuilding, `${tag}: only ${String(density.openColumnsPerBuilding)} open columns per building`);
+            assert.ok(density.footprintFraction <= FAC.DENSITY.maxFootprintFraction, `${tag}: footprints cover ${(density.footprintFraction * 100).toFixed(1)}%`);
+            (openPerBuildingByRole[String(record.role)] ??= []).push(density.openColumnsPerBuilding);
+            // the 49x49 prototype fitted ~50 buildings into 2401 columns; an enlarged district must give
+            // each of them many times that much open land.
+            assert.ok(density.openColumnsPerBuilding > 2401 / 50 * 5, `${tag}: as dense as the 49x49 prototype`);
+        }
+        const byRole = new Map(five.records.map((record) => [String(record.role), FAC.densityOf(record).openColumnsPerBuilding]));
+        const roomy = FAC.DENSITY.roomyRoles.map((role) => Number(byRole.get(role)));
+        const crowded = FAC.DENSITY.crowdedRoles.map((role) => Number(byRole.get(role)));
+        assert.ok(Math.min(...roomy) > Math.max(...crowded), `${spec.seed}: density does not follow the role - ${JSON.stringify([...byRole.entries()])}`);
+        const all = [...byRole.values()];
+        assert.ok(Math.max(...all) >= Math.min(...all) * FAC.DENSITY.minSpreadRatio, `${spec.seed}: all five equally dense - ${JSON.stringify(all)}`);
+    }
+    console.log(`open columns per building (min..max over ${BATTERY.length} terrains): ${Object.entries(openPerBuildingByRole).map(([role, list]) => `${role} ${String(Math.min(...list))}-${String(Math.max(...list))}`).join(", ")}`);
+});
+
+/* ------------------------------------------------------------------ role mix and loudness */
+
+test("the built kind mix of each district is its role's mix, and only its role's", () => {
+    const lines = [];
+    for (const spec of BATTERY) {
+        const five = fiveDistricts(spec.seed, spec.relief);
+        for (const record of five.records) {
+            const problems = FAC.mixProblems(record, five.records);
+            assert.deepEqual(problems, [], `${five.name} d${String(record.districtIndex)} ${String(record.role)}: ${problems.slice(0, 4).join(" | ")}`);
+            const mix = FAC.mixOf(record);
+            lines.push(`${five.name} d${String(record.districtIndex)} ${String(record.role)}: ${String(mix.buildings)} buildings, ${JSON.stringify(mix.kinds)}`);
+        }
+    }
+    console.log(lines.join("\n"));
+    // the five roles are told apart by what they actually contain, on the reference terrain
+    const five = fiveDistricts(SEED, 18);
+    const kindsOf = new Map(five.records.map((record) => [String(record.role), buildingKinds(record)]));
+    for (const [kind, owner] of Object.entries(FAC.EXCLUSIVE_OWNER)) {
+        for (const [role, kinds] of kindsOf) {
+            if (role === owner) continue;
+            assert.equal(kinds[kind] ?? 0, 0, `${role} sited ${kind}, which belongs to ${owner}`);
+        }
+    }
+    for (const role of ["command", "industrial", "agricultural", "commercial", "residential"]) {
+        assert.ok(Object.keys(kindsOf.get(role) ?? {}).length >= 8, `${role}: only ${String(Object.keys(kindsOf.get(role) ?? {}).length)} distinct kinds`);
+    }
+});
+
+test("unsited facilities are reported per district, never swallowed", () => {
+    const silent = [];
+    const reported = [];
+    /** @type {Set<string>} */
+    const zeroSited = new Set();
+    for (const spec of BATTERY) {
+        const five = fiveDistricts(spec.seed, spec.relief);
+        for (const record of five.records) {
+            const tag = `${five.name} d${String(record.districtIndex)} ${String(record.role)}`;
+            for (const problem of FAC.unsitedProblems(record)) silent.push(`${tag}: ${problem}`);
+            const shortfalls = FAC.shortfallOf(record);
+            const notes = FAC.reportedShortfalls(record);
+            for (const miss of shortfalls) reported.push(`${tag}: ${miss.kind} ${String(miss.placed)}/${String(miss.wanted)}`);
+            // the record's own lot accounting must match the notes
+            assert.ok(
+                record.notes.filter((note) => String(note).includes("no buildable pad")).length >= Number(record.stats.lotsWithoutPad),
+                `${tag}: ${String(record.stats.lotsWithoutPad)} lots without pad, ${String(record.notes.filter((note) => String(note).includes("no buildable pad")).length)} notes`,
+            );
+            assert.equal(Number(record.stats.buildings), Number(record.stats.lotsPlaced), `${tag}: buildings vs placed lots`);
+            // the structures that MAKE the role have to be physically sited, on every terrain in the battery.
+            // A programme kind may only vanish if civ/facilities.js admits it cannot always be sited - that
+            // half is asserted by mixProblems/unsitedProblems above, both of which must come back empty.
+            const mix = FAC.mixOf(record);
+            for (const kind of FAC.DEFINING[String(record.role)]) {
+                assert.ok(Number(mix.kinds[kind] ?? 0) >= 1, `${tag}: ${kind} defines the ${String(record.role)} role and is not sited at all`);
+            }
+            for (const [kind, wanted] of Object.entries(FAC.programmeWants(String(record.role)))) {
+                if ((mix.kinds[kind] ?? 0) !== 0) continue;
+                assert.ok((FAC.SITING_GAPS[String(record.role)] ?? []).includes(kind), `${tag}: ${kind} (wanted ${String(wanted)}) sited none, and the audit does not admit that as possible`);
+                zeroSited.add(`${String(record.role)}/${kind}`);
+            }
+        }
+    }
+    const registry = new Set(Object.entries(FAC.SITING_GAPS).flatMap(([role, kinds]) => kinds.map((kind) => `${role}/${kind}`)));
+    assert.ok([...zeroSited].every((entry) => registry.has(entry)), `sited-none kinds outside the registry: ${[...zeroSited].filter((e) => !registry.has(e)).join(", ")}`);
+    const unexercised = [...registry].filter((entry) => !zeroSited.has(entry));
+    console.log(`siting registry: ${String(zeroSited.size)} of ${String(registry.size)} admitted kinds actually failed on this battery${unexercised.length > 0 ? ` (proved by the wider sweep, not this one: ${unexercised.join(", ")})` : ""}`);
+    assert.deepEqual(silent, [], silent.slice(0, 6).join(" ; "));
+    console.log(`unsited (always announced): ${reported.length} entries, e.g. ${reported.slice(0, 4).join(" | ")}`);
+    // a district that loses a signature category must be refused by the audit, not shipped
+    const five = fiveDistricts(SEED, 18);
+    const tampered = structuredClone({ ...five.records[1], lots: five.records[1].lots.filter((element) => !String(element.kind).includes("smithy")) });
+    assert.ok(FAC.mixProblems(tampered, five.records).length > 0, "removing every smithy from Ironquarry must be a problem");
+    const silenced = structuredClone({ ...five.records[3] });
+    silenced.lots = five.records[3].lots.filter((element) => !String(element.kind).includes("market_square"));
+    silenced.notes = [];
+    assert.ok(FAC.unsitedProblems(silenced).length > 0, "an unplaced market square with no note must not pass silently");
+});
+
+/* ------------------------------------------------------------------ shape */
+
+test("all five outlines stay irregular, solid and pairwise non-congruent", () => {
+    const limits = VAL.VALIDATE_DEFAULTS;
+    const cellSets = new Map();
+    for (const spec of [BATTERY[0], BATTERY[2]]) {
+        const five = fiveDistricts(spec.seed, spec.relief);
+        const decoded = decodeCacheFor(five.plan);
+        const grid = five.plan.grid;
+        for (const index of [1, 2, 3, 4, 5]) {
+            const record = five.records[index - 1];
+            const tag = `${five.name} d${String(index)}`;
+            /** @type {number[][]} */
+            const cells = [];
+            for (let gz = 0; gz < grid.h; gz += 1) for (let gx = 0; gx < grid.w; gx += 1) if (decoded[gz * grid.w + gx] === index) cells.push([gx, gz]);
+            cellSets.set(index, cells);
+            assert.ok(record.outline.length >= 12, `${tag}: only ${String(record.outline.length)} vertices`);
+            const area = VAL.polygonAreaOf(record.outline);
+            assert.ok(Math.abs(area / Number(record.area) - 1) <= limits.outlineAreaTolerance, `${tag}: outline area ${String(area)} vs ${String(record.area)} columns`);
+            const perimeter = VAL.polygonPerimeterOf(record.outline, true);
+            const compact = VAL.compactnessOf(area, perimeter);
+            assert.ok(compact >= limits.compactnessMin && compact <= limits.compactnessMax, `${tag}: compactness ${compact.toFixed(3)} is a disc or a fringe`);
+            // bbox fill: not a square, not a rectangle
+            const bbox = record.bbox;
+            const cell = Number(five.plan.cell);
+            const gx0 = Math.floor((bbox.x0 - five.plan.grid.x0) / cell);
+            const gx1 = Math.floor((bbox.x1 - five.plan.grid.x0) / cell);
+            const gz0 = Math.floor((bbox.z0 - five.plan.grid.z0) / cell);
+            const gz1 = Math.floor((bbox.z1 - five.plan.grid.z0) / cell);
+            const inside = (gx1 - gx0 + 1) * (gz1 - gz0 + 1);
+            assert.ok(cells.length / inside < 0.8, `${tag}: ${(100 * (cells.length / inside)).toFixed(1)}% bbox fill`);
+            // a solid region, not a thread: eroding by two cells keeps one big piece
+            const labels = new Uint8Array(grid.w * grid.h);
+            for (let gz = 0; gz < grid.h; gz += 1) for (let gx = 0; gx < grid.w; gx += 1) labels[gz * grid.w + gx] = decoded[gz * grid.w + gx] === index ? index : 0;
+            const eroded = VAL.erodeUniform(labels, grid.w, grid.h, 2);
+            let kept = 0;
+            for (let p = 0; p < eroded.length; p += 1) if (eroded[p] === 1) kept += 1;
+            assert.ok(kept > 0.6 * cells.length, `${tag}: only ${String(kept)} of ${String(cells.length)} cells survive a 2-cell erosion`);
+            const open = VAL.labelComponents(Uint8Array.from(eroded, (v) => (v === 1 ? 0 : 1)), grid.w, grid.h, false);
+            assert.ok(open.count <= 4, `${tag}: the eroded district breaks into ${String(open.count)} pieces`);
+            assert.deepEqual(D.siteContainmentProblems(five.plan, index, record), [], `${tag}: containment`);
+        }
+        if (spec.seed !== SEED) continue;
+        // pairwise non-congruence of the five outlines
+        let worst = 0;
+        for (let a = 1; a <= 5; a += 1) {
+            for (let b = a + 1; b <= 5; b += 1) {
+                const found = VAL.congruence([...cellSets.get(a)], [...cellSets.get(b)]);
+                assert.equal(found.exact, false, `districts ${String(a)} and ${String(b)} are exact copies`);
+                assert.ok(found.iou < limits.congruenceIou, `districts ${String(a)} and ${String(b)} are ${String(Math.round(found.iou * 100))}% congruent`);
+                worst = Math.max(worst, found.iou);
+            }
+        }
+        console.log(`worst pairwise congruence IoU over the five districts: ${worst.toFixed(4)} (limit ${String(limits.congruenceIou)})`);
+    }
+});
+
+/* ------------------------------------------------------------------ determinism + saved-world compatibility */
+
+/** District-1 checksums captured from `civ/districtplan.js` at baseline 7123c5c, before districts 2-5
+ *  were registered. Anyone who already built Hearthgate stores one of these; the five-district
+ *  release must not move it. */
+const HEARTHGATE_BASELINE = {
+    21: "53c81775",
+    3: "574153b3",
+    7: "35adcecb",
+    42: "d82a02e2",
+    99: "52dd64fb",
+    12: "4fb3d3a3",
+    8: "e76294fd",
+};
+
+test("district 1's checksum is frozen: the five-district release changes nothing for a saved Hearthgate", () => {
+    for (const spec of CASES) {
+        const expected = HEARTHGATE_BASELINE[spec.seed];
+        assert.ok(expected !== undefined, `the sweep has no pinned baseline for seed ${String(spec.seed)}`);
+        const again = D.planDistrictSite(buildCase(spec).plan, 1, buildCase(spec).field, { seed: spec.seed });
+        assert.equal(again.record.checksum, expected, `seed ${String(spec.seed)}: Hearthgate's record changed`);
+        assert.equal(again.record.layoutId, "hearthgate-enlarged");
+    }
+    // ...and only the layout registration moved: the rest of district 1's record is untouched
+    const fresh = D.planDistrictSite(PLAN, 1, field, { seed: SEED });
+    const keys = ["version", "layoutId", "seed", "districtIndex", "districtId", "name", "role", "planSeed", "anchor", "cell", "bbox", "area", "outline", "options", "ground", "sealedWalls", "stats", "walls", "gates", "roads", "lots", "dressing", "clear", "routes", "patrol", "lotReport", "notes", "problems", "limits", "recordBytes", "checksum"];
+    assert.deepEqual(Object.keys(fresh.record).sort(), keys.slice().sort(), "the record gained or lost a field");
+    assert.equal(fresh.record.checksum, RECORD.checksum);
+    assert.deepEqual(fresh.record.stats, RECORD.stats, "district 1's stats drifted");
+    assert.deepEqual(fresh.record.lots.map((element) => `${element.id}@${element.total}`), RECORD.lots.map((element) => `${element.id}@${element.total}`), "district 1's buildings moved");
+});
+
+test("districts 2-5 are deterministic, and a different seed changes the plan", () => {
+    for (const spec of BATTERY) {
+        const five = fiveDistricts(spec.seed, spec.relief);
+        const other = D.planDistrictSite(five.plan, 2, five.field, { seed: spec.seed + 1 });
+        for (const record of five.records) {
+            const index = Number(record.districtIndex);
+            const again = D.planDistrictSite(five.plan, index, five.field, { seed: spec.seed });
+            assert.equal(again.record.checksum, record.checksum, `${five.name} d${String(index)}: a rerun differs`);
+            assert.notEqual(other.record.checksum, record.checksum, `${five.name} d${String(index)}: seed ${String(spec.seed + 1)} produced the same plan`);
+            // the record stays small enough for the kingdom blob and never embeds ops
+            assert.ok(Number(record.recordBytes) <= CIV_LIMITS.maxPlanBytes, `d${String(index)}: ${String(record.recordBytes)} bytes`);
+            let biggest = 0;
+            let streamed = 0;
+            for (const slice of D.siteOpSlices(record)) {
+                streamed += slice.ops.length;
+                biggest = Math.max(biggest, slice.ops.length);
+            }
+            assert.equal(streamed, D.siteOpCount(record), `d${String(index)}: streamed ops disagree`);
+            assert.ok(biggest <= CIV_LIMITS.maxBlocksPerSlice, `d${String(index)}: a slice of ${String(biggest)} ops`);
+            const specs = D.siteJobSpecs(record);
+            const jobs = Object.values(specs).reduce((sum, list) => sum + (/** @type {any[]} */ (list)).length, 0);
+            assert.ok(jobs > 150, `d${String(index)}: only ${String(jobs)} job elements`);
+            assert.ok(D.siteOpCount(record) <= 400000, `d${String(index)}: ${String(D.siteOpCount(record))} ops`);
+        }
+    }
+});
+
+/* ------------------------------------------------------------------ the numbers */
+
+test("the five districts fit the existing budgets without raising any of them", () => {
+    const MAX_SANE_OPS = 400000; // integration/civBuilder.js, per district
+    let maxRecord = 0;
+    let maxQueue = 0;
+    let maxOps = 0;
+    let maxSlices = 0;
+    for (const spec of BATTERY) {
+        const five = fiveDistricts(spec.seed, spec.relief);
+        for (const record of five.records) {
+            const ops = D.siteOpCount(record);
+            const queue = createQueue(D.siteJobSpecs(record), { planHash: String(record.checksum) });
+            const queueBytes = JSON.stringify(queue).length;
+            maxRecord = Math.max(maxRecord, Number(record.recordBytes));
+            maxQueue = Math.max(maxQueue, queueBytes);
+            maxOps = Math.max(maxOps, ops);
+            maxSlices = Math.max(maxSlices, Math.ceil(ops / CIV_LIMITS.maxBlocksPerSlice));
+            assert.ok(Number(record.recordBytes) <= CIV_LIMITS.maxPlanBytes, `d${String(record.districtIndex)}: record ${String(record.recordBytes)} B`);
+            assert.ok(queueBytes <= CIV_LIMITS.maxJobBytes, `d${String(record.districtIndex)}: job queue ${String(queueBytes)} B over ${String(CIV_LIMITS.maxJobBytes)}`);
+            assert.ok(ops <= MAX_SANE_OPS, `d${String(record.districtIndex)}: ${String(ops)} ops over the builder's ${String(MAX_SANE_OPS)}`);
+        }
+    }
+    console.log(`five-district budget use: record ${String(maxRecord)}/${String(CIV_LIMITS.maxPlanBytes)} B, job queue ${String(maxQueue)}/${String(CIV_LIMITS.maxJobBytes)} B, ops ${String(maxOps)}/${String(MAX_SANE_OPS)}, slices/slice ${String(maxSlices)}/${String(CIV_LIMITS.maxBlocksPerSlice)}`);
+});
+
+test("the five district plans, in numbers (printed for the milestone report)", () => {
+    /** @type {string[]} */
+    const rows = [];
+    for (const spec of BATTERY) {
+        const five = fiveDistricts(spec.seed, spec.relief);
+        rows.push(`${five.name}: district | role | enclosed columns | ops | job elements | record bytes | lots sited/wanted | walls/length | gates | road cells`);
+        for (const record of five.records) {
+            const spacing = FAC.spacingOf(record);
+            const density = FAC.densityOf(record);
+            const wanted = Object.values(FAC.programmeWants(String(record.role))).reduce((sum, n) => sum + n, 0);
+            rows.push(
+                `  d${String(record.districtIndex)} ${String(record.name)} ${String(record.role).padEnd(12)}` +
+                ` area=${String(record.area).padStart(6)}` +
+                ` ops=${String(D.siteOpCount(record)).padStart(6)}` +
+                ` jobs=${String(Object.values(D.siteJobSpecs(record)).reduce((s, l) => s + l.length, 0)).padStart(4)}` +
+                ` bytes=${String(record.recordBytes).padStart(6)}` +
+                ` lots=${String(record.stats.lotsPlaced)}/${String(wanted)}` +
+                ` walls=${String(record.stats.walls)}/${String(record.stats.wallLength)}` +
+                ` gates=${String(record.stats.gates)}` +
+                ` roads=${String(record.stats.roadCells)}` +
+                ` stairs=${String(record.stats.wallStairs)}` +
+                ` minGap=${String(spacing.minGap)}` +
+                ` openPerBuilding=${String(density.openColumnsPerBuilding)}` +
+                ` footprint=${(density.footprintFraction * 100).toFixed(1)}%` +
+                ` checksum=${record.checksum}`,
+            );
+        }
+    }
+    console.log(rows.join("\n"));
+    const five = fiveDistricts(SEED, 18);
+    const areas = five.records.map((record) => Number(record.area));
+    assert.ok(Math.min(...areas) >= 30000 && Math.max(...areas) <= 45000, `areas ${JSON.stringify(areas)}`);
+    assert.ok(Math.max(...areas) - Math.min(...areas) > 3000, `the five districts are all the same size: ${JSON.stringify(areas)}`);
+    const ops = five.records.map((record) => D.siteOpCount(record));
+    assert.ok(Math.max(...ops) - Math.min(...ops) > 5000, `identical workload everywhere: ${JSON.stringify(ops)}`);
 });

@@ -122,9 +122,13 @@ powershell -NoProfile -Command "Get-ChildItem -Path $env:LOCALAPPDATA\Packages -
 
 ---
 
-## Enlarged Hearthgate (new, unverified in game)
+## Five-district construction (new, unverified in game)
 
-`civ:generate_plan` (read-only) and `civ:generate` plan a five-district irregular civilization and build the enlarged Hearthgate in a NEW world. See [docs/ENLARGED_HEARTHGATE.md](docs/ENLARGED_HEARTHGATE.md).
+`civ:generate_plan` (read-only) plans a five-district irregular civilization; `civ:generate [district=N]` builds one
+district at a time, each with its own stored plan slot and resumable queue, in order 1 Hearthgate → 2 Ironquarry →
+3 Whitethorn → 4 Saltmere → 5 Ashfall. `site=here` keeps the survey on the ground around you instead of scanning
+hundreds of blocks for a site. See [docs/FIVE_DISTRICT_BUILD.md](docs/FIVE_DISTRICT_BUILD.md) for the sequence, the
+measured costs and what to capture, and [docs/ENLARGED_HEARTHGATE.md](docs/ENLARGED_HEARTHGATE.md) for the safety model.
 
 ## Starter world template (prebuilt kingdom)
 

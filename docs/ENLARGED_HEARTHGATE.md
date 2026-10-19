@@ -4,18 +4,23 @@
 
 ## What it is
 One explicit command plans a whole five-district civilization (irregular districts of about 35-40k block-columns each,
-about 182-198k in total, shared and outer walls, gates, roads, routes) and then physically builds ONLY the enlarged,
-irregular Hearthgate (district 1). The other four districts are planned but not built; building them is behind the
-development gate and refused ("not enabled in this build"). The original 49x49 Hearthgate (`district.physical`) is never
-overlapped, resized or erased; the site search excludes it with a margin and every write re-checks it.
+about 182-198k in total, shared and outer walls, gates, roads, routes) and then physically builds one district per
+invocation. All five districts now have enlarged layouts registered (`hearthgate/ironquarry/whitethorn/saltmere/ashfall-enlarged`)
+and their own plan slot and resumable queue, so building district 2 never overwrites district 1's data or blocks.
+Building them all, in order, is `docs/FIVE_DISTRICT_BUILD.md`. The original 49x49 Hearthgate (`district.physical`) is
+never overlapped, resized or erased; the site search excludes it with a margin and every write re-checks it.
 
 ## Commands (all scriptevent ids have exactly ONE colon)
-- `civ:generate [radius=N] [seed=N]` - the one-command workflow (player only). Default radius 220, max 400.
-- `civ:generate_plan [radius=N] [seed=N]` - same scan + plan + validation but READ-ONLY (writes nothing); prints site,
-  district areas, shape metrics, wall length, gates, lots, estimated ops/slices/minutes.
-- `civ:generate_status`, `civ:generate_abort`, `civ:generate_resume` - progress, pause (keeps blocks and queue), continue
-  (also after a Minecraft restart: plan and ground are reloaded and the checksum is verified).
-- `civ:generate_devgate on|off` - development gate for districts 2-5 (not implemented in this build).
+- `civ:generate [district=N] [site=here] [radius=N] [seed=N]` - the one-command workflow (player only), one district at
+  a time; `district=` defaults to 1, so the old usage is unchanged. Default radius 220, max 400. `site=here` fixes the
+  capital on your own position and reads only as far as the master plan reaches (no distant chunk storms).
+- `civ:generate_plan [district=N|all] ...` - same scan + plan + validation but READ-ONLY (writes nothing); prints site,
+  district areas, shape metrics, wall length, gates, lots, estimated ops/slices/minutes, the stored sizes, and any
+  facility kinds the programme could not site. `district=all` reads no terrain and totals the civilization.
+- `civ:generate_status`, `civ:generate_abort [district=N]`, `civ:generate_resume [district=N]` - progress across all
+  five districts, pause (keeps blocks and queue), continue (also after a Minecraft restart: plan and ground are reloaded
+  and the checksum is verified).
+- `civ:generate_devgate on|off` - the development flag; districts 2-5 are implemented, so it no longer means "unavailable".
 - Gates: `civ:gate_list`, `civ:gate_status [id]`, `civ:gate_open <id>`, `civ:gate_close <id>`, `civ:gate_auto <id>`,
   `civ:gate_test <id>` (safe close -> verify sealed -> reopen -> verify passable; refuses if entities are in the gateway).
 - Old manual commands (`civ:district_scout`, `civ:district_generate ...`) still work and are unchanged.

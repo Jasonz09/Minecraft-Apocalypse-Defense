@@ -393,7 +393,7 @@ test("abandoned ticking areas are removed at the start of civ commands when no j
     districtBuilder.finishJob(token);
 });
 
-test("an error thrown inside planning, or while describing the plan, still releases the slot and the area", T, async () => {
+test("an error thrown inside planning, or while reporting the plan, still releases the slot and the area", T, async () => {
     const rejections = [];
     const onRejection = (reason) => rejections.push(String(reason));
     process.on("unhandledRejection", onRejection);
@@ -406,17 +406,36 @@ test("an error thrown inside planning, or while describing the plan, still relea
         await planOnly(player);
         assert.match(text(player), /boom in validation/);
         assertClean("error inside planning");
+        // A plan report that cannot be produced (the measured storage of the run is missing): the outer catch still
+        // releases the slot and the chunks and says nothing was changed.
         setup();
         builder.seams.onOutcome = (o) => {
-            o.plan.districts = [];
+            o.stats.storage = undefined;
         };
         player = makePlayer();
         await planOnly(player);
         assert.match(text(player), /Failed - nothing was changed/);
-        assertClean("error in describePlan");
+        assertClean("error while reporting the plan");
         const status = asked(player, CIV_EVENT_IDS.status);
         assert.match(status, /\(plan\): failed/);
         assert.match(status, /error: TypeError/);
+        // Reporting is district-generic now: a master plan whose district list is gone must NOT crash the reporter -
+        // the numbers of the district that was planned come from its own record. (This is the behaviour that replaced
+        // the old crash; asserting it here so the change is recorded, not hidden.)
+        setup();
+        let captured;
+        builder.seams.onOutcome = (o) => {
+            captured = o;
+        };
+        player = makePlayer();
+        await planOnly(player);
+        assert.match(text(player), /Plan is valid/);
+        assert.ok(captured?.ok, "the run reached a valid plan");
+        const described = builder.describePlan({ ...captured, plan: { ...captured.plan, districts: [] } });
+        assert.equal(described.district, 1);
+        assert.equal(described.districtId, "district-1");
+        assert.ok(described.ops > 0 && described.lots > 0, "the district's own record still reports its numbers");
+        assert.equal(mc.writes, 0);
         // and the very next command works
         setup();
         const again = makePlayer();
@@ -485,6 +504,81 @@ test("resume after an interrupted planning abort: a fresh generate works and bui
     send(CIV_EVENT_IDS.resume, "", player);
     await pump();
     assert.match(text(player), /is built/);
+});
+
+// ---------------------------------------------------------------------------- explicit site: the survey never leaves the master plan's reach
+
+test("site=here surveys only as far as the master plan reaches: no distant chunks, unlike the site search", T, async () => {
+    /** Run one plan and report how far from the anchor any column was read, plus the survey's own counts. */
+    async function measure(message) {
+        setup();
+        let outcome;
+        builder.seams.onOutcome = (o) => {
+            outcome = o;
+        };
+        const realGetBlock = dimension.getBlock;
+        const realTopmost = dimension.getTopmostBlock;
+        let farthest = 0;
+        let columns = 0;
+        dimension.getBlock = (position) => {
+            farthest = Math.max(farthest, Math.abs(Math.floor(position.x)), Math.abs(Math.floor(position.z)));
+            columns += 1;
+            return realGetBlock.call(dimension, position);
+        };
+        dimension.getTopmostBlock = (position) => {
+            farthest = Math.max(farthest, Math.abs(Math.floor(position.x)), Math.abs(Math.floor(position.z)));
+            columns += 1;
+            return realTopmost.call(dimension, position);
+        };
+        const player = makePlayer();
+        try {
+            send(CIV_EVENT_IDS.plan, message, player);
+            await pump();
+        } finally {
+            dimension.getBlock = realGetBlock;
+            dimension.getTopmostBlock = realTopmost;
+        }
+        assert.match(text(player), /Plan is valid/, text(player).slice(-700));
+        assert.equal(mc.writes, 0, "planning writes nothing");
+        return { outcome, farthest, columns, player };
+    }
+    const reach = builder.MASTER_REACH;
+    assert.equal(reach, builder.MASTER_PLAN_RADIUS + 16, "the reach is the master plan radius plus its margin");
+    const searched = await measure(GEN);
+    assert.equal(searched.outcome.stats.survey.mode, "search");
+    const here = await measure(`${GEN} site=here`);
+    const survey = here.outcome.stats.survey;
+    assert.equal(survey.mode, "here");
+    assert.match(text(here.player), /Using where you stand as the civilization anchor/);
+    assert.match(text(here.player), /No site is searched for/);
+    assert.doesNotMatch(text(here.player), /ring \d+ scanned/, "no ring-by-ring site search happens");
+    // the coarse survey covers exactly the reachable area, and nothing wider
+    assert.equal(survey.fullRadius, reach, `the explicit-site survey reached ${String(survey.fullRadius)} blocks`);
+    assert.equal(survey.scannedRadius, reach, "and it scanned all of it (one ring, the plan's own reach)");
+    const tile = scan.tileSizeNow();
+    const tiles = scan.countTiles({ x: 0, z: 0 }, reach, tile);
+    assert.equal(here.outcome.stats.coarse.tilesTotal, tiles, `planned ${String(tiles)} tiles for a ${String(reach)}-block reach`);
+    assert.equal(survey.tilesScanned, tiles, "every planned tile was read, none more");
+    assert.ok(survey.chunksScanned <= tiles * (tile / 16) ** 2, `chunk count ${String(survey.chunksScanned)}`);
+    // no column further from the anchor than the reach plus one tile was ever read (tiles are tile-aligned)
+    assert.ok(here.farthest <= reach + tile, `the explicit-site survey read out to ${String(here.farthest)} blocks`);
+    assert.ok(here.farthest < searched.farthest, `explicit site read ${String(here.farthest)} vs search ${String(searched.farthest)}: the distant search must not come back`);
+    assert.ok(searched.farthest > reach, "the search mode really does scan past the reach (that is what site=here avoids)");
+    assert.ok(here.columns < searched.columns, `${String(here.columns)} reads vs ${String(searched.columns)}`);
+    console.log(JSON.stringify({
+        explicitSite: {
+            reach: reach,
+            tiles: here.outcome.stats.coarse.tilesTotal,
+            chunks: survey.chunksScanned,
+            columnsRead: here.columns,
+            farthestBlock: here.farthest,
+            searchColumnsRead: searched.columns,
+            searchFarthestBlock: searched.farthest,
+        },
+    }));
+    // and the district's own ground is still read at full resolution inside that reach
+    assert.match(text(here.player), /Reading district 1 \(Hearthgate, district-1\) at full resolution/);
+    assert.match(text(here.player), /nothing outside this district is read/);
 });
 
 // ---------------------------------------------------------------------------- diagnostics

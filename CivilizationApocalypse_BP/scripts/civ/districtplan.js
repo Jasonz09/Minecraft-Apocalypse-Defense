@@ -18,7 +18,7 @@ import { MAX_RUN, clipField, exportSiteGround, fnvFeed, importSiteGroundSteps, p
 /** @typedef {{ region: { x0: number, z0: number, x1: number, z1: number }, w: number, h: number, g: Int16Array, k: Uint8Array, t: Uint8Array, idx: (x: number, z: number) => number, ground: (x: number, z: number) => number | undefined, sampler: (x: number, z: number) => { g: number, water?: number, hollow?: boolean }, vegetated: (x: number, z: number) => boolean, unusable: (x: number, z: number) => boolean, isLand: (x: number, z: number) => boolean }} Snapshot */
 
 /**
- * Enlarged irregular district construction planner - Phase C.
+ * Enlarged irregular district construction planner - all five districts.
  *
  * The parts already existed but nothing joined them: `civ/walls.js` turns a centreline into
  * terrain-following wall columns, `civ/gates.js` builds a gatehouse on a straight wall run,
@@ -26,6 +26,13 @@ import { MAX_RUN, clipField, exportSiteGround, fnvFeed, importSiteGroundSteps, p
  * `civ/foundations.js` levels pads and surfaces roads with stairs and bridges, and
  * `structures/blueprints2.js` holds the buildings. This module composes them into ONE
  * complete, reproducible construction plan for a single district.
+ *
+ * IT IS INDEX-GENERIC. Nothing below branches on the district index: the district's walls are
+ * `plan.walls.filter(between.includes(index))`, its gates are the gates of those walls, its roads
+ * are the ones that touch its land, its zoning comes from `regionFromPlan(plan, index)` (and with it
+ * the facility mix, from `civ/zoning.js` `ROLE_ZONES[district.role]`). `ENLARGED_LAYOUTS` is only the
+ * name of that pairing, one entry per district 1..5. `civ/facilities.js` audits a finished record
+ * against its role: mix, loudness of unsited lots, and spacing/density.
  *
  * RESTART SAFETY. The plan is a pure function of `(CivPlan, ground, options)`. `ground` is the
  * district's region (bounding box + margin) frozen at full resolution by `civ/siteprofile.js`.
@@ -49,8 +56,26 @@ import { MAX_RUN, clipField, exportSiteGround, fnvFeed, importSiteGroundSteps, p
 
 export const SITE_PLAN_VERSION = 2;
 
-export const ENLARGED_LAYOUTS = Object.freeze({ 1: "hearthgate-enlarged" });
+/**
+ * One enlarged layout per district. The planner below is index-generic: it reads the district's
+ * own walls, gates and roads out of the master `CivPlan` and takes its facility mix from
+ * `civ/zoning.js` `ROLE_ZONES[district.role]`, so a layout id is only a name for that pairing.
+ */
+export const ENLARGED_LAYOUTS = Object.freeze({
+    1: "hearthgate-enlarged",
+    2: "ironquarry-enlarged",
+    3: "whitethorn-enlarged",
+    4: "saltmere-enlarged",
+    5: "ashfall-enlarged",
+});
 
+/**
+ * One global set of site rules - deliberately NOT per role or per index. Every district 1..5 is built
+ * with the same wall height, road widths, pad tiers, lot search and HQ plaza radius, so the five
+ * layouts are directly comparable and a saved Hearthgate record stays byte-identical. What differs by
+ * role is the facility mix (from `civ/zoning.js` `ROLE_ZONES`) and how much land that mix spreads
+ * over; `civ/facilities.js` reads a finished record and checks the role's mix, spacing and density.
+ */
 export const SITE_RULES = Object.freeze({
     wallHeight: WALL.height,
     arterialWidth: 5,
@@ -447,7 +472,7 @@ export function isLiveSite(record) {
  * side effects. `planDistrictSite` is its synchronous driver, so there is ONE implementation.
  *
  * @param {any} plan a CivPlan from civ/masterplan.js
- * @param {number} index district index (1 = Hearthgate)
+ * @param {number} index district index 1..5; see `ENLARGED_LAYOUTS` (1 Hearthgate, 2 Ironquarry, 3 Whitethorn, 4 Saltmere, 5 Ashfall)
  * @param {any} field height field exposing at(x, z) -> { g, k, tree }
  * @param {{
  *   seed?: number,
@@ -473,7 +498,7 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
     if (layoutId === undefined) {
         return {
             ok: false,
-            problems: [`district ${String(index)} has no enlarged layout (Phase C plans Hearthgate only; districts 2-5 are deliberately unstarted)`],
+            problems: [`district ${String(index)} has no enlarged layout in ENLARGED_LAYOUTS`],
             notes,
             record: null,
         };
@@ -2086,7 +2111,7 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
  * Synchronous driver of planDistrictSiteSteps (one implementation).
  *
  * @param {any} plan a CivPlan from civ/masterplan.js
- * @param {number} index district index (1 = Hearthgate)
+ * @param {number} index district index 1..5; see `ENLARGED_LAYOUTS` (1 Hearthgate, 2 Ironquarry, 3 Whitethorn, 4 Saltmere, 5 Ashfall)
  * @param {any} field height field exposing at(x, z) -> { g, k, tree }
  * @param {Parameters<typeof planDistrictSiteSteps>[3]} [options]
  */

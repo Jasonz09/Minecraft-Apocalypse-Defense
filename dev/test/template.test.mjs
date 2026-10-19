@@ -74,7 +74,14 @@ const receipt = { armed: true, templateId: SPEC.templateId, builtDistricts: ["di
 test("the shipped starter spec validates against the real pack and planner", () => {
     const result = validateTemplateSpec(SPEC, { enlargedLayouts: layouts });
     assert.deepEqual(result.problems, [], result.problems.join(" | "));
-    assert.ok(result.notes.some((note) => note.includes("prepared but not started")), "the four unbuilt districts should be reported as prepared, not hidden");
+    // Five layouts are registered, so all five may be marked starter districts - but none has been
+    // built in Minecraft yet, and the gate has to say so out loud rather than look green.
+    const unbuilt = result.notes.find((note) => note.includes("planner-ready but not physically built"));
+    assert.ok(unbuilt !== undefined, `the unbuilt starter districts must be reported, not hidden: ${result.notes.join(" | ")}`);
+    for (const name of ["Hearthgate", "Ironquarry", "Whitethorn", "Saltmere", "Ashfall"]) {
+        assert.ok(unbuilt.includes(name), `${name} should be listed as not physically built: ${unbuilt}`);
+    }
+    assert.match(unbuilt, /template:release-check must refuse packaging/, "the note must point at the gate that enforces it");
 });
 
 test("the spec gate actually fails on the packaging mistakes that matter", () => {
@@ -94,7 +101,10 @@ test("the spec gate actually fails on the packaging mistakes that matter", () =>
     );
     assert.ok(check((s) => (s.starter.keepKeyPrefixes = ["civ:kingdom"])).some((p) => p.includes("master plan")), "losing civ:plan would break future expansion");
     assert.ok(check((s) => s.starter.wipeKeyPrefixes.push("civ:kingdom")).some((p) => p.includes("both kept and wiped")));
-    assert.ok(check((s) => (s.districts[1].starterWorld = true)).some((p) => p.includes("no layout registered")), "marking district 2 a starter district needs the planner to support it");
+    // The spec and the planner must agree in BOTH directions: a registered layout left out of the
+    // starter list, and a required district that is not a starter district at all.
+    assert.ok(check((s) => (s.districts[1].starterWorld = false)).some((p) => p.includes("does not mark it starterWorld")), "the planner registers district 2, so the spec may not silently drop it");
+    assert.ok(check((s) => s.starter.builtRequired.push("district-9")).some((p) => p.includes("not a starter-world district")), "arming cannot require a district the spec does not ship");
     assert.ok(check((s) => (s.districts[1].layoutId = "hearthgate")).some((p) => p.includes("prototype layout id")));
     assert.ok(check((s) => (s.districts[4].status = "planned", (s.districts[4].starterWorld = true))).some((p) => p.includes("would ship unbuilt")));
     assert.ok(check((s) => (s.languages = [])).some((p) => p.includes("en_US")));

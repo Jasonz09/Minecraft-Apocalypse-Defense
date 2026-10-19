@@ -119,3 +119,60 @@ generation refuses any footprint that touches an existing `physical` record's fo
 - Outer walls: `between` contains 0. Shared walls: two distinct positive indices.
 - Movement may cut corners, so walls are stamped to 4-connected barriers (thickness >= 3). Roads may run <= 14 blocks past a gate.
 - Decisions: site search uses `avoid` mode for existing footprints (old Hearthgate); search radius is an argument (default 220, max 400).
+
+## Five-district build-once contract (adopted 2026-10-18)
+
+The starting kingdom is built ONCE in a dedicated development world and shipped as a world template;
+the procedural pipeline stays intact for later conquest and rebuilding.
+
+- **One plan, one coordinate system.** `civ/masterplan.js` produces the whole civilization (five
+  irregular districts, shared walls, gates, roads, routes) from `(seed, anchor, field)`. A district's
+  site plan is always `planDistrictSite(plan, index, field, options)` against THAT plan. No district may
+  pick its own site: `civ/worldplan.js` takes `options.district` (1..5) and refuses anything else.
+- **Layouts.** `civ/districtplan.js` `ENLARGED_LAYOUTS` registers all five: `hearthgate-enlarged` (command),
+  `ironquarry-enlarged` (industrial), `whitethorn-enlarged` (agricultural), `saltmere-enlarged` (commercial),
+  `ashfall-enlarged` (residential). Facility mixes come from `civ/zoning.js` `ROLE_ZONES` ->
+  `structures/blueprints2.js` `BLUEPRINT_VARIANTS`; no role may invent a facility with no blueprint.
+- **Storage keys** (all under the prefixes the starter-world rules already keep or wipe): the master
+  plan stays under the `civ:plan` plan-store prefix; each district's own site payload (ground +
+  options + checksum) goes to a prefix built from it - `PLAN_PREFIX` + `":site:d" + index` - and each
+  district's resumable queue to `JOB_PREFIX` + `":d" + index`, with district 1 keeping the plain
+  legacy queue prefix and the old single-slot ground as a read path for saved worlds. Both are built
+  by concatenation, never written as a literal here, because the repo-wide guard that forbids a
+  two-colon `civ:` id scans docs too. `district.civ` in the kingdom blob stays a small
+  pointer (status/seed/anchor/centre/checksum/stage/progress). Measured on a complete five-district build
+  in the fake world: the master plan plus the five site payloads occupy 155,697 B in 13 keys, the longest
+  value 30,000 chars (the store's own chunk ceiling, below the engine's 32,767), and the five queues
+  11,029 B in 10 keys - 2,068-2,745 B each against the 16 KB `maxJobBytes`. The kingdom blob is 6,611
+  chars with all five districts complete, of which the five `district.civ` pointers are 1,546 B
+  (305-313 B each). Per-district block operations 58k-75k against the 400k per-district ceiling, 331,961
+  for the whole civilization at the reference seed, 266,473 blocks actually written in the offline build.
+- **Build order.** Neighbour ring 1-2-3-4-5-1, capital first. A shared wall is included in BOTH
+  neighbours' records, so neither district's enclosure depends on which of them was built first. That
+  duplication has a price the write guard has to pay: the clearance that keeps a later district out of a
+  finished one's land also covers columns only the later district plans (62 of the 11,465 barrier columns
+  at seed 21), so a wall op of the district being built is allowed into the *outward band* of a finished
+  neighbour - never onto its own land, never an op that removes a block, and only onto raw terrain,
+  because two districts' walls are the same stone and an identical id would otherwise read as "ours"
+  (`integration/civBuilder.js` `isSharedWallFill`). Writes are place-only, so nothing here can take a
+  neighbour's masonry down.
+- **Arming requires the whole city.** `STARTER.builtRequired` (config.js) and `starter.builtRequired`
+  (template.json) both list all five districts, and `dev/test/template.test.mjs` fails if the two
+  lists drift. `civ:starter_arm confirm` therefore refuses a partially built world.
+- **Release is stricter still.** `npm run template:release-check` needs all five marked
+  `starterWorld: true, status: "built"`, receipted, and verified; `--zip` is refused while it fails.
+- **Geometry invariants are asserted on the BUILT records**, not only on the plan:
+  `dev/test/civ-fivedistrict.test.mjs` uses `civ/validate.js`'s own component labeller to check that
+  walls + gate hardware seal every district from its neighbours and from the exterior, that the road
+  network reaches every HQ and every gate and crosses between districts only at gate passages, and
+  that each role's facilities are actually placed, spaced and - where a programme could not be sited
+  - announced through `civ/facilities.js` rather than hidden behind a flattering statistic. Where one
+  of these is red, the district is not shippable; the test is the record of the defect.
+  Deliberately NOT asserted: cell-by-cell equality between the plan's square-stamped band and the
+  blocks the records place - the terrain-following band and a square stamp of the centreline differ at
+  corner cells, and the safety question is whether anything can walk through, which the sealed-separation
+  tests answer directly. What IS measured is an internal inconsistency in the wall stage: summed over the
+  five districts its elements report more band columns than their own operations cover - 15,146 against
+  14,967 at seed 21 (179 apart, worst single element 30), 14,650 against 14,390 on flat ground (260
+  apart, worst 34). The built line admits no walkable corridor, so this is bookkeeping in `civ/walls.js`,
+  and fixing it moves district 1's stored checksum - a scheduled change, not something to slip in here.

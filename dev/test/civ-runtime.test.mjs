@@ -26,16 +26,38 @@ test("every civ command id has exactly one colon and is registered by CIV_EVENT_
     for (const id of Object.values(CIV_EVENT_IDS)) assert.equal(id.split(":").length, 2, id);
 });
 
-test("argument parsing: radius bounds, seed, unknown arguments", () => {
-    assert.deepEqual(civCommands.parseCivArgs([]), { radius: CIV.defaultSearchRadius, seed: undefined, districts: undefined, error: undefined });
-    assert.equal(civCommands.parseCivArgs(["radius=300", "seed=-7"]).radius, 300);
-    assert.equal(civCommands.parseCivArgs(["radius=300", "seed=-7"]).seed, -7);
-    assert.match(civCommands.parseCivArgs([`radius=${CIV.maxSearchRadius + 1}`]).error, /radius must be/);
-    assert.match(civCommands.parseCivArgs(["radius=abc"]).error, /radius must be/);
-    assert.match(civCommands.parseCivArgs(["seed=1.5"]).error, /seed must be/);
-    assert.match(civCommands.parseCivArgs(["bogus"]).error, /unrecognised/);
-    assert.match(civCommands.parseCivArgs(["colour=red"]).error, /unknown argument/);
-    assert.equal(civCommands.parseCivArgs(["districts=1,2"]).districts, "1,2");
+test("argument parsing: radius bounds, seed, district, site, unknown arguments", () => {
+    const p = civCommands.parseCivArgs;
+    // the whole result shape, so a new option is never accepted silently by a test that stopped looking
+    assert.deepEqual(p([]), { radius: CIV.defaultSearchRadius, seed: undefined, districts: undefined, district: undefined, site: undefined, error: undefined });
+    assert.equal(p(["radius=300", "seed=-7"]).radius, 300);
+    assert.equal(p(["radius=300", "seed=-7"]).seed, -7);
+    // every refusal that existed before district/site options still refuses
+    assert.match(p([`radius=${CIV.maxSearchRadius + 1}`]).error, /radius must be/);
+    assert.match(p(["radius=abc"]).error, /radius must be/);
+    assert.match(p(["radius=12"]).error, /radius must be/);
+    assert.match(p(["seed=1.5"]).error, /seed must be/);
+    assert.match(p(["seed=x"]).error, /seed must be/);
+    assert.match(p(["bogus"]).error, /unrecognised/);
+    assert.match(p(["colour=red"]).error, /unknown argument/);
+    assert.equal(p(["districts=1,2"]).districts, "1,2");
+    // district= takes one of the five indexes, or "all" (which only civ:generate_plan acts on)
+    for (const index of [1, 2, 3, 4, 5]) assert.equal(p([`district=${String(index)}`]).district, index, `district=${String(index)}`);
+    assert.equal(p(["district=all"]).district, "all");
+    assert.equal(p(["district=ALL"]).district, "all");
+    for (const bad of ["district=0", "district=6", "district=-1", "district=1.5", "district=abc", "district=all2", "district=", "district=99"]) {
+        assert.match(p([bad]).error, /district must be 1 to 5 \(or all, for civ:generate_plan\)/, bad);
+    }
+    // site= takes exactly "here"
+    assert.equal(p(["site=here"]).site, "here");
+    assert.equal(p(["site=HERE"]).site, "here");
+    for (const bad of ["site=there", "site=", "site=here,there"]) assert.match(p([bad]).error, /site takes one value/, bad);
+    // all four options together, and a refusal still stops the parse at the offending argument
+    assert.deepEqual(p(["district=3", "site=here", "radius=400", "seed=9"]), { radius: 400, seed: 9, districts: undefined, district: 3, site: "here", error: undefined });
+    assert.match(p(["district=3", "bogus=1"]).error, /^unknown argument 'bogus='/);
+    assert.equal(civCommands.districtIndexOf(undefined), 1);
+    assert.equal(civCommands.districtIndexOf("all"), 1);
+    assert.equal(civCommands.districtIndexOf(4), 4);
 });
 
 test("district.civ record validation", () => {
@@ -158,6 +180,9 @@ function baseline() {
             civ: structuredClone(civRecord()),
             written: new Set(mc.written),
             placed: new Map(mc.placed),
+            // everything a later district starts from: the finished district 1, in the property store and in the world
+            savedProps: propsSnapshot(),
+            savedPlaced: new Map(mc.placed),
         };
     })();
     return baselinePromise;
@@ -431,11 +456,29 @@ function pickCells(record, stage, count) {
     return picked;
 }
 
-function rehydrateStored() {
-    const payload = planstore.createPlanStore(mc.world).loadPlan().plan;
-    const re = siteplan.rehydrateSite(payload.plan, 1, payload.ground, { ...payload.siteOptions, expectChecksum: payload.siteChecksum });
+/** The plan + persist state of ONE district lives in two slots: the shared master plan and the district's own site slot. */
+function siteStoreFor(index = 1) {
+    return planstore.createPlanStore(mc.world, { prefix: builder.sitePrefixFor(index) });
+}
+
+function jobStoreFor(index = 1) {
+    return jobsModule.createJobStore(mc.world, { prefix: builder.jobPrefixFor(index) });
+}
+
+/**
+ * Reload what a run stored, the way a restart does: the master plan from its own slot, the district's ground and
+ * options from that district's site slot.
+ * @param {number} [index]
+ */
+function rehydrateStored(index = 1) {
+    const master = builder.loadMasterPlan();
+    assert.equal(master.status, "ok", "the master plan is stored");
+    const loaded = siteStoreFor(index).loadPlan();
+    assert.equal(loaded.status, "ok", `the site payload of district ${String(index)} is stored`);
+    const payload = loaded.plan;
+    const re = siteplan.rehydrateSite(master.plan, index, payload.ground, { ...payload.siteOptions, expectChecksum: payload.siteChecksum });
     assert.ok(re.ok, re.problems.join(";"));
-    return { payload, record: re.record };
+    return { payload, plan: master.plan, record: re.record };
 }
 
 test("player blocks and existing walls are never overwritten and are counted as skipped", MIN_TIMEOUT, async () => {
@@ -616,47 +659,82 @@ test("a chunk that stays unloaded pauses the build with a saved cursor; resuming
 
 // ---------------------------------------------------------------------------- resume refusals
 
-test("resume refuses on a checksum mismatch, a version mismatch, a corrupt ground and a foreign queue - without writing", MIN_TIMEOUT, async () => {
+test("resume refuses on a checksum mismatch, a site-version mismatch, a wrong district, a corrupt ground and a foreign queue - without writing", MIN_TIMEOUT, async () => {
     const planned = await plannedOnly();
-    async function refused(tamper, message) {
+    /** @param {string} label @param {() => void} tamper @param {RegExp} message */
+    async function refused(label, tamper, message) {
         await restart();
         restoreProps(planned.props);
         tamper();
+        const writes = mc.writes;
+        const propWrites = mc.propWrites;
         const player = makePlayer();
         send(CIV_EVENT_IDS.resume, "", player);
         await pump();
-        assert.match(text(player), message, text(player));
-        assert.equal(mc.writes, 0);
-        assert.equal(districtBuilder.isBusy(), false);
+        const out = text(player);
+        assert.match(out, message, `${label}: ${out.slice(-900)}`);
+        assert.equal(mc.writes, writes, `${label}: no block written`);
+        assert.equal(mc.propWrites, propWrites, `${label}: a refused resume stores nothing`);
+        assert.equal(districtBuilder.isBusy(), false, `${label}: the job slot is free`);
+        assert.equal(mc.areas.size, 0, `${label}: no ticking area left`);
     }
-    const store2 = () => planstore.createPlanStore(mc.world);
-    await refused(() => {
+    const siteStore = () => siteStoreFor(1);
+    /** Rewrite district 1's own site slot with a tampered payload. */
+    const tamperSite = (mutate) => {
+        const payload = siteStore().loadPlan().plan;
+        mutate(payload);
+        assert.ok(siteStore().savePlan(payload).ok, "the tampered payload fits its slot");
+    };
+    await refused("checksum mismatch", () => {
         const k = store.load().kingdom;
         districtById(k, "district-1").civ.checksum = "00000000";
         store.save(k);
     }, /not the one this district was started from/);
-    await refused(() => {
-        const payload = store2().loadPlan().plan;
+    await refused("site version mismatch", () => tamperSite((payload) => {
         payload.site.version = 99;
-        assert.ok(store2().savePlan(payload).ok);
-    }, /site version 99/);
-    await refused(() => {
-        const payload = store2().loadPlan().plan;
-        payload.ground.g = payload.ground.g.slice(0, -40) + "A".repeat(40);
-        assert.ok(store2().savePlan(payload).ok);
-    }, /unusable|could not be rebuilt/);
-    await refused(() => {
+    }), /site version 99/);
+    await refused("payload of another district", () => tamperSite((payload) => {
+        payload.district = 2;
+    }), /the stored plan is district 2, not 1/);
+    await refused("corrupt ground", () => tamperSite((payload) => {
+        payload.ground.g = `${payload.ground.g.slice(0, -40)}${"A".repeat(40)}`;
+    }), /stored ground is unusable|could not be rebuilt/);
+    await refused("foreign queue", () => {
         const queue = jobsModule.createQueue({ clear: [{ total: 10, hash: 1 }] }, { planHash: "zzzz" });
         assert.ok(jobsModule.createJobStore(mc.world).saveQueue(queue).ok);
     }, /does not belong to this plan/);
-    await refused(() => {
+    await refused("no master plan", () => {
         for (const k of [...mc.props.keys()]) if (k.startsWith("civ:plan")) mc.props.delete(k);
     }, /stored plan is absent/);
-    await refused(() => {
+    await refused("no civ record", () => {
         const k = store.load().kingdom;
         delete districtById(k, "district-1").civ;
         store.save(k);
     }, /no generated civilization to resume/);
+});
+
+test("an OLD world that stored district 1's ground inside the master-plan slot still resumes and builds the identical world", MIN_TIMEOUT, async () => {
+    const base = await baseline();
+    const planned = await plannedOnly();
+    await restart();
+    restoreProps(planned.props);
+    // Fold this district's site payload back into the single pre-district slot and drop its own slot: that is what a
+    // world planned by an earlier build holds, and it must still be resumable (saved-world compatibility).
+    const master = planstore.createPlanStore(mc.world);
+    const site = siteStoreFor(1);
+    const payload = site.loadPlan().plan;
+    const merged = { ...master.loadPlan().plan, ground: payload.ground, siteChecksum: payload.siteChecksum, siteOptions: payload.siteOptions, site: payload.site, ops: payload.ops };
+    site.clear();
+    const saved = master.savePlan(merged);
+    assert.ok(saved.ok, String(saved.reason ?? saved.status));
+    assert.equal(siteStoreFor(1).loadPlan().status, "absent", "the district slot is gone: only the legacy shape remains");
+    const player = makePlayer();
+    send(CIV_EVENT_IDS.resume, "", player);
+    await pump();
+    assert.match(text(player), /Verified plan [0-9a-f]{8}/, text(player).slice(-900));
+    assert.match(text(player), /is built/, text(player).slice(-900));
+    assertSameWorld(worldFingerprint(), base.fp, "legacy single-slot resume");
+    assert.equal(civRecord().status, "complete");
 });
 
 // ---------------------------------------------------------------------------- exclusion, gating, determinism, hooks
@@ -690,23 +768,61 @@ test("a second command while a job runs is refused; a second generate after comp
     districtBuilder.finishJob(token);
 });
 
-test("the development gate: districts= is refused, and even with the gate on it says not enabled", MIN_TIMEOUT, async () => {
+test("district selection: district= is accepted, an out-of-range index is refused, and the dev gate still refuses nonsense", MIN_TIMEOUT, async () => {
+    // Districts 2-5 are buildable now, so the old "not enabled in this build" wording is gone. What must still hold:
+    // a valid district= is understood and acted on, an invalid one is refused with a reason, districts= (the old
+    // multi-district spelling) is still refused, and the gate still refuses everything it has to refuse - all of it
+    // with zero writes and zero world reads.
     resetWorld(1);
     const player = makePlayer();
-    send(CIV_EVENT_IDS.generate, "districts=1,2,3", player);
+    for (const bad of ["district=6 seed=1", "district=0 seed=1", "district=seven seed=1"]) {
+        send(CIV_EVENT_IDS.generate, bad, player);
+    }
+    await flush();
+    const refused = text(player);
+    assert.equal((refused.match(/district must be 1 to 5/g) ?? []).length, 3, refused);
+    assert.ok(/Usage: \/scriptevent civ:generate \[district=1-5\] \[site=here\] \[radius=24-400\] \[seed=N\]/.test(refused), refused);
+    assert.equal(mc.writes, 0);
+    assert.equal(mc.reads, 0, "a bad argument is refused before the world is read");
+    // the gate is off, so district 2 is refused BY NAME and told how to open the gate
+    send(CIV_EVENT_IDS.generate, "district=2 seed=1", player);
     await pump();
-    assert.match(text(player), /districts 2-5 is not available yet/i);
+    assert.match(text(player), /Ironquarry \(district-2\) is development-only: the development gate is off/);
+    assert.match(text(player), /civ:generate_devgate on/);
+    // with the gate ON a valid district= is accepted: it gets past the parser and past the gate and is stopped only
+    // by the real reason - this world has no five-district master plan yet
     send(CIV_EVENT_IDS.devgate, "on", player);
     assert.equal(mc.props.get(CIV.devGateKey), true);
-    const p2 = makePlayer();
-    send(CIV_EVENT_IDS.generate, "districts=1,2,3", p2);
+    const second = makePlayer();
+    send(CIV_EVENT_IDS.generate, "district=2 seed=1", second);
     await pump();
-    assert.match(text(p2), /not enabled in this build/);
-    send(CIV_EVENT_IDS.devgate, "off", player);
-    assert.equal(mc.props.get(CIV.devGateKey), false);
+    const started = text(second);
+    assert.doesNotMatch(started, /not enabled|development-only|not available yet/i, started.slice(-900));
+    assert.match(started, /nothing to build district-2 from: this world holds no five-district master plan/);
+    assert.match(started, /Build district 1 first/);
     assert.equal(mc.writes, 0);
     assert.equal(mc.reads, 0);
-    assert.equal(mc.jobs.length, 0);
+    // district=all stays read-only, and the old districts= list is still refused (with the new, true wording)
+    const third = makePlayer();
+    send(CIV_EVENT_IDS.generate, "district=all", third);
+    send(CIV_EVENT_IDS.generate, "districts=1,2,3", third);
+    await pump();
+    assert.match(text(third), /district=all is read-only/);
+    assert.match(text(third), /districts= lists several at once; one command builds one district: district=1 to district=5/);
+    assert.match(text(third), /The development gate is on, so districts 2 and up may start as soon as their lower-numbered neighbours are complete/);
+    assert.equal(mc.writes, 0);
+    assert.equal(mc.reads, 0);
+    // the gate itself still refuses nonsense and reports its own state
+    const gate = makePlayer();
+    send(CIV_EVENT_IDS.devgate, "maybe", gate);
+    send(CIV_EVENT_IDS.devgate, "", gate);
+    await flush();
+    assert.match(text(gate), /Usage: \/scriptevent civ:generate_devgate on\|off/);
+    assert.match(text(gate), /Development gate is on/);
+    send(CIV_EVENT_IDS.devgate, "off", gate);
+    assert.equal(mc.props.get(CIV.devGateKey), false);
+    assert.deepEqual(noCivData(), [], "nothing was stored by any refusal");
+    assert.equal(districtBuilder.isBusy(), false);
 });
 
 test("status and abort answer sensibly when nothing is running", MIN_TIMEOUT, async () => {
@@ -1088,4 +1204,355 @@ test("worldplan.planWorldSteps and the runtime pipeline give the same plan and r
     assert.equal(JSON.stringify(result.plan), JSON.stringify(outcome.plan), "same master plan");
     assert.equal(result.record.checksum, outcome.record.checksum, "same site record checksum");
     assert.equal(JSON.stringify(result.ground), JSON.stringify(outcome.ground), "same stored ground");
+});
+
+// ============================================================================= the second district
+// Everything below starts from ONE cached reference run (district 1 built and complete) and forks it: the fake world
+// and the property store are rewound to exactly that state, so a district-2 scenario is measured against the same
+// city every time.
+
+/** @returns {Promise<any>} the baseline object, with the world rewound to "district 1 stands complete, dev gate on" */
+async function forkCity() {
+    const base = await baseline();
+    resetWorld(1);
+    restoreProps(base.savedProps);
+    mc.placed = new Map(base.savedPlaced);
+    mc.written = new Set();
+    mc.reads = 0;
+    mc.writes = 0;
+    mc.propWrites = 0;
+    mc.firstWrite = undefined;
+    mc.slices = 0;
+    mc.maxReadsPerSlice = 0;
+    mc.maxWritesPerSlice = 0;
+    // the standing heights the untouched run had: getTopmostBlock must answer the same way
+    for (const [k, id] of mc.placed) {
+        if (id === "minecraft:air") continue;
+        const [x, y, z] = k.split(",").map(Number);
+        const ck = `${String(x)},${String(z)}`;
+        if ((mc.colTop.get(ck) ?? -999) < y) mc.colTop.set(ck, y);
+    }
+    const gate = makePlayer();
+    send(CIV_EVENT_IDS.devgate, "on", gate);
+    await flush();
+    assert.equal(mc.props.get(CIV.devGateKey), true, "the development gate is on for districts 2-5");
+    const kingdom = store.load().kingdom;
+    assert.equal(districtById(kingdom, "district-1").civ.status, "complete", "district 1 stands");
+    assert.equal(districtById(kingdom, "district-2").civ, undefined, "district 2 has not been started");
+    assert.deepEqual(worldFingerprint(), base.fp, "the forked world is the reference world");
+    return base;
+}
+
+const D2 = "district=2 seed=1";
+
+test("planning and building district 2 writes nothing inside district 1's protected footprint and changes none of its blocks", MIN_TIMEOUT, async () => {
+    const base = await forkCity();
+    const plan = base.outcome.plan;
+    const kingdomBefore = structuredClone(store.load().kingdom);
+    const d1Centre = districtById(kingdomBefore, "district-1").civ.centre;
+    // the exact list the build guards with: district 1 is complete, district 2 is the one asking
+    const guarded = civCommands.protectedRects(kingdomBefore, 1, plan, builder.WRITE_PROTECT_GROW, 2).filter((area) => area.polygon !== undefined);
+    assert.equal(guarded.length, 1, `district-1's outline is the footprint to keep clear: ${guarded.map((a) => a.label).join(", ")}`);
+    assert.match(String(guarded[0].label), /^district-1 /, String(guarded[0].label));
+    assert.equal(builder.inProtectedArea(guarded, d1Centre.x, d1Centre.z), true, "the guard really covers district 1");
+    // (a) planning district 2 is read-only
+    const planner = makePlayer();
+    send(CIV_EVENT_IDS.plan, D2, planner);
+    await pump();
+    assert.match(text(planner), /Plan is valid/, text(planner).slice(-900));
+    assert.match(text(planner), /Reading district 2 \(Ironquarry, district-2\) at full resolution/);
+    assert.match(text(planner), /nothing outside this district is read/);
+    assert.equal(mc.writes, 0, "planning district 2 writes no block");
+    const blocksBefore = new Map(mc.placed);
+    // (b) building district 2
+    const player = makePlayer();
+    send(CIV_EVENT_IDS.generate, D2, player);
+    await pump();
+    const out = text(player);
+    assert.match(out, /=== Ironquarry \(enlarged\) is built ===/, out.slice(-1200));
+    const d1Cells = new Set();
+    for (const [k, id] of blocksBefore) if (naturalAt(...k.split(",").map(Number)) !== id) d1Cells.add(k);
+    assert.ok(d1Cells.size > 20000, `district 1 had ${String(d1Cells.size)} modified cells to protect`);
+    const changed = [];
+    for (const k of d1Cells) {
+        const [x, y, z] = k.split(",").map(Number);
+        if (typeAt(x, y, z) !== blocksBefore.get(k)) changed.push(`${k}: was ${blocksBefore.get(k)}, now ${typeAt(x, y, z)}`);
+    }
+    assert.deepEqual(changed.slice(0, 5), [], `${String(changed.length)} block(s) district 1 placed were modified by the district-2 build`);
+    // What the district-2 run may and may not do inside district 1's protected footprint. It may never
+    // touch district 1's own land - the outline with no clearance around it is the honest test of that -
+    // and it may never modify a block district 1 placed (asserted above). The one thing it IS allowed to
+    // do is lay its own wall on a column district 1 left empty in the shared band: a shared wall is in
+    // both records, and a clearance that also ate the second neighbour's copy of that band left 62 wall
+    // columns unbuilt and opened four districts to the outside (dev/test/civ-fivedistrict.test.mjs).
+    const districtOnesOwnLand = civCommands.protectedRects(kingdomBefore, 1, plan, 0, 2).filter((area) => area.polygon !== undefined);
+    assert.equal(builder.inProtectedArea(districtOnesOwnLand, d1Centre.x, d1Centre.z), true, "the zero-clearance list really is district 1's land");
+    const insideLand = [];
+    const bandWrites = [];
+    for (const k of mc.written) {
+        const [x, , z] = k.split(",").map(Number);
+        if (builder.inProtectedArea(districtOnesOwnLand, x, z)) insideLand.push(k);
+        else if (builder.inProtectedArea(guarded, x, z)) bandWrites.push(k);
+    }
+    assert.deepEqual(insideLand.slice(0, 5), [], `${String(insideLand.length)} write(s) landed on district 1's own land`);
+    assert.ok(bandWrites.length > 0, "district 2 built no wall in the shared band at all - the enclosure would be incomplete");
+    // how many band columns may be written is pinned exactly, and offline, by the built-barrier equality in
+    // dev/test/civ-fivedistrict.test.mjs; here the promise is only that the shared band really was filled.
+    // the guard is not decoration: district 2's own plan reaches that land and is refused op by op
+    const refused = Number(/(\d+) op\(s\) fell outside this district or inside a finished neighbour/.exec(out)?.[1] ?? 0);
+    assert.ok(refused > 0, `the build reported no protected-footprint refusals at all: ${out.slice(-900)}`);
+    assert.match(out, new RegExp(`${String(refused)}x inside a protected footprint`));
+    assert.deepEqual(districtById(store.load().kingdom, "district-1").civ, districtById(kingdomBefore, "district-1").civ, "district-1's civ record is untouched");
+});
+
+test("a district-2 build that crashes twice resumes after a restart to exactly the world an uninterrupted build leaves", { timeout: 900000 }, async () => {
+    // the uninterrupted reference
+    await forkCity();
+    const clean = makePlayer();
+    send(CIV_EVENT_IDS.generate, D2, clean);
+    await pump();
+    assert.match(text(clean), /is built/, text(clean).slice(-900));
+    const reference = worldFingerprint();
+    assert.ok(reference.length > 40000, `the district-2 build changed ${String(reference.length)} cells`);
+    // the same build, killed at two points inside it
+    await forkCity();
+    const player = makePlayer();
+    send(CIV_EVENT_IDS.generate, D2, player);
+    let died = 0;
+    for (const at of [8000, 30000]) {
+        mc.dieAtWrites = at;
+        await pump({ stopOnDead: true });
+        assert.equal(mc.dead, true, `the process died at ${String(at)} writes`);
+        died += 1;
+        const writtenAtDeath = mc.written.size;
+        await restart();
+        assert.equal(mc.written.size, writtenAtDeath, "nothing is written after the death");
+        const revived = makePlayer();
+        revived.sendMessage = (m) => player.messages.push(...(Array.isArray(m) ? m : [m]));
+        send(CIV_EVENT_IDS.resume, "district=2", revived);
+    }
+    mc.dieAtWrites = null;
+    await pump();
+    assert.equal(died, 2);
+    assert.match(text(player), /is built/, text(player).slice(-1200));
+    assertSameWorld(worldFingerprint(), reference, "district-2 crash/restart");
+    const two = districtById(store.load().kingdom, "district-2").civ;
+    assert.equal(two.status, "complete");
+    assert.equal(two.ops, two.opsTotal);
+    assert.deepEqual(civCommands.civRecordProblems(two), []);
+});
+
+test("each district keeps its own site payload and its own queue: different key slots, separate bytes, independent wipes", MIN_TIMEOUT, async () => {
+    await forkCity();
+    const before = propsSnapshot();
+    const prefixes = {
+        site1: builder.sitePrefixFor(1),
+        site2: builder.sitePrefixFor(2),
+        jobs1: builder.jobPrefixFor(1),
+        jobs2: builder.jobPrefixFor(2),
+        master: "civ:plan",
+    };
+    const owned = Object.values(prefixes);
+    /** The LONGEST owning prefix of a key, exactly how builder.storageFootprint() groups them. */
+    const ownerOf = (k) => owned.reduce((best, p) => (k.startsWith(`${p}:`) && (best === undefined || p.length > best.length) ? p : best), undefined);
+    const keysOf = (snapshot, prefix) => [...snapshot.keys()].filter((k) => ownerOf(k) === prefix).sort();
+    const bytesOf = (snapshot, prefix) => [...snapshot.entries()].filter(([k]) => ownerOf(k) === prefix).reduce((sum, [, v]) => sum + planstore.utf8Length(String(v)), 0);
+    assert.equal(prefixes.jobs1, jobsModule.JOB_PREFIX, "district 1 keeps the plain legacy queue slot");
+    assert.notEqual(prefixes.jobs2, jobsModule.JOB_PREFIX, "district 2 has its own queue slot");
+    assert.notEqual(prefixes.site1, prefixes.site2);
+    const player = makePlayer();
+    send(CIV_EVENT_IDS.generate, D2, player);
+    await pump({ until: () => builder.hasSession() });
+    assert.ok(builder.hasSession(), "district 2 reached construction, so everything was stored first");
+    const after = propsSnapshot();
+    // both districts hold a payload and a queue, and no key is shared between the slots
+    for (const [name, prefix] of Object.entries(prefixes)) {
+        assert.ok(keysOf(after, prefix).length > 0, `${name} (${prefix}) holds at least its meta key`);
+    }
+    const overlap = keysOf(after, prefixes.site1).filter((k) => keysOf(after, prefixes.site2).includes(k));
+    assert.deepEqual(overlap, [], "the two site slots own disjoint keys");
+    const queueOverlap = keysOf(after, prefixes.jobs1).filter((k) => keysOf(after, prefixes.jobs2).includes(k));
+    assert.deepEqual(queueOverlap, [], "the two queues own disjoint keys");
+    assert.ok(keysOf(after, prefixes.jobs2).every((k) => !k.startsWith(`${prefixes.jobs1}:a:`) && !k.startsWith(`${prefixes.jobs1}:b:`)), "district 2's queue keys are not plain queue chunks");
+    assert.ok(keysOf(after, prefixes.master).every((k) => !k.includes(":site:")), "the master-plan slot holds no district payload");
+    const payload1 = planstore.createPlanStore(mc.world, { prefix: prefixes.site1 }).loadPlan();
+    const payload2 = planstore.createPlanStore(mc.world, { prefix: prefixes.site2 }).loadPlan();
+    assert.equal(payload1.status, "ok");
+    assert.equal(payload2.status, "ok");
+    assert.equal(payload1.plan.district, 1);
+    assert.equal(payload2.plan.district, 2);
+    assert.equal(payload2.plan.districtId, "district-2");
+    assert.notEqual(payload1.plan.ground.g, payload2.plan.ground.g, "each district persisted its OWN ground");
+    assert.notEqual(payload1.plan.siteChecksum, payload2.plan.siteChecksum);
+    const queues = {
+        one: jobsModule.createJobStore(mc.world, { prefix: prefixes.jobs1 }).loadQueue({ recoverRunning: false }),
+        two: jobsModule.createJobStore(mc.world, { prefix: prefixes.jobs2 }).loadQueue({ recoverRunning: false }),
+    };
+    assert.equal(queues.one.status, "ok");
+    assert.equal(queues.two.status, "ok");
+    assert.equal(queues.two.queue.planHash, payload2.plan.siteChecksum, "district 2's queue belongs to district 2's plan");
+    assert.notEqual(queues.one.queue.planHash, queues.two.queue.planHash, "they are two different queues");
+    // measured bytes, per slot, against every ceiling
+    const rows = {};
+    for (const [name, prefix] of Object.entries(prefixes)) rows[name] = { keys: keysOf(after, prefix).length, bytes: bytesOf(after, prefix) };
+    console.log(JSON.stringify({ perDistrictBytes: rows }));
+    assert.ok(rows.site1.bytes > 0 && rows.site2.bytes > 0);
+    assert.ok(rows.jobs2.bytes > 0);
+    assert.notEqual(after.get(`${prefixes.site1}:meta`), after.get(`${prefixes.site2}:meta`));
+    const footprint = builder.storageFootprint();
+    assert.deepEqual(footprint.problems, [], `some key family is over budget: ${footprint.problems.join(" | ")}`);
+    for (const family of footprint.families) {
+        if (!family.bytes) continue;
+        assert.ok(family.bytes <= family.limit, `${family.prefix}: ${String(family.bytes)} > ${String(family.limit)}`);
+        assert.ok(family.longestProperty <= CIV_LIMITS.maxPropertyChars, `${family.prefix}: longest property ${String(family.longestProperty)} chars`);
+        assert.ok(family.longestProperty < 32767, `${family.prefix}: ${String(family.longestProperty)} chars is at the engine ceiling`);
+    }
+    assert.equal(footprint.families.filter((family) => family.prefix === prefixes.site2).length, 1, "the district's own slot is accounted separately from the master plan");
+    // the aborted build leaves both districts' data in its own slots; the byte counts stay inside every budget
+    send(CIV_EVENT_IDS.abort, "", player);
+    await pump();
+    assert.equal(builder.hasSession(), false);
+    const atAbort = propsSnapshot();
+    planstore.createPlanStore(mc.world, { prefix: prefixes.site1 }).clear();
+    assert.deepEqual(keysOf(propsSnapshot(), prefixes.site1), [], "district 1's site slot is gone");
+    assert.deepEqual(keysOf(propsSnapshot(), prefixes.site2).sort(), keysOf(atAbort, prefixes.site2).sort(), "district 2's slot is the same key set");
+    assert.equal(bytesOf(propsSnapshot(), prefixes.site2), bytesOf(atAbort, prefixes.site2), "not one byte of district 2 moved");
+    assert.equal(planstore.createPlanStore(mc.world, { prefix: prefixes.site2 }).loadPlan().plan.siteChecksum, payload2.plan.siteChecksum);
+    assert.equal(jobsModule.createJobStore(mc.world, { prefix: prefixes.jobs2 }).loadQueue({ recoverRunning: false }).status, "ok");
+    assert.equal(planstore.createPlanStore(mc.world).loadPlan().status, "ok", "the shared master plan was not touched");
+    // and district 2 still resumes and finishes from its own slots alone
+    const resumed = makePlayer();
+    send(CIV_EVENT_IDS.resume, "district=2", resumed);
+    await pump();
+    assert.match(text(resumed), /Verified plan [0-9a-f]{8}/, text(resumed).slice(-900));
+    assert.match(text(resumed), /is built/, text(resumed).slice(-900));
+    assert.equal(districtById(store.load().kingdom, "district-2").civ.status, "complete");
+    // wiping district 2's slot leaves district 1's master plan and queue intact
+    planstore.createPlanStore(mc.world, { prefix: prefixes.site2 }).clear();
+    jobsModule.createJobStore(mc.world, { prefix: prefixes.jobs2 }).clear();
+    assert.equal(planstore.createPlanStore(mc.world).loadPlan().status, "ok");
+    assert.equal(jobsModule.createJobStore(mc.world, { prefix: prefixes.jobs1 }).loadQueue({ recoverRunning: false }).status, "ok");
+    assert.deepEqual(keysOf(propsSnapshot(), prefixes.jobs2), []);
+    assert.ok(bytesOf(before, prefixes.site1) > 0, "the fork really started from a stored district 1");
+});
+
+test("district 3 cannot start while district 2 is building, and civ:generate_status lists all five districts", MIN_TIMEOUT, async () => {
+    const { DISTRICT_NAMES } = await load("config.js");
+    await forkCity();
+    const player = makePlayer();
+    send(CIV_EVENT_IDS.generate, D2, player);
+    await pump({ until: () => (builder.sessionStatus()?.pct ?? 0) >= 3 });
+    assert.ok(builder.hasSession() && districtBuilder.isBusy(), "district 2 is being built");
+    const writes = mc.writes;
+    const propWrites = mc.propWrites;
+    // (a) while the district-2 job owns the slot, a second district is refused with the reason "a job is running"
+    const impatient = makePlayer();
+    send(CIV_EVENT_IDS.generate, "district=3 seed=1", impatient);
+    send(CIV_EVENT_IDS.plan, "district=4 seed=1", impatient);
+    await flush();
+    const busy = text(impatient);
+    assert.ok((busy.match(/is already running/g) ?? []).length >= 2, busy);
+    assert.match(busy, /civ-build job is already running/);
+    assert.equal(mc.writes, writes, "the refused district-3 start wrote no block");
+    assert.equal(mc.propWrites, propWrites, "and stored nothing");
+    assert.equal(districtById(store.load().kingdom, "district-3").civ, undefined, "no record was made for district 3");
+    // (b) the process dies: district 2 stays recorded as `building` with no job holding the slot. Now the refusal is
+    // the ordering rule itself, and it names the district that has to be finished first.
+    mc.dieAtWrites = mc.writes + 1;
+    await pump({ stopOnDead: true });
+    assert.equal(mc.dead, true, "the district-2 process died mid-build");
+    await restart();
+    assert.equal(districtBuilder.isBusy(), false, "no process owns the slot any more");
+    assert.equal(districtById(store.load().kingdom, "district-2").civ.status, "building", "district 2 is still recorded as building");
+    const afterDeathWrites = mc.writes;
+    const afterDeathProps = mc.propWrites;
+    const third = makePlayer();
+    send(CIV_EVENT_IDS.generate, "district=3 seed=1", third);
+    await pump();
+    const out = text(third);
+    assert.match(out, /district-2 \(Ironquarry\) is still being built - one district at a time/, out.slice(-1200));
+    assert.match(out, /its neighbours are not built yet: district-2 Ironquarry \(building\)/);
+    assert.match(out, /Build them first - districts share their walls/);
+    assert.match(out, /Nothing was changed/);
+    assert.equal(mc.writes, afterDeathWrites, "the refused district-3 start wrote no block after the death either");
+    assert.equal(mc.propWrites, afterDeathProps, "and stored nothing");
+    // (c) status: every district, by id, with its own state - and no claim that districts 2-5 are unavailable
+    send(CIV_EVENT_IDS.status, "", third);
+    await flush();
+    const status = text(third);
+    const lineFor = (id) => status.split("\n").filter((line) => line.includes(id)).join("\n");
+    assert.match(status, /Districts \(5, built one at a time in this order/);
+    assert.match(status, /master plan stored at -?\d+, -?\d+/);
+    for (const index of builder.DISTRICT_INDEXES) {
+        assert.ok(status.includes(`district-${String(index)} ${DISTRICT_NAMES[index - 1]}`), `district ${String(index)} is listed: ${status}`);
+    }
+    assert.match(lineFor("district-1"), /: complete, stage complete \d+ \/ \d+ ops, placed \d+, skipped \d+/);
+    assert.match(lineFor("district-1"), /plan [0-9a-f]{8}/);
+    assert.match(lineFor("district-2"), /: building, stage \w+ \d+ \/ \d+ ops/);
+    assert.match(status, /Stored queue: \d+% \(\d+ \/ \d+ ops\), state \w+; continue with \/scriptevent civ:generate_resume district=2/);
+    assert.match(lineFor("district-3"), /: not started - build district-2 first/);
+    assert.match(lineFor("district-4"), /: not started - build district-3 first/);
+    assert.match(lineFor("district-5"), /: not started - build district-4 first/);
+    assert.doesNotMatch(status, /not available yet|not enabled in this build|only district 1 exists/i, status);
+    assert.match(status, /Dev gate: on \(districts 2-5 only start with it on\)/);
+    assert.match(status, /total \d+ B \(every family inside its budget\)/);
+    // the district-2 build does finish when it is resumed - which is what the refusal told the operator to do
+    send(CIV_EVENT_IDS.resume, "district=2", player);
+    await pump();
+    assert.match(text(player), /is built/, text(player).slice(-1200));
+    assert.equal(districtById(store.load().kingdom, "district-2").civ.status, "complete");
+});
+
+test("a district with no master plan, or an unbuilt neighbour, is refused BY NAME; an unknown index writes nothing", MIN_TIMEOUT, async () => {
+    // (a) a world with no master plan at all cannot start district 3 (the gate is on: this is not a gate refusal)
+    resetWorld(1);
+    const gate = makePlayer();
+    send(CIV_EVENT_IDS.devgate, "on", gate);
+    await flush();
+    const player = makePlayer();
+    send(CIV_EVENT_IDS.generate, "district=3 seed=1", player);
+    await pump();
+    assert.match(text(player), /nothing to build district-3 from: this world holds no five-district master plan/);
+    assert.match(text(player), /civ:plan reads 'absent'/);
+    assert.match(text(player), /Build district 1 first \(it makes the master plan\): \/scriptevent civ:generate district=1 seed=1/);
+    assert.equal(mc.writes, 0);
+    assert.equal(mc.reads, 0, "a missing master plan is noticed before any world read");
+    assert.deepEqual(noCivData(), [], "nothing stored");
+    assert.equal(districtBuilder.isBusy(), false);
+    // (b) a stored master plan whose lower neighbour is only PAUSED still refuses, and names the neighbour
+    const planned = await plannedOnly();
+    await restart();
+    restoreProps(planned.props);
+    send(CIV_EVENT_IDS.devgate, "on", makePlayer());
+    await flush();
+    assert.equal(builder.loadMasterPlan().plan !== undefined, true, "district 1's run stored the five-district master plan");
+    const second = makePlayer();
+    send(CIV_EVENT_IDS.generate, "district=2 seed=1", second);
+    await pump();
+    assert.match(text(second), /its neighbours are not built yet: district-1 Hearthgate \(paused\)/);
+    assert.match(text(second), /Build them first/);
+    assert.equal(mc.writes, 0, "no block was written for the district-2 attempt");
+    // planning district 2, however, is allowed: it shares the stored master plan and writes nothing
+    const third = makePlayer();
+    send(CIV_EVENT_IDS.plan, "district=2 seed=1", third);
+    await pump();
+    assert.match(text(third), /Plan is valid/, text(third).slice(-700));
+    assert.equal(mc.writes, 0);
+    // (c) an unknown index never reaches the planner and leaves the world byte-identical
+    const keys = [...mc.props.keys()].sort();
+    const bytes = mc.propWrites;
+    for (const bad of ["district=7", "district=-2", "district=1x", "district=+2", "district="]) {
+        const asker = makePlayer();
+        send(CIV_EVENT_IDS.generate, `${bad} seed=1`, asker);
+        send(CIV_EVENT_IDS.plan, `${bad} seed=1`, asker);
+        send(CIV_EVENT_IDS.resume, bad, asker);
+        send(CIV_EVENT_IDS.abort, bad, asker);
+        await pump();
+        assert.match(text(asker), /district must be 1 to 5/, `${bad}: ${text(asker).slice(-400)}`);
+    }
+    assert.equal(mc.writes, 0);
+    assert.equal(mc.propWrites, bytes, "an unknown index stores nothing");
+    assert.deepEqual([...mc.props.keys()].sort(), keys);
+    assert.equal(mc.areas.size, 0);
+    assert.equal(districtBuilder.isBusy(), false);
 });

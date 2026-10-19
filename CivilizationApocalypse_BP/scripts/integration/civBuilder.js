@@ -2,11 +2,12 @@ import { BlockPermutation, world } from "@minecraft/server";
 import { CIV, PHYSICAL } from "../config.js";
 import { CIV_LIMITS } from "../civ/budget.js";
 import { SITE_PLAN_VERSION, planDistrictSiteSteps, rehydrateSiteSteps, siteContainmentProblemsSteps, siteJobSpecs, siteOpCount, siteOpsFor, siteOptionsOf } from "../civ/districtplan.js";
+import { auditRecord, shortfallOf } from "../civ/facilities.js";
 import * as jobs from "../civ/jobs.js";
 import { planCivilizationDetailedSteps } from "../civ/masterplan.js";
 import { markYield, newOps } from "../civ/regions.js";
 import { normalizeOp } from "../civ/opnorm.js";
-import { PLAN_VERSION, createPlanStore, utf8Length } from "../civ/planstore.js";
+import { PLAN_PREFIX, PLAN_VERSION, createPlanStore, utf8Length } from "../civ/planstore.js";
 import { clipField, exportSiteGroundSteps, siteGroundBytes, siteGroundRegion } from "../civ/siteprofile.js";
 import { SITE_DEFAULTS, overlapsExclusion, rankSites, scanRadiusFor } from "../civ/siteselect.js";
 import { validatePlanSteps } from "../civ/validatesteps.js";
@@ -19,14 +20,23 @@ import { finishProgress, getProgress, heartbeat, nowTick, resetProgressForTests,
  * Bedrock boundary for the one-command civilization workflow, WRITE side, plus the planning
  * pipeline that precedes it.
  *
+ * The workflow is DISTRICT-GENERIC: every entry point takes a district index (1..5), derives its `district-N`
+ * id, its own site-payload slot and its own job queue from it. The five-district MASTER PLAN is stored once
+ * (`civ:plan`) and shared: the districts lie in one coordinate system and share walls and gates, so a district must
+ * never be planned against a master plan other than the one its neighbours were placed by.
+ *
  * Contract (nothing below ever happens at import or activation):
- *  - planWorld(): scan -> rank -> master plan -> validate -> full-resolution ground -> district
- *    site plan. It is READ-ONLY. Every failure returns a report; no failure path has written a block.
- *  - persistRun(): plan + ground + job queue + district.civ record are saved BEFORE the first block.
+ *  - planWorld(): either (a) survey -> rank -> master plan -> validate -> full-resolution ground -> district site
+ *    plan, or (b) when a master plan is already stored, read it and survey ONLY the district's own region.
+ *    Both are READ-ONLY. Every failure returns a report; no failure path has written a block.
+ *  - persistRun(): master plan + the district's ground + that district's job queue are saved BEFORE the first block.
  *  - startConstruction(): the only code that writes blocks. Every op is classified against the LIVE
  *    block immediately before it is written; anything that is not air, loose vegetation, natural
  *    ground (or, for explicit support kinds, still water) or a block this very plan placed at that
- *    cell is skipped and counted - never overwritten. Natural trees are cleared only after the whole
+ *    cell is skipped and counted - never overwritten. Ops inside a district that is already being built or is
+ *    complete (see `inProtectedArea`) are skipped before they are even read, except the district's own wall
+ *    closing out a shared band (`isSharedWallFill`) - see the two functions for exactly what may and may not
+ *    enter a finished neighbour's land. Natural trees are cleared only after the whole
  *    tree has been proven natural; a tree with persistent leaves, a log-only stack or a foreign block
  *    touching it is left alone.
  *  - slices: <= CIV_LIMITS.maxBlocksPerSlice ops and <= CIV_LIMITS.maxReadsPerSlice reads between yields.
@@ -42,11 +52,19 @@ import { finishProgress, getProgress, heartbeat, nowTick, resetProgressForTests,
 
 /**
  * Replaceable collaborators. Production code never touches this; tests substitute members to force the failure paths
- * (an invalid master plan, an over-sized plan) without a contrived world.
+ * (an invalid master plan, an over-sized plan, a district whose construction plan is not composed yet) without a
+ * contrived world.
  */
 export const seams = {
     /** @type {(plan: any, ops: import("../civ/regions.js").Ops) => Generator<void, { ok: boolean, problems: string[], metrics?: any }, void>} */
     validatePlan: (plan, ops) => validatePlanSteps(plan, { ops }),
+    /**
+     * One district's construction plan. The default is the real planner (civ/districtplan.js), which refuses a
+     * district that has no enlarged layout; a test may substitute a generator to exercise the runtime around a
+     * district whose layout is still being composed.
+     * @type {(plan: any, index: number, field: any, options: any) => Generator<void, { ok: boolean, problems: string[], notes: string[], record: any }, void>}
+     */
+    planSite: (plan, index, field, options) => planDistrictSiteSteps(plan, index, field, options),
     /** @type {number | undefined} */
     maxPlanBytes: undefined,
     /** @type {number | undefined} */
@@ -57,17 +75,75 @@ export const seams = {
 
 /** Plan area radius handed to the master planner (its own default). */
 export const MASTER_PLAN_RADIUS = 300;
+/** How far the master plan reaches from its anchor, plus a margin: an explicit-site survey never reads beyond this. */
+export const MASTER_REACH = MASTER_PLAN_RADIUS + 16;
 /** Re-seeded planning attempts (master plan -> ground -> site plan) before giving up. */
 const WORLD_ATTEMPTS = 3;
 /** Extra clearance (blocks) around every protected footprint for the site search. */
 export const PROTECT_MARGIN = 12;
+/**
+ * Clearance (blocks) the write side keeps around a built district's outline; the wall band is shared land.
+ * A finished district does not stop at its outline: measured on all five districts over rough and flat
+ * ground, its masonry reaches exactly 3 blocks past the outline it was planned with, so anything narrower
+ * than 4 lets a later district work that band. Wider buys nothing and costs the district being built: at
+ * 10 the clearance suppresses 1,581 of its own building operations and 3,133 road operations, all of them
+ * on land the neighbour never built on, and it still leaves the wall incomplete (see `isSharedWallFill`).
+ */
+export const WRITE_PROTECT_GROW = 4;
 /** Sanity ceiling for the op count of one district. */
 export const MAX_SANE_OPS = 400000;
+/** The districts a civilization has, in the order they may be built. */
+export const DISTRICT_INDEXES = Object.freeze([1, 2, 3, 4, 5]);
 /** Largest bounding box (blocks per side) of one construction window; the held tile is 128. */
 /** Largest span (blocks) of one construction window; the held tile must also fit 8 blocks of apron on every side. */
 const windowMaxSpan = () => Math.max(4, Math.min(100, tileSizeNow() - 28));
 const WORLD_MIN_Y = -64;
 const WORLD_MAX_Y = 319;
+
+// ---------------------------------------------------------------------------------------------
+// Per-district storage keys
+//
+// The chunked store keeps one meta key plus `<prefix>:<fam>:<i>` chunk keys per payload, where fam is always "a" or
+// "b" and i a plain integer. Every district prefix here adds its OWN extra segment before the store appends those
+// suffixes (the site prefix adds a "site" segment plus the district number, the job prefix adds the district number),
+// so a district key can never be one the master-plan store or the plain queue owns: the two key sets are disjoint by
+// construction. Both families still start with the prefixes the starter-world rules in config.js classify: the plan
+// prefix is KEPT when a world is armed, the job prefix is WIPED.
+
+/** @param {number} index @returns {string} the plan-prefix slot holding ONE district's site payload (ground + options + checksum) */
+export function sitePrefixFor(index) {
+    return `${PLAN_PREFIX}:site:d${String(index)}`;
+}
+
+/** @param {number} index @returns {string} the job-prefix slot holding ONE district's queue (district 1 keeps the plain `civ:jobs`) */
+export function jobPrefixFor(index) {
+    return index === 1 ? jobs.JOB_PREFIX : `${jobs.JOB_PREFIX}:d${String(index)}`;
+}
+
+/** @param {number} index @returns {string} the kingdom district id this index is recorded under */
+export function districtIdFor(index) {
+    return `district-${String(index)}`;
+}
+
+/** @param {number} index */
+function assertIndex(index) {
+    if (!Number.isInteger(index) || index < 1 || index > DISTRICT_INDEXES.length) {
+        throw new RangeError(`district index ${String(index)} is not one of 1..${String(DISTRICT_INDEXES.length)}`);
+    }
+}
+
+/**
+ * @param {number} index @param {{ maxBytes?: number }} [options]
+ * @returns {ReturnType<typeof createPlanStore>}
+ */
+function siteStoreFor(index, options = {}) {
+    return createPlanStore(world, { prefix: sitePrefixFor(index), ...options });
+}
+
+/** @param {number} index @param {{ maxBytes?: number }} [options] */
+function jobStoreFor(index, options = {}) {
+    return jobs.createJobStore(world, { prefix: jobPrefixFor(index), ...options });
+}
 
 /** Largest tree-like component the clearer will examine (forests merge canopies; player-made stacks are caught by their own rules). */
 const CIV_TREE_CAP = 600;
@@ -87,6 +163,13 @@ const isAir = (id) => AIR_IDS.has(id);
 const isWater = (id) => id === "minecraft:water" || id === "minecraft:flowing_water";
 /** @param {string} id */
 const isCanopy = (id) => isLog(id) || isLeaves(id);
+/**
+ * Anything a civ build may legitimately stand on: open air, a plant, unworked ground or still water. Not
+ * "a block that happens to have an id we also use" - that is how a finished neighbour's wall face would
+ * pass for raw terrain (see the shared-band rule in the construction loop).
+ * @param {string} id
+ */
+const isRawTerrain = (id) => isAir(id) || isPlant(id) || isNaturalGround(id) || isWater(id);
 
 /**
  * Decide what to do with one op given the LIVE block and the ids this plan targets at the same cell.
@@ -158,29 +241,355 @@ function reasonKey(reason) {
  */
 const inRect = (rect, x, z) => x >= rect.x0 && x <= rect.x1 && z >= rect.z0 && z <= rect.z1;
 
+/**
+ * A footprint nothing may be written in: a rectangle, optionally narrowed to the exact polygon of the land it
+ * claims (a district outline) and grown by `grow` blocks so the shared wall band stays a single owner's work.
+ * @typedef {{ x0: number, z0: number, x1: number, z1: number, polygon?: [number, number][], grow?: number, label?: string }} ProtectedArea
+ */
+
+/** @param {[number, number][]} poly @param {number} x @param {number} z */
+function insidePolygon(poly, x, z) {
+    let inside = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i, i += 1) {
+        const [xi, zi] = /** @type {[number, number]} */ (poly[i]);
+        const [xj, zj] = /** @type {[number, number]} */ (poly[j]);
+        if (zi > z !== zj > z && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) inside = !inside;
+    }
+    return inside;
+}
+
+/** Chebyshev distance from (x, z) to the segment a-b. @param {number} x @param {number} z @param {[number, number]} a @param {[number, number]} b */
+function distanceToSegment(x, z, a, b) {
+    const [ax, az] = a;
+    const [bx, bz] = b;
+    const dx = bx - ax;
+    const dz = bz - az;
+    const length = dx * dx + dz * dz;
+    const t = length === 0 ? 0 : Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / length));
+    return Math.max(Math.abs(x - (ax + t * dx)), Math.abs(z - (az + t * dz)));
+}
+
+/**
+ * Kinds whose only effect is to ADD masonry: the wall, its towers, walkway, footing and dressing, and gate
+ * hardware. Nothing in this set removes a block - an operation that writes air is never treated as a fill.
+ */
+export const WALL_FILL_KINDS = Object.freeze(["wall", "tower", "merlon", "walk", "rubble", "footing", "gate"]);
+
+/**
+ * May this operation go into the outward clearance of a district that is already built? Only its own wall:
+ * a shared wall is planned by BOTH neighbours (so that neither district's enclosure depends on build order),
+ * and a finished district's masonry reaches 3 blocks past its outline, so the clearance also covers columns
+ * the second neighbour still has to lay. Without the exemption the clearance at WRITE_PROTECT_GROW ate 62 of
+ * the 11,418 planned barrier columns - all of them in district 2's wall - and every district raised after the
+ * capital lost its enclosure: their deep interiors became walkable from outside, and from each other.
+ *
+ * What stays forbidden, in order: a rectangle-protected footprint (a prototype) is never entered, an operation
+ * that writes air never passes, only the wall kinds above pass, and nothing passes on land inside a finished
+ * neighbour's own outline. In that band a wall may then only stand on raw terrain (see the construction loop),
+ * because two districts' walls are made of the same stone and an identical id would otherwise read as "a block
+ * of ours" and be replaced. So this can fill the line in, but cannot break it or build on land a finished
+ * district owns.
+ * @param {readonly ProtectedArea[]} areas @param {CanonicalOp} op
+ */
+export function isSharedWallFill(areas, op) {
+    if (!WALL_FILL_KINDS.includes(String(op.kind)) || isAir(String(op.id))) return false;
+    for (const area of areas) {
+        const polygon = area.polygon;
+        if (polygon === undefined) return false;
+        if (inRect(area, op.x, op.z) && insidePolygon(polygon, op.x, op.z)) return false;
+    }
+    return true;
+}
+
+/**
+ * Is this cell inside a protected footprint? A polygon entry is decided by its outline (grown by `grow`), not by
+ * its bounding box: districts interlock, so their boxes overlap while the land itself does not.
+ * @param {readonly ProtectedArea[]} areas @param {number} x @param {number} z
+ */
+export function inProtectedArea(areas, x, z) {
+    for (const area of areas) {
+        const polygon = area.polygon;
+        if (polygon === undefined) {
+            if (inRect(area, x, z)) return true;
+            continue;
+        }
+        if (!inRect(area, x, z)) continue;
+        if (insidePolygon(polygon, x, z)) return true;
+        const grow = area.grow ?? 0;
+        if (grow > 0 && polygon.length > 2) {
+            for (let i = 0; i < polygon.length; i += 1) {
+                const a = /** @type {[number, number]} */ (polygon[i]);
+                const b = /** @type {[number, number]} */ (polygon[(i + 1) % polygon.length]);
+                if (distanceToSegment(x, z, a, b) <= grow) return true;
+            }
+        }
+    }
+    return false;
+}
+
 // ---------------------------------------------------------------------------------------------
 // Planning (read-only)
 
 /**
  * @typedef {{
  *   token: Job, dimension: Dimension, anchor: { x: number, z: number }, radius: number, seed: number,
- *   exclusions: Rect[], say: (lines: string[]) => void, maxPlanBytes?: number, progress?: import("./civProgress.js").Progress
+ *   exclusions: ProtectedArea[], plannerFootprints?: ProtectedArea[],
+ *   say: (lines: string[]) => void, maxPlanBytes?: number,
+ *   progress?: import("./civProgress.js").Progress,
+ *   district?: number, siteMode?: "search" | "here", planSeed?: number
  * }} PlanContext
  * @typedef {{
- *   ok: boolean, cancelled?: boolean, stage: string, reasons: string[],
- *   site?: any, plan?: any, record?: any, ground?: any, region?: Rect, payload?: any,
+ *   ok: boolean, cancelled?: boolean, fatal?: boolean, stage: string, reasons: string[],
+ *   district: number, name: string, masterIsNew: boolean, layoutId?: string,
+ *   site?: any, plan?: any, record?: any, ground?: any, groundField?: any, region?: Rect, payload?: any, master?: any,
  *   stats: Record<string, any>
  * }} PlanOutcome
  */
 
 /**
- * Scan, rank, plan, validate and plan the first district's construction. READ-ONLY.
+ * "district 3 (Saltmere, district-3)" - every runtime line names the district it is working on.
+ * @param {number} index @param {any} [plan]
+ */
+function districtLabel(index, plan = undefined) {
+    const entry = /** @type {any[]} */ (plan?.districts ?? []).find((district) => district?.index === index);
+    return entry !== undefined ? `district ${String(index)} (${String(entry.name)}, ${districtIdFor(index)})` : `district ${String(index)} (${districtIdFor(index)})`;
+}
+
+/** @param {number} index @param {string} [stage] @returns {PlanOutcome} */
+function newOutcome(index, stage = "scan") {
+    return { ok: false, stage, reasons: [], district: index, name: districtIdFor(index), masterIsNew: false, stats: { blocksWritten: 0 } };
+}
+
+/**
+ * The five-district master plan of this world, if one is stored (it lives once, in `civ:plan`, and every district
+ * is planned from it). Older worlds stored the plan and district 1's ground together in that slot; their `plan`
+ * member is read the same way.
+ *
+ * @returns {{ status: string, plan: any, payload: any, planSeed: number | undefined, anchor: { x: number, z: number } | undefined, reason: string | undefined }}
+ */
+export function loadMasterPlan() {
+    const loaded = createPlanStore(world).loadPlan();
+    const payload = loaded.plan;
+    return {
+        status: loaded.status,
+        plan: payload?.plan,
+        payload,
+        planSeed: typeof payload?.planSeed === "number" ? payload.planSeed : typeof payload?.siteChecksum === "string" ? payload.seed : undefined,
+        anchor: payload?.anchor,
+        reason: loaded.reason,
+    };
+}
+
+/**
+ * Plan ONE district, read-only. If the world already holds a master plan, only that district's own region is
+ * surveyed (no site search, no distant chunks); otherwise the civilization's master plan is made first, either by
+ * searching nearest-first (`siteMode` unset - the behaviour of every run so far) or on the spot the developer is
+ * standing (`siteMode: "here"`).
+ *
  * @param {PlanContext} ctx
  * @returns {Promise<PlanOutcome>}
  */
 export async function planWorld(ctx) {
+    const index = ctx.district ?? 1;
+    assertIndex(index);
+    const stored = loadMasterPlan();
+    if (stored.plan !== undefined && stored.plan !== null) {
+        return planOnStoredMaster(ctx, stored.plan, index, stored.planSeed);
+    }
+    return planNewMaster(ctx, index);
+}
+
+/**
+ * One district of an already stored master plan. The site search is skipped entirely: the civilization's anchor is
+ * fixed, so the only ground that matters is the district's own region.
+ *
+ * @param {PlanContext} ctx @param {any} plan @param {number} index @param {number | undefined} storedSeed
+ * @returns {Promise<PlanOutcome>}
+ */
+async function planOnStoredMaster(ctx, plan, index, storedSeed) {
+    const out = newOutcome(index, "survey");
+    out.plan = plan;
+    const ops = newOps();
+    out.stats.ops = ops;
+    out.stats.history = [];
+    out.stats.planAttempts = 1;
+    const planSeed = storedSeed ?? ctx.planSeed ?? ctx.seed;
+    const read = await readRegion(ctx, plan, index);
+    if (ctx.token.cancelled) {
+        out.cancelled = true;
+        return finishFail(out, "cancelled", ["cancelled"]);
+    }
+    if (!read.ok) {
+        return finishFail(out, read.stage, read.problems);
+    }
+    out.region = read.region;
+    out.groundField = read.fine.field;
+    out.stats.fine = read.fine.stats;
+    out.stats.survey = { tilesScanned: read.fine.stats.attempted, tilesTotal: read.fine.stats.tilesTotal, chunksScanned: read.fine.stats.chunksScanned, columns: read.columns, mode: "stored-plan" };
+    return planDistrictTail(ctx, plan, index, planSeed, out, false);
+}
+
+/** @param {PlanOutcome} out @param {string} stage @param {string[]} reasons */
+function finishFail(out, stage, reasons) {
+    out.stage = stage;
+    out.reasons = reasons;
+    out.fatal = true;
+    out.ok = false;
+    return out;
+}
+
+// ---------------------------------------------------------------------------------------------
+// One district: region survey -> construction plan -> ground export -> storage check. READ-ONLY.
+
+/**
+ * The inputs of one district's site payload: everything a restart needs to rebuild the same record (the master plan
+ * itself stays in its own slot, so no district's ground is ever stored twice).
+ * @param {PlanContext} ctx @param {any} plan @param {number} index @param {number} planSeed @param {any} ground @param {any} record
+ */
+function sitePayloadOf(ctx, plan, index, planSeed, ground, record) {
+    return {
+        version: PLAN_VERSION,
+        district: index,
+        districtId: districtIdFor(index),
+        ground,
+        siteChecksum: record.checksum,
+        siteOptions: siteOptionsOf(record),
+        seed: ctx.seed,
+        planSeed,
+        anchor: { x: plan.anchor.x, z: plan.anchor.z },
+        site: { layoutId: record.layoutId, version: SITE_PLAN_VERSION },
+        ops: siteOpCount(record),
+    };
+}
+
+/**
+ * Full-resolution survey of ONE district's own region: nothing outside it is read, so no distant chunk is ever
+ * generated for a district that shares a master plan with its neighbours.
+ *
+ * @param {PlanContext} ctx @param {any} plan @param {number} index @param {boolean} [numbered]
+ * @returns {Promise<{ ok: true, fine: any, region: Rect, columns: number } | { ok: false, stage: string, problems: string[] }>}
+ */
+async function readRegion(ctx, plan, index, numbered = false) {
+    const region = siteGroundRegion(plan, index);
+    const columns = (region.x1 - region.x0 + 1) * (region.z1 - region.z0 + 1);
+    const tile = tileSizeNow();
+    const tiles = Math.ceil((region.x1 - region.x0 + 1) / tile) * Math.ceil((region.z1 - region.z0 + 1) / tile);
+    setPhase(ctx.progress, 4, "ground survey");
+    ctx.say([`${numbered ? "[4/6] " : ""}Reading ${districtLabel(index, plan)} at full resolution (read-only, one sample per column): ${String(columns)} columns in ${String(tiles)} ${String(tile)}-block tiles; up to ${String(tiles * (tile / 16) ** 2)} chunks may have to be generated and loaded, nothing outside this district is read.`]);
+    let lastTile = 0;
+    const fine = await scanFull(ctx.token, ctx.dimension, region, {
+        progress: ctx.progress,
+        onTile(done, total) {
+            if (done - lastTile >= Math.max(1, Math.floor(total / 4)) && done < total) {
+                lastTile = done;
+                ctx.say([`      ground ${String(Math.floor((done * 100) / total))}%`]);
+            }
+        },
+    });
+    if (fine.cancelled) {
+        return { ok: false, stage: "cancelled", problems: ["cancelled"] };
+    }
+    if (fine.stats.aborted !== undefined) {
+        return { ok: false, stage: "stalled", problems: [fine.stats.aborted] };
+    }
+    if (fine.stats.unloaded > 0) {
+        return { ok: false, stage: "unloaded", problems: [`${String(fine.stats.unloaded)} column(s) of ${districtLabel(index, plan)} could not be read (chunks not loaded); nothing was guessed and nothing was changed`] };
+    }
+    return { ok: true, fine, region, columns };
+}
+
+/**
+ * The district's construction plan, its containment check, the frozen ground and the storage measurement.
+ * Everything after the region has been read; nothing here writes a block.
+ *
+ * @param {PlanContext} ctx @param {any} plan @param {number} index @param {number} planSeed @param {PlanOutcome} out
+ * @param {boolean} numbered print the [5-6/6] pipeline lines (a civilization whose master plan was just made)
+ * @returns {Promise<PlanOutcome>}
+ */
+async function planDistrictTail(ctx, plan, index, planSeed, out, numbered) {
+    /** @type {(stage: string, reasons: string[], fatal?: boolean) => PlanOutcome} */
+    const fail = (stage, reasons, fatal = true) => {
+        out.stage = stage;
+        out.reasons = reasons;
+        out.fatal = fatal;
+        out.record = undefined;
+        out.ground = undefined;
+        out.payload = undefined;
+        out.ok = false;
+        return out;
+    };
+    const label = districtLabel(index, plan);
+    if (out.region === undefined || out.groundField === undefined) {
+        return fail("survey", [`${label} was never surveyed`]);
+    }
+    const region = out.region;
+    const ops = /** @type {import("../civ/regions.js").Ops} */ (out.stats.ops);
+    setPhase(ctx.progress, 5, "district plan");
+    ctx.say(numbered ? ["[5/6] Planning walls, gates, roads and buildings..."] : [`Planning ${label}'s walls, gates, roads and buildings...`]);
+    const clipped = clipField(out.groundField, region);
+    const done = await runJobAsync(ctx.token, planSiteSteps(plan, index, clipped, region, out.groundField, { seed: planSeed, excludeFootprints: ctx.plannerFootprints ?? ctx.exclusions, ops }), ctx.progress);
+    if (ctx.token.cancelled || done === undefined) {
+        out.cancelled = true;
+        return fail("cancelled", ["cancelled"]);
+    }
+    if (!done.ok) {
+        return fail(done.stage, done.problems, done.retry === true ? false : true);
+    }
+    const record = done.record;
+    const opCount = siteOpCount(record);
+    if (!Number.isInteger(opCount) || opCount <= 0 || opCount > MAX_SANE_OPS) {
+        return fail("site-plan", [`implausible operation count ${String(opCount)}`]);
+    }
+    out.record = record;
+    out.ground = done.ground;
+    out.layoutId = record.layoutId;
+    out.stats.notes = done.notes;
+
+    setPhase(ctx.progress, 6, "storage check");
+    ctx.say(numbered ? ["[6/6] Checking the plan fits the world's storage..."] : ["Checking the plan fits the world's storage..."]);
+    const payload = sitePayloadOf(ctx, plan, index, planSeed, done.ground, record);
+    const maxBytes = ctx.maxPlanBytes ?? seams.maxPlanBytes;
+    const options = maxBytes === undefined ? {} : { maxBytes };
+    const measure = siteStoreFor(index, options).measurePlan(payload);
+    const masterPayload = out.masterIsNew ? { version: PLAN_VERSION, plan, seed: ctx.seed, planSeed, anchor: { x: plan.anchor.x, z: plan.anchor.z } } : undefined;
+    const masterMeasure = masterPayload === undefined ? undefined : createPlanStore(world, options).measurePlan(masterPayload);
+    const masterBytes = masterMeasure?.bytes ?? 0;
+    const masterChunks = masterMeasure?.chunks ?? 0;
+    out.payload = payload;
+    out.master = masterPayload;
+    out.stats.storage = {
+        // Both plan families this run writes: the one master plan (`civ:plan`) and this district's site slot.
+        bytes: measure.bytes + masterBytes,
+        chunks: measure.chunks + masterChunks,
+        limit: measure.limit,
+        ground: siteGroundBytes(done.ground),
+        site: { bytes: measure.bytes, chunks: measure.chunks, limit: measure.limit, fits: measure.fits, prefix: sitePrefixFor(index) },
+        master: { bytes: masterBytes, chunks: masterChunks, limit: measure.limit, fits: masterMeasure?.fits !== false, prefix: PLAN_PREFIX, stored: masterPayload !== undefined },
+    };
+    if (!measure.fits) {
+        return fail("too-big", [`${label}'s construction plan needs ${String(measure.bytes)} bytes but only ${String(measure.limit)} may be stored; nothing was changed. Try another seed= or a different place.`]);
+    }
+    if (masterMeasure !== undefined && !masterMeasure.fits) {
+        return fail("too-big", [`the master plan needs ${String(masterMeasure.bytes)} bytes but only ${String(masterMeasure.limit)} may be stored; nothing was changed. Try another seed= or a different place.`]);
+    }
+    out.stats.opsMaxRun = ops.maxRun;
+    seams.onOutcome?.(out);
+    out.ok = true;
+    out.stage = "planned";
+    out.reasons = [];
+    return out;
+}
+
+/**
+ * A brand-new civilization: survey the terrain, rank sites, make and validate the master plan, then plan the
+ * requested district on top of it.
+ * @param {PlanContext} ctx @param {number} index
+ * @returns {Promise<PlanOutcome>}
+ */
+async function planNewMaster(ctx, index) {
     /** @type {PlanOutcome} */
-    const out = { ok: false, stage: "scan", reasons: [], stats: { blocksWritten: 0 } };
+    const out = newOutcome(index, "scan");
+    out.masterIsNew = true;
     const { token } = ctx;
     /** @param {string} stage @param {string[]} reasons */
     const fail = (stage, reasons) => {
@@ -188,18 +597,23 @@ export async function planWorld(ctx) {
         out.reasons = reasons;
         return out;
     };
+    const explicit = ctx.siteMode === "here";
 
-    // (a) progressive nearest-first survey, ring by ring, stopping as soon as a site is found
+    // (a) progressive nearest-first survey, ring by ring, stopping as soon as a site is found - or, with
+    // `site=here`, exactly as far as the master plan reaches (MASTER_REACH) and no further: the spot is chosen, only
+    // its terrain has to be proven.
     // The master plan reaches MASTER_PLAN_RADIUS from the site centre, beyond the 480-block analysis window: keep that much clear.
     const progress = ctx.progress;
     const clearance = Math.max(SITE_DEFAULTS.exclusionMargin, PROTECT_MARGIN, MASTER_PLAN_RADIUS - SITE_DEFAULTS.windowSize / 2 + 24);
-    const rankOptions = { searchRadius: ctx.radius, exclusions: ctx.exclusions, exclusionMargin: clearance };
-    const reach = MASTER_PLAN_RADIUS + 16;
-    const scanRadius = Math.max(scanRadiusFor(rankOptions), ctx.radius + reach);
+    const rankOptions = { searchRadius: explicit ? 0 : ctx.radius, exclusions: /** @type {any[]} */ (ctx.exclusions), exclusionMargin: clearance };
+    const reach = MASTER_REACH;
+    const scanRadius = explicit ? reach : Math.max(scanRadiusFor(rankOptions), ctx.radius + reach);
     /** @type {number[]} */
     const rings = [];
-    for (let ring = reach + 24; ring < scanRadius; ring += 64) {
-        rings.push(ring);
+    if (!explicit) {
+        for (let ring = reach + 24; ring < scanRadius; ring += 64) {
+            rings.push(ring);
+        }
     }
     rings.push(scanRadius);
     const tileSide = tileSizeNow();
@@ -208,7 +622,9 @@ export async function planWorld(ctx) {
     const allTiles = countTiles(ctx.anchor, scanRadius, tileSide);
     setPhase(progress, 1, "survey");
     ctx.say([
-        `[1/6] Surveying the terrain around you (read-only, every ${String(SITE_DEFAULTS.step)}th column), nearest first, ring by ring, stopping as soon as a suitable site is found.`,
+        explicit
+            ? `[1/6] Using where you stand as the civilization anchor: surveying the ${String(scanRadius)}-block radius the master plan reaches (read-only, every ${String(SITE_DEFAULTS.step)}th column). No site is searched for.`
+            : `[1/6] Surveying the terrain around you (read-only, every ${String(SITE_DEFAULTS.step)}th column), nearest first, ring by ring, stopping as soon as a suitable site is found.`,
         `      Up to ${String(allTiles * chunksPerTile)} chunks (first ring ${String(firstTiles * chunksPerTile)}, in ${String(tileSide)}-block tiles) may have to be generated and loaded; in a fresh world that can take minutes (an estimate until measured in Minecraft). Progress is reported at least every ${String(Math.round(CIV.heartbeatTicks / 20))} s.`,
     ]);
     /** @type {ReturnType<typeof rankSites> | undefined} */
@@ -225,6 +641,9 @@ export async function planWorld(ctx) {
             lastTileTick = now;
         },
         evaluate(field, ring, last) {
+            if (explicit) {
+                return false;
+            }
             const searchRadius = last ? ctx.radius : Math.min(ctx.radius, ring - reach);
             if (!last && searchRadius < 24) {
                 return false;
@@ -241,7 +660,7 @@ export async function planWorld(ctx) {
         },
     });
     out.stats.coarse = coarse.stats;
-    out.stats.survey = { tilesScanned: coarse.stats.attempted, tilesTotal: coarse.tilesTotal, chunksScanned: coarse.stats.chunksScanned, scannedRadius: coarse.scannedRadius, fullRadius: scanRadius, early: coarse.early, rings: coarse.stats.ringsDone };
+    out.stats.survey = { tilesScanned: coarse.stats.attempted, tilesTotal: coarse.tilesTotal, chunksScanned: coarse.stats.chunksScanned, scannedRadius: coarse.scannedRadius, fullRadius: scanRadius, early: coarse.early, rings: coarse.stats.ringsDone, mode: explicit ? "here" : "search" };
     if (coarse.cancelled) {
         out.cancelled = true;
         return fail("cancelled", ["cancelled"]);
@@ -253,16 +672,19 @@ export async function planWorld(ctx) {
         return fail("scan", ["no terrain could be read around you (every column was unloaded)"]);
     }
 
-    // (b) the ranking of the last evaluated ring decides
+    // (b) the ranking of the last evaluated ring decides - or, with `site=here`, the one window centred on you
     setPhase(progress, 2, "ranking sites");
     ctx.say([`[2/6] Surveyed ${String(coarse.stats.attempted)} of ${String(coarse.tilesTotal)} tiles (${String(coarse.stats.chunksScanned)} chunks, ${String(coarse.field.columnsRead)} columns read, ${String(coarse.stats.unloaded)} unloaded${coarse.early ? ", stopped early" : ""}).`]);
+    if (explicit) {
+        ranking = rankSites(coarse.field, ctx.anchor, { ...rankOptions, searchRadius: 0 });
+    }
     if (ranking === undefined) {
         return fail("site", ["no ring could be evaluated"]);
     }
     const found = /** @type {ReturnType<typeof rankSites>} */ (ranking);
-    out.stats.ranking = { evaluated: found.evaluated, reads: found.reads };
+    out.stats.ranking = { evaluated: found.evaluated, reads: found.reads, mode: explicit ? "here" : "search" };
     if (found.site === null) {
-        return fail("site", found.reasons.slice(0, 8));
+        return fail("site", explicit ? [`where you stand is not suitable: ${found.reasons.slice(0, 6).join("; ")}`] : found.reasons.slice(0, 8));
     }
     const siteFound = found.site;
     out.site = siteFound;
@@ -277,7 +699,7 @@ export async function planWorld(ctx) {
     for (let attempt = 0; attempt < WORLD_ATTEMPTS; attempt += 1) {
         const planSeed = (ctx.seed + 7919 * attempt) | 0;
         setPhase(progress, 3, "master plan");
-        ctx.say([`[3/6] Site found ${String(Math.round(siteFound.distance))} blocks away; planning five districts${attempt > 0 ? ` (retry ${String(attempt)}, seed ${String(planSeed)})` : ""}...`]);
+        ctx.say([`[3/6] ${explicit ? "Anchor accepted" : `Site found ${String(Math.round(siteFound.distance))} blocks away`}; planning five districts${attempt > 0 ? ` (retry ${String(attempt)}, seed ${String(planSeed)})` : ""}...`]);
         const made = await runJobAsync(token, planMasterSteps(coarse.field, { seed: planSeed, anchor: { x: siteFound.x, z: siteFound.z }, radius: MASTER_PLAN_RADIUS, ops }), progress);
         if (token.cancelled || made === undefined) {
             out.cancelled = true;
@@ -305,75 +727,34 @@ export async function planWorld(ctx) {
             continue;
         }
         out.plan = plan;
-
-        const region = siteGroundRegion(plan, 1);
-        out.region = region;
-        const columns = (region.x1 - region.x0 + 1) * (region.z1 - region.z0 + 1);
-        setPhase(progress, 4, "ground survey");
-        ctx.say([`[4/6] Reading district 1 at full resolution (${String(columns)} columns)...`]);
-        let lastTile = 0;
-        const fine = await scanFull(token, ctx.dimension, region, {
-            progress,
-            onTile(done, total) {
-                if (done - lastTile >= Math.max(1, Math.floor(total / 4)) && done < total) {
-                    lastTile = done;
-                    ctx.say([`      ground ${String(Math.floor((done * 100) / total))}%`]);
-                }
-            },
-        });
-        out.stats.fine = fine.stats;
-        if (fine.cancelled) {
+        const read = await readRegion(ctx, plan, index, true);
+        if (token.cancelled) {
             out.cancelled = true;
             return fail("cancelled", ["cancelled"]);
         }
-        if (fine.stats.aborted !== undefined) {
-            return fail("stalled", [fine.stats.aborted]);
-        }
-        if (fine.stats.unloaded > 0) {
-            return fail("unloaded", [`${String(fine.stats.unloaded)} column(s) of district 1 could not be read (chunks not loaded); nothing was guessed and nothing was changed`]);
-        }
-
-        setPhase(progress, 5, "district plan");
-        ctx.say(["[5/6] Planning walls, gates, roads and buildings..."]);
-        const clipped = clipField(fine.field, region);
-        const done = await runJobAsync(token, planSiteSteps(plan, clipped, region, fine.field, { seed: planSeed, excludeFootprints: ctx.exclusions, ops }), progress);
-        if (token.cancelled || done === undefined) {
-            out.cancelled = true;
-            return fail("cancelled", ["cancelled"]);
-        }
-        if (!done.ok) {
-            history.push(`attempt ${String(attempt)}: ${done.stage}: ${done.problems.slice(0, 3).join(" | ")}`);
-            out.stage = done.stage;
-            out.reasons = done.problems;
+        if (!read.ok) {
+            history.push(`attempt ${String(attempt)}: ${read.stage}: ${read.problems.slice(0, 3).join(" | ")}`);
+            out.stage = read.stage;
+            out.reasons = read.problems;
+            if (read.stage !== "site-plan" && read.stage !== "containment") {
+                return out;
+            }
             continue;
         }
-        const record = done.record;
-        const opCount = siteOpCount(record);
-        if (!Number.isInteger(opCount) || opCount <= 0 || opCount > MAX_SANE_OPS) {
-            return fail("site-plan", [`implausible operation count ${String(opCount)}`]);
+        out.region = read.region;
+        out.groundField = read.fine.field;
+        out.stats.fine = read.fine.stats;
+        const planned = await planDistrictTail(ctx, plan, index, planSeed, out, true);
+        if (planned.ok) {
+            planned.stats.planAttempts = attempt + 1;
+            return planned;
         }
-        out.record = record;
-        const ground = done.ground;
-
-        setPhase(progress, 6, "storage check");
-        ctx.say(["[6/6] Checking the plan fits the world's storage..."]);
-        const payload = { version: PLAN_VERSION, plan, ground, siteChecksum: record.checksum, siteOptions: siteOptionsOf(record), seed: ctx.seed, planSeed, anchor: { x: plan.anchor.x, z: plan.anchor.z }, site: { layoutId: record.layoutId, version: SITE_PLAN_VERSION } };
-        const maxBytes = ctx.maxPlanBytes ?? seams.maxPlanBytes;
-        const planStore = createPlanStore(world, maxBytes === undefined ? {} : { maxBytes });
-        const measure = planStore.measurePlan(payload);
-        out.stats.storage = { bytes: measure.bytes, chunks: measure.chunks, limit: measure.limit, ground: siteGroundBytes(ground) };
-        if (!measure.fits) {
-            return fail("too-big", [`the plan needs ${String(measure.bytes)} bytes but only ${String(measure.limit)} may be stored; nothing was changed. Try another seed= or a different place.`]);
+        if (planned.cancelled || planned.fatal !== false) {
+            return planned;
         }
-        out.ground = ground;
-        out.payload = payload;
-        out.stats.opsMaxRun = ops.maxRun;
-        out.stats.planAttempts = attempt + 1;
-        seams.onOutcome?.(out);
-        out.ok = true;
-        out.stage = "planned";
-        out.reasons = [];
-        return out;
+        history.push(`attempt ${String(attempt)}: ${planned.stage}: ${planned.reasons.slice(0, 3).join(" | ")}`);
+        out.groundField = undefined;
+        out.region = undefined;
     }
     out.stats.opsMaxRun = ops.maxRun;
     out.stats.planAttempts = WORLD_ATTEMPTS;
@@ -401,36 +782,61 @@ function* planMasterSteps(field, options) {
 }
 
 /**
- * District 1 construction plan, containment check and ground export as one generator.
- * @param {any} plan @param {any} clipped @param {Rect} region @param {any} rawField
- * @param {{ seed: number, excludeFootprints: Rect[], ops: import("../civ/regions.js").Ops }} options
- * @returns {Generator<void, { ok: true, record: any, ground: any } | { ok: false, stage: string, problems: string[] }, void>}
+ * ONE district's construction plan, its containment check and its ground export as one generator.
+ * A district the composer has no layout for is refused here and the refusal reason is what the caller reports.
+ *
+ * @param {any} plan @param {number} index @param {any} clipped @param {Rect} region @param {any} rawField
+ * @param {{ seed: number, excludeFootprints: ProtectedArea[], ops: import("../civ/regions.js").Ops }} options
+ * @returns {Generator<void, { ok: true, record: any, ground: any, notes: string[] } | { ok: false, stage: string, problems: string[], retry?: boolean }, void>}
  */
-function* planSiteSteps(plan, clipped, region, rawField, options) {
-    const site = yield* planDistrictSiteSteps(plan, 1, clipped, { seed: options.seed, excludeFootprints: options.excludeFootprints, ops: options.ops });
+function* planSiteSteps(plan, index, clipped, region, rawField, options) {
+    if (!planHasDistrict(plan, index)) {
+        return { ok: false, stage: "site-plan", problems: [`the stored master plan has no district ${String(index)}`], retry: false };
+    }
+    const site = yield* seams.planSite(plan, index, clipped, { seed: options.seed, excludeFootprints: options.excludeFootprints, ops: options.ops });
     if (!site.ok || site.record === null || site.problems.length > 0) {
-        return { ok: false, stage: "site-plan", problems: ["the district construction plan has problems", ...site.problems.slice(0, 8)] };
+        return { ok: false, stage: "site-plan", problems: [`district ${String(index)} has no construction plan yet: ${site.problems.slice(0, 8).join(" | ")}`], retry: true };
     }
     if (clipped.outsideReads() > 0) {
         const first = clipped.firstOutside();
-        return { ok: false, stage: "site-plan", problems: [`the planner read ground outside the stored region at ${String(first?.x)},${String(first?.z)}`] };
+        return { ok: false, stage: "site-plan", problems: [`the planner read ground outside the stored region at ${String(first?.x)},${String(first?.z)}`], retry: true };
     }
-    const contained = yield* siteContainmentProblemsSteps(plan, 1, site.record, options.ops);
+    const contained = yield* siteContainmentProblemsSteps(plan, index, site.record, options.ops);
     if (contained.length > 0) {
-        return { ok: false, stage: "containment", problems: ["a structure would leave its district", ...contained.slice(0, 6)] };
+        return { ok: false, stage: "containment", problems: ["a structure would leave its district", ...contained.slice(0, 6)], retry: true };
     }
     const ground = yield* exportSiteGroundSteps(rawField, region, options.ops);
     markYield(options.ops);
-    return { ok: true, record: site.record, ground };
+    return { ok: true, record: site.record, ground, notes: site.notes };
 }
 
 /**
- * Human numbers for a successful planning outcome (plan-only report and the pre-build summary).
+ * Does this master plan hold the district at all (1..5 and a bbox the region can be derived from)?
+ * @param {any} plan @param {number} index
+ */
+export function planHasDistrict(plan, index) {
+    const entry = /** @type {any[]} */ (plan?.districts ?? []).find((district) => district?.index === index);
+    if (entry === undefined) {
+        return false;
+    }
+    try {
+        siteGroundRegion(plan, index);
+    } catch (_error) {
+        return false;
+    }
+    return true;
+}
+
+/**
+ * Human numbers for a successful planning outcome (plan-only report and the pre-build summary), for the district
+ * the outcome planned.
  * @param {PlanOutcome} outcome
  */
 export function describePlan(outcome) {
     const plan = outcome.plan;
     const record = outcome.record;
+    const index = outcome.district ?? 1;
+    const entry = /** @type {any[]} */ (plan?.districts ?? []).find((district) => district?.index === index) ?? plan?.districts?.[0];
     const ops = siteOpCount(record);
     // Slices measured offline: build windows run about 3x the ideal ops/400 (stage ends, holds, trees); survey and planning
     // slices are the measured ones. One slice per tick is assumed (an ESTIMATE until measured in Minecraft).
@@ -439,22 +845,131 @@ export function describePlan(outcome) {
     const planSlices = outcome.stats.ops?.yields ?? 0;
     const slices = buildSlices + surveySlices + planSlices;
     const ticks = Math.ceil(slices / CIV_LIMITS.slicesPerTick);
+    /** @type {(list: any) => number} */
+    const sizeOf = (list) => (Array.isArray(list) ? list.length : 0);
     return {
-        centre: { x: Math.round(plan.districts[0].centroid.x), z: Math.round(plan.districts[0].centroid.z) },
-        hq: plan.districts[0].hq,
+        district: index,
+        districtId: districtIdFor(index),
+        name: entry?.name ?? `district ${String(index)}`,
+        layoutId: record?.layoutId ?? outcome.layoutId,
+        centre: { x: Math.round(entry?.centroid?.x ?? 0), z: Math.round(entry?.centroid?.z ?? 0) },
+        hq: entry?.hq,
         areas: /** @type {number[]} */ (plan.stats.perDistrictArea),
         compactness: /** @type {number[]} */ (plan.stats.compactness),
         bboxFill: /** @type {number[]} */ (plan.stats.bboxFill),
         wallLength: plan.stats.wallLength,
         gateCount: plan.stats.gateCount,
         roadLength: plan.stats.roadLength,
-        lots: /** @type {any[]} */ (record.lots).length,
-        elements: SITE_STAGE_NAMES.reduce((sum, stage) => sum + /** @type {any[]} */ (record[stage] ?? []).length, 0),
+        lots: sizeOf(record?.lots),
+        elements: SITE_STAGE_NAMES.reduce((sum, stage) => sum + sizeOf(record?.[stage]), 0),
         ops,
+        // Reported, never silently ignored: `ok:true` only means the geometry is sound, not that the
+        // district got the facility mix its role promises. A shortcoming is not a reason to refuse an
+        // in-game build, so this is loud output here and a hard assertion in the offline audit tests.
+        // Only the single-district half of the audit runs: the city-wide rules compare the five roles
+        // against each other and would call a flawless lone district "jammed" for having no neighbours yet.
+        facilityProblems: auditRecord(record),
+        shortfalls: shortfallOf(record),
         slices,
         minutes: Math.round((ticks / CIV_LIMITS.ticksPerSecond / 60) * 10) / 10,
         stored: outcome.stats.storage,
     };
+}
+
+/**
+ * A whole-civilization read-out from the stored master plan alone: what each district claims and what is known of
+ * its construction. NO terrain is read and nothing is written, so `civ:generate_plan district=all` is cheap.
+ *
+ * @param {any} plan the five-district master plan
+ * @param {any} kingdom the loaded kingdom (its per-district `civ` records carry the measured op counts)
+ * @returns {{ rows: Array<{ index: number, id: string, name: string, status: string, area: number, columns: number, ops: number, opsTotal: number, measured: boolean, estimated: number }>, totals: { columns: number, ops: number, measuredOps: number, measured: number, complete: number, building: number, paused: number, unbuilt: number }, problems: string[] }}
+ */
+export function civilizationOverview(plan, kingdom) {
+    const districts = /** @type {any[]} */ (plan?.districts ?? []);
+    /** @type {Array<{ index: number, id: string, name: string, status: string, area: number, columns: number, ops: number, opsTotal: number, measured: boolean, estimated: number }>} */
+    const rows = [];
+    const totals = { columns: 0, ops: 0, measuredOps: 0, measured: 0, complete: 0, building: 0, paused: 0, unbuilt: 0 };
+    if (districts.length === 0) {
+        return { rows, totals, problems: ["no master plan is stored: there is nothing to total up (run civ:generate_plan first)"] };
+    }
+    for (const entry of districts) {
+        const index = Number(entry?.index);
+        if (!Number.isInteger(index)) {
+            continue;
+        }
+        let columns = 0;
+        try {
+            const region = siteGroundRegion(plan, index);
+            columns = (region.x1 - region.x0 + 1) * (region.z1 - region.z0 + 1);
+        } catch (_error) {
+            columns = 0;
+        }
+        const civ = /** @type {any[]} */ (kingdom?.districts ?? []).find((district) => district.id === districtIdFor(index))?.civ;
+        const measured = civ !== undefined && Number.isInteger(civ.opsTotal);
+        rows.push({
+            index,
+            id: districtIdFor(index),
+            name: String(entry?.name ?? ""),
+            status: String(civ?.status ?? "not built"),
+            area: Number(plan?.stats?.perDistrictArea?.[index - 1] ?? 0),
+            columns,
+            ops: measured ? Number(civ.opsTotal) : 0,
+            opsTotal: measured ? Number(civ.opsTotal) : 0,
+            measured,
+            estimated: 0,
+        });
+        totals.columns += columns;
+        if (civ?.status === "complete") totals.complete += 1;
+        else if (civ?.status === "building") totals.building += 1;
+        else if (civ?.status === "paused") totals.paused += 1;
+        else totals.unbuilt += 1;
+        if (measured) {
+            totals.measured += 1;
+            totals.measuredOps += Number(civ.opsTotal);
+        }
+    }
+    // Districts nobody has surveyed yet: scale the measured work of the ones that have, per claimed column.
+    const perColumn = totals.measuredOps > 0 && rows.some((row) => row.measured && row.ops > 0)
+        ? totals.measuredOps / rows.filter((row) => row.measured).reduce((sum, row) => sum + row.columns, 0)
+        : 0;
+    for (const row of rows) {
+        row.estimated = row.measured ? 0 : Math.round(row.columns * perColumn);
+        totals.ops += row.measured ? row.ops : row.estimated;
+    }
+    return { rows, totals, problems: [] };
+}
+
+/**
+ * Take back what `persistRun` stored when the run cannot be authorised after all (an unwritable kingdom record):
+ * this district's queue and site payload, and the master plan too when this world made it in this same run.
+ * Never touches another district's slots.
+ *
+ * @param {PlanOutcome} outcome
+ * @returns {string[]} what could not be cleared
+ */
+export function discardRun(outcome) {
+    const index = outcome.district ?? 1;
+    const { planStore, siteStore, jobStore } = stores(index);
+    /** @type {string[]} */
+    const failed = [];
+    try {
+        jobStore.clear();
+    } catch (error) {
+        failed.push(`queue: ${String(error)}`);
+    }
+    try {
+        siteStore.clear();
+    } catch (error) {
+        failed.push(`site plan: ${String(error)}`);
+    }
+    if (outcome.masterIsNew === true) {
+        try {
+            planStore.clear();
+        } catch (error) {
+            failed.push(`master plan: ${String(error)}`);
+        }
+    }
+    return failed;
 }
 
 const SITE_STAGE_NAMES = jobs.JOB_STAGES;
@@ -486,72 +1001,119 @@ export function jobSpecsOf(record) {
  * @typedef {ReturnType<typeof createPlanStore>} PlanStore
  */
 
-/** @returns {{ planStore: PlanStore, jobStore: ReturnType<typeof jobs.createJobStore> }} */
-function stores() {
-    return { planStore: createPlanStore(world), jobStore: jobs.createJobStore(world) };
+/** @param {number} [index] @returns {{ planStore: PlanStore, siteStore: PlanStore, jobStore: ReturnType<typeof jobs.createJobStore> }} */
+function stores(index = 1) {
+    return { planStore: createPlanStore(world), siteStore: siteStoreFor(index), jobStore: jobStoreFor(index) };
 }
 
 /**
- * Save plan + ground, job queue (nothing is built yet) and let the caller save the kingdom record.
- * Any failure leaves the world untouched.
+ * Store what this run planned: the civilization's ONE master plan (only when this run made it), this district's OWN
+ * site payload and this district's OWN job queue.
+ * The ordering discipline is unchanged and is what makes a crash harmless: every size is measured BEFORE the first
+ * property write, and a queue write that fails takes the payloads it would have orphaned back down with it.
  *
  * @param {PlanOutcome} outcome
- * @returns {{ ok: boolean, reason?: string, queue?: JobQueue, saved?: any }}
+ * @returns {{ ok: boolean, reason?: string, queue?: JobQueue, saved?: any, savedMaster?: any, bytes?: Record<string, number> }}
  */
 export function persistRun(outcome) {
-    const { planStore } = stores();
-    const jobStore = jobs.createJobStore(world, seams.maxJobBytes === undefined ? {} : { maxBytes: seams.maxJobBytes });
+    const index = outcome.district ?? 1;
+    assertIndex(index);
+    const { planStore, siteStore, jobStore } = stores(index);
     try {
-        // Check the queue BEFORE the plan is stored, so an oversize queue can never leave an orphan plan behind.
+        // Check the queue BEFORE any plan is stored, so an oversize queue can never leave an orphan plan behind.
         const queue = jobs.createQueue(jobSpecsOf(outcome.record), { planHash: outcome.record.checksum, maxAttempts: 8 });
         const queueBytes = utf8Length(jobs.serializeQueue(queue));
         const queueLimit = seams.maxJobBytes ?? CIV_LIMITS.maxJobBytes;
         if (queueBytes > queueLimit) {
-            return { ok: false, reason: `the job queue would need ${String(queueBytes)} bytes but only ${String(queueLimit)} may be stored; nothing was stored` };
+            return { ok: false, reason: `the ${districtIdFor(index)} job queue would need ${String(queueBytes)} bytes but only ${String(queueLimit)} may be stored; nothing was stored` };
         }
-        const saved = planStore.savePlan(outcome.payload);
+        const siteBytes = utf8Length(JSON.stringify(outcome.payload));
+        const planLimit = seams.maxPlanBytes ?? CIV_LIMITS.maxPlanBytes;
+        if (siteBytes > planLimit) {
+            return { ok: false, reason: `the ${districtIdFor(index)} site plan would need ${String(siteBytes)} bytes but only ${String(planLimit)} may be stored; nothing was stored` };
+        }
+        const fresh = outcome.masterIsNew === true && outcome.master !== undefined;
+        if (fresh && !planStore.measurePlan(outcome.master).fits) {
+            return { ok: false, reason: `the master plan would need ${String(utf8Length(JSON.stringify(outcome.master)))} bytes but only ${String(planLimit)} may be stored; nothing was stored` };
+        }
+        const savedMaster = fresh ? planStore.savePlan(outcome.master) : undefined;
+        if (savedMaster !== undefined && !savedMaster.ok) {
+            return { ok: false, reason: `could not store the master plan (${String(savedMaster.reason ?? savedMaster.status)})` };
+        }
+        const saved = siteStore.savePlan(outcome.payload);
         if (!saved.ok) {
-            return { ok: false, reason: `could not store the plan (${String(saved.reason ?? saved.status)})` };
+            if (savedMaster !== undefined && savedMaster.ok) {
+                try {
+                    planStore.clear();
+                } catch (_error) {
+                    // best effort: a master plan without a record is harmless
+                }
+            }
+            return { ok: false, reason: `could not store the district plan (${String(saved.reason ?? saved.status)})` };
         }
         const queued = jobStore.saveQueue(queue);
         if (!queued.ok) {
             try {
-                planStore.clear();
+                siteStore.clear();
+                if (savedMaster !== undefined && savedMaster.ok) {
+                    planStore.clear();
+                }
             } catch (_error) {
                 // best effort: the plan without a record is harmless
             }
             return { ok: false, reason: `could not store the job queue (${String(queued.reason ?? queued.status)})` };
         }
-        return { ok: true, queue, saved };
+        return { ok: true, queue, saved, savedMaster, bytes: { queue: queueBytes, site: siteBytes, master: savedMaster !== undefined ? savedMaster.bytes : 0 } };
     } catch (error) {
         return { ok: false, reason: `storage failed: ${String(error)}` };
     }
 }
 
 /**
- * Reload everything from the stores only (restart recovery) and verify it.
+ * What a restart needs for ONE district: its master plan (shared, the single plan slot) plus its own site payload
+ * slot (sitePrefixFor) and its own queue slot (jobPrefixFor). Nothing here touches another district's data, and the
+ * checksum of the district's own `civ` record is still the gate: a payload that does not match is refused.
+ *
  * Heavy work (rebuilding the plan from the stored ground) runs as budgeted steps charged to `ops`.
+ *
  * @param {{ checksum?: string, seed?: number }} civ the district.civ record
  * @param {import("../civ/regions.js").Ops} ops
- * @returns {Generator<void, { ok: true, plan: any, record: any, queue: JobQueue, region: Rect, payload: any, recovered: number } | { ok: false, reasons: string[] }, void>}
+ * @param {number} [index]
+ * @returns {Generator<void, { ok: true, plan: any, record: any, queue: JobQueue, region: Rect, payload: any, district: number, recovered: number } | { ok: false, reasons: string[] }, void>}
  */
-export function* loadSavedRunSteps(civ, ops) {
-    const { planStore, jobStore } = stores();
-    const loadedPlan = planStore.loadPlan();
-    if (loadedPlan.status !== "ok" || loadedPlan.plan === undefined) {
-        return { ok: false, reasons: [`the stored plan is ${loadedPlan.status}${loadedPlan.reason ? ` (${loadedPlan.reason})` : ""}; refusing to continue`] };
+export function* loadSavedRunSteps(civ, ops, index = 1) {
+    assertIndex(index);
+    const { planStore, siteStore, jobStore } = stores(index);
+    const loadedMaster = planStore.loadPlan();
+    if (loadedMaster.status !== "ok" || loadedMaster.plan === undefined) {
+        return { ok: false, reasons: [`the stored plan is ${loadedMaster.status}${loadedMaster.reason ? ` (${loadedMaster.reason})` : ""}; refusing to continue`] };
     }
-    const payload = loadedPlan.plan;
-    if (payload?.site?.version !== SITE_PLAN_VERSION) {
-        return { ok: false, reasons: [`the stored plan is site version ${String(payload?.site?.version)}, this build understands ${String(SITE_PLAN_VERSION)}; refusing to continue`] };
+    const master = loadedMaster.plan;
+    const loadedSite = siteStore.loadPlan();
+    // A world planned before districts had their own slots keeps district 1's ground in the master-plan slot.
+    const legacy = loadedSite.status !== "ok" && index === 1 && master?.ground !== undefined ? master : undefined;
+    const payload = loadedSite.status === "ok" && loadedSite.plan !== undefined ? loadedSite.plan : legacy;
+    if (payload === undefined) {
+        const reason = loadedSite.status === "ok" ? "it holds no ground" : loadedSite.reason;
+        return { ok: false, reasons: [`the stored plan of ${districtIdFor(index)} is ${loadedSite.status}${reason ? ` (${reason})` : ""}; refusing to continue`] };
+    }
+    if (payload.site?.version !== SITE_PLAN_VERSION) {
+        return { ok: false, reasons: [`the stored plan is site version ${String(payload.site?.version)}, this build understands ${String(SITE_PLAN_VERSION)}; refusing to continue`] };
+    }
+    if (Number.isInteger(payload.district) && payload.district !== index) {
+        return { ok: false, reasons: [`the stored plan is district ${String(payload.district)}, not ${String(index)}; refusing to continue`] };
     }
     if (typeof civ.checksum !== "string" || payload.siteChecksum !== civ.checksum) {
         return { ok: false, reasons: [`the stored plan (${String(payload.siteChecksum)}) is not the one this district was started from (${String(civ.checksum)}); refusing to continue`] };
     }
+    const plan = payload.plan ?? master.plan;
+    if (plan === undefined || !planHasDistrict(plan, index)) {
+        return { ok: false, reasons: [`the stored master plan holds no district ${String(index)}; refusing to continue`] };
+    }
     /** @type {any} */
     let record;
     try {
-        const result = yield* rehydrateSiteSteps(payload.plan, 1, payload.ground, { ...(payload.siteOptions ?? {}), expectChecksum: civ.checksum, ops });
+        const result = yield* rehydrateSiteSteps(plan, index, payload.ground, { ...(payload.siteOptions ?? {}), expectChecksum: civ.checksum, ops });
         record = result.record;
         if (!result.ok || record === null || record === undefined) {
             return { ok: false, reasons: ["the district plan could not be rebuilt from storage", ...result.problems.slice(0, 5)] };
@@ -568,7 +1130,7 @@ export function* loadSavedRunSteps(civ, ops) {
     }
     const queue = loadedQueue.queue;
     const fresh = jobs.createQueue(jobSpecsOf(record), { planHash: record.checksum });
-    const same = fresh.total.length === queue.total.length && fresh.total.every((total, index) => total === queue.total[index] && fresh.hash[index] === queue.hash[index]);
+    const same = fresh.total.length === queue.total.length && fresh.total.every((total, at) => total === queue.total[at] && fresh.hash[at] === queue.hash[at]);
     if (!same || queue.planHash !== record.checksum) {
         return { ok: false, reasons: ["the stored job queue does not belong to this plan; refusing to continue"] };
     }
@@ -578,7 +1140,90 @@ export function* loadSavedRunSteps(civ, ops) {
     if (queue.state === "paused") {
         jobs.resume(queue);
     }
-    return { ok: true, plan: payload.plan, record, queue, region: siteGroundRegion(payload.plan, 1), payload, recovered: loadedQueue.recovered ?? 0 };
+    return { ok: true, plan, record, queue, region: siteGroundRegion(plan, index), payload, district: index, recovered: loadedQueue.recovered ?? 0 };
+}
+
+/**
+ * What ONE district's stored queue says, without a running session (restart / status read-out).
+ * @param {number} index @param {{ recoverRunning?: boolean }} [options]
+ * @returns {{ status: string, reason: string | undefined, state: string | undefined, pct: number | undefined, done: number | undefined, total: number | undefined }}
+ */
+export function storedQueueStatus(index, options = {}) {
+    const { jobStore } = stores(index);
+    const loaded = jobStore.loadQueue({ recoverRunning: options.recoverRunning });
+    if (loaded.status !== "ok" || loaded.queue === undefined) {
+        return { status: loaded.status, reason: loaded.reason, state: undefined, pct: undefined, done: undefined, total: undefined };
+    }
+    const overall = jobs.progress(loaded.queue);
+    return { status: "ok", reason: undefined, state: loaded.queue.state, pct: overall.pct, done: overall.totalOps - overall.remainingOps, total: overall.totalOps };
+}
+
+/**
+ * Measured save-size discipline: every key this pack's civilization stores, grouped by the store that owns it.
+ * A key belongs to the LONGEST matching prefix, so a district's own site or queue slot is never counted as the
+ * shared master-plan slot or as the plain district-1 queue.
+ *
+ * @returns {{ families: Array<{ prefix: string, keys: number, bytes: number, longestProperty: number, limit: number, overBudget: boolean, overProperty: boolean }>, totalBytes: number, problems: string[] }}
+ */
+export function storageFootprint() {
+    /** @type {string[]} */
+    let ids = [];
+    try {
+        ids = typeof world.getDynamicPropertyIds === "function" ? world.getDynamicPropertyIds() : [];
+    } catch (_error) {
+        ids = [];
+    }
+    /** @type {Array<{ prefix: string, limit: number, kind: string }>} */
+    const stores = [
+        { prefix: PLAN_PREFIX, limit: CIV_LIMITS.maxPlanBytes, kind: "plan" },
+        ...DISTRICT_INDEXES.map((index) => ({ prefix: sitePrefixFor(index), limit: CIV_LIMITS.maxPlanBytes, kind: "plan" })),
+        { prefix: jobs.JOB_PREFIX, limit: CIV_LIMITS.maxJobBytes, kind: "jobs" },
+        ...DISTRICT_INDEXES.map((index) => ({ prefix: jobPrefixFor(index), limit: CIV_LIMITS.maxJobBytes, kind: "jobs" })),
+    ];
+    /** @type {Record<string, { keys: number, bytes: number, longest: number, limit: number, kind: string }>} */
+    const found = {};
+    for (const key of ids) {
+        let match;
+        for (const store of stores) {
+            if (!key.startsWith(`${store.prefix}:`)) {
+                continue;
+            }
+            if (match === undefined || store.prefix.length > match.prefix.length) {
+                match = store;
+            }
+        }
+        if (match === undefined) {
+            continue;
+        }
+        let value;
+        try {
+            value = world.getDynamicProperty(key);
+        } catch (_error) {
+            continue;
+        }
+        if (typeof value !== "string") {
+            continue;
+        }
+        const entry = found[match.prefix] ?? { keys: 0, bytes: 0, longest: 0, limit: match.limit, kind: match.kind };
+        entry.keys += 1;
+        entry.bytes += utf8Length(value);
+        entry.longest = Math.max(entry.longest, value.length);
+        found[match.prefix] = entry;
+    }
+    const families = Object.entries(found).map(([prefix, entry]) => ({
+        prefix,
+        kind: entry.kind,
+        keys: entry.keys,
+        bytes: entry.bytes,
+        longestProperty: entry.longest,
+        limit: entry.limit,
+        overBudget: entry.bytes > entry.limit,
+        overProperty: entry.longest > CIV_LIMITS.maxPropertyChars,
+    }));
+    const problems = families
+        .filter((family) => family.overBudget || family.overProperty)
+        .map((family) => `${family.prefix}: ${String(family.bytes)} bytes / ${String(family.limit)} budget, longest property ${String(family.longestProperty)} chars / ${String(CIV_LIMITS.maxPropertyChars)}`);
+    return { families, totalBytes: families.reduce((sum, family) => sum + family.bytes, 0), problems };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -591,7 +1236,8 @@ export function* loadSavedRunSteps(civ, ops) {
  *   byReason: Record<string, number>, samples: string[]
  * }} Counts
  * @typedef {{
- *   token: Job, dimension: Dimension, plan: any, record: any, queue: JobQueue, region: Rect, protectedRects: Rect[],
+ *   token: Job, dimension: Dimension, plan: any, record: any, queue: JobQueue, region: Rect,
+ *   protectedRects: ProtectedArea[], district: number,
  *   say: (lines: string[]) => void,
  *   saveCiv: (patch: Record<string, any>) => boolean,
  *   onStageComplete?: (stage: string) => void,
@@ -920,7 +1566,7 @@ function* clearTree(s, seed) {
     // remainder that still contains the seed - the replay finds it again and finishes the same job.
     for (let ci = component.length - 1; ci >= 0; ci -= 1) {
         const cell = /** @type {{ x: number, y: number, z: number, id: string }} */ (component[ci]);
-        if (!inRect(wide, cell.x, cell.z) || s.opts.protectedRects.some((rect) => inRect(rect, cell.x, cell.z))) {
+        if (!inRect(wide, cell.x, cell.z) || inProtectedArea(s.opts.protectedRects, cell.x, cell.z)) {
             continue;
         }
         yield* budgetFor(s, 2, 1);
@@ -970,7 +1616,9 @@ function* applyOp(s, op) {
         skip("outside the planned area");
         return "ok";
     }
-    if (s.opts.protectedRects.some((rect) => inRect(rect, op.x, op.z))) {
+    const insideNeighbourLand = inProtectedArea(s.opts.protectedRects, op.x, op.z);
+    const fillsSharedBand = insideNeighbourLand && isSharedWallFill(s.opts.protectedRects, op);
+    if (insideNeighbourLand && !fillsSharedBand) {
         counts.outside += 1;
         skip("inside a protected footprint");
         return "ok";
@@ -1006,6 +1654,15 @@ function* applyOp(s, op) {
             return "unloaded";
         }
         verdict = classifyCivOp(op, target.typeId, plannedAt(s, op.x, op.y, op.z, op.id));
+    }
+    // A wall filling in the shared band may stand on raw terrain and on nothing else. classifyCivOp decides
+    // a block is "ours" when its id is one this plan targets at that cell, and two districts' walls are made
+    // of the same stone: without this rule district 2's footing replaced 9 finished blocks of district 1's
+    // wall face. The cost is that a SECOND operation on the same band cell is refused once the first one
+    // stands there - at most a dressing block, because the column itself is already solid masonry.
+    if (fillsSharedBand && verdict.action === "place" && !isRawTerrain(String(target.typeId))) {
+        skip(`occupied by ${String(target.typeId)} in a finished neighbour's band`);
+        return "ok";
     }
     if (verdict.action === "built") {
         counts.built += 1;
@@ -1084,7 +1741,7 @@ function holdRectFor(box) {
 
 /** Persist the job queue and the small kingdom record. @param {Session} s @param {Record<string, any>} [extra] */
 function persistProgress(s, extra = {}) {
-    const { jobStore } = stores();
+    const { jobStore } = stores(s.opts.district ?? 1);
     const result = jobStore.saveQueue(s.queue);
     if (!result.ok) {
         throw new Error(`could not store progress (${String(result.reason ?? result.status)})`);
@@ -1262,7 +1919,7 @@ async function run(s) {
         return result;
     };
     try {
-        s.opts.say(["Preparing the build: indexing the plan..."]);
+        s.opts.say([`Preparing the build of ${districtLabel(s.opts.district ?? 1, s.plan)}: indexing the plan...`]);
         await runJobAsync(s.token, indexOwnBlocks(s));
         if (s.token.cancelled) {
             return /** @type {EndResult} */ ({ status: "paused", counts: s.counts, opsPlanned: 0, opsDone: 0, slices: s.slice });
@@ -1278,7 +1935,7 @@ async function run(s) {
                 const rect = holdRectFor(result.box);
                 const held = await holdArea(s.dimension, rect, s.token, CIV_TICKING_ID, s.opts.progress);
                 if (!s.token.cancelled && (held.status === "stalled" || held.status === "shrink" || held.status === "error")) {
-                    return await end("paused", `the chunks around ${String(rect.x0)},${String(rect.z0)} would not load (${String(held.note)}); nothing is lost - run /scriptevent civ:generate_resume when the area loads`);
+                    return await end("paused", `the chunks around ${String(rect.x0)},${String(rect.z0)} would not load (${String(held.note)}); nothing is lost - run /scriptevent civ:generate_resume district=${String(s.opts.district ?? 1)} when the area loads`);
                 }
                 if (s.token.cancelled) {
                     releaseArea(s.token);
@@ -1305,7 +1962,9 @@ async function run(s) {
  * @param {Session} s
  */
 async function safeSpot(s) {
-    const hq = s.plan?.districts?.[0]?.hq ?? s.plan?.districts?.[0]?.centroid;
+    const index = s.opts.district ?? 1;
+    const entry = /** @type {any[]} */ (s.plan?.districts ?? []).find((district) => district?.index === index) ?? s.plan?.districts?.[0];
+    const hq = entry?.hq ?? entry?.centroid;
     if (hq === undefined) {
         return undefined;
     }
@@ -1330,7 +1989,7 @@ export function sessionStatus() {
         return undefined;
     }
     const overall = jobs.progress(s.queue);
-    return { status: s.status, stage: s.lastStage, pct: overall.pct, done: overall.totalOps - overall.remainingOps, total: overall.totalOps, counts: s.counts, slice: s.slice };
+    return { district: s.opts.district ?? 1, status: s.status, stage: s.lastStage, pct: overall.pct, done: overall.totalOps - overall.remainingOps, total: overall.totalOps, counts: s.counts, slice: s.slice };
 }
 
 /**

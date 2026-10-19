@@ -141,6 +141,10 @@ export function validateTemplateSpec(spec, ctx = {}) {
     for (const index of Object.keys(registered)) {
         ok(shipped.some((district) => String(district.index) === String(index)), `civ/districtplan.js registers district ${index} but the starter spec does not mark it starterWorld`);
     }
+    const unbuilt = districts.filter((district) => district.starterWorld === true && district.status !== "built");
+    if (unbuilt.length > 0) {
+        notes.push(`${String(unbuilt.length)} starter district(s) are planner-ready but not physically built: ${unbuilt.map((district) => `${district.name} (${district.layoutId}, ${district.status})`).join(", ")}. template:release-check must refuse packaging until each one is built and verified in Minecraft.`);
+    }
     const planned = districts.filter((district) => !district.starterWorld);
     if (planned.length > 0) {
         notes.push(`${planned.length} district(s) are prepared but not started: ${planned.map((district) => `${district.name} (${district.layoutId}, ${district.status})`).join(", ")}`);

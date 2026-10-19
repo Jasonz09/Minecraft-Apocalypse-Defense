@@ -115,7 +115,7 @@ export const STARTER = {
      */
     wipeKeyPrefixes: ["civ:kingdom-quarantine", "civ:jobs", "civ:debug", "civ:demo-", "civ_devgate"],
     /** Districts that must be physically complete before a world may be armed. Mirrors template.json. */
-    builtRequired: ["district-1"],
+    builtRequired: ["district-1", "district-2", "district-3", "district-4", "district-5"],
 };
 
 export const PHYSICAL = {
