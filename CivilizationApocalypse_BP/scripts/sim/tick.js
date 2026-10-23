@@ -4,6 +4,7 @@ import { formatGameTime } from "./clock.js";
 import { advanceConstruction, assignBuilders } from "./construction.js";
 import { runEvacuationStep } from "./evacuation.js";
 import { runGateControlStep, validateGateRecords } from "./gatecontrol.js";
+import { runInvasionDirectorStep } from "./invasion/director.js";
 import { runExpansionStep } from "./expansion.js";
 import { advanceTraining, runPopulationStep } from "./population.js";
 import { runPolicyStep } from "./policies.js";
@@ -129,6 +130,8 @@ export function advanceKingdomStep(kingdom) {
     /** @type {string[]} */
     let problems;
     try {
+        // Invasion director: a no-op unless kingdom.invasion exists (disabled by default; see docs/INVASION_DIRECTOR.md).
+        events.push(...runInvasionDirectorStep(kingdom));
         events.push(...toEvents(runWarStep(kingdom)));
         events.push(...toEvents(runGateControlStep(kingdom)));
         events.push(...toEvents(runEvacuationStep(kingdom)));
