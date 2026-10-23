@@ -1,5 +1,9 @@
 # Invasion director
 
+Gate: the director acts only when `kingdom.invasion` exists with `enabled: true`. Nothing in the shipped pack creates or
+enables that record, and no command sets it (`enableInvasion` has no callers). Enabling it therefore needs code or a
+development build; it is not reachable from chat.
+
 Status: built, tested offline, **wired into the tick as a no-op and disabled by default**. `sim/tick.js`
 calls `runInvasionDirectorStep` every step; it returns nothing unless `kingdom.invasion` exists, and nothing
 in the shipped pack creates that record yet (`enableInvasion` has no callers). Roadmap section B asks for this; see [ROADMAP.md](ROADMAP.md).
