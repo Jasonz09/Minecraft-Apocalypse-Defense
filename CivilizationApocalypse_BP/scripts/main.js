@@ -1,4 +1,4 @@
-import { world } from "@minecraft/server";
+import { system, world } from "@minecraft/server";
 import { registerDebugCommands } from "./commands/debug.js";
 import { registerInspectionCommands } from "./commands/inspect.js";
 import { registerCivCommands } from "./commands/civ.js";
@@ -7,7 +7,9 @@ import { registerPhysicalCommands } from "./commands/physical.js";
 import { registerStatusCommand } from "./commands/status.js";
 import { registerStarterCommands } from "./commands/starter.js";
 import { registerWelcomeOnJoin } from "./events/welcome.js";
+import { registerLedger, registerLedgerDevGate } from "./integration/ledgerBindings.js";
 import { startSimulationLoop } from "./integration/simulationLoop.js";
+import { ledgerGateOn } from "./ledger/devgate.js";
 import { createKingdomStore } from "./kingdom/store.js";
 
 /**
@@ -27,3 +29,13 @@ registerGateCommands(kingdomStore);
 registerCivCommands(kingdomStore);
 registerStarterCommands(kingdomStore);
 startSimulationLoop(kingdomStore);
+
+// The Commander's Ledger is off unless the development gate is on. The switch always listens, because it is the
+// only way to turn the gate on. The Ledger's own handlers register only when the gate is on at load, and early
+// execution cannot read the gate, so that check runs on the first tick.
+registerLedgerDevGate(kingdomStore);
+system.run(() => {
+    if (ledgerGateOn(world)) {
+        registerLedger(kingdomStore);
+    }
+});

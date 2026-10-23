@@ -28,6 +28,7 @@ const mc = {
     scriptEventSubscribers: [],
     intervals: [],
     clearedRuns: [],
+    deferredRuns: [],
     failDimension: false,
 };
 globalThis.__mc = mc;
@@ -81,6 +82,11 @@ mc.system = {
         mc.intervals.push({ id, callback, ticks });
         return id;
     },
+    // system.run is deferred work: recorded, never executed here (the Ledger's gate check waits for a tick)
+    run(callback) {
+        mc.deferredRuns.push(callback);
+        return mc.deferredRuns.length;
+    },
     clearRun(id) {
         mc.clearedRuns.push(id);
         const found = mc.intervals.find((entry) => entry.id === id);
@@ -95,7 +101,14 @@ export async function resolve(specifier, context, nextResolve) {
     if (specifier === "@minecraft/server") {
         const stub = 'export const world = globalThis.__mc.world; export const system = globalThis.__mc.system;' +
             'export const ScriptEventSource = { Block: "Block", Entity: "Entity", NPCDialogue: "NPCDialogue", Server: "Server" };' +
+            'export const ItemLockMode = { none: "none", inventory: "inventory", slot: "slot" };' +
+            'export class ItemStack { constructor(typeId, amount = 1) { this.typeId = typeId; this.amount = amount; } }' +
             'export const BlockPermutation = { resolve() { throw new Error("BlockPermutation is not modelled in this suite"); } };';
+        return { url: "data:text/javascript," + encodeURIComponent(stub), shortCircuit: true };
+    }
+    if (specifier === "@minecraft/server-ui") {
+        // imported by integration/ledgerBindings.js; forms are never shown in this suite
+        const stub = 'export class ActionFormData {} export class MessageFormData {}';
         return { url: "data:text/javascript," + encodeURIComponent(stub), shortCircuit: true };
     }
     if (specifier === "./war.js" && typeof context.parentURL === "string" && context.parentURL.endsWith("/sim/tick.js")) {
@@ -184,7 +197,7 @@ test("main.js: importing it during early execution does not touch world state an
 
 test("main.js: registers exactly the subscriptions the pack needs and one hourly interval", () => {
     assert.equal(earlySnapshot.spawn, 1, "one playerSpawn subscriber");
-    assert.equal(earlySnapshot.scriptEvents, 7, "status + inspection + debug + physical + gates + civ + starter script-event subscribers");
+    assert.equal(earlySnapshot.scriptEvents, 8, "status + inspection + debug + physical + gates + civ + starter script-event subscribers, + the Ledger development switch (the only Ledger listener while the gate is off)");
     assert.deepEqual([...earlySnapshot.intervals].sort((a, b) => a - b), [40, SIM.stepTicks], "gate-adapter poll (40 ticks) plus one interval at the in-game-hour cadence");
     for (const { options } of mc.scriptEventSubscribers) {
         assert.deepEqual(options?.namespaces, ["civ"], "every script-event subscription is namespace-filtered");
@@ -202,7 +215,7 @@ test("registration is idempotent: calling the register functions again adds no d
     (await load("commands", "civ.js")).registerCivCommands(store);
     (await load("commands", "starter.js")).registerStarterCommands(store);
     assert.equal(mc.spawnSubscribers.length, 1);
-    assert.equal(mc.scriptEventSubscribers.length, 7);
+    assert.equal(mc.scriptEventSubscribers.length, 8);
     assert.equal(loop.isSimulationLoopRunning(), true);
     assert.equal(mc.intervals.length, 2, "re-registering starts no extra interval (gate poll + simulation hour)");
 });
