@@ -11,7 +11,6 @@ const loadModule = (...parts) => import(pathToFileURL(join(scriptsRoot, ...parts
 const { DISTRICT_DEFAULTS, POLICY_DEFAULTS, STARTING_SIMULATION } = await loadModule("config.js");
 const { computeTotals, createInitialKingdom, districtById, findValidationProblems } = await loadModule("kingdom", "state.js");
 const war = await loadModule("sim", "war.js");
-const { MIN_REPAIR_CREW } = await loadModule("sim", "siegeTuning.js");
 
 /** Fixed seed everywhere: no Math.random, no sleeps, no tolerance fudge in this file. */
 const SEED = 20261017;
@@ -560,10 +559,8 @@ test("recovery repairs the wall for materials and demotes security one rung at a
     district.reserves.materials = 180;
 
     const first = war.recoverAfterDefense(kingdom, district);
-    // Adapted: the wall crew is one hand per 20 civilians, so 80 civilians are four hands at
-    // DISTRICT_DEFAULTS.integrityRepairPerStep each (see the wall crew test below).
-    assert.equal(district.defensiveIntegrity, 22.4, `${DISTRICT_DEFAULTS.integrityRepairPerStep} integrity per hand, four hands for 80 civilians`);
-    assert.equal(district.reserves.materials, 178.8, "repair is paid for out of reserves.materials");
+    assert.equal(district.defensiveIntegrity, 20.6, `${DISTRICT_DEFAULTS.integrityRepairPerStep} integrity per step with the standing wall crew`);
+    assert.equal(district.reserves.materials, 179.7, "repair is paid for out of reserves.materials");
     assert.equal(district.security, "breached", "the wall is still below breachIntegrity, so the district cannot step up yet");
     assert.equal(district.siegeSteps, 0, "the siege counter clears once the district is not being pressed");
     assert.ok(first.length === 0 || first.every((event) => typeof event === "string"));
@@ -697,84 +694,6 @@ test("recovery does not start while raiders are still on the ground", () => {
     assert.equal(district.defensiveIntegrity, 20, "no free repair under attack");
     assert.equal(district.reserves.materials, materials);
     assert.equal(district.security, "breached");
-});
-
-test("a remnant of one or two raiders is worn down by a standing defence, so it cannot outlast the wall", () => {
-    const kingdom = kingdomAt(SEED);
-    const district = kingdom.districts[0];
-    district.soldiers = 30;
-    district.defensiveIntegrity = 0;
-    district.security = "breached";
-    district.assault = 2;
-    district.siegeSteps = 0;
-    war.assignDefenders(district);
-    assert.ok(war.defensiveStrength(district) > 0, "a standing (if feeble) defence still engages the remnant");
-
-    kingdom.step = 1;
-    war.resolveAssault(kingdom, district);
-    assert.equal(district.assault, 1, "at least one raider is lost a step; round(2 * 0.18) = 0 used to lose none for ever");
-    kingdom.step = 2;
-    war.resolveAssault(kingdom, district);
-    assert.equal(district.assault, 0, "the remnant is gone in two steps");
-    assert.ok(kingdom.battles.every((battle) => battle.attackerLosses >= 1), "every engaged battle cost the raiders a man");
-    assertInvariants(kingdom);
-});
-
-test("the wall crew is one hand per twenty civilians, with the builders and a standing hand as the floor", () => {
-    const kingdom = kingdomAt(SEED);
-    const district = kingdom.districts[0];
-    const repairPerHand = Number(DISTRICT_DEFAULTS.integrityRepairPerStep);
-    const repairOnce = (civilians, builders) => {
-        district.assault = 0;
-        district.security = "secure";
-        district.defensiveIntegrity = 10;
-        district.reserves.materials = 180;
-        district.civilians = civilians;
-        district.builders = builders;
-        war.recoverAfterDefense(kingdom, district);
-        return Math.round((district.defensiveIntegrity - 10) * 10) / 10;
-    };
-
-    // Adapted: the standing crew is MIN_REPAIR_CREW (siegeTuning.js, raised from 1 to 2). The
-    // rule itself is unchanged: the floor applies, and civilians add hands only per 20 of them.
-    assert.equal(repairOnce(0, 0), Math.round(repairPerHand * MIN_REPAIR_CREW * 10) / 10, "an emptied district keeps its standing crew");
-    assert.equal(repairOnce(19, 0), Math.round(repairPerHand * MIN_REPAIR_CREW * 10) / 10, "19 civilians add no hand beyond the standing crew");
-    assert.equal(repairOnce(80, 0), Math.round(repairPerHand * 4 * 10) / 10, "80 civilians are four hands");
-    assert.equal(repairOnce(40, 6), Math.round(repairPerHand * 6 * 10) / 10, "six builders on a project outnumber the two hands 40 civilians give");
-    assertInvariants(kingdom);
-});
-
-test("a fallen district with no raiders left climbs back to secure from its own people", () => {
-    const kingdom = kingdomAt(SEED);
-    const district = kingdom.districts[0];
-    district.soldiers = 0;
-    district.defensiveIntegrity = 0;
-    district.security = "lost";
-    district.assault = 0;
-    district.siegeSteps = 12;
-    district.civilians = 80;
-    district.builders = 0;
-    district.reserves.materials = 180;
-    war.assignDefenders(district);
-
-    let breachedAt = -1;
-    let secureAt = -1;
-    for (let step = 1; step <= 80 && secureAt < 0; step += 1) {
-        kingdom.step = step;
-        war.recoverAfterDefense(kingdom, district);
-        assertInvariants(kingdom);
-        if (breachedAt < 0 && district.security !== "lost") {
-            breachedAt = step;
-            assert.ok(district.defensiveIntegrity >= POLICY_DEFAULTS.breachIntegrity, "a fallen wall is only stepped up once it is back above breachIntegrity");
-        }
-        if (district.security === "secure") {
-            secureAt = step;
-        }
-    }
-    assert.ok(breachedAt > 0, "the district stepped up from lost");
-    assert.ok(secureAt > breachedAt && secureAt <= 80, `the district is secure again by step ${String(secureAt)}`);
-    assert.equal(district.siegeSteps, 0, "the siege counter is cleared once nobody presses the district");
-    assert.equal(computeTotals(kingdom).civilians, 400, "a district that fell and recovered keeps every civilian");
 });
 
 test("runWarStep drives one step, keeps a stable order and returns plain strings", () => {

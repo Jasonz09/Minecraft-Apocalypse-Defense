@@ -39,52 +39,6 @@ list of staged construction projects. Totals are always **derived** from the dis
 | Recruitment respects limits and suspends | `population.openRecruitment` rejects non-integers, negatives and over-population enlistment; the queue cannot exceed capacity; a shortage or an emergency halts it |
 | Builders develop secured land | `policies.nextDevelopmentWork` schedules farms/homes/storehouses/barracks when the district actually needs them, and will not schedule what it cannot pay for |
 
-## Siege
-
-Raids, walls and garrisons are resolved each step by `sim/war.js` (`runWarStep`). Every number
-below is in `sim/siegeTuning.js` or `config.js`; the reasoning and the measurements are in
-[SIEGE_BALANCE.md](SIEGE_BALANCE.md).
-
-**Raids.** Each step each district that is not `lost` is raided with probability 8% (`ASSAULT_CHANCE`).
-A raid is a band of 6 to 24 raiders. Bands stack on a district up to 32 (`ASSAULT_CAP`). Nothing is
-spawned: a raid is a strength number on the district record.
-
-**Engagement** (one battle step, while raiders are on the ground):
-- Effective defence is the front garrison times the wall: `front x clamp(integrity, 5, 100) / 100`.
-  The odds are `assault / max(1, defence)`.
-- Raiders lost: `max(1, round(0.18 x assault))` when any defender stands
-  (`ENGAGED_ATTACKER_MINIMUM_LOSS`). Unopposed, `max(1, round(0.045 x assault))`.
-- Defenders lost: `round(front x 0.03 x clamp(odds, 0.5, 4))` (`DEFENDER_LOSS_RATE`).
-- Integrity lost: `max(0.5, 1.2 x odds)`, capped at 4 per step. Unopposed it is at least 1.
-- Counterattack when defence is at least 1.5 times the band. It breaks 60% of the defence
-  (`COUNTERATTACK_RATIO`, `COUNTERATTACK_BROKEN_FRACTION`) and costs `round(front x 0.03 x 0.5)` men.
-
-**Breach and fall.** Integrity below 40 (`breachIntegrity`) with a raid on the ground is `breached`.
-A district with no able defender (no front soldier, or integrity 0) counts breached steps while raiders
-stay on it. After 12 consecutive such steps (`fallAfterSiegeSteps`) it is `lost`. A lost district keeps
-its people, walls and records. It is not raided again until it recovers to `breached`.
-
-**Repair.** The wall is repaired only when no raid is on the ground. It is repaired by the wall crew:
-`max(2, builders, floor(civilians / 20))` hands at 0.6 integrity per hand per step. Every point repaired
-costs 0.5 materials from `reserves.materials`, and a district with no materials repairs nothing and says
-so. Walls are never removed.
-
-**Recovery.** Once no raid is on the ground, borrowed soldiers march home, the siege counter clears, and
-security climbs one rung a step: `lost` -> `breached` (only at integrity 40 or better) -> `contested` ->
-`alert` -> `secure`. Lost and breached districts can still request and receive reinforcements.
-
-**Reinforcement and construction** are unchanged: neighbours keep half of their home strength
-(`reinforcementKeepFraction`), and construction and recruitment are gated by security as before.
-
-**Balance targets** (default defence, 3000 steps = 125 in-game days, 16 seeds):
-- No run ends with all five districts lost.
-- At most one district lost at the end on at least 90% of seeds (measured 16 of 16).
-- Breaches still happen: about 85 breaches per run, a wall down about 6% of the time.
-- A district with no soldiers still falls under sustained raids (measured on 16 of 16 seeds).
-
-These are offline results. The judgement calls still to be tested in play are listed in
-[SIEGE_BALANCE.md](SIEGE_BALANCE.md), section 5.
-
 ## Policy modes
 
 `civ:policy balanced|paused|rapid`. `balanced` is the default and demands the full surplus
