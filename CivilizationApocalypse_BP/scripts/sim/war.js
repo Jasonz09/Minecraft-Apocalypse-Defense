@@ -1,6 +1,7 @@
 import { DISTRICT_DEFAULTS, POLICY_DEFAULTS, SECURITY_LEVELS } from "../config.js";
 import { canAfford, districtById, pushBattle, pushEvent, spend } from "../kingdom/state.js";
 import { nextChance, nextInt } from "./rng.js";
+import { DEFENDER_LOSS_RATE, ENGAGED_ATTACKER_MINIMUM_LOSS, MIN_REPAIR_CREW } from "./siegeTuning.js";
 
 /**
  * The military side of the simulation: raiders press a district, the wall chips, the
@@ -48,8 +49,6 @@ const ATTACKER_LOSS_RATE = 0.18;
  * drifts off instead of parking there for a hundred steps. */
 const RAIDERS_UNOPPOSED_FACTOR = 0.25;
 const RAIDERS_UNOPPOSED_MINIMUM_LOSS = 1;
-/** LOCAL: share of the front garrison lost per battle step, scaled by how badly outnumbered. */
-const DEFENDER_LOSS_RATE = 0.04;
 /** LOCAL: worst odds multiplier casualties are scaled by, so a hopeless fight is still finite. */
 const MAX_PRESSURE_FOR_CASUALTIES = 4;
 /** LOCAL: an integrity this low still counts as a wall worth defending, so a 0-integrity
@@ -69,9 +68,11 @@ const MIN_DEMAND_INTEGRITY = 25;
 const CONTESTED_RATIO = 1;
 /** LOCAL: materials spent to restore one point of defensive integrity. */
 const MATERIALS_PER_INTEGRITY = 0.5;
-/** LOCAL: a wall crew always exists, even before sim/population.js assigns builders, so a
- * held district cannot deadlock at low integrity with zero builders. */
-const MIN_REPAIR_CREW = 1;
+/** LOCAL: one wall hand per this many civilians, so a besieged district that has released its
+ * builders can still re-wall itself from its own people (20 matches the economy's work gang
+ * in sim/policies.js). Without it a district under sustained raids repairs at 0.6 a step and
+ * the raids take more integrity than that, which is the long-horizon siege deadlock. */
+const WALL_CREW_CIVILIANS = 20;
 /** LOCAL: fallback if a saved policy is missing the reinforcement keep fraction. */
 const FALLBACK_KEEP_FRACTION = typeof POLICY_DEFAULTS.reinforcementKeepFraction === "number" ? POLICY_DEFAULTS.reinforcementKeepFraction : 0.5;
 /** LOCAL: security levels that make a district call for help from its neighbours. */
@@ -762,11 +763,10 @@ export function resolveAssault(kingdom, district) {
     const integrityLoss = roundTo1(Math.min(INTEGRITY_LOSS_CAP, Math.max(standing > 0 ? 0.5 : 1, odds * INTEGRITY_PER_PRESSURE)));
     const unopposed = standing <= 0;
     const rawAttackerLosses = assault * ATTACKER_LOSS_RATE * (unopposed ? RAIDERS_UNOPPOSED_FACTOR : 1);
-    const attackerLosses = clamp(
-        unopposed ? Math.max(RAIDERS_UNOPPOSED_MINIMUM_LOSS, Math.round(rawAttackerLosses)) : Math.round(rawAttackerLosses),
-        0,
-        assault,
-    );
+    // A band the garrison is fighting loses at least ENGAGED_ATTACKER_MINIMUM_LOSS a step (see
+    // siegeTuning.js). Without that floor a band of one or two rounds to zero losses for ever.
+    const minimumAttackerLoss = unopposed ? RAIDERS_UNOPPOSED_MINIMUM_LOSS : ENGAGED_ATTACKER_MINIMUM_LOSS;
+    const attackerLosses = clamp(Math.max(minimumAttackerLoss, Math.round(rawAttackerLosses)), 0, assault);
     const defenderLosses =
         standing > 0
             ? clamp(Math.round(garrison.front * DEFENDER_LOSS_RATE * Math.min(MAX_PRESSURE_FOR_CASUALTIES, Math.max(0.5, odds))), 0, garrison.soldiers)
@@ -898,14 +898,19 @@ export function counterattack(kingdom, district) {
 }
 
 /**
- * What happens once a district is no longer being pressed:
+ * What happens once a district is no longer being pressed (no raider on the ground):
  *   - borrowed soldiers march home to their own districts
- *   - the wall is repaired at `DISTRICT_DEFAULTS.integrityRepairPerStep`, paid for out of
- *     `reserves.materials` through canAfford()/spend(); a district with no materials repairs
- *     nothing and says so
+ *   - the wall is repaired at `DISTRICT_DEFAULTS.integrityRepairPerStep` per hand in the wall
+ *     crew, paid for out of `reserves.materials` through canAfford()/spend(); a district with
+ *     no materials repairs nothing and says so
  *   - the siege counter is cleared
  *   - `security` steps one rung down the ladder toward `secure`, and only leaves `breached`
  *     once the wall is back above `POLICY_DEFAULTS.breachIntegrity`
+ *
+ * The wall crew is the larger of the standing crew, the builders on a project, and one hand per
+ * WALL_CREW_CIVILIANS civilians. A besieged district releases its builders (construction cannot
+ * work under attack), so before this crew rule the only hand left was the standing one, and a
+ * district whose raids outpaced 0.6 integrity a step could never climb back out.
  *
  * @param {Kingdom} kingdom
  * @param {District} district
@@ -927,7 +932,7 @@ export function recoverAfterDefense(kingdom, district) {
     }
 
     if (integrity < 100) {
-        const crew = Math.max(MIN_REPAIR_CREW, toInt(district.builders));
+        const crew = wallCrewOf(district);
         const wanted = roundTo1(Math.min(100 - integrity, numberOf(DISTRICT_DEFAULTS.integrityRepairPerStep, 0) * crew));
         const stocked = numberOf(district.reserves.materials, 0);
         let applied = wanted;
@@ -959,6 +964,17 @@ export function recoverAfterDefense(kingdom, district) {
 
     events.push(...demoteSecurity(kingdom, district));
     return events;
+}
+
+/**
+ * Hands repairing the wall while no raid is on the ground. See recoverAfterDefense.
+ *
+ * @param {District} district
+ * @returns {number}
+ */
+function wallCrewOf(district) {
+    const fromCivilians = Math.floor(toInt(district.civilians) / WALL_CREW_CIVILIANS);
+    return Math.max(MIN_REPAIR_CREW, toInt(district.builders), fromCivilians);
 }
 
 /**

@@ -7,7 +7,7 @@ const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..")
 const scriptsRoot = join(projectRoot, "CivilizationApocalypse_BP", "scripts");
 const loadModule = (...parts) => import(pathToFileURL(join(scriptsRoot, ...parts)).href);
 
-const { DISTRICT_DEFAULTS, GATE_STATES } = await loadModule("config.js");
+const { DISTRICT_DEFAULTS, GATE_STATES, POLICY_DEFAULTS } = await loadModule("config.js");
 const { computeTotals, createInitialKingdom, deserializeKingdom, findValidationProblems, serializeKingdom } =
     await loadModule("kingdom", "state.js");
 const evacuation = await loadModule("sim", "evacuation.js");
@@ -435,6 +435,7 @@ test("evacuation and war agree: a breached district empties gradually and a held
 
     const /** @type {string[]} */ ladder = [];
     let firstSecureStep = -1;
+    let integrityAtSecure = -1;
     for (let step = 0; step < 70; step += 1) {
         kingdom.step = step;
         war.recoverAfterDefense(kingdom, district);
@@ -445,17 +446,28 @@ test("evacuation and war agree: a breached district empties gradually and a held
         }
         if (district.security === "secure" && firstSecureStep < 0) {
             firstSecureStep = step;
+            integrityAtSecure = district.defensiveIntegrity;
         }
     }
 
     assert.deepEqual(ladder, ["breached", "contested", "alert", "secure"], "security climbs one rung at a time");
-    assert.ok(firstSecureStep > 50, `the wall had to be rebuilt first (reached secure at step ${String(firstSecureStep)})`);
+    // Adapted: the wall crew is one hand per 20 civilians, so the first steps (80 people still
+    // home) repair at four hands. The breached district then evacuates within ten steps and
+    // repairs at the standing crew of one. What must still hold is that the wall is back above
+    // breachIntegrity before the district is called secure.
+    assert.ok(
+        integrityAtSecure >= POLICY_DEFAULTS.breachIntegrity,
+        `the wall had to be back above breachIntegrity first (${String(integrityAtSecure)} at step ${String(firstSecureStep)})`,
+    );
     assert.equal(district.security, "secure");
     assert.equal(shelteredTotal(kingdom), total, "the same 400 civilians, wherever they slept");
     assert.equal(district.civilians, 80, "everyone who sheltered elsewhere came back");
     assert.ok(kingdom.districts.every((entry) => entry.refugees === 0));
-    assert.equal(district.defensiveIntegrity, 52, "70 steps of DISTRICT_DEFAULTS.integrityRepairPerStep, paid as they went");
-    assert.equal(district.reserves.materials, 159, "180 materials minus 0.3 per repaired tenth of a point");
+    // Adapted: the standing crew is now two hands (MIN_REPAIR_CREW), so the wall reaches the cap
+    // inside the 70 steps. The invariant is unchanged: repair stops at 100 and every repaired point
+    // is paid for in materials (90 points from 10 at 0.5 each).
+    assert.equal(district.defensiveIntegrity, 100, "70 steps of repair reach the cap: four hands while 80 people were home, then the standing crew of two");
+    assert.equal(district.reserves.materials, 135, "180 materials minus 0.5 per repaired point of integrity (90 points), paid as they went");
     assert.equal(host.reserves.materials, 180, "a host that did not repair spent nothing");
 });
 
