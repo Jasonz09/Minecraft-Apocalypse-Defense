@@ -6,8 +6,8 @@ The gates run headless and claim no in-game behaviour. Use the manual script at 
 
 ## Goal-pass test additions
 
-Run `npm run verify` (manifest, typecheck, unit tests, end-to-end). New offline suites include siege-longhorizon,
-invasion-director, population-lod, population-sync, ledger-presenters, ledger-ui, ledger-binding, civ-five-district (with the
+Run `npm run verify` (manifest, typecheck, unit tests, end-to-end). New offline suites include
+invasion-director, population-lod, population-sync, ledger-presenters, ledger-ui, civ-five-district (with the
 golden Hearthgate pin). Run the template suites on their own: they share a folder and must not run concurrently with another run.
 
 ## The five gates

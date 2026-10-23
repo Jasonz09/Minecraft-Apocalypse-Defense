@@ -305,14 +305,14 @@ Seams left for the next milestone:
 
 ## Goal pass status (offline only - nothing below has run in Minecraft)
 
-- **Siege balance:** fixed offline (see docs/SIEGE_BALANCE.md). Difficulty needs playtesting.
+- **Siege balance:** NOT on master. The fix (commit 8810ef9) is parked on the branch `siege-balance-candidate` because it
+  changes existing test expectations, which the project rules forbid without approval. It needs playtesting first.
 - **Districts 2-5:** build through the Hearthgate path behind the development gate (civ_devgate). Shared-wall deviation
   documented in docs/FIVE_DISTRICT_BUILD.md.
 - **Invasion director:** built, disabled by default; the tick calls it as a no-op (docs/INVASION_DIRECTOR.md).
 - **Population LOD:** built and tested; spawning disabled and not wired into the pack (docs/POPULATION_LOD.md).
-- **Commander's Ledger:** presenters, UI and dev-gated wiring committed (civ_ledger_dev, default off). The manifest now
-  depends on @minecraft/server-ui 2.1.0, which is UNVERIFIED in game: if it does not resolve, the whole pack will fail to
-  load. Test the pack on a throwaway world first (docs/LEDGER_PLAN.md).
+- **Commander's Ledger:** presenters and runtime are committed but unwired. The wiring and the manifest dependency on
+  @minecraft/server-ui were reverted because they broke original tests; see docs/LEDGER_PLAN.md.
 
 ## Verification status
 

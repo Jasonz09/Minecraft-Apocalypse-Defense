@@ -150,7 +150,7 @@ Measured with the director wired as in the integration section. These numbers we
 throwaway scripts, not committed.
 
 - 27 to 30 waves per seed, 1 to 3 majors per seed. The save validator never refused a step.
-- Outcomes over all 164 finished waves: 131 `repelled`, 26 `breached`, 10 `fallen`. Seed 424242 is
+- Outcomes over all 164 finished waves: 131 `repelled`, 26 `breached`, 10 `fallen`. A wave whose target falls before it lands is recorded as `withdrawn`. Seed 424242 is
   the breach-heavy one (8 breached, 2 fallen of 27), as its walls wear down.
 - District-loss entries (a district becoming `lost`): 75 without the director, 91 with it. The
   baseline already loses districts repeatedly under the siege deadlock in ROADMAP section C. The

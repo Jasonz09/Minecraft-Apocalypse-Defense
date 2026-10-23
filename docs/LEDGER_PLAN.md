@@ -48,3 +48,10 @@ The existing script-event commands stay as developer/debug tools.
 ## Remaining dependencies
 Enlarged Hearthgate in-game pass; functional gate controls verified in-game; civ generation status/abort/resume commands stable;
 decision on first-join grant (default: off, grant only by `civ:ledger`).
+
+## Status (reverted state)
+Presenters (`scripts/ledger/`, tested), the injected-dependency runtime (`scripts/ledger/runtime.js`, tested) and the
+recovery id `civ:ledger` are committed. The wiring (`integration/ledgerBindings.js`, dev-gated `civ_ledger_dev`) and the
+manifest dependency on `@minecraft/server-ui` 2.1.0 were REVERTED (commits 6e24380 and 5026111) because they changed the
+original reliability-runtime tests (subscriber count, harness). Re-adding them needs an explicit decision on those
+expectations. Nothing here is verified in game.

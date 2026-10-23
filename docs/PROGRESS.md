@@ -204,9 +204,9 @@ not honesty; and the shared band's duplicate ownership is the root cause the wal
 game. See FIVE_DISTRICT_BUILD.md, CIVILIZATION_PLAN_DESIGN.md, STARTER_WORLD.md.
 
 ## Goal pass (offline)
-- Siege balance: all-lost deadlock removed (0 of 16 seeds versus 16 of 16 before); difficulty to playtest (SIEGE_BALANCE.md).
+- Siege balance: fix parked on branch siege-balance-candidate (8810ef9), NOT on master: it changed existing test expectations. Needs playtesting and explicit approval before merge.
 - Districts 2-5 on the Hearthgate path, behind civ_devgate; golden keeps Hearthgate unchanged (FIVE_DISTRICT_BUILD.md).
 - Invasion director: built, disabled, tick no-op (INVASION_DIRECTOR.md).
 - Population LOD: built, spawning disabled, unwired (POPULATION_LOD.md).
-- Commander's Ledger: presenters, runtime, dev-gated wiring; manifest dependency on server-ui 2.1.0 unverified in game (LEDGER_PLAN.md).
-- Known gaps: civ_ledger_dev is not in the starter wipe list; any sender of the Ledger dev switch can turn it on (no operator check).
+- Commander's Ledger: presenters and runtime committed and tested; wiring and manifest dependency reverted (unwired).
+- Reverts on master: Ledger wiring (6e24380), manifest dependency (5026111), siege balance (8810ef9). Original tests restored; full verify 1177/1177 at 5fff901.
