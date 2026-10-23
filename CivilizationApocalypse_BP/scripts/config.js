@@ -113,7 +113,7 @@ export const STARTER = {
      * store keeps its quarantine copy under the plan prefix, and it rides along with the kept plan -
      * see "Known limitations" in docs/STARTER_WORLD.md.
      */
-    wipeKeyPrefixes: ["civ:kingdom-quarantine", "civ:jobs", "civ:debug", "civ:demo-", "civ_devgate"],
+    wipeKeyPrefixes: ["civ:kingdom-quarantine", "civ:jobs", "civ:debug", "civ:demo-", "civ_devgate", "civ_ledger_dev"],
     /** Districts that must be physically complete before a world may be armed. Mirrors template.json. */
     builtRequired: ["district-1", "district-2", "district-3", "district-4", "district-5"],
 };

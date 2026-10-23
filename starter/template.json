@@ -32,7 +32,7 @@
     "starter": {
         "templateId": "civapoc-starter",
         "keepKeyPrefixes": ["civ:kingdom", "civ:plan", "civ_gatereg", "civ_gate_"],
-        "wipeKeyPrefixes": ["civ:kingdom-quarantine", "civ:jobs", "civ:debug", "civ:demo-", "civ_devgate"],
+        "wipeKeyPrefixes": ["civ:kingdom-quarantine", "civ:jobs", "civ:debug", "civ:demo-", "civ_devgate", "civ_ledger_dev"],
         "builtRequired": ["district-1", "district-2", "district-3", "district-4", "district-5"]
     },
     "districts": [
