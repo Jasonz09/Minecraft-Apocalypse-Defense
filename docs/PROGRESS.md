@@ -42,8 +42,8 @@ land, drafting to a share of population, and development scheduling.
 `integration/{simulationLoop,buildAdapter}.js`, `events/welcome.js`, `main.js`.
 
 ## Verification
-`npm run verify` runs four gates: manifest/packaging (**231 checks**), strict `checkJs`
-typecheck against `@minecraft/server` 2.7.0 (**0 errors**), unit tests (**148 across 10
+`npm run verify` runs four gates: manifest/packaging (**869 checks**), strict `checkJs`
+typecheck against `@minecraft/server` 2.7.0 (**0 errors**), unit tests (**1004 across the tracked test files; was 148 across 10
 files**), headless end-to-end kingdom run (**52/52 stages**).
 
 ## Defects found while integrating this milestone, and fixed
@@ -209,4 +209,4 @@ game. See FIVE_DISTRICT_BUILD.md, CIVILIZATION_PLAN_DESIGN.md, STARTER_WORLD.md.
 - Invasion director: built, disabled, tick no-op (INVASION_DIRECTOR.md).
 - Population LOD: built, spawning disabled, unwired (POPULATION_LOD.md).
 - Commander's Ledger: presenters and runtime committed and tested; wiring and manifest dependency reverted (unwired).
-- Reverts on master: Ledger wiring (6e24380), manifest dependency (5026111), siege balance (8810ef9). Original tests restored; full verify 1177/1177 at 5fff901.
+- Reverts on master: Ledger wiring (ee819b4), manifest dependency (a9dcd0f), siege balance (340a69e). Original tests restored. Clean export of HEAD 2cf6125: verify exit 0, 869/869 manifest checks, 1004/1004 unit tests, e2e 52/52.

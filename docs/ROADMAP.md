@@ -41,8 +41,8 @@ existing kingdom records (assault, integrity, casualties, security state, gate s
 
 ## C. Known balance problem (fix PARKED on branch siege-balance-candidate, not on master)
 
-Status: a candidate fix exists in commit 8810ef9 on branch `siege-balance-candidate`. It is NOT merged, because it changes
-existing test expectations. Merging needs playtesting and explicit approval. The original analysis follows.
+Status: the candidate fix (commit 8810ef9) was merged to master and then reverted (340a69e), because it changes existing test
+expectations. It is kept on branch `siege-balance-candidate`. Merging needs playtesting and explicit approval. The original analysis follows.
 The audit found a long-term siege deadlock in the simulation: over about 1,000 default-seed steps (about 40+ in-game
 days) every district can end in the `lost` state. Mechanism (see `docs/MINECRAFT_INTEGRATION.md`, known limits): attacker
 losses round to zero for bands of 1-2 raiders (`war.js`), the counterattack needs 1.5x strength, repairs are blocked while

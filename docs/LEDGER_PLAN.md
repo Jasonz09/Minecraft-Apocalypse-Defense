@@ -1,6 +1,6 @@
-# Commander's Ledger - implementation plan (NOT started)
+# Commander's Ledger - implementation plan (presenters and runtime built; wiring reverted)
 
-Gate: no Ledger code is written or deployed until the enlarged Hearthgate has passed its first in-game test.
+Gate: no Ledger code may be deployed until the enlarged Hearthgate has passed its first in-game test. Presenters and runtime are committed and unwired; the wiring is reverted (see Status below).
 The existing script-event commands stay as developer/debug tools.
 
 ## Compatibility findings (research, medium-high confidence)
@@ -52,6 +52,6 @@ decision on first-join grant (default: off, grant only by `civ:ledger`).
 ## Status (reverted state)
 Presenters (`scripts/ledger/`, tested), the injected-dependency runtime (`scripts/ledger/runtime.js`, tested) and the
 recovery id `civ:ledger` are committed. The wiring (`integration/ledgerBindings.js`, dev-gated `civ_ledger_dev`) and the
-manifest dependency on `@minecraft/server-ui` 2.1.0 were REVERTED (commits 6e24380 and 5026111) because they changed the
+manifest dependency on `@minecraft/server-ui` 2.1.0 were REVERTED (commits ee819b4 and a9dcd0f, reverting 6e24380 and 5026111) because they changed the
 original reliability-runtime tests (subscriber count, harness). Re-adding them needs an explicit decision on those
 expectations. Nothing here is verified in game.

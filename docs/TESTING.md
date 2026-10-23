@@ -10,7 +10,7 @@ Run `npm run verify` (manifest, typecheck, unit tests, end-to-end). New offline 
 invasion-director, population-lod, population-sync, ledger-presenters, ledger-ui, civ-five-district (with the
 golden Hearthgate pin). Run the template suites on their own: they share a folder and must not run concurrently with another run.
 
-## The five gates
+## The four gates
 
 ```bash
 npm install      # typescript + @minecraft/server@2.7.0 types + @minecraft/common
@@ -22,8 +22,8 @@ Current results: see `docs/PROGRESS.md` and `docs/ENLARGED_HEARTHGATE.md` (count
 | Command | Gate | What it actually proves |
 | --- | --- | --- |
 | `npm run validate` | manifest + packaging | Manifest structure, real unique UUIDs, entry file exists, the `@minecraft/server` pin **equals the installed types version** (so the code cannot be checked against one API and shipped against another), every relative import carries a `.js` extension and resolves (a missing extension is a silent pack-load failure), no dev junk inside the pack root |
-| `npm run typecheck` | strict `checkJs` | All 24 pack scripts are typed against the real 2.7.0 declarations: catches `initial` vs `initialSpawn`, `scriptEventReceived` vs `scriptEventReceive`, non-existent methods, implicit `any` |
-| `npm run test` | 148 unit tests across 10 files | Simulation behaviour, save/migration, invariants, reporting text, argument parsing |
+| `npm run typecheck` | strict `checkJs` | Every pack script is typed against the real 2.7.0 declarations: catches `initial` vs `initialSpawn`, `scriptEventReceived` vs `scriptEventReceive`, non-existent methods, implicit `any` |
+| `npm run test` | 1004 unit tests (clean export of HEAD) | Simulation behaviour, save/migration, invariants, reporting text, argument parsing |
 | `npm run e2e` | headless kingdom run | The whole gameplay sequence over a v1 save: migrate → peace → siege → evacuation → reinforcement → counterattack → victory → autonomous claim → shortage refusal → construction → recruitment → persistence → deterministic replay → readouts |
 | `npm run template:validate` | starter-world template contract | `starter/template.json` against the real pack and planner: distinct, collide-free UUIDs, `world_template` module type, pack folder name ≤ 10 characters, `en_US` language, the keep/wipe prefix sets (the master plan must survive, `civ:kingdom-quarantine` must not), five unique districts with unique layout ids, and **no district marked `starterWorld` unless its enlarged layout is actually registered** - which is what stops an empty template being called finished |
 
