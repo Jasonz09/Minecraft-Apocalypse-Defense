@@ -21,6 +21,8 @@ never overlapped, resized or erased; the site search excludes it with a margin a
   five districts, pause (keeps blocks and queue), continue (also after a Minecraft restart: plan and ground are reloaded
   and the checksum is verified).
 - `civ:generate_devgate on|off` - the development flag; districts 2-5 are implemented, so it no longer means "unavailable".
+  The generation commands above (`civ:generate*`, `civ:generate_diag`) are registered only while this gate is on: a shipped
+  world, where it is off, answers none of them. Turning the gate on enables them at once; no reload needed.
 - Gates: `civ:gate_list`, `civ:gate_status [id]`, `civ:gate_open <id>`, `civ:gate_close <id>`, `civ:gate_auto <id>`,
   `civ:gate_test <id>` (safe close -> verify sealed -> reopen -> verify passable; refuses if entities are in the gateway).
 - Old manual commands (`civ:district_scout`, `civ:district_generate ...`) still work and are unchanged.

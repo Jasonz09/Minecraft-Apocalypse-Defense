@@ -545,10 +545,12 @@ test("devgate: building districts 2-5 is refused with the gate off; district=all
     await flush();
     assert.match(text(build), /district=all is read-only/);
     assert.equal(mc.writes, 0, "a refusal writes nothing");
+    // the gate is off: the generation commands are not registered, so nothing answers and nothing is built
+    send(CIV_EVENT_IDS.devgate, "off", makePlayer());
     const off = makePlayer();
     send(CIV_EVENT_IDS.generate, "district=2", off);
     await flush();
-    assert.match(text(off), /Ironquarry \(district-2\) is development-only: the development gate is off/);
+    assert.equal(text(off), "", "with the gate off the generation command is not answered at all");
     assert.equal(mc.writes, 0, "a refusal writes nothing");
     assert.equal(mc.reads, 0, "a refusal reads nothing from the world");
 
@@ -564,8 +566,8 @@ test("devgate: building districts 2-5 is refused with the gate off; district=all
     const resumeOff = makePlayer();
     send(CIV_EVENT_IDS.resume, "district=2", resumeOff);
     await flush();
-    // Pre-goal behaviour: resume itself is not gated by the development switch (the build is only ever started with it on).
-    assert.doesNotMatch(text(resumeOff), /development-only/, "resume is not gated by the development switch");
+    // the gate is still off here: resume is a generation command, so it is not registered and not answered
+    assert.equal(text(resumeOff), "", "with the gate off resume is not answered at all");
     // with the gate on the same command gets past the gate
     send(CIV_EVENT_IDS.devgate, "on", makePlayer());
     await flush();

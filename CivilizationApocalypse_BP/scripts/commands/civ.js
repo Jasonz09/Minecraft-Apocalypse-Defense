@@ -63,6 +63,9 @@ export function setGateLinker(fn) {
 export let lastResumeOps = newOps();
 
 /**
+ * Registers the development gate switch, which always listens because it is the only way to turn the gate on.
+ * The generation commands register only when the gate is on: at load (checked on the first tick, because early
+ * execution cannot read world properties) or when the switch turns it on. Ledger pattern (ledger/devgate.js).
  * @param {KingdomStore} kingdomStore
  */
 export function registerCivCommands(kingdomStore) {
@@ -71,6 +74,36 @@ export function registerCivCommands(kingdomStore) {
     }
     registered = true;
     system.afterEvents.scriptEventReceive.subscribe((event) => {
+        if (event.id === CIV_EVENT_IDS.devgate) {
+            handleDevgate(kingdomStore, parseArgs(event.message), event);
+        }
+    }, { namespaces: [SCRIPT_EVENT_NAMESPACE] });
+    system.run(() => {
+        if (devGateOn()) {
+            enableCivGeneration(kingdomStore);
+        }
+    });
+}
+
+/** Whether the generation listener is subscribed (once, ever, in this session). */
+let generationSubscribed = false;
+/** Whether generation commands are currently answered; turning the gate off clears it. */
+let generationOn = false;
+
+/**
+ * Subscribes the generation commands the first time the gate is on, and answers them only while it stays on.
+ * @param {KingdomStore} kingdomStore
+ */
+function enableCivGeneration(kingdomStore) {
+    generationOn = true;
+    if (generationSubscribed) {
+        return;
+    }
+    generationSubscribed = true;
+    system.afterEvents.scriptEventReceive.subscribe((event) => {
+        if (!generationOn) {
+            return;
+        }
         const id = event.id;
         if (id === CIV_EVENT_IDS.generate) {
             void handleGenerate(kingdomStore, parseArgs(event.message), event, false);
@@ -82,8 +115,6 @@ export function registerCivCommands(kingdomStore) {
             handleAbort(kingdomStore, parseArgs(event.message), event);
         } else if (id === CIV_EVENT_IDS.resume) {
             void handleResume(kingdomStore, parseArgs(event.message), event);
-        } else if (id === CIV_EVENT_IDS.devgate) {
-            handleDevgate(parseArgs(event.message), event);
         } else if (id === CIV_EVENT_IDS.diag) {
             handleDiag(event);
         }
@@ -1012,13 +1043,19 @@ function handleDiag(event) {
 }
 
 /**
+ * @param {KingdomStore} kingdomStore
  * @param {string[]} args
  * @param {ScriptEvent} event
  */
-function handleDevgate(args, event) {
+function handleDevgate(kingdomStore, args, event) {
     const value = args[0]?.toLowerCase();
     if (value === "on" || value === "off") {
         world.setDynamicProperty(CIV.devGateKey, value === "on");
+        if (value === "on") {
+            enableCivGeneration(kingdomStore);
+        } else {
+            generationOn = false;
+        }
         reply([
             `Development gate ${value}: districts 2-${String(DISTRICT_INDEXES.length)} ${value === "on" ? "may be generated in this world, one at a time and only after their lower-numbered neighbours are complete" : "cannot be generated in this world any more (district 1 is unaffected)"}.`,
             `One command per district: /scriptevent ${CIV_EVENT_IDS.generate} district=2. Arming a starter world wipes the gate.`,

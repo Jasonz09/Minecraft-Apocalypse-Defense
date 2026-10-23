@@ -784,11 +784,12 @@ test("district selection: district= is accepted, an out-of-range index is refuse
     assert.ok(/Usage: \/scriptevent civ:generate \[district=1-5\] \[site=here\] \[radius=24-400\] \[seed=N\]/.test(refused), refused);
     assert.equal(mc.writes, 0);
     assert.equal(mc.reads, 0, "a bad argument is refused before the world is read");
-    // the gate is off, so district 2 is refused BY NAME and told how to open the gate
-    send(CIV_EVENT_IDS.generate, "district=2 seed=1", player);
+    // the gate is off: the generation commands are not registered, so nothing answers and nothing is built
+    send(CIV_EVENT_IDS.devgate, "off", makePlayer());
+    const silent = makePlayer();
+    send(CIV_EVENT_IDS.generate, "district=2 seed=1", silent);
     await pump();
-    assert.match(text(player), /Ironquarry \(district-2\) is development-only: the development gate is off/);
-    assert.match(text(player), /civ:generate_devgate on/);
+    assert.equal(text(silent), "", "with the gate off the generation command is not answered at all");
     // with the gate ON a valid district= is accepted: it gets past the parser and past the gate and is stopped only
     // by the real reason - this world has no five-district master plan yet
     send(CIV_EVENT_IDS.devgate, "on", player);

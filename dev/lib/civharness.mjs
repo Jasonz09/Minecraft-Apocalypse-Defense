@@ -277,6 +277,8 @@ mc.system = {
         mc.timers = mc.timers.filter((t) => t.id !== id);
     },
     runTimeout: (callback, ticks = 1) => addTimer(ticks, callback),
+    // system.run is next-tick work, like the engine's: the civ gate is read there (main.js and civ.js)
+    run: (callback) => addTimer(1, callback),
     runJob(generator) {
         const id = mc.nextJob++;
         mc.jobs.push({ id, generator });
@@ -385,6 +387,10 @@ function resetWorld(seed = 1, options = {}) {
     mc.crashProps = null;
     mc.dieAtWrites = null;
     mc.dead = false;
+    mc.messages.length = 0;
+    // the shipped default is the development gate OFF; test worlds start with it ON, switched on the way the pack
+    // does it (the switch also subscribes the generation commands). Its reply is discarded here.
+    send(CIV_EVENT_IDS.devgate, "on");
     mc.messages.length = 0;
     mc.jobs.length = 0;
     mc.reads = 0;
