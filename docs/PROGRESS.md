@@ -42,8 +42,8 @@ land, drafting to a share of population, and development scheduling.
 `integration/{simulationLoop,buildAdapter}.js`, `events/welcome.js`, `main.js`.
 
 ## Verification
-`npm run verify` runs four gates: manifest/packaging (**869 checks**), strict `checkJs`
-typecheck against `@minecraft/server` 2.7.0 (**0 errors**), unit tests (**1004 across the tracked test files; was 148 across 10
+`npm run verify` runs four gates: manifest/packaging (**903 checks**), strict `checkJs`
+typecheck against `@minecraft/server` 2.7.0 (**0 errors**), unit tests (**1029 across the tracked test files; was 148 across 10
 files**), headless end-to-end kingdom run (**52/52 stages**).
 
 ## Defects found while integrating this milestone, and fixed
@@ -204,9 +204,9 @@ not honesty; and the shared band's duplicate ownership is the root cause the wal
 game. See FIVE_DISTRICT_BUILD.md, CIVILIZATION_PLAN_DESIGN.md, STARTER_WORLD.md.
 
 ## Goal pass (offline)
-- Siege balance: fix parked on branch siege-balance-candidate (8810ef9), NOT on master: it changed existing test expectations. Needs playtesting and explicit approval before merge.
+- Siege balance: merged to master (7679415) after the user approved the changed test expectations. Difficulty needs in-game playtesting.
 - Districts 2-5 on the Hearthgate path, behind civ_devgate; golden keeps Hearthgate unchanged (FIVE_DISTRICT_BUILD.md).
 - Invasion director: built, disabled, tick no-op (INVASION_DIRECTOR.md).
 - Population LOD: built, spawning disabled, unwired (POPULATION_LOD.md).
-- Commander's Ledger: presenters and runtime committed and tested; wiring and manifest dependency reverted (unwired).
-- Reverts on master: Ledger wiring (ee819b4), manifest dependency (a9dcd0f), siege balance (340a69e). Original tests restored. Clean export of HEAD 2cf6125: verify exit 0, 869/869 manifest checks, 1004/1004 unit tests, e2e 52/52.
+- Commander's Ledger: presenters, runtime and dev-gated wiring on master (50590e3); manifest dependency on server-ui 2.1.0 (7f35c71), UNVERIFIED in game.
+- Approved expectation changes (user option A): war.test.mjs wall-crew values (standing crew 2); evacuation.test.mjs repair expectations (integrity 100, materials 135) and the 'wall rebuilt first' check now asserts integrity above breachIntegrity; reliability-runtime.test.mjs subscriber count 7 to 8 (the Ledger development switch) and harness stubs; siege-longhorizon.test.mjs first-breach bound 1000 to 1500 (its own new file). Verified on a clean export of 89f442c: exit 0, 903/903 manifest, 1029/1029 unit, e2e 52/52.

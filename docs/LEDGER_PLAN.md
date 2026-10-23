@@ -1,4 +1,4 @@
-# Commander's Ledger - implementation plan (presenters and runtime built; wiring reverted)
+# Commander's Ledger - implementation plan (presenters, runtime and dev-gated wiring on master)
 
 Gate: no Ledger code may be deployed until the enlarged Hearthgate has passed its first in-game test. Presenters and runtime are committed and unwired; the wiring is reverted (see Status below).
 The existing script-event commands stay as developer/debug tools.

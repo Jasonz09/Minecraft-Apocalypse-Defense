@@ -104,4 +104,4 @@ characters. The demo build adapter places blocks only when explicitly opted in â
 `docs/TESTING.md`.
 
 ## Roadmap
-Population as visible entities, the zombie invasion director and the long-term siege balance fix are recorded in [ROADMAP.md](ROADMAP.md). The siege balance candidate is on branch `siege-balance-candidate` and is not on master.
+Population as visible entities, the zombie invasion director and the long-term siege balance fix are recorded in [ROADMAP.md](ROADMAP.md). The siege balance fix is on master (7679415).

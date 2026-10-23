@@ -243,9 +243,9 @@ npm run verify     # runs all four gates, reports every one even if an earlier o
 
 | Gate | What it proves |
 | --- | --- |
-| `npm run validate` | 869 checks: manifest structure, real unique UUIDs, entry file exists, the pinned API version equals the installed types version, every relative import carries a `.js` extension and resolves, and the pack root has no dev junk in it |
+| `npm run validate` | 903 checks: manifest structure, real unique UUIDs, entry file exists, the pinned API version equals the installed types version, every relative import carries a `.js` extension and resolves, and the pack root has no dev junk in it |
 | `npm run typecheck` | Every pack script checked with `checkJs` **strict** against the real 2.7.0 declarations |
-| `npm run test` | 1004 offline unit tests across the tracked test files (clean export of HEAD): starting values, population splits, derived totals, validation, seed-once, restart round-trip, migration, quarantine, siege/evacuation/fallback/construction/expansion/population/policy behaviour |
+| `npm run test` | 1029 offline unit tests across the tracked test files (clean export of HEAD): starting values, population splits, derived totals, validation, seed-once, restart round-trip, migration, quarantine, siege/evacuation/fallback/construction/expansion/population/policy behaviour |
 | `npm run e2e` | A headless 52-stage kingdom run: migrate a v1 save, hold the realm, take a siege, evacuate, reinforce, counterattack, win beyond the border, claim and plan new land, be refused by a shortage, build, recruit, reload, and replay identically |
 
 The typecheck gate was mutation-tested: renaming `initialSpawn` → `initial` (the old 1.x
@@ -305,19 +305,14 @@ Seams left for the next milestone:
 
 ## Goal pass status (offline only - nothing below has run in Minecraft)
 
-- **Siege balance:** NOT on master. The fix (commit 8810ef9) is parked on the branch `siege-balance-candidate` because it
-  changes existing test expectations, which the project rules forbid without approval. It needs playtesting first.
-- **Districts 2-5:** build through the Hearthgate path behind the development gate (civ_devgate). Shared-wall deviation
-  documented in docs/FIVE_DISTRICT_BUILD.md.
-- **Invasion director:** built, disabled by default; the tick calls it as a no-op (docs/INVASION_DIRECTOR.md).
-- **Population LOD:** built and tested; spawning disabled and not wired into the pack (docs/POPULATION_LOD.md).
-- **Commander's Ledger:** presenters and runtime are committed but unwired. The wiring and the manifest dependency on
-  @minecraft/server-ui were reverted because they broke original tests; see docs/LEDGER_PLAN.md.
+- **Siege balance:** merged (7679415). It changes existing test expectations, approved by the user (see docs/PROGRESS.md). Difficulty still needs playtesting in Minecraft; falls are rare by design of the current numbers.
+
+- **Commander's Ledger:** wired behind the development gate `civ_ledger_dev` (default off; commit 50590e3). The manifest depends on @minecraft/server-ui 2.1.0 (7f35c71), which is UNVERIFIED in game: if it does not resolve, the whole pack will fail to load. Test on a throwaway world first (docs/LEDGER_PLAN.md).
 
 ## Verification status
 
-Four offline gates green on a clean export of HEAD: 869 manifest/packaging checks, strict typecheck against the real
-2.7.0 declarations, 1004 unit tests, and a 52-stage headless end-to-end kingdom run.
+Four offline gates green on a clean export of HEAD: 903 manifest/packaging checks, strict typecheck against the real
+2.7.0 declarations, 1029 unit tests, and a 52-stage headless end-to-end kingdom run.
 **Nothing has been run inside Minecraft** — it is not installed on the machine that built
 this. `docs/TESTING.md` carries the in-game script for when it is, and `docs/PROGRESS.md`
 lists the defects found and fixed during this milestone along with the remaining risks.
