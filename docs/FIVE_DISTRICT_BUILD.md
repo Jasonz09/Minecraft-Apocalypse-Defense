@@ -150,3 +150,67 @@ that output, export the world, and follow `docs/STARTER_WORLD.md`.
   `chapel`, `school`, wells) is required to be physically present in every district on every terrain.
 * Physical entities: none. Civilians and soldiers remain simulation values; the Commander's Ledger,
   zombie sieges, NPCs and diplomacy are later milestones.
+
+## WP2 audit (districts 2-5 through the district-1 code path)
+
+Measured at HEAD `143afa9` before any WP2 edit. Probe: `planCivilizationDetailed` on `makeField(seed, { relief, hills: 60 })`,
+then `planDistrictSite(plan, i, field, { seed })` for i = 1..5. Rough = relief 18, flat = relief 2.
+
+| district | role | layout registered | planned on 7 fixtures (seeds 21, 3, 7, 42, 99 rough; 12, 8 flat) | containment problems | ops (seed 21) | record bytes (max, 7 fixtures) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 Hearthgate | command | `hearthgate-enlarged` | 7/7 ok | 0 | 75,155 | 73,845 |
+| 2 Ironquarry | industrial | `ironquarry-enlarged` | 7/7 ok | 0 | 58,261 | 73,752 |
+| 3 Whitethorn | agricultural | `whitethorn-enlarged` | 7/7 ok | 0 | 67,182 | 87,773 |
+| 4 Saltmere | commercial | `saltmere-enlarged` | 7/7 ok | 0 | 65,967 | 76,116 |
+| 5 Ashfall | residential | `ashfall-enlarged` | 7/7 ok | 0 | 65,396 | 90,965 |
+
+All 35 district plans succeed with no problems; the master plan succeeds on all 7 fixtures. Record bytes stay under the 120,000-byte
+plan budget. Per-seed numbers are in the probe output, not here.
+
+What is in place already (no change needed for the build path): one generic planner `planDistrictSiteSteps` reads each district's own
+walls, gates and roads from the master plan; `ENLARGED_LAYOUTS` names all five layouts; the site slot (`sitePrefixFor`) and queue
+slot (`jobPrefixFor`) are index-generic, with district 1 keeping the legacy single slot; `civ:generate`, `civ:generate_plan` refuse
+districts 2-5 without `civ_devgate`.
+
+What was missing or unproven:
+
+* **Gate gaps (fixed in WP2):** `civ:generate_plan district=all` was ungated, and `civ:generate_resume` of an already started
+  district 2-5 was not refused when the gate was off. Both now refuse with the gate-off message.
+* **Coverage gap (closed by `dev/test/civ-five-district.test.mjs`):** the existing door, walkability, rehydration and
+  restart tests in `civ-districtplan.test.mjs` and `civ-siterehydrate.test.mjs` iterate over district 1 only. Districts 2-5 had
+  no rehydration, walkable-network or interrupted-resume check of their own.
+* **Shared walls, at HEAD (superseded, see round 2 below):** planning a shared wall from
+  either neighbour's ground gives identical blocks (`planWall` output does not depend on the region clip). The per-district
+  element lists differ because `resolve()` keeps only the first claim when two wall elements of one district lay the same block
+  at a junction. Seed 21, element-only cells per side: wall-3 (1|2) 12 / 22; wall-4 (1|5) 358 / 363; wall-6 (2|3) 0 / 727;
+  wall-7 (1|3) 388 / 26; wall-9 (1|4) 46 / 53; wall-10 (4|5) 0 / 0; wall-11 (3|4) 0 / 0. Every cell that one side's element
+  omits is built by the other side's stream. Making the element lists identical would change district 1's pinned output, so it
+  is recorded here rather than changed.
+* **Raw cross-district overlaps, at HEAD (superseded, see round 2 below):** in build order 1..5 the raw streams place a different block on
+  796 coordinates already claimed by an earlier district's wall or gate (seed 21). The runtime refuses these: the write guard
+  (`inProtectedArea`, `isSharedWallFill`) and the live-block classifier (`classifyCivOp`) treat a non-natural block as occupied and
+  skip the later op. Within one district no later stage replaces a barrier block.
+
+### WP2 decisions, implemented (round 2)
+
+* **Shared-wall criterion (deviation from the element-identity wording).** The spec asked that the wall ops district A and
+  district B produce for a shared wall be identical, cell for cell and id for id. That is not what is asserted, and cannot be
+  without changing district 1. Element lists differ because `resolve()` de-duplicates a wall element against the other wall
+  elements of the same district: where two walls of one district lay the same block at a junction, the first claim is kept.
+  District 1's de-duplication is pinned by `dev/test/golden/hearthgate-golden.json` (its element ids, totals and hashes), so
+  district 1's wall-3, wall-4, wall-7 and wall-9 elements cannot be made to hold every planned column, and no district 2-5
+  element can be made to match them exactly without copying district 1's omissions. The test therefore asserts the three
+  properties that describe what is built:
+  1. the wall planned from A's ground equals the wall planned from B's ground (`planDiff` 0);
+  2. every planned column is solid in the final stream of at least one neighbour (`uncovered` 0);
+  3. no planned column holds two different solid blocks in the two final streams (`conflicts` 0).
+  Measured on seed 21 (rough) after the change: planned geometry identical on all 7 shared walls, and no planned column absent
+  from both final streams.
+* **Plan-time priority across districts (implemented in `scripts/civ/districtplan.js`).** For districts 2-5, every op of a
+  later district that would place a different block on a column owned by an earlier district's final wall layer is dropped at
+  plan time (`foreignBarrier`, applied in `resolve()`). The earlier layer is planned from this district's own region ground, so
+  rehydration reproduces it. District 1 has no earlier district, so its output does not change (golden test passes).
+  Runtime write-path checks (guard and classifier) stay as they were.
+* **Gate gaps and the devgate fixture.** `civ:generate_plan district=all` and `civ:generate_resume` of districts 2-5 are gated
+  on `civ_devgate`. The devgate test's fixture was hand-written and invalid (missing seed, startedStep, anchor, checksum,
+  stage); it now has the shape `commands/civ.js` writes. No producer change was needed.

@@ -428,6 +428,10 @@ async function handleGenerate(kingdomStore, args, event, planOnly) {
         say(player, formatErrorLines(title, [`district=all is read-only: it prints the totals of all ${String(DISTRICT_INDEXES.length)} districts. Name the one district to build (district=1 to district=${String(DISTRICT_INDEXES.length)}), or use /scriptevent ${CIV_EVENT_IDS.plan} district=all.`]));
         return;
     }
+    if (options.district === "all" && !devGateOn()) {
+        say(player, formatErrorLines(title, [`district=all covers districts 2-${String(DISTRICT_INDEXES.length)} as well, so it is development-only: the development gate is off.`, `/scriptevent ${CIV_EVENT_IDS.devgate} on (a released world ships with it off and wiped).`]));
+        return;
+    }
     const index = districtIndexOf(options.district);
     const districtId = districtIdFor(index);
     const kingdomLoaded = kingdomStore.load();
@@ -766,6 +770,10 @@ async function handleResume(kingdomStore, args, event) {
     const civ = district?.civ;
     if (!district || civ === undefined) {
         say(player, formatErrorLines(title, [`${districtId} was never started: there is nothing to resume${options.district === undefined ? " (say which district you mean: district=N)" : ""}.`]));
+        return;
+    }
+    if (index > 1 && !devGateOn()) {
+        say(player, formatErrorLines(title, [`${districtTitle(index)} is development-only: the development gate is off, so its build cannot be continued.`, `/scriptevent ${CIV_EVENT_IDS.devgate} on (a released world ships with it off and wiped).`]));
         return;
     }
     if (civ.status === "complete") {

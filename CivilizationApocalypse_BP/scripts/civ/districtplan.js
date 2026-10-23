@@ -543,6 +543,59 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
 
     const zoneRegion = regionFromPlan(plan, index);
 
+    // ---------------------------------------------------------------- priority across districts
+    /**
+     * Plan-time priority between districts. Build order is 1..5, so a barrier an EARLIER district plans
+     * (one of its walls) owns the cells it stands on: this district drops every op of its own that would put a
+     * DIFFERENT block there (resolve below). The earlier walls are planned here from this district's own ground
+     * (siteGroundRegion covers every wall that can reach this district), so the result is rehydrated identically.
+     * District 1 has no earlier district: its map stays empty and its output does not change.
+     * @type {Map<number, string>} k3 key -> block id
+     */
+    const foreignBarrier = new Map();
+    if (index > 1 && district !== undefined) {
+        const reach = 12;
+        const near = {
+            x0: Number(district.bbox?.x0 ?? 0) - reach,
+            z0: Number(district.bbox?.z0 ?? 0) - reach,
+            x1: Number(district.bbox?.x1 ?? 0) + reach,
+            z1: Number(district.bbox?.z1 ?? 0) + reach,
+        };
+        // Each earlier district's FINAL wall layer, in the order its own planner executes its walls (id order; a later
+        // wall overwrites an earlier one on the same cell, as resolve() does for equal-rank walls). Earlier districts
+        // are merged in build order, so the first-built block wins, exactly as it does in the world.
+        for (let label = 1; label < index; label += 1) {
+            /** @type {Map<number, string>} */
+            const layer = new Map();
+            const owned = /** @type {any[]} */ (plan.walls ?? [])
+                .filter((wall) => (/** @type {any[]} */ (wall?.between ?? [])).map(Number).includes(label))
+                .sort((left, right) => String(left.id).localeCompare(String(right.id)));
+            for (const wall of owned) {
+                const path = /** @type {number[][]} */ (Array.isArray(wall.path) ? wall.path : []);
+                if (path.length === 0) continue;
+                const wx0 = Math.min(...path.map((p) => p[0]));
+                const wx1 = Math.max(...path.map((p) => p[0]));
+                const wz0 = Math.min(...path.map((p) => p[1]));
+                const wz1 = Math.max(...path.map((p) => p[1]));
+                if (wx1 < near.x0 || wx0 > near.x1 || wz1 < near.z0 || wz0 > near.z1) continue;
+                const gatesHere = (/** @type {any[]} */ (plan.gates ?? [])).filter((gate) => String(gate.wallId) === String(wall.id)).map((gate) => ({ at: gate.at, axis: gate.axis }));
+                let built;
+                try {
+                    built = planWall(path, ground, { closed: wall.closed === true, height: wallHeight, gates: gatesHere });
+                } catch (_error) {
+                    continue;
+                }
+                yield* pace(ops, Math.min(23000, path.length * 400 + 2000));
+                for (const segment of wallOpSegments(built, CIV_LIMITS.maxBlocksPerSlice)) {
+                    for (const op of segment.ops) layer.set(k3(op), String(op.id));
+                }
+            }
+            for (const [key, id] of layer) {
+                if (!foreignBarrier.has(key)) foreignBarrier.set(key, id);
+            }
+        }
+    }
+
     // ---------------------------------------------------------------- element registry
     /**
      * @typedef {{
@@ -708,6 +761,12 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
                     continue;
                 }
                 const key = /** @type {number} */ (el.keys[i]);
+                // an earlier district's barrier owns this cell: a different block here is dropped, never placed over it
+                const owned = foreignBarrier.get(key);
+                if (owned !== undefined && owned !== el.norm[i].id) {
+                    dropped += 1;
+                    continue;
+                }
                 const sig = /** @type {number} */ (el.sigs[i]);
                 const claim = claims.get(key);
                 if (claim === undefined) {

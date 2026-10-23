@@ -1,0 +1,7988 @@
+{
+ "description": "Golden snapshot of district 1 (Hearthgate) site output, recorded at HEAD 143afa9 before the WP2 five-district change. Any change to district 1 output must fail dev/test/civ-five-district.test.mjs.",
+ "head": "143afa9",
+ "version": 2,
+ "layoutId": "hearthgate-enlarged",
+ "cases": {
+  "seed 21 rough": {
+   "seed": 21,
+   "relief": 18,
+   "checksum": "53c81775",
+   "siteOpCount": 75155,
+   "opCount": 75155,
+   "opsSha256": "69dba8a7c70bf18505cc342404ea6e6756af222ed9c53002b8335c5c21d947ba",
+   "elements": [
+    {
+     "stage": "clear",
+     "id": "clear-wall-1",
+     "total": 5,
+     "hash": "9d4a2857"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-hq_citadel-1",
+     "total": 8,
+     "hash": "db86b6c9"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-barracks-1",
+     "total": 13,
+     "hash": "bd5c3fa5"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-guard_post-3",
+     "total": 2,
+     "hash": "cf381153"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-guard_post-4",
+     "total": 1,
+     "hash": "f02ef416"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-farm_kitchen-3",
+     "total": 10,
+     "hash": "a348815f"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-stable-2",
+     "total": 5,
+     "hash": "b30d590c"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-warehouse-1",
+     "total": 6,
+     "hash": "b3161924"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-warehouse-2",
+     "total": 9,
+     "hash": "d5bda48b"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-well-2",
+     "total": 7,
+     "hash": "e86f6db3"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-well-3",
+     "total": 6,
+     "hash": "76ba7816"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-well-4",
+     "total": 1,
+     "hash": "53c143c7"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-roads",
+     "total": 47,
+     "hash": "87e812de"
+    },
+    {
+     "stage": "walls",
+     "id": "wall-1",
+     "total": 14055,
+     "hash": "e4dccc61"
+    },
+    {
+     "stage": "walls",
+     "id": "wall-3",
+     "total": 8458,
+     "hash": "d0f07523"
+    },
+    {
+     "stage": "walls",
+     "id": "wall-4",
+     "total": 8868,
+     "hash": "a0a1b2a2"
+    },
+    {
+     "stage": "walls",
+     "id": "wall-7",
+     "total": 5426,
+     "hash": "b83c9647"
+    },
+    {
+     "stage": "walls",
+     "id": "wall-9",
+     "total": 2236,
+     "hash": "70522de0"
+    },
+    {
+     "stage": "gates",
+     "id": "gate-1",
+     "total": 459,
+     "hash": "1d7f0c65"
+    },
+    {
+     "stage": "gates",
+     "id": "gate-5",
+     "total": 459,
+     "hash": "d7a4013b"
+    },
+    {
+     "stage": "gates",
+     "id": "gate-6",
+     "total": 459,
+     "hash": "6de31065"
+    },
+    {
+     "stage": "gates",
+     "id": "gate-7",
+     "total": 459,
+     "hash": "5b277e6e"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-armoury-1",
+     "total": 12,
+     "hash": "8698964a"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-barracks-1",
+     "total": 12,
+     "hash": "21f28d33"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-barracks-2",
+     "total": 5,
+     "hash": "6aa5eb24"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-barracks-3",
+     "total": 2,
+     "hash": "75c816c7"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-drill_ground-1",
+     "total": 9,
+     "hash": "59efade7"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-1",
+     "total": 9,
+     "hash": "144c98a8"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-10",
+     "total": 4,
+     "hash": "814ce342"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-11",
+     "total": 8,
+     "hash": "ba30952b"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-2",
+     "total": 6,
+     "hash": "300c7c69"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-3",
+     "total": 9,
+     "hash": "8a096108"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-4",
+     "total": 8,
+     "hash": "925f6fdb"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-5",
+     "total": 4,
+     "hash": "0fd59699"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-6",
+     "total": 8,
+     "hash": "45c32296"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-7",
+     "total": 7,
+     "hash": "20588907"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-8",
+     "total": 1,
+     "hash": "df15a922"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-9",
+     "total": 8,
+     "hash": "21a04dc0"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-watchtower-1",
+     "total": 5,
+     "hash": "9ce83772"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-watchtower-2",
+     "total": 8,
+     "hash": "01f1c272"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-watchtower-3",
+     "total": 5,
+     "hash": "6e533986"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-farm_kitchen-1",
+     "total": 7,
+     "hash": "53ba0c93"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-farm_kitchen-2",
+     "total": 10,
+     "hash": "24d82d98"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-farm_kitchen-3",
+     "total": 17,
+     "hash": "98961ad2"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-garden-1",
+     "total": 8,
+     "hash": "c40812eb"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-garden-2",
+     "total": 11,
+     "hash": "de6f15f0"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-garden-3",
+     "total": 14,
+     "hash": "a090a428"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-granary-1",
+     "total": 17,
+     "hash": "ba5dfc2e"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-hospital-1",
+     "total": 4,
+     "hash": "db24bc07"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-market_stall-1",
+     "total": 5,
+     "hash": "9a96a55e"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-market_stall-2",
+     "total": 7,
+     "hash": "a24a7d77"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-market_stall-3",
+     "total": 2,
+     "hash": "59a1529c"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-market_stall-4",
+     "total": 8,
+     "hash": "5ce754b1"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-pen-1",
+     "total": 6,
+     "hash": "a839f8eb"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-pen-2",
+     "total": 23,
+     "hash": "e71adbaf"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-pen-3",
+     "total": 8,
+     "hash": "439900ec"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-shop-1",
+     "total": 5,
+     "hash": "c579e28d"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-stable-1",
+     "total": 8,
+     "hash": "1fab37c8"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-stable-2",
+     "total": 8,
+     "hash": "f7956006"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-warehouse-1",
+     "total": 4,
+     "hash": "529dcd96"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-warehouse-2",
+     "total": 7,
+     "hash": "0fa310a8"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-well-1",
+     "total": 3,
+     "hash": "05b18e82"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-well-2",
+     "total": 4,
+     "hash": "02ca03c6"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-well-3",
+     "total": 10,
+     "hash": "8d96b1ba"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-well-4",
+     "total": 7,
+     "hash": "dc2bfea7"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_l-1",
+     "total": 3,
+     "hash": "e9f3d507"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_m-1",
+     "total": 4,
+     "hash": "d628afb4"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_m-2",
+     "total": 6,
+     "hash": "e366d8e4"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_m-3",
+     "total": 7,
+     "hash": "99125b7e"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_s-1",
+     "total": 5,
+     "hash": "5b9689af"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_s-2",
+     "total": 5,
+     "hash": "f451311d"
+    },
+    {
+     "stage": "roads",
+     "id": "patrol-lane",
+     "total": 433,
+     "hash": "d5868088"
+    },
+    {
+     "stage": "roads",
+     "id": "patrol-lane-2",
+     "total": 1802,
+     "hash": "88ba6c17"
+    },
+    {
+     "stage": "roads",
+     "id": "connector-1",
+     "total": 1,
+     "hash": "32476f54"
+    },
+    {
+     "stage": "roads",
+     "id": "connector-2",
+     "total": 1,
+     "hash": "2b23819a"
+    },
+    {
+     "stage": "roads",
+     "id": "connector-3",
+     "total": 1,
+     "hash": "ac45bfe6"
+    },
+    {
+     "stage": "roads",
+     "id": "connector-4",
+     "total": 2,
+     "hash": "db14395a"
+    },
+    {
+     "stage": "roads",
+     "id": "road-10",
+     "total": 75,
+     "hash": "8ab41fd1"
+    },
+    {
+     "stage": "roads",
+     "id": "road-11",
+     "total": 32,
+     "hash": "4a5d12a9"
+    },
+    {
+     "stage": "roads",
+     "id": "road-12",
+     "total": 94,
+     "hash": "c7862ef4"
+    },
+    {
+     "stage": "roads",
+     "id": "road-13",
+     "total": 26,
+     "hash": "21866307"
+    },
+    {
+     "stage": "roads",
+     "id": "road-14",
+     "total": 67,
+     "hash": "417de598"
+    },
+    {
+     "stage": "roads",
+     "id": "road-15",
+     "total": 29,
+     "hash": "1394492a"
+    },
+    {
+     "stage": "roads",
+     "id": "road-16",
+     "total": 75,
+     "hash": "832d0e42"
+    },
+    {
+     "stage": "roads",
+     "id": "road-5",
+     "total": 99,
+     "hash": "9161bd80"
+    },
+    {
+     "stage": "roads",
+     "id": "road-6",
+     "total": 100,
+     "hash": "6f179d70"
+    },
+    {
+     "stage": "roads",
+     "id": "road-7",
+     "total": 97,
+     "hash": "0aae9058"
+    },
+    {
+     "stage": "roads",
+     "id": "road-8",
+     "total": 94,
+     "hash": "0cb6f717"
+    },
+    {
+     "stage": "roads",
+     "id": "road-9",
+     "total": 24,
+     "hash": "2c2c953a"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s1",
+     "total": 96,
+     "hash": "fe8bdcdf"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s2",
+     "total": 61,
+     "hash": "b2231f29"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s3",
+     "total": 117,
+     "hash": "fbc70c51"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s4",
+     "total": 46,
+     "hash": "63b9fdad"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s5",
+     "total": 4,
+     "hash": "7b6f4b03"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s6",
+     "total": 81,
+     "hash": "f74fb650"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s7",
+     "total": 181,
+     "hash": "8a72a0d9"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s8",
+     "total": 112,
+     "hash": "9df811f6"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s9",
+     "total": 56,
+     "hash": "be66f3cb"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s10",
+     "total": 63,
+     "hash": "41080f17"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s11",
+     "total": 50,
+     "hash": "5ba625f4"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s12",
+     "total": 35,
+     "hash": "8312cb5b"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s13",
+     "total": 4,
+     "hash": "a2808d99"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s14",
+     "total": 26,
+     "hash": "68bc2d6b"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s15",
+     "total": 42,
+     "hash": "55056b76"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s16",
+     "total": 44,
+     "hash": "ff0b763c"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s17",
+     "total": 6,
+     "hash": "295e479e"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s18",
+     "total": 60,
+     "hash": "fcd991f5"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s19",
+     "total": 14,
+     "hash": "fee0e19a"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s20",
+     "total": 13,
+     "hash": "27bb56e0"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s21",
+     "total": 82,
+     "hash": "de7c6779"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s22",
+     "total": 35,
+     "hash": "db973e74"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s23",
+     "total": 45,
+     "hash": "147f385e"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s24",
+     "total": 77,
+     "hash": "24076ddf"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s25",
+     "total": 44,
+     "hash": "7905bb11"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s26",
+     "total": 45,
+     "hash": "49049cef"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s27",
+     "total": 8,
+     "hash": "601c3c14"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s28",
+     "total": 54,
+     "hash": "dccecd44"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s29",
+     "total": 53,
+     "hash": "16dd8411"
+    },
+    {
+     "stage": "roads",
+     "id": "road-81",
+     "total": 68,
+     "hash": "2ad26f52"
+    },
+    {
+     "stage": "roads",
+     "id": "road-85",
+     "total": 73,
+     "hash": "37b74e67"
+    },
+    {
+     "stage": "roads",
+     "id": "road-86",
+     "total": 108,
+     "hash": "a369688b"
+    },
+    {
+     "stage": "roads",
+     "id": "road-87",
+     "total": 77,
+     "hash": "75ce6315"
+    },
+    {
+     "stage": "roads",
+     "id": "apron-gate-1",
+     "total": 10,
+     "hash": "0090e546"
+    },
+    {
+     "stage": "roads",
+     "id": "apron-gate-5",
+     "total": 13,
+     "hash": "a4731970"
+    },
+    {
+     "stage": "roads",
+     "id": "road-1",
+     "total": 217,
+     "hash": "b8292a1f"
+    },
+    {
+     "stage": "roads",
+     "id": "road-2",
+     "total": 238,
+     "hash": "ee150f12"
+    },
+    {
+     "stage": "roads",
+     "id": "road-3",
+     "total": 538,
+     "hash": "f3b57e5d"
+    },
+    {
+     "stage": "roads",
+     "id": "road-4",
+     "total": 736,
+     "hash": "2b1d7913"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-hq_citadel-1",
+     "total": 1206,
+     "hash": "f6e1ddc4"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-hq_citadel-1",
+     "total": 3078,
+     "hash": "e48b24fe"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-armoury-1",
+     "total": 170,
+     "hash": "9de6530e"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-armoury-1",
+     "total": 611,
+     "hash": "e3274367"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-barracks-1",
+     "total": 339,
+     "hash": "00766e6e"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-barracks-1",
+     "total": 669,
+     "hash": "bd57d22e"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-barracks-2",
+     "total": 327,
+     "hash": "46ad73a3"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-barracks-2",
+     "total": 669,
+     "hash": "2c6c1cdc"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-barracks-3",
+     "total": 625,
+     "hash": "90f5e251"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-barracks-3",
+     "total": 669,
+     "hash": "f2d0511b"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-drill_ground-1",
+     "total": 1670,
+     "hash": "2fe56118"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-drill_ground-1",
+     "total": 856,
+     "hash": "e96f5f89"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-1",
+     "total": 25,
+     "hash": "3d0486de"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-1",
+     "total": 187,
+     "hash": "5606360e"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-10",
+     "total": 38,
+     "hash": "3e7275e0"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-10",
+     "total": 187,
+     "hash": "b98c5279"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-11",
+     "total": 51,
+     "hash": "8e24eef3"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-11",
+     "total": 187,
+     "hash": "6a5d1ccd"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-2",
+     "total": 57,
+     "hash": "0e5eddb3"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-2",
+     "total": 187,
+     "hash": "9d68d3f2"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-3",
+     "total": 26,
+     "hash": "f1618536"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-3",
+     "total": 187,
+     "hash": "5aa2e9bd"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-4",
+     "total": 3,
+     "hash": "67de1fe1"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-4",
+     "total": 187,
+     "hash": "473a4a88"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-5",
+     "total": 6,
+     "hash": "12aa3770"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-5",
+     "total": 187,
+     "hash": "af8be3dd"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-6",
+     "total": 41,
+     "hash": "c696b3e2"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-6",
+     "total": 187,
+     "hash": "386bc1f3"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-7",
+     "total": 36,
+     "hash": "0ff43e6a"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-7",
+     "total": 187,
+     "hash": "8bc95b13"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-8",
+     "total": 26,
+     "hash": "ea68c0df"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-8",
+     "total": 187,
+     "hash": "d343f212"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-9",
+     "total": 37,
+     "hash": "5b9ab14d"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-9",
+     "total": 187,
+     "hash": "40210bf2"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-watchtower-1",
+     "total": 11,
+     "hash": "bb31d5b1"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-watchtower-1",
+     "total": 251,
+     "hash": "d3439f09"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-watchtower-2",
+     "total": 4,
+     "hash": "a2013986"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-watchtower-2",
+     "total": 251,
+     "hash": "f8128627"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-watchtower-3",
+     "total": 45,
+     "hash": "e7b868c1"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-watchtower-3",
+     "total": 251,
+     "hash": "d736de1a"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-farm_kitchen-1",
+     "total": 660,
+     "hash": "afc98d85"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-farm_kitchen-1",
+     "total": 309,
+     "hash": "772127b2"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-farm_kitchen-2",
+     "total": 564,
+     "hash": "c6c17afa"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-farm_kitchen-2",
+     "total": 309,
+     "hash": "8582ab9d"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-farm_kitchen-3",
+     "total": 666,
+     "hash": "551a84b7"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-farm_kitchen-3",
+     "total": 309,
+     "hash": "3e1d7baa"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-garden-1",
+     "total": 168,
+     "hash": "4d7d8f04"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-garden-1",
+     "total": 72,
+     "hash": "4a9f08e7"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-garden-2",
+     "total": 165,
+     "hash": "f194a6b2"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-garden-2",
+     "total": 71,
+     "hash": "3a00ac2e"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-garden-3",
+     "total": 258,
+     "hash": "8ebbb304"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-garden-3",
+     "total": 66,
+     "hash": "4ef5a4ec"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-granary-1",
+     "total": 279,
+     "hash": "f6ca9e16"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-granary-1",
+     "total": 489,
+     "hash": "a2a56c69"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-hospital-1",
+     "total": 277,
+     "hash": "d4801024"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-hospital-1",
+     "total": 450,
+     "hash": "8486384b"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-market_stall-1",
+     "total": 41,
+     "hash": "b96ef051"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-market_stall-1",
+     "total": 43,
+     "hash": "311a967f"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-market_stall-2",
+     "total": 12,
+     "hash": "23396e21"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-market_stall-2",
+     "total": 43,
+     "hash": "074fa128"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-market_stall-3",
+     "total": 20,
+     "hash": "ee708c60"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-market_stall-3",
+     "total": 43,
+     "hash": "073e1c5d"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-market_stall-4",
+     "total": 13,
+     "hash": "a985a3ee"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-market_stall-4",
+     "total": 43,
+     "hash": "ca2266be"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-pen-1",
+     "total": 106,
+     "hash": "2916b064"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-pen-1",
+     "total": 198,
+     "hash": "17005f4b"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-pen-2",
+     "total": 749,
+     "hash": "19e338e3"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-pen-2",
+     "total": 104,
+     "hash": "a311b807"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-pen-3",
+     "total": 143,
+     "hash": "87ada2b1"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-pen-3",
+     "total": 184,
+     "hash": "cf138ddb"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-shop-1",
+     "total": 255,
+     "hash": "2225da2d"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-shop-1",
+     "total": 284,
+     "hash": "93d788d1"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-stable-1",
+     "total": 346,
+     "hash": "4e281539"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-stable-1",
+     "total": 448,
+     "hash": "cbe0ccdd"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-stable-2",
+     "total": 179,
+     "hash": "c54fe8e1"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-stable-2",
+     "total": 448,
+     "hash": "cd9cd5c2"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-warehouse-1",
+     "total": 147,
+     "hash": "74164e95"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-warehouse-1",
+     "total": 480,
+     "hash": "a38265b1"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-warehouse-2",
+     "total": 343,
+     "hash": "758c6f27"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-warehouse-2",
+     "total": 480,
+     "hash": "5c0ff17b"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-well-1",
+     "total": 105,
+     "hash": "7733edd9"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-well-1",
+     "total": 75,
+     "hash": "7a17710d"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-well-2",
+     "total": 10,
+     "hash": "b479221a"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-well-2",
+     "total": 75,
+     "hash": "b46d4791"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-well-3",
+     "total": 39,
+     "hash": "d1f77e96"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-well-3",
+     "total": 75,
+     "hash": "74872c9b"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-well-4",
+     "total": 78,
+     "hash": "79b41db3"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-well-4",
+     "total": 75,
+     "hash": "23c41687"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-house_l-1",
+     "total": 259,
+     "hash": "f9f0e864"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_l-1",
+     "total": 338,
+     "hash": "183b9b70"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-house_m-1",
+     "total": 33,
+     "hash": "db7b4711"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_m-1",
+     "total": 269,
+     "hash": "e6d940be"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-house_m-2",
+     "total": 101,
+     "hash": "87813fa6"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_m-2",
+     "total": 239,
+     "hash": "3fc550f7"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-house_m-3",
+     "total": 117,
+     "hash": "b7b2200d"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_m-3",
+     "total": 239,
+     "hash": "a5dad082"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-house_s-1",
+     "total": 56,
+     "hash": "c0ba80c3"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_s-1",
+     "total": 148,
+     "hash": "0c2cecde"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-house_s-2",
+     "total": 64,
+     "hash": "90741858"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_s-2",
+     "total": 148,
+     "hash": "94fbe170"
+    },
+    {
+     "stage": "dressing",
+     "id": "stairs-1",
+     "total": 30,
+     "hash": "ce149710"
+    },
+    {
+     "stage": "dressing",
+     "id": "stairs-2",
+     "total": 35,
+     "hash": "f038a780"
+    },
+    {
+     "stage": "dressing",
+     "id": "stairs-3",
+     "total": 26,
+     "hash": "c714df64"
+    },
+    {
+     "stage": "dressing",
+     "id": "stairs-4",
+     "total": 13,
+     "hash": "9912a2af"
+    },
+    {
+     "stage": "dressing",
+     "id": "stairs-5",
+     "total": 47,
+     "hash": "cef8ed1c"
+    },
+    {
+     "stage": "dressing",
+     "id": "hq-plaza",
+     "total": 46,
+     "hash": "e29f6f40"
+    }
+   ]
+  },
+  "seed 3 rough": {
+   "seed": 3,
+   "relief": 18,
+   "checksum": "574153b3",
+   "siteOpCount": 75256,
+   "opCount": 75256,
+   "opsSha256": "c5b76895a7a687d6f73c4b682035e68beb15ca696ba544c86d603b169a9fe966",
+   "elements": [
+    {
+     "stage": "clear",
+     "id": "clear-wall-1",
+     "total": 19,
+     "hash": "77de938d"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-wall-5",
+     "total": 8,
+     "hash": "f0729d5d"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-wall-7",
+     "total": 5,
+     "hash": "dd68b6a3"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-barracks-2",
+     "total": 3,
+     "hash": "d4e5ee51"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-guard_post-10",
+     "total": 3,
+     "hash": "3666de86"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-guard_post-11",
+     "total": 9,
+     "hash": "31e0eabb"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-guard_post-3",
+     "total": 1,
+     "hash": "f5688488"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-farm_kitchen-2",
+     "total": 6,
+     "hash": "64148b7f"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-farm_kitchen-3",
+     "total": 19,
+     "hash": "e2d0c5a2"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-stable-1",
+     "total": 15,
+     "hash": "7b9f3e8e"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-roads",
+     "total": 82,
+     "hash": "d3362535"
+    },
+    {
+     "stage": "walls",
+     "id": "wall-1",
+     "total": 17561,
+     "hash": "d8ac006f"
+    },
+    {
+     "stage": "walls",
+     "id": "wall-3",
+     "total": 4962,
+     "hash": "0b9d815f"
+    },
+    {
+     "stage": "walls",
+     "id": "wall-5",
+     "total": 11890,
+     "hash": "01a99e2e"
+    },
+    {
+     "stage": "walls",
+     "id": "wall-7",
+     "total": 3524,
+     "hash": "1472bc11"
+    },
+    {
+     "stage": "gates",
+     "id": "gate-1",
+     "total": 459,
+     "hash": "62231df4"
+    },
+    {
+     "stage": "gates",
+     "id": "gate-6",
+     "total": 459,
+     "hash": "89d4b9dd"
+    },
+    {
+     "stage": "gates",
+     "id": "gate-7",
+     "total": 459,
+     "hash": "deb7f952"
+    },
+    {
+     "stage": "gates",
+     "id": "gate-8",
+     "total": 459,
+     "hash": "275682de"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-hq_citadel-1",
+     "total": 11,
+     "hash": "e70a247f"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-armoury-1",
+     "total": 9,
+     "hash": "bec6f72c"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-barracks-1",
+     "total": 3,
+     "hash": "e6932359"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-barracks-2",
+     "total": 7,
+     "hash": "2b1197e7"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-barracks-3",
+     "total": 9,
+     "hash": "69def525"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-command_hall-1",
+     "total": 6,
+     "hash": "d8008395"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-1",
+     "total": 6,
+     "hash": "73fad47a"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-10",
+     "total": 6,
+     "hash": "838bfb2b"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-11",
+     "total": 9,
+     "hash": "fbfae344"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-12",
+     "total": 4,
+     "hash": "aa7d3a17"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-2",
+     "total": 2,
+     "hash": "b66443e3"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-3",
+     "total": 4,
+     "hash": "4e73dd61"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-4",
+     "total": 6,
+     "hash": "002e5171"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-5",
+     "total": 5,
+     "hash": "be4b302f"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-6",
+     "total": 6,
+     "hash": "7a1c3006"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-7",
+     "total": 9,
+     "hash": "57d1fa76"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-8",
+     "total": 6,
+     "hash": "9cdf1047"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-9",
+     "total": 5,
+     "hash": "f93a1df5"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-watchtower-1",
+     "total": 4,
+     "hash": "51d9066d"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-watchtower-2",
+     "total": 2,
+     "hash": "c732eb04"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-watchtower-3",
+     "total": 5,
+     "hash": "6b494b47"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-watchtower-4",
+     "total": 8,
+     "hash": "2618bc3a"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-watchtower-5",
+     "total": 3,
+     "hash": "0fe23162"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-farm_kitchen-1",
+     "total": 5,
+     "hash": "22149342"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-farm_kitchen-2",
+     "total": 3,
+     "hash": "fd5d711d"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-farm_kitchen-3",
+     "total": 11,
+     "hash": "4e92bf1b"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-farm_kitchen-4",
+     "total": 8,
+     "hash": "81df5dcc"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-garden-1",
+     "total": 2,
+     "hash": "fbc8d5db"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-garden-2",
+     "total": 13,
+     "hash": "2e251266"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-garden-3",
+     "total": 10,
+     "hash": "b46cd59b"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-granary-1",
+     "total": 9,
+     "hash": "d88333fe"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-hospital-1",
+     "total": 7,
+     "hash": "eec6e287"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-market_stall-1",
+     "total": 2,
+     "hash": "9fc3e059"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-market_stall-2",
+     "total": 4,
+     "hash": "4d14a41a"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-market_stall-3",
+     "total": 3,
+     "hash": "38e19eb8"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-market_stall-4",
+     "total": 3,
+     "hash": "d4a51087"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-orchard-1",
+     "total": 7,
+     "hash": "85ac87f2"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-pen-1",
+     "total": 4,
+     "hash": "6d73fff2"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-pen-2",
+     "total": 4,
+     "hash": "b3ce0667"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-pen-3",
+     "total": 6,
+     "hash": "55c98744"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-shop-1",
+     "total": 9,
+     "hash": "c7a76370"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-stable-1",
+     "total": 3,
+     "hash": "dd79c82d"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-stable-2",
+     "total": 3,
+     "hash": "df0363aa"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-warehouse-1",
+     "total": 12,
+     "hash": "9abfe0d4"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-warehouse-2",
+     "total": 3,
+     "hash": "6852d1d5"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-well-1",
+     "total": 4,
+     "hash": "d1413693"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-well-2",
+     "total": 3,
+     "hash": "ffa2ad20"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-well-3",
+     "total": 11,
+     "hash": "5b435a7d"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-well-4",
+     "total": 2,
+     "hash": "8c2a3be1"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_l-1",
+     "total": 7,
+     "hash": "6fa4b574"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_m-1",
+     "total": 8,
+     "hash": "aec337d5"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_m-2",
+     "total": 10,
+     "hash": "247dd05d"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_m-3",
+     "total": 7,
+     "hash": "6bd9a7a6"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_s-1",
+     "total": 7,
+     "hash": "2c436a3e"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_s-2",
+     "total": 10,
+     "hash": "e594c702"
+    },
+    {
+     "stage": "roads",
+     "id": "patrol-lane",
+     "total": 2004,
+     "hash": "206d5cc0"
+    },
+    {
+     "stage": "roads",
+     "id": "connector-1",
+     "total": 1,
+     "hash": "ec03c42f"
+    },
+    {
+     "stage": "roads",
+     "id": "connector-2",
+     "total": 1,
+     "hash": "dd6aed2f"
+    },
+    {
+     "stage": "roads",
+     "id": "connector-3",
+     "total": 1,
+     "hash": "5a2decd3"
+    },
+    {
+     "stage": "roads",
+     "id": "connector-4",
+     "total": 1,
+     "hash": "dfdcd69b"
+    },
+    {
+     "stage": "roads",
+     "id": "road-10",
+     "total": 38,
+     "hash": "310ed322"
+    },
+    {
+     "stage": "roads",
+     "id": "road-11",
+     "total": 78,
+     "hash": "71af55da"
+    },
+    {
+     "stage": "roads",
+     "id": "road-12",
+     "total": 104,
+     "hash": "94dfca54"
+    },
+    {
+     "stage": "roads",
+     "id": "road-13",
+     "total": 53,
+     "hash": "06d05005"
+    },
+    {
+     "stage": "roads",
+     "id": "road-14",
+     "total": 66,
+     "hash": "f28b5cf0"
+    },
+    {
+     "stage": "roads",
+     "id": "road-15",
+     "total": 74,
+     "hash": "075103ba"
+    },
+    {
+     "stage": "roads",
+     "id": "road-16",
+     "total": 84,
+     "hash": "230dc443"
+    },
+    {
+     "stage": "roads",
+     "id": "road-5",
+     "total": 98,
+     "hash": "c00f2008"
+    },
+    {
+     "stage": "roads",
+     "id": "road-6",
+     "total": 61,
+     "hash": "1a33c04c"
+    },
+    {
+     "stage": "roads",
+     "id": "road-7",
+     "total": 65,
+     "hash": "ca0a4de1"
+    },
+    {
+     "stage": "roads",
+     "id": "road-8",
+     "total": 70,
+     "hash": "a66b26e6"
+    },
+    {
+     "stage": "roads",
+     "id": "road-9",
+     "total": 115,
+     "hash": "bc5caf23"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s1",
+     "total": 179,
+     "hash": "fdd966aa"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s2",
+     "total": 98,
+     "hash": "0f27d706"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s3",
+     "total": 110,
+     "hash": "d90122c7"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s4",
+     "total": 16,
+     "hash": "05cc74b8"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s5",
+     "total": 79,
+     "hash": "1af67715"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s6",
+     "total": 40,
+     "hash": "5734bcf7"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s7",
+     "total": 7,
+     "hash": "f773cf34"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s8",
+     "total": 103,
+     "hash": "7de047d1"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s9",
+     "total": 20,
+     "hash": "a26009c0"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s10",
+     "total": 54,
+     "hash": "42c7d041"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s11",
+     "total": 43,
+     "hash": "f6ad45d5"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s12",
+     "total": 27,
+     "hash": "976428b0"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s13",
+     "total": 13,
+     "hash": "aa3d1730"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s14",
+     "total": 17,
+     "hash": "63732d1b"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s15",
+     "total": 16,
+     "hash": "10d151f3"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s16",
+     "total": 25,
+     "hash": "4e776558"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s17",
+     "total": 4,
+     "hash": "2516cfdd"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s18",
+     "total": 8,
+     "hash": "583d0794"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s19",
+     "total": 49,
+     "hash": "ea7098fe"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s20",
+     "total": 77,
+     "hash": "ad1d914f"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s21",
+     "total": 105,
+     "hash": "96f67e92"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s22",
+     "total": 12,
+     "hash": "236a0156"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s23",
+     "total": 29,
+     "hash": "4d0cb6ca"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s24",
+     "total": 57,
+     "hash": "37566aab"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s25",
+     "total": 65,
+     "hash": "ad43148f"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s26",
+     "total": 46,
+     "hash": "759e6eba"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s27",
+     "total": 55,
+     "hash": "2c16b66b"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s28",
+     "total": 46,
+     "hash": "7a322ef4"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s29",
+     "total": 25,
+     "hash": "df6af4ce"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s30",
+     "total": 46,
+     "hash": "f9e6198f"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s31",
+     "total": 33,
+     "hash": "91ea7d62"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-x1",
+     "total": 64,
+     "hash": "43daf14f"
+    },
+    {
+     "stage": "roads",
+     "id": "road-82",
+     "total": 60,
+     "hash": "cf62bc96"
+    },
+    {
+     "stage": "roads",
+     "id": "road-87",
+     "total": 95,
+     "hash": "92fb80eb"
+    },
+    {
+     "stage": "roads",
+     "id": "road-88",
+     "total": 68,
+     "hash": "071c67a9"
+    },
+    {
+     "stage": "roads",
+     "id": "road-89",
+     "total": 81,
+     "hash": "9ff0743d"
+    },
+    {
+     "stage": "roads",
+     "id": "apron-gate-1",
+     "total": 10,
+     "hash": "2c9155e7"
+    },
+    {
+     "stage": "roads",
+     "id": "apron-gate-6",
+     "total": 14,
+     "hash": "a256e881"
+    },
+    {
+     "stage": "roads",
+     "id": "apron-gate-7",
+     "total": 12,
+     "hash": "a24c0a9d"
+    },
+    {
+     "stage": "roads",
+     "id": "apron-gate-8",
+     "total": 11,
+     "hash": "22f7b3d2"
+    },
+    {
+     "stage": "roads",
+     "id": "road-1",
+     "total": 160,
+     "hash": "665e36f9"
+    },
+    {
+     "stage": "roads",
+     "id": "road-2",
+     "total": 366,
+     "hash": "46b9f269"
+    },
+    {
+     "stage": "roads",
+     "id": "road-3",
+     "total": 430,
+     "hash": "93046781"
+    },
+    {
+     "stage": "roads",
+     "id": "road-4",
+     "total": 230,
+     "hash": "d6e2f9aa"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-hq_citadel-1",
+     "total": 1745,
+     "hash": "00b55fa7"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-hq_citadel-1",
+     "total": 3078,
+     "hash": "34db9ef8"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-armoury-1",
+     "total": 156,
+     "hash": "3ce133d4"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-armoury-1",
+     "total": 611,
+     "hash": "a1f90f2c"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-barracks-1",
+     "total": 340,
+     "hash": "a17e35ec"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-barracks-1",
+     "total": 669,
+     "hash": "43098330"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-barracks-2",
+     "total": 369,
+     "hash": "6a0d900a"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-barracks-2",
+     "total": 669,
+     "hash": "543356c6"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-barracks-3",
+     "total": 443,
+     "hash": "2892c9b3"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-barracks-3",
+     "total": 669,
+     "hash": "9cb81d59"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-command_hall-1",
+     "total": 648,
+     "hash": "f96b94c9"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-command_hall-1",
+     "total": 2322,
+     "hash": "f733ef06"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-1",
+     "total": 52,
+     "hash": "2ebe72b0"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-1",
+     "total": 187,
+     "hash": "9087257d"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-10",
+     "total": 71,
+     "hash": "3c54e6e2"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-10",
+     "total": 187,
+     "hash": "21ea82f8"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-11",
+     "total": 15,
+     "hash": "30805cbb"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-11",
+     "total": 187,
+     "hash": "4ec26a80"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-12",
+     "total": 34,
+     "hash": "ef7223af"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-12",
+     "total": 187,
+     "hash": "f7c84010"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-2",
+     "total": 59,
+     "hash": "b0a28d67"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-2",
+     "total": 187,
+     "hash": "3fdd63d4"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-3",
+     "total": 187,
+     "hash": "7f05f5b4"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-4",
+     "total": 133,
+     "hash": "3088c288"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-4",
+     "total": 187,
+     "hash": "a70d63bc"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-5",
+     "total": 29,
+     "hash": "92e3fbe8"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-5",
+     "total": 187,
+     "hash": "068f9fe1"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-6",
+     "total": 42,
+     "hash": "3e76f189"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-6",
+     "total": 187,
+     "hash": "1eafab49"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-7",
+     "total": 39,
+     "hash": "06ef4a26"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-7",
+     "total": 187,
+     "hash": "14263e92"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-8",
+     "total": 18,
+     "hash": "2abae82a"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-8",
+     "total": 187,
+     "hash": "3bf18728"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-9",
+     "total": 62,
+     "hash": "e4735a47"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-9",
+     "total": 187,
+     "hash": "35294beb"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-watchtower-1",
+     "total": 22,
+     "hash": "a84a8cb4"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-watchtower-1",
+     "total": 251,
+     "hash": "00a82af0"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-watchtower-2",
+     "total": 40,
+     "hash": "740678fa"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-watchtower-2",
+     "total": 251,
+     "hash": "35216cc6"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-watchtower-3",
+     "total": 29,
+     "hash": "a73d00f9"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-watchtower-3",
+     "total": 251,
+     "hash": "8f8099dc"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-watchtower-4",
+     "total": 48,
+     "hash": "aa61176d"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-watchtower-4",
+     "total": 251,
+     "hash": "a67c4d39"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-watchtower-5",
+     "total": 39,
+     "hash": "76b6e355"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-watchtower-5",
+     "total": 251,
+     "hash": "42609a50"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-farm_kitchen-1",
+     "total": 110,
+     "hash": "39a99291"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-farm_kitchen-1",
+     "total": 309,
+     "hash": "e54558a4"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-farm_kitchen-2",
+     "total": 261,
+     "hash": "ad659c0f"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-farm_kitchen-2",
+     "total": 309,
+     "hash": "4305e256"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-farm_kitchen-3",
+     "total": 587,
+     "hash": "f0a255c3"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-farm_kitchen-3",
+     "total": 309,
+     "hash": "c310a2c7"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-farm_kitchen-4",
+     "total": 204,
+     "hash": "cfe18925"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-farm_kitchen-4",
+     "total": 309,
+     "hash": "15ea3a3f"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-garden-1",
+     "total": 105,
+     "hash": "3ab5cf51"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-garden-1",
+     "total": 84,
+     "hash": "b3ece698"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-garden-2",
+     "total": 142,
+     "hash": "b0555376"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-garden-2",
+     "total": 75,
+     "hash": "2f8fe7bc"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-garden-3",
+     "total": 165,
+     "hash": "e017daa2"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-garden-3",
+     "total": 76,
+     "hash": "63fab06f"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-granary-1",
+     "total": 107,
+     "hash": "eea45cd6"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-granary-1",
+     "total": 489,
+     "hash": "8d8c6078"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-hospital-1",
+     "total": 135,
+     "hash": "67d11664"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-hospital-1",
+     "total": 450,
+     "hash": "a87381ca"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-market_stall-1",
+     "total": 9,
+     "hash": "abd9d609"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-market_stall-1",
+     "total": 43,
+     "hash": "8ab70068"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-market_stall-2",
+     "total": 23,
+     "hash": "8c478fe9"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-market_stall-2",
+     "total": 43,
+     "hash": "1dc268d0"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-market_stall-3",
+     "total": 21,
+     "hash": "1fb7ac22"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-market_stall-3",
+     "total": 43,
+     "hash": "10db6563"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-market_stall-4",
+     "total": 23,
+     "hash": "f60a7518"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-market_stall-4",
+     "total": 43,
+     "hash": "e247fcc6"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-orchard-1",
+     "total": 449,
+     "hash": "8d687a53"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-orchard-1",
+     "total": 772,
+     "hash": "8f348276"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-pen-1",
+     "total": 256,
+     "hash": "0b501f95"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-pen-1",
+     "total": 135,
+     "hash": "fad32c8f"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-pen-2",
+     "total": 174,
+     "hash": "999060de"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-pen-2",
+     "total": 152,
+     "hash": "8de2ec20"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-pen-3",
+     "total": 126,
+     "hash": "7d6084fd"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-pen-3",
+     "total": 200,
+     "hash": "c1d2febd"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-shop-1",
+     "total": 108,
+     "hash": "05917a5c"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-shop-1",
+     "total": 284,
+     "hash": "e75fcebf"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-stable-1",
+     "total": 41,
+     "hash": "ad9260ca"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-stable-1",
+     "total": 448,
+     "hash": "37f08478"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-stable-2",
+     "total": 250,
+     "hash": "2e7ddec3"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-stable-2",
+     "total": 448,
+     "hash": "dead6b49"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-warehouse-1",
+     "total": 390,
+     "hash": "93c7b9d5"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-warehouse-1",
+     "total": 666,
+     "hash": "3d12b5fd"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-warehouse-2",
+     "total": 530,
+     "hash": "c8edbaf9"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-warehouse-2",
+     "total": 480,
+     "hash": "ed842d44"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-well-1",
+     "total": 83,
+     "hash": "1b641e4c"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-well-1",
+     "total": 75,
+     "hash": "57784033"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-well-2",
+     "total": 72,
+     "hash": "1e9048b6"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-well-2",
+     "total": 75,
+     "hash": "27be070d"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-well-3",
+     "total": 86,
+     "hash": "156a46fd"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-well-3",
+     "total": 75,
+     "hash": "8b67b70d"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-well-4",
+     "total": 84,
+     "hash": "d593d534"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-well-4",
+     "total": 75,
+     "hash": "c3488590"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-house_l-1",
+     "total": 245,
+     "hash": "f015f650"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_l-1",
+     "total": 338,
+     "hash": "00857b9b"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-house_m-1",
+     "total": 44,
+     "hash": "b8ff33e6"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_m-1",
+     "total": 239,
+     "hash": "c4bb8e53"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-house_m-2",
+     "total": 85,
+     "hash": "ccbf37bd"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_m-2",
+     "total": 239,
+     "hash": "b48029d7"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-house_m-3",
+     "total": 80,
+     "hash": "c2a5f3a2"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_m-3",
+     "total": 239,
+     "hash": "c758acc3"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-house_s-1",
+     "total": 16,
+     "hash": "8d4a77d5"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_s-1",
+     "total": 148,
+     "hash": "2dceb41a"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_s-2",
+     "total": 139,
+     "hash": "721232b3"
+    },
+    {
+     "stage": "dressing",
+     "id": "stairs-1",
+     "total": 28,
+     "hash": "db473bc8"
+    },
+    {
+     "stage": "dressing",
+     "id": "stairs-2",
+     "total": 28,
+     "hash": "84b5b656"
+    },
+    {
+     "stage": "dressing",
+     "id": "stairs-3",
+     "total": 24,
+     "hash": "4f743964"
+    },
+    {
+     "stage": "dressing",
+     "id": "stairs-4",
+     "total": 25,
+     "hash": "1dff77ca"
+    },
+    {
+     "stage": "dressing",
+     "id": "stairs-5",
+     "total": 31,
+     "hash": "4f696110"
+    },
+    {
+     "stage": "dressing",
+     "id": "hq-plaza",
+     "total": 53,
+     "hash": "e50c088a"
+    }
+   ]
+  },
+  "seed 7 rough": {
+   "seed": 7,
+   "relief": 18,
+   "checksum": "35adcecb",
+   "siteOpCount": 71268,
+   "opCount": 71268,
+   "opsSha256": "f0883f35bc5ac4688612210ea06d7fcea5276734b29ce0cdbba794fa48346a03",
+   "elements": [
+    {
+     "stage": "clear",
+     "id": "clear-wall-2",
+     "total": 6,
+     "hash": "4c8b84a3"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-wall-3",
+     "total": 3,
+     "hash": "d4aa888a"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-wall-9",
+     "total": 2,
+     "hash": "b54c16b0"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-hq_citadel-1",
+     "total": 79,
+     "hash": "c9a08da9"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-barracks-2",
+     "total": 9,
+     "hash": "40f9bb11"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-barracks-3",
+     "total": 10,
+     "hash": "498ca676"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-command_hall-1",
+     "total": 27,
+     "hash": "7b5944b5"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-drill_ground-1",
+     "total": 2,
+     "hash": "c03dc04f"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-guard_post-2",
+     "total": 4,
+     "hash": "6af6e633"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-guard_post-4",
+     "total": 1,
+     "hash": "d20f46d7"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-guard_post-9",
+     "total": 8,
+     "hash": "135dbbcf"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-watchtower-2",
+     "total": 7,
+     "hash": "659d8f9d"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-garden-1",
+     "total": 14,
+     "hash": "79467ea7"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-garden-2",
+     "total": 4,
+     "hash": "fced07c1"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-garden-3",
+     "total": 8,
+     "hash": "a0f5721c"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-hospital-1",
+     "total": 19,
+     "hash": "ce8485f0"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-market_stall-1",
+     "total": 4,
+     "hash": "42cac8d0"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-market_stall-2",
+     "total": 1,
+     "hash": "4ab8a05a"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-pen-2",
+     "total": 4,
+     "hash": "d973aa66"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-well-1",
+     "total": 8,
+     "hash": "ea10f314"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-well-2",
+     "total": 4,
+     "hash": "0bab65cb"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-well-4",
+     "total": 10,
+     "hash": "fc90a8c0"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-house_l-1",
+     "total": 13,
+     "hash": "78ac9159"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-house_s-1",
+     "total": 7,
+     "hash": "024e8e79"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-house_s-3",
+     "total": 3,
+     "hash": "26031477"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-roads",
+     "total": 77,
+     "hash": "ac923bdf"
+    },
+    {
+     "stage": "walls",
+     "id": "wall-2",
+     "total": 11804,
+     "hash": "3404c06c"
+    },
+    {
+     "stage": "walls",
+     "id": "wall-3",
+     "total": 14915,
+     "hash": "bb5ef8d0"
+    },
+    {
+     "stage": "walls",
+     "id": "wall-9",
+     "total": 5940,
+     "hash": "7c90724a"
+    },
+    {
+     "stage": "gates",
+     "id": "gate-1",
+     "total": 459,
+     "hash": "d4d05a3e"
+    },
+    {
+     "stage": "gates",
+     "id": "gate-2",
+     "total": 459,
+     "hash": "109aa736"
+    },
+    {
+     "stage": "gates",
+     "id": "gate-7",
+     "total": 459,
+     "hash": "5b522820"
+    },
+    {
+     "stage": "gates",
+     "id": "gate-8",
+     "total": 459,
+     "hash": "f6013ac6"
+    },
+    {
+     "stage": "gates",
+     "id": "gate-9",
+     "total": 459,
+     "hash": "1be17540"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-armoury-1",
+     "total": 5,
+     "hash": "17a5bfe1"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-barracks-1",
+     "total": 9,
+     "hash": "1d83cc62"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-barracks-2",
+     "total": 6,
+     "hash": "e4bc0c78"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-barracks-3",
+     "total": 6,
+     "hash": "c06db28b"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-command_hall-1",
+     "total": 5,
+     "hash": "efd80fca"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-drill_ground-1",
+     "total": 23,
+     "hash": "ebc576a4"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-1",
+     "total": 10,
+     "hash": "f1d630e0"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-2",
+     "total": 10,
+     "hash": "2036f887"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-3",
+     "total": 12,
+     "hash": "834c77d5"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-4",
+     "total": 7,
+     "hash": "aeaa0056"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-5",
+     "total": 6,
+     "hash": "1d105588"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-6",
+     "total": 5,
+     "hash": "2d30cb3e"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-7",
+     "total": 10,
+     "hash": "89a17c0f"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-8",
+     "total": 2,
+     "hash": "48e2b721"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-9",
+     "total": 7,
+     "hash": "40a6d4b4"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-watchtower-1",
+     "total": 4,
+     "hash": "ca8374ef"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-watchtower-2",
+     "total": 10,
+     "hash": "cead520e"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-watchtower-3",
+     "total": 3,
+     "hash": "96a0fcd2"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-farm_kitchen-1",
+     "total": 5,
+     "hash": "29778f79"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-farm_kitchen-2",
+     "total": 4,
+     "hash": "20d59501"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-garden-1",
+     "total": 2,
+     "hash": "abd1f137"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-garden-2",
+     "total": 5,
+     "hash": "f23b650d"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-garden-3",
+     "total": 9,
+     "hash": "a735ac4a"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-granary-1",
+     "total": 2,
+     "hash": "8b125e46"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-hospital-1",
+     "total": 1,
+     "hash": "352329c4"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-market_stall-1",
+     "total": 12,
+     "hash": "8eb0ba32"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-market_stall-2",
+     "total": 4,
+     "hash": "07cc4436"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-market_stall-3",
+     "total": 6,
+     "hash": "5ac90591"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-market_stall-4",
+     "total": 4,
+     "hash": "986fd6c1"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-pen-1",
+     "total": 7,
+     "hash": "fa673d9b"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-pen-2",
+     "total": 9,
+     "hash": "6e44360b"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-pen-3",
+     "total": 5,
+     "hash": "f58dbd8d"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-shop-1",
+     "total": 12,
+     "hash": "e95b66f3"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-warehouse-1",
+     "total": 7,
+     "hash": "8cab6ad1"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-warehouse-2",
+     "total": 7,
+     "hash": "f0d1e2f3"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-well-1",
+     "total": 3,
+     "hash": "c8ce7504"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-well-2",
+     "total": 4,
+     "hash": "67e45364"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-well-3",
+     "total": 2,
+     "hash": "a5df9e66"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-well-4",
+     "total": 9,
+     "hash": "e3fa9d96"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_l-1",
+     "total": 8,
+     "hash": "a86d0973"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_m-1",
+     "total": 9,
+     "hash": "14a0e3cd"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_m-2",
+     "total": 5,
+     "hash": "0bc3a44a"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_m-3",
+     "total": 5,
+     "hash": "a614166f"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_s-1",
+     "total": 4,
+     "hash": "af87c296"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_s-2",
+     "total": 16,
+     "hash": "b8182585"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_s-3",
+     "total": 7,
+     "hash": "cca68ebd"
+    },
+    {
+     "stage": "roads",
+     "id": "patrol-lane",
+     "total": 1856,
+     "hash": "a26fbc65"
+    },
+    {
+     "stage": "roads",
+     "id": "connector-1",
+     "total": 1,
+     "hash": "16456013"
+    },
+    {
+     "stage": "roads",
+     "id": "connector-2",
+     "total": 1,
+     "hash": "f53c8d93"
+    },
+    {
+     "stage": "roads",
+     "id": "connector-3",
+     "total": 2,
+     "hash": "e61d4193"
+    },
+    {
+     "stage": "roads",
+     "id": "road-10",
+     "total": 105,
+     "hash": "6335d3f5"
+    },
+    {
+     "stage": "roads",
+     "id": "road-11",
+     "total": 118,
+     "hash": "6406a61d"
+    },
+    {
+     "stage": "roads",
+     "id": "road-12",
+     "total": 110,
+     "hash": "85363926"
+    },
+    {
+     "stage": "roads",
+     "id": "road-13",
+     "total": 54,
+     "hash": "62062ba4"
+    },
+    {
+     "stage": "roads",
+     "id": "road-14",
+     "total": 87,
+     "hash": "c74231af"
+    },
+    {
+     "stage": "roads",
+     "id": "road-15",
+     "total": 105,
+     "hash": "f1a2f03b"
+    },
+    {
+     "stage": "roads",
+     "id": "road-16",
+     "total": 94,
+     "hash": "2c7d18c3"
+    },
+    {
+     "stage": "roads",
+     "id": "road-17",
+     "total": 108,
+     "hash": "c67f0b0d"
+    },
+    {
+     "stage": "roads",
+     "id": "road-6",
+     "total": 73,
+     "hash": "b8d21cf2"
+    },
+    {
+     "stage": "roads",
+     "id": "road-7",
+     "total": 38,
+     "hash": "987971f6"
+    },
+    {
+     "stage": "roads",
+     "id": "road-8",
+     "total": 104,
+     "hash": "20943a0a"
+    },
+    {
+     "stage": "roads",
+     "id": "road-9",
+     "total": 69,
+     "hash": "051ee1d1"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s1",
+     "total": 17,
+     "hash": "ba1e097c"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s2",
+     "total": 6,
+     "hash": "ddd49748"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s3",
+     "total": 8,
+     "hash": "e9dc758b"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s4",
+     "total": 23,
+     "hash": "e471d584"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s5",
+     "total": 58,
+     "hash": "c2805d96"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s6",
+     "total": 15,
+     "hash": "518ab2e0"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s7",
+     "total": 12,
+     "hash": "bdd73032"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s8",
+     "total": 62,
+     "hash": "b619c1dc"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s9",
+     "total": 43,
+     "hash": "662ac9b6"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s10",
+     "total": 15,
+     "hash": "a0ac09c3"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s11",
+     "total": 17,
+     "hash": "81a20a82"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s12",
+     "total": 41,
+     "hash": "8a8ee990"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s13",
+     "total": 21,
+     "hash": "dc4ca177"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s14",
+     "total": 69,
+     "hash": "1f653517"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s15",
+     "total": 24,
+     "hash": "ce45f5fa"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s16",
+     "total": 39,
+     "hash": "dcdade20"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s17",
+     "total": 76,
+     "hash": "61b123d2"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s18",
+     "total": 58,
+     "hash": "f9869f4f"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s19",
+     "total": 62,
+     "hash": "3f72f545"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s20",
+     "total": 41,
+     "hash": "65f43aba"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s21",
+     "total": 57,
+     "hash": "0e307b99"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s22",
+     "total": 56,
+     "hash": "0ec22aaf"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s23",
+     "total": 33,
+     "hash": "9b32a2aa"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s24",
+     "total": 26,
+     "hash": "6b3a7ebc"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s25",
+     "total": 3,
+     "hash": "1b5d7f67"
+    },
+    {
+     "stage": "roads",
+     "id": "road-84",
+     "total": 81,
+     "hash": "a191f97a"
+    },
+    {
+     "stage": "roads",
+     "id": "road-85",
+     "total": 91,
+     "hash": "0c4b0f57"
+    },
+    {
+     "stage": "roads",
+     "id": "road-90",
+     "total": 60,
+     "hash": "49f8f070"
+    },
+    {
+     "stage": "roads",
+     "id": "road-91",
+     "total": 62,
+     "hash": "1fa82157"
+    },
+    {
+     "stage": "roads",
+     "id": "road-92",
+     "total": 107,
+     "hash": "d815e65b"
+    },
+    {
+     "stage": "roads",
+     "id": "apron-gate-1",
+     "total": 20,
+     "hash": "7b101b7e"
+    },
+    {
+     "stage": "roads",
+     "id": "apron-gate-2",
+     "total": 14,
+     "hash": "5f725f41"
+    },
+    {
+     "stage": "roads",
+     "id": "apron-gate-7",
+     "total": 7,
+     "hash": "6847c248"
+    },
+    {
+     "stage": "roads",
+     "id": "apron-gate-8",
+     "total": 10,
+     "hash": "20e6d81b"
+    },
+    {
+     "stage": "roads",
+     "id": "apron-gate-9",
+     "total": 5,
+     "hash": "28720c8b"
+    },
+    {
+     "stage": "roads",
+     "id": "road-1",
+     "total": 290,
+     "hash": "e9cbaa81"
+    },
+    {
+     "stage": "roads",
+     "id": "road-2",
+     "total": 341,
+     "hash": "465aa91f"
+    },
+    {
+     "stage": "roads",
+     "id": "road-3",
+     "total": 457,
+     "hash": "90f7ca12"
+    },
+    {
+     "stage": "roads",
+     "id": "road-4",
+     "total": 224,
+     "hash": "d2c3e349"
+    },
+    {
+     "stage": "roads",
+     "id": "road-5",
+     "total": 350,
+     "hash": "e1297887"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-hq_citadel-1",
+     "total": 808,
+     "hash": "ba4a978b"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-hq_citadel-1",
+     "total": 3078,
+     "hash": "61fbea5e"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-armoury-1",
+     "total": 247,
+     "hash": "77c9378b"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-armoury-1",
+     "total": 611,
+     "hash": "f0c98f9e"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-barracks-1",
+     "total": 343,
+     "hash": "235a1463"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-barracks-1",
+     "total": 669,
+     "hash": "3a2f26b4"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-barracks-2",
+     "total": 739,
+     "hash": "09ce914a"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-barracks-2",
+     "total": 669,
+     "hash": "763a818e"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-barracks-3",
+     "total": 870,
+     "hash": "bc43fbee"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-barracks-3",
+     "total": 669,
+     "hash": "5abb37d1"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-command_hall-1",
+     "total": 954,
+     "hash": "5cc63e6b"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-command_hall-1",
+     "total": 2322,
+     "hash": "ec9ac769"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-drill_ground-1",
+     "total": 3787,
+     "hash": "9ce0d1ea"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-drill_ground-1",
+     "total": 856,
+     "hash": "4f20ab6c"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-1",
+     "total": 5,
+     "hash": "c1e0cdff"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-1",
+     "total": 187,
+     "hash": "db301589"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-2",
+     "total": 38,
+     "hash": "a72b28c6"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-2",
+     "total": 187,
+     "hash": "91e9dd61"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-3",
+     "total": 25,
+     "hash": "45992be6"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-3",
+     "total": 187,
+     "hash": "94a089cf"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-4",
+     "total": 20,
+     "hash": "e5e88288"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-4",
+     "total": 187,
+     "hash": "54caea9b"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-5",
+     "total": 114,
+     "hash": "66f85b62"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-5",
+     "total": 187,
+     "hash": "2735dfec"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-6",
+     "total": 9,
+     "hash": "ea23c0da"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-6",
+     "total": 187,
+     "hash": "a0407d1c"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-7",
+     "total": 37,
+     "hash": "cacda3a4"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-7",
+     "total": 187,
+     "hash": "d994ed81"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-8",
+     "total": 10,
+     "hash": "758da2af"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-8",
+     "total": 187,
+     "hash": "bea10683"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-9",
+     "total": 13,
+     "hash": "3995a984"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-9",
+     "total": 187,
+     "hash": "1b954b3a"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-watchtower-1",
+     "total": 16,
+     "hash": "a7706756"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-watchtower-1",
+     "total": 251,
+     "hash": "2fda4947"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-watchtower-2",
+     "total": 25,
+     "hash": "8fb0bce4"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-watchtower-2",
+     "total": 251,
+     "hash": "42bef7e0"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-watchtower-3",
+     "total": 18,
+     "hash": "3bac0816"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-watchtower-3",
+     "total": 251,
+     "hash": "110f6637"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-farm_kitchen-1",
+     "total": 565,
+     "hash": "f082cdd8"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-farm_kitchen-1",
+     "total": 309,
+     "hash": "6bc3b885"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-farm_kitchen-2",
+     "total": 114,
+     "hash": "1cfa7997"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-farm_kitchen-2",
+     "total": 309,
+     "hash": "a997ff55"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-garden-1",
+     "total": 32,
+     "hash": "f831a79d"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-garden-1",
+     "total": 110,
+     "hash": "eea59892"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-garden-2",
+     "total": 66,
+     "hash": "9972e858"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-garden-2",
+     "total": 88,
+     "hash": "1cd6b38b"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-garden-3",
+     "total": 107,
+     "hash": "b5eeacd5"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-garden-3",
+     "total": 78,
+     "hash": "477e429e"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-granary-1",
+     "total": 173,
+     "hash": "78346d47"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-granary-1",
+     "total": 489,
+     "hash": "1eee16a6"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-hospital-1",
+     "total": 139,
+     "hash": "1971fddd"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-hospital-1",
+     "total": 450,
+     "hash": "37f6ce37"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-market_stall-1",
+     "total": 9,
+     "hash": "568a8155"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-market_stall-1",
+     "total": 43,
+     "hash": "ba9ae30e"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-market_stall-2",
+     "total": 41,
+     "hash": "d1666221"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-market_stall-2",
+     "total": 43,
+     "hash": "11e6950c"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-market_stall-3",
+     "total": 42,
+     "hash": "b3cc9007"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-market_stall-3",
+     "total": 43,
+     "hash": "9d6abcba"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-market_stall-4",
+     "total": 16,
+     "hash": "c071c899"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-market_stall-4",
+     "total": 43,
+     "hash": "e5a1ecf4"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-pen-1",
+     "total": 624,
+     "hash": "6213309c"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-pen-1",
+     "total": 114,
+     "hash": "a0f6abb4"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-pen-2",
+     "total": 277,
+     "hash": "48ed9206"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-pen-2",
+     "total": 139,
+     "hash": "840dfc2d"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-pen-3",
+     "total": 20,
+     "hash": "758beb26"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-pen-3",
+     "total": 239,
+     "hash": "1c0c2b5e"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-shop-1",
+     "total": 212,
+     "hash": "6f5ef607"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-shop-1",
+     "total": 284,
+     "hash": "4bf07a55"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-warehouse-1",
+     "total": 573,
+     "hash": "c7cb2d3a"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-warehouse-1",
+     "total": 666,
+     "hash": "19ae0d5b"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-warehouse-2",
+     "total": 292,
+     "hash": "b55309f6"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-warehouse-2",
+     "total": 480,
+     "hash": "1f5f7921"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-well-1",
+     "total": 57,
+     "hash": "98f29dbb"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-well-1",
+     "total": 75,
+     "hash": "c96bfc1b"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-well-2",
+     "total": 89,
+     "hash": "f588a3cc"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-well-2",
+     "total": 75,
+     "hash": "1ac5fd8e"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-well-3",
+     "total": 58,
+     "hash": "5d711984"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-well-3",
+     "total": 75,
+     "hash": "00a6b877"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-well-4",
+     "total": 15,
+     "hash": "ef9282d2"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-well-4",
+     "total": 75,
+     "hash": "09dc58ac"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-house_l-1",
+     "total": 148,
+     "hash": "9e870a74"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_l-1",
+     "total": 607,
+     "hash": "ddfcec31"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-house_m-1",
+     "total": 91,
+     "hash": "4821321e"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_m-1",
+     "total": 239,
+     "hash": "7e6aff05"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-house_m-2",
+     "total": 60,
+     "hash": "ce60906a"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_m-2",
+     "total": 239,
+     "hash": "84774c61"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-house_m-3",
+     "total": 149,
+     "hash": "39c1c2bf"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_m-3",
+     "total": 269,
+     "hash": "c25f8369"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-house_s-1",
+     "total": 64,
+     "hash": "e8434596"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_s-1",
+     "total": 139,
+     "hash": "93e53abe"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-house_s-2",
+     "total": 124,
+     "hash": "fd028e4d"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_s-2",
+     "total": 148,
+     "hash": "174be40a"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-house_s-3",
+     "total": 52,
+     "hash": "c4e7b4e2"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_s-3",
+     "total": 148,
+     "hash": "0c720f38"
+    },
+    {
+     "stage": "dressing",
+     "id": "stairs-1",
+     "total": 29,
+     "hash": "bc81f929"
+    },
+    {
+     "stage": "dressing",
+     "id": "stairs-2",
+     "total": 46,
+     "hash": "0b14438f"
+    },
+    {
+     "stage": "dressing",
+     "id": "stairs-3",
+     "total": 21,
+     "hash": "8b96b656"
+    },
+    {
+     "stage": "dressing",
+     "id": "stairs-4",
+     "total": 32,
+     "hash": "694022b5"
+    }
+   ]
+  },
+  "seed 21 flat": {
+   "seed": 21,
+   "relief": 2,
+   "checksum": "1b382b32",
+   "siteOpCount": 67079,
+   "opCount": 67079,
+   "opsSha256": "76dbe4e146b40f64d01690f228ca548cf1ec952363054a2c9fffde37937924ad",
+   "elements": [
+    {
+     "stage": "clear",
+     "id": "clear-wall-1",
+     "total": 3,
+     "hash": "9ce79e3b"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-wall-4",
+     "total": 1,
+     "hash": "d34b2dc4"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-wall-7",
+     "total": 1,
+     "hash": "04efb322"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-hq_citadel-1",
+     "total": 3,
+     "hash": "b7c7c521"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-armoury-1",
+     "total": 5,
+     "hash": "d3313fdb"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-garden-1",
+     "total": 11,
+     "hash": "34b97f51"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-well-2",
+     "total": 6,
+     "hash": "145dae4f"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-house_s-1",
+     "total": 8,
+     "hash": "cad56170"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-roads",
+     "total": 32,
+     "hash": "adebde49"
+    },
+    {
+     "stage": "walls",
+     "id": "wall-1",
+     "total": 12344,
+     "hash": "67d31ca1"
+    },
+    {
+     "stage": "walls",
+     "id": "wall-3",
+     "total": 8812,
+     "hash": "21205c66"
+    },
+    {
+     "stage": "walls",
+     "id": "wall-4",
+     "total": 9806,
+     "hash": "21b81190"
+    },
+    {
+     "stage": "walls",
+     "id": "wall-7",
+     "total": 4845,
+     "hash": "c75e01a9"
+    },
+    {
+     "stage": "walls",
+     "id": "wall-9",
+     "total": 3588,
+     "hash": "ea632694"
+    },
+    {
+     "stage": "gates",
+     "id": "gate-1",
+     "total": 459,
+     "hash": "190851dc"
+    },
+    {
+     "stage": "gates",
+     "id": "gate-5",
+     "total": 459,
+     "hash": "746f184f"
+    },
+    {
+     "stage": "gates",
+     "id": "gate-6",
+     "total": 459,
+     "hash": "418eae96"
+    },
+    {
+     "stage": "gates",
+     "id": "gate-7",
+     "total": 459,
+     "hash": "22bb99bf"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-hq_citadel-1",
+     "total": 11,
+     "hash": "f67fbe45"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-armoury-1",
+     "total": 2,
+     "hash": "b22e76f7"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-barracks-1",
+     "total": 7,
+     "hash": "2e2e7dfb"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-barracks-2",
+     "total": 6,
+     "hash": "d063173c"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-barracks-3",
+     "total": 10,
+     "hash": "4bf28428"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-drill_ground-1",
+     "total": 7,
+     "hash": "cfcb98a1"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-1",
+     "total": 9,
+     "hash": "700bab95"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-2",
+     "total": 7,
+     "hash": "ea976070"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-3",
+     "total": 4,
+     "hash": "3ec39ae0"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-4",
+     "total": 5,
+     "hash": "ce409b1d"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-5",
+     "total": 6,
+     "hash": "563c4004"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-6",
+     "total": 3,
+     "hash": "c3f862ce"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-7",
+     "total": 2,
+     "hash": "c6580ef3"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-8",
+     "total": 10,
+     "hash": "a2a68248"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-9",
+     "total": 5,
+     "hash": "5aba5712"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-watchtower-1",
+     "total": 8,
+     "hash": "878b11c0"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-watchtower-2",
+     "total": 3,
+     "hash": "8364f6ac"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-watchtower-3",
+     "total": 3,
+     "hash": "96c2fef7"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-farm_kitchen-1",
+     "total": 5,
+     "hash": "89299e34"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-farm_kitchen-2",
+     "total": 3,
+     "hash": "fb1d8fa7"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-farm_veg-1",
+     "total": 5,
+     "hash": "62e4c4e1"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-garden-1",
+     "total": 8,
+     "hash": "3b5ddcea"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-garden-2",
+     "total": 2,
+     "hash": "249457c8"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-garden-3",
+     "total": 4,
+     "hash": "427ca028"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-granary-1",
+     "total": 8,
+     "hash": "0cd56391"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-hospital-1",
+     "total": 2,
+     "hash": "d8c43280"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-market_stall-1",
+     "total": 4,
+     "hash": "19fe3f90"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-market_stall-2",
+     "total": 4,
+     "hash": "91e6cba7"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-market_stall-3",
+     "total": 6,
+     "hash": "fd4910a8"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-market_stall-4",
+     "total": 5,
+     "hash": "e6afc316"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-orchard-1",
+     "total": 6,
+     "hash": "3031550b"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-pen-1",
+     "total": 4,
+     "hash": "34ea5fbe"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-pen-2",
+     "total": 3,
+     "hash": "c34b0510"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-pen-3",
+     "total": 3,
+     "hash": "4670738f"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-shop-1",
+     "total": 8,
+     "hash": "969f527d"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-stable-1",
+     "total": 5,
+     "hash": "19701118"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-stable-2",
+     "total": 4,
+     "hash": "1d539fc1"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-warehouse-1",
+     "total": 4,
+     "hash": "8d30db3e"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-warehouse-2",
+     "total": 8,
+     "hash": "ba9027c4"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-well-1",
+     "total": 4,
+     "hash": "04d87d2f"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-well-2",
+     "total": 5,
+     "hash": "3b27e068"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-well-3",
+     "total": 3,
+     "hash": "fa5147c4"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-well-4",
+     "total": 4,
+     "hash": "15785b8b"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_l-1",
+     "total": 5,
+     "hash": "cf488261"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_m-1",
+     "total": 5,
+     "hash": "5a30343f"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_m-2",
+     "total": 4,
+     "hash": "fdf80fe8"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_m-3",
+     "total": 7,
+     "hash": "4e070b48"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_s-1",
+     "total": 4,
+     "hash": "b5960b08"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_s-2",
+     "total": 4,
+     "hash": "977fb95a"
+    },
+    {
+     "stage": "roads",
+     "id": "patrol-lane",
+     "total": 2389,
+     "hash": "c12ba62a"
+    },
+    {
+     "stage": "roads",
+     "id": "road-10",
+     "total": 102,
+     "hash": "d0e3a4a5"
+    },
+    {
+     "stage": "roads",
+     "id": "road-11",
+     "total": 86,
+     "hash": "f05de441"
+    },
+    {
+     "stage": "roads",
+     "id": "road-12",
+     "total": 109,
+     "hash": "ead321a1"
+    },
+    {
+     "stage": "roads",
+     "id": "road-13",
+     "total": 60,
+     "hash": "a759946d"
+    },
+    {
+     "stage": "roads",
+     "id": "road-14",
+     "total": 51,
+     "hash": "7a82a559"
+    },
+    {
+     "stage": "roads",
+     "id": "road-15",
+     "total": 107,
+     "hash": "9b844a42"
+    },
+    {
+     "stage": "roads",
+     "id": "road-16",
+     "total": 107,
+     "hash": "392e40ab"
+    },
+    {
+     "stage": "roads",
+     "id": "road-5",
+     "total": 53,
+     "hash": "9fc41355"
+    },
+    {
+     "stage": "roads",
+     "id": "road-6",
+     "total": 73,
+     "hash": "83f558e0"
+    },
+    {
+     "stage": "roads",
+     "id": "road-7",
+     "total": 102,
+     "hash": "09920b71"
+    },
+    {
+     "stage": "roads",
+     "id": "road-8",
+     "total": 80,
+     "hash": "74111812"
+    },
+    {
+     "stage": "roads",
+     "id": "road-9",
+     "total": 73,
+     "hash": "cc66fe72"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s1",
+     "total": 56,
+     "hash": "6d3c7ad9"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s2",
+     "total": 117,
+     "hash": "18fdb912"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s3",
+     "total": 33,
+     "hash": "676bca59"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s4",
+     "total": 81,
+     "hash": "5d44ea2e"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s5",
+     "total": 21,
+     "hash": "262ed0b1"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s6",
+     "total": 235,
+     "hash": "bc5eeddb"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s7",
+     "total": 129,
+     "hash": "55396be5"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s8",
+     "total": 88,
+     "hash": "0135930a"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s9",
+     "total": 130,
+     "hash": "587588e0"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s10",
+     "total": 103,
+     "hash": "02b52491"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s11",
+     "total": 11,
+     "hash": "62fc77cb"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s12",
+     "total": 12,
+     "hash": "cf4867b6"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s13",
+     "total": 9,
+     "hash": "9aeb5768"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s14",
+     "total": 9,
+     "hash": "7791b8d6"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s15",
+     "total": 3,
+     "hash": "ca91febe"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s16",
+     "total": 3,
+     "hash": "b4b69258"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s17",
+     "total": 34,
+     "hash": "160bc2d0"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s18",
+     "total": 9,
+     "hash": "5a1ef08e"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s19",
+     "total": 18,
+     "hash": "20db00dc"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s20",
+     "total": 24,
+     "hash": "04ed8df8"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s21",
+     "total": 78,
+     "hash": "9eb252fe"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s22",
+     "total": 54,
+     "hash": "99d1789c"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s23",
+     "total": 88,
+     "hash": "17a20c9b"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s24",
+     "total": 68,
+     "hash": "531240a7"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s25",
+     "total": 47,
+     "hash": "e831c8bc"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s26",
+     "total": 44,
+     "hash": "f5acb9c1"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s27",
+     "total": 3,
+     "hash": "97cf6bc5"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s28",
+     "total": 55,
+     "hash": "37c3bef4"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-x1",
+     "total": 68,
+     "hash": "8eb36772"
+    },
+    {
+     "stage": "roads",
+     "id": "road-81",
+     "total": 79,
+     "hash": "c1b340d5"
+    },
+    {
+     "stage": "roads",
+     "id": "road-85",
+     "total": 73,
+     "hash": "2bb1c6aa"
+    },
+    {
+     "stage": "roads",
+     "id": "road-86",
+     "total": 73,
+     "hash": "897dd25a"
+    },
+    {
+     "stage": "roads",
+     "id": "road-87",
+     "total": 75,
+     "hash": "96fc644e"
+    },
+    {
+     "stage": "roads",
+     "id": "apron-gate-1",
+     "total": 5,
+     "hash": "0ee5af26"
+    },
+    {
+     "stage": "roads",
+     "id": "road-1",
+     "total": 194,
+     "hash": "09fd41b6"
+    },
+    {
+     "stage": "roads",
+     "id": "road-2",
+     "total": 347,
+     "hash": "625d86d2"
+    },
+    {
+     "stage": "roads",
+     "id": "road-3",
+     "total": 335,
+     "hash": "f2798632"
+    },
+    {
+     "stage": "roads",
+     "id": "road-4",
+     "total": 444,
+     "hash": "89c36f5e"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-hq_citadel-1",
+     "total": 139,
+     "hash": "c11d790b"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-hq_citadel-1",
+     "total": 3078,
+     "hash": "8826c4ba"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-armoury-1",
+     "total": 611,
+     "hash": "2bcc8967"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-barracks-1",
+     "total": 10,
+     "hash": "5796916b"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-barracks-1",
+     "total": 669,
+     "hash": "3dddedbc"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-barracks-2",
+     "total": 186,
+     "hash": "c4541569"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-barracks-2",
+     "total": 669,
+     "hash": "f1461402"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-barracks-3",
+     "total": 669,
+     "hash": "c7f8db39"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-drill_ground-1",
+     "total": 404,
+     "hash": "0f0a34da"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-drill_ground-1",
+     "total": 856,
+     "hash": "fc888109"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-1",
+     "total": 187,
+     "hash": "488b0571"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-2",
+     "total": 187,
+     "hash": "dbca99bb"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-3",
+     "total": 187,
+     "hash": "5fe7e49a"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-4",
+     "total": 12,
+     "hash": "5d705cc7"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-4",
+     "total": 187,
+     "hash": "f044c7e2"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-5",
+     "total": 187,
+     "hash": "e25f1cdd"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-6",
+     "total": 187,
+     "hash": "fba451ba"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-7",
+     "total": 187,
+     "hash": "f80d3630"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-8",
+     "total": 187,
+     "hash": "69dd5ff6"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-9",
+     "total": 187,
+     "hash": "6f94530d"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-watchtower-1",
+     "total": 251,
+     "hash": "13f3fb2a"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-watchtower-2",
+     "total": 251,
+     "hash": "ffe18793"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-watchtower-3",
+     "total": 251,
+     "hash": "10e7634f"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-farm_kitchen-1",
+     "total": 188,
+     "hash": "8a05d1ac"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-farm_kitchen-1",
+     "total": 309,
+     "hash": "5bf5861a"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-farm_kitchen-2",
+     "total": 309,
+     "hash": "ff7058cc"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-farm_veg-1",
+     "total": 32,
+     "hash": "9aa96d31"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-farm_veg-1",
+     "total": 692,
+     "hash": "ba3f5e81"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-garden-1",
+     "total": 122,
+     "hash": "cdb6d88a"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-garden-2",
+     "total": 122,
+     "hash": "8a526402"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-garden-3",
+     "total": 30,
+     "hash": "de2976aa"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-garden-3",
+     "total": 113,
+     "hash": "b0ec9a1d"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-granary-1",
+     "total": 489,
+     "hash": "5de236dd"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-hospital-1",
+     "total": 21,
+     "hash": "827fe2ba"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-hospital-1",
+     "total": 450,
+     "hash": "3baaca04"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-market_stall-1",
+     "total": 43,
+     "hash": "5e957acd"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-market_stall-2",
+     "total": 43,
+     "hash": "2f7b367b"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-market_stall-3",
+     "total": 43,
+     "hash": "b7167532"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-market_stall-4",
+     "total": 43,
+     "hash": "e02c1e14"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-orchard-1",
+     "total": 187,
+     "hash": "46fcb776"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-orchard-1",
+     "total": 819,
+     "hash": "0e4eaf79"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-pen-1",
+     "total": 111,
+     "hash": "c9427eea"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-pen-1",
+     "total": 196,
+     "hash": "0413a7cc"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-pen-2",
+     "total": 98,
+     "hash": "c1081914"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-pen-2",
+     "total": 176,
+     "hash": "2e904d77"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-pen-3",
+     "total": 244,
+     "hash": "a3cf95ae"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-shop-1",
+     "total": 2,
+     "hash": "a0591ead"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-shop-1",
+     "total": 284,
+     "hash": "092dcd1e"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-stable-1",
+     "total": 15,
+     "hash": "a42e1920"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-stable-1",
+     "total": 448,
+     "hash": "d019bf01"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-stable-2",
+     "total": 79,
+     "hash": "37eaa3b6"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-stable-2",
+     "total": 448,
+     "hash": "45d8b58d"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-warehouse-1",
+     "total": 18,
+     "hash": "2e679a55"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-warehouse-1",
+     "total": 480,
+     "hash": "846fda4e"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-warehouse-2",
+     "total": 70,
+     "hash": "15810359"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-warehouse-2",
+     "total": 480,
+     "hash": "55fabce7"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-well-1",
+     "total": 75,
+     "hash": "e358c47c"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-well-2",
+     "total": 75,
+     "hash": "a10777a4"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-well-3",
+     "total": 75,
+     "hash": "6225a75c"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-well-4",
+     "total": 75,
+     "hash": "5d3932fd"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_l-1",
+     "total": 338,
+     "hash": "6d3cae09"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-house_m-1",
+     "total": 2,
+     "hash": "4f94e7d0"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_m-1",
+     "total": 269,
+     "hash": "c9e98781"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_m-2",
+     "total": 239,
+     "hash": "9af04dfa"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-house_m-3",
+     "total": 55,
+     "hash": "7d4e93a0"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_m-3",
+     "total": 269,
+     "hash": "3087dd38"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-house_s-1",
+     "total": 46,
+     "hash": "29836069"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_s-1",
+     "total": 139,
+     "hash": "00fb9967"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_s-2",
+     "total": 139,
+     "hash": "8400e285"
+    },
+    {
+     "stage": "dressing",
+     "id": "stairs-1",
+     "total": 26,
+     "hash": "cad66a73"
+    },
+    {
+     "stage": "dressing",
+     "id": "stairs-2",
+     "total": 28,
+     "hash": "aec810ab"
+    },
+    {
+     "stage": "dressing",
+     "id": "stairs-3",
+     "total": 28,
+     "hash": "77f1f528"
+    },
+    {
+     "stage": "dressing",
+     "id": "stairs-4",
+     "total": 28,
+     "hash": "4244d935"
+    },
+    {
+     "stage": "dressing",
+     "id": "stairs-5",
+     "total": 28,
+     "hash": "f899c7b8"
+    }
+   ]
+  },
+  "seed 3 flat": {
+   "seed": 3,
+   "relief": 2,
+   "checksum": "382bfb48",
+   "siteOpCount": 58905,
+   "opCount": 58905,
+   "opsSha256": "63d97c462be2c42e78ce82e43409268318addbeec19506f808870e1fe12cb313",
+   "elements": [
+    {
+     "stage": "clear",
+     "id": "clear-wall-11",
+     "total": 9,
+     "hash": "175b3cc2"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-hq_citadel-1",
+     "total": 38,
+     "hash": "8f4c3240"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-barracks-1",
+     "total": 11,
+     "hash": "9ab5c6f4"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-barracks-2",
+     "total": 30,
+     "hash": "e6bdee97"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-drill_ground-1",
+     "total": 67,
+     "hash": "42b7fe3a"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-guard_post-5",
+     "total": 4,
+     "hash": "1b68b6ea"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-guard_post-6",
+     "total": 7,
+     "hash": "b7e143b4"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-guard_post-9",
+     "total": 2,
+     "hash": "5388988b"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-watchtower-2",
+     "total": 1,
+     "hash": "71521569"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-watchtower-3",
+     "total": 1,
+     "hash": "fbc41862"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-farm_kitchen-1",
+     "total": 11,
+     "hash": "0494ce06"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-garden-1",
+     "total": 3,
+     "hash": "f0e240e9"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-market_stall-3",
+     "total": 1,
+     "hash": "b99c776f"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-market_stall-4",
+     "total": 3,
+     "hash": "b6909b7e"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-orchard-1",
+     "total": 39,
+     "hash": "d84522a8"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-pen-1",
+     "total": 19,
+     "hash": "9bc5077e"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-pen-2",
+     "total": 23,
+     "hash": "49473671"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-pen-3",
+     "total": 17,
+     "hash": "972418b7"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-stable-1",
+     "total": 17,
+     "hash": "5eca35c4"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-stable-2",
+     "total": 11,
+     "hash": "5741c3c6"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-house_l-1",
+     "total": 6,
+     "hash": "056fadf6"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-house_m-3",
+     "total": 6,
+     "hash": "798369b9"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-roads",
+     "total": 123,
+     "hash": "c6455a04"
+    },
+    {
+     "stage": "walls",
+     "id": "wall-10",
+     "total": 5301,
+     "hash": "5af7eeab"
+    },
+    {
+     "stage": "walls",
+     "id": "wall-11",
+     "total": 16639,
+     "hash": "c9d5a3a0"
+    },
+    {
+     "stage": "walls",
+     "id": "wall-7",
+     "total": 6320,
+     "hash": "b3ac73d5"
+    },
+    {
+     "stage": "walls",
+     "id": "wall-8",
+     "total": 2233,
+     "hash": "e7b87142"
+    },
+    {
+     "stage": "gates",
+     "id": "gate-1",
+     "total": 459,
+     "hash": "c56707c6"
+    },
+    {
+     "stage": "gates",
+     "id": "gate-6",
+     "total": 459,
+     "hash": "5b6ddb0f"
+    },
+    {
+     "stage": "gates",
+     "id": "gate-7",
+     "total": 459,
+     "hash": "2109fcbd"
+    },
+    {
+     "stage": "gates",
+     "id": "gate-8",
+     "total": 459,
+     "hash": "cc8a70c2"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-armoury-1",
+     "total": 2,
+     "hash": "04c7d869"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-barracks-1",
+     "total": 7,
+     "hash": "eaa1d4f6"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-barracks-2",
+     "total": 9,
+     "hash": "7624d3db"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-barracks-3",
+     "total": 10,
+     "hash": "079c4742"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-command_hall-1",
+     "total": 7,
+     "hash": "8b8a82be"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-drill_ground-1",
+     "total": 8,
+     "hash": "5f9c2b70"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-1",
+     "total": 3,
+     "hash": "83cc3ba2"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-2",
+     "total": 3,
+     "hash": "9303137b"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-3",
+     "total": 9,
+     "hash": "a3f6485d"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-4",
+     "total": 1,
+     "hash": "846cdf1a"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-5",
+     "total": 3,
+     "hash": "2a024476"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-6",
+     "total": 10,
+     "hash": "af95328d"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-7",
+     "total": 5,
+     "hash": "2f158e2f"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-8",
+     "total": 10,
+     "hash": "404c9173"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-9",
+     "total": 5,
+     "hash": "ff99e81e"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-watchtower-1",
+     "total": 4,
+     "hash": "cff9c253"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-watchtower-2",
+     "total": 2,
+     "hash": "b630a75c"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-watchtower-3",
+     "total": 4,
+     "hash": "db430521"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-farm_kitchen-1",
+     "total": 10,
+     "hash": "4efa0432"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-garden-1",
+     "total": 6,
+     "hash": "9d675667"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-garden-2",
+     "total": 6,
+     "hash": "af42d434"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-garden-3",
+     "total": 11,
+     "hash": "f0ee97da"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-granary-1",
+     "total": 8,
+     "hash": "e7de5ca9"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-hospital-1",
+     "total": 4,
+     "hash": "d8b8c3c0"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-market_stall-1",
+     "total": 8,
+     "hash": "b05d5b76"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-market_stall-2",
+     "total": 5,
+     "hash": "3d89e654"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-market_stall-3",
+     "total": 3,
+     "hash": "162d98d4"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-market_stall-4",
+     "total": 4,
+     "hash": "c1bc2b55"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-orchard-1",
+     "total": 9,
+     "hash": "0f875835"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-pen-1",
+     "total": 4,
+     "hash": "62839dca"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-pen-2",
+     "total": 9,
+     "hash": "6d287478"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-pen-3",
+     "total": 10,
+     "hash": "31b87ef4"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-shop-1",
+     "total": 7,
+     "hash": "b3e820b1"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-stable-1",
+     "total": 2,
+     "hash": "14568e8f"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-stable-2",
+     "total": 2,
+     "hash": "61101ba8"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-warehouse-1",
+     "total": 5,
+     "hash": "6f531c7a"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-warehouse-2",
+     "total": 7,
+     "hash": "329feeb9"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-well-1",
+     "total": 3,
+     "hash": "cdb37688"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-well-2",
+     "total": 7,
+     "hash": "ce65fdf2"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-well-3",
+     "total": 4,
+     "hash": "a93a79d0"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-well-4",
+     "total": 3,
+     "hash": "67a27cb1"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_l-1",
+     "total": 5,
+     "hash": "38cb9dee"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_m-1",
+     "total": 9,
+     "hash": "beeae8c5"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_m-2",
+     "total": 7,
+     "hash": "055f59d1"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_m-3",
+     "total": 6,
+     "hash": "66327652"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_s-1",
+     "total": 4,
+     "hash": "730a8497"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_s-2",
+     "total": 3,
+     "hash": "8aa37a92"
+    },
+    {
+     "stage": "roads",
+     "id": "patrol-lane",
+     "total": 1926,
+     "hash": "5be96d4e"
+    },
+    {
+     "stage": "roads",
+     "id": "connector-1",
+     "total": 1,
+     "hash": "5709d995"
+    },
+    {
+     "stage": "roads",
+     "id": "connector-2",
+     "total": 1,
+     "hash": "5102352a"
+    },
+    {
+     "stage": "roads",
+     "id": "road-10",
+     "total": 108,
+     "hash": "7c7a4230"
+    },
+    {
+     "stage": "roads",
+     "id": "road-11",
+     "total": 85,
+     "hash": "f925f401"
+    },
+    {
+     "stage": "roads",
+     "id": "road-12",
+     "total": 60,
+     "hash": "9e6a0504"
+    },
+    {
+     "stage": "roads",
+     "id": "road-13",
+     "total": 84,
+     "hash": "4e274711"
+    },
+    {
+     "stage": "roads",
+     "id": "road-14",
+     "total": 81,
+     "hash": "7b518d58"
+    },
+    {
+     "stage": "roads",
+     "id": "road-15",
+     "total": 83,
+     "hash": "0a6f3420"
+    },
+    {
+     "stage": "roads",
+     "id": "road-16",
+     "total": 30,
+     "hash": "831bbf06"
+    },
+    {
+     "stage": "roads",
+     "id": "road-5",
+     "total": 38,
+     "hash": "8f960d66"
+    },
+    {
+     "stage": "roads",
+     "id": "road-6",
+     "total": 108,
+     "hash": "b6084906"
+    },
+    {
+     "stage": "roads",
+     "id": "road-7",
+     "total": 108,
+     "hash": "7ba5d4c4"
+    },
+    {
+     "stage": "roads",
+     "id": "road-8",
+     "total": 101,
+     "hash": "29aa8b7f"
+    },
+    {
+     "stage": "roads",
+     "id": "road-9",
+     "total": 108,
+     "hash": "60d69667"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s1",
+     "total": 83,
+     "hash": "1a1d1cfd"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s2",
+     "total": 7,
+     "hash": "a54a582e"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s3",
+     "total": 16,
+     "hash": "509d0bef"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s4",
+     "total": 52,
+     "hash": "e43eee59"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s5",
+     "total": 75,
+     "hash": "62f27dc5"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s6",
+     "total": 50,
+     "hash": "7065be4e"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s7",
+     "total": 60,
+     "hash": "8c2d619b"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s8",
+     "total": 48,
+     "hash": "00cf92e9"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s9",
+     "total": 35,
+     "hash": "0d4c7389"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s10",
+     "total": 48,
+     "hash": "8791a0e8"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s11",
+     "total": 150,
+     "hash": "c8d44cd7"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s12",
+     "total": 129,
+     "hash": "b4637320"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s13",
+     "total": 34,
+     "hash": "86568354"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s14",
+     "total": 88,
+     "hash": "4e80f6f0"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s15",
+     "total": 16,
+     "hash": "50052061"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s16",
+     "total": 4,
+     "hash": "692556ca"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s17",
+     "total": 84,
+     "hash": "089ecb5e"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s18",
+     "total": 52,
+     "hash": "9650f64d"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s19",
+     "total": 67,
+     "hash": "171d5db8"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s20",
+     "total": 58,
+     "hash": "10c9628e"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s21",
+     "total": 4,
+     "hash": "bbbaa562"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s22",
+     "total": 37,
+     "hash": "14d72ed3"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s23",
+     "total": 78,
+     "hash": "6c59156e"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s24",
+     "total": 10,
+     "hash": "c3314dbc"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s25",
+     "total": 38,
+     "hash": "774cec85"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s26",
+     "total": 9,
+     "hash": "ee3988dd"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s27",
+     "total": 48,
+     "hash": "36d5495d"
+    },
+    {
+     "stage": "roads",
+     "id": "road-82",
+     "total": 75,
+     "hash": "3f346ca8"
+    },
+    {
+     "stage": "roads",
+     "id": "road-87",
+     "total": 75,
+     "hash": "dfa9ddb6"
+    },
+    {
+     "stage": "roads",
+     "id": "road-88",
+     "total": 74,
+     "hash": "11ce362e"
+    },
+    {
+     "stage": "roads",
+     "id": "road-89",
+     "total": 75,
+     "hash": "859fb6b0"
+    },
+    {
+     "stage": "roads",
+     "id": "apron-gate-7",
+     "total": 5,
+     "hash": "c689b6ae"
+    },
+    {
+     "stage": "roads",
+     "id": "road-1",
+     "total": 184,
+     "hash": "10267b78"
+    },
+    {
+     "stage": "roads",
+     "id": "road-2",
+     "total": 425,
+     "hash": "90169ddf"
+    },
+    {
+     "stage": "roads",
+     "id": "road-3",
+     "total": 254,
+     "hash": "20860333"
+    },
+    {
+     "stage": "roads",
+     "id": "road-4",
+     "total": 396,
+     "hash": "d49bf1af"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-hq_citadel-1",
+     "total": 220,
+     "hash": "7253e8c9"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-hq_citadel-1",
+     "total": 3078,
+     "hash": "9f5942c4"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-armoury-1",
+     "total": 59,
+     "hash": "7d8d3de0"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-armoury-1",
+     "total": 611,
+     "hash": "cae3b3bb"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-barracks-1",
+     "total": 669,
+     "hash": "6bb416a7"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-barracks-2",
+     "total": 129,
+     "hash": "da7776cb"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-barracks-2",
+     "total": 669,
+     "hash": "9701af23"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-barracks-3",
+     "total": 669,
+     "hash": "46214b21"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-command_hall-1",
+     "total": 43,
+     "hash": "56bf8f01"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-command_hall-1",
+     "total": 2322,
+     "hash": "edacb9f5"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-drill_ground-1",
+     "total": 254,
+     "hash": "0bd9721a"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-drill_ground-1",
+     "total": 856,
+     "hash": "b7d9021f"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-1",
+     "total": 187,
+     "hash": "1b6852df"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-2",
+     "total": 3,
+     "hash": "23f00da0"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-2",
+     "total": 187,
+     "hash": "a15b0e0c"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-3",
+     "total": 187,
+     "hash": "8cbb4802"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-4",
+     "total": 28,
+     "hash": "77f11618"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-4",
+     "total": 187,
+     "hash": "27c5e457"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-5",
+     "total": 187,
+     "hash": "424d6db9"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-6",
+     "total": 187,
+     "hash": "13bfee56"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-7",
+     "total": 187,
+     "hash": "3bffb0d6"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-8",
+     "total": 187,
+     "hash": "07efba57"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-9",
+     "total": 187,
+     "hash": "8138ed3a"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-watchtower-1",
+     "total": 251,
+     "hash": "f75b7440"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-watchtower-2",
+     "total": 251,
+     "hash": "93c9dee8"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-watchtower-3",
+     "total": 251,
+     "hash": "0d7070e0"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-farm_kitchen-1",
+     "total": 309,
+     "hash": "a9f02140"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-garden-1",
+     "total": 30,
+     "hash": "24860e97"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-garden-1",
+     "total": 114,
+     "hash": "ebf685a2"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-garden-2",
+     "total": 13,
+     "hash": "3a3c1666"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-garden-2",
+     "total": 120,
+     "hash": "49f23f5d"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-garden-3",
+     "total": 122,
+     "hash": "7bc638e4"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-granary-1",
+     "total": 8,
+     "hash": "f4990129"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-granary-1",
+     "total": 489,
+     "hash": "d240dcdf"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-hospital-1",
+     "total": 11,
+     "hash": "72d26ac9"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-hospital-1",
+     "total": 450,
+     "hash": "2617fba1"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-market_stall-1",
+     "total": 43,
+     "hash": "2cc1075b"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-market_stall-2",
+     "total": 5,
+     "hash": "4525d6d7"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-market_stall-2",
+     "total": 43,
+     "hash": "4f48d6b8"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-market_stall-3",
+     "total": 43,
+     "hash": "84045613"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-market_stall-4",
+     "total": 43,
+     "hash": "b545a25f"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-orchard-1",
+     "total": 224,
+     "hash": "0957be05"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-orchard-1",
+     "total": 858,
+     "hash": "4c0ae5b0"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-pen-1",
+     "total": 244,
+     "hash": "2798c20d"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-pen-2",
+     "total": 8,
+     "hash": "145caa97"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-pen-2",
+     "total": 244,
+     "hash": "ecda5cb6"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-pen-3",
+     "total": 244,
+     "hash": "0936053f"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-shop-1",
+     "total": 35,
+     "hash": "438d128a"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-shop-1",
+     "total": 284,
+     "hash": "d4ad0441"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-stable-1",
+     "total": 448,
+     "hash": "3e58b5c4"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-stable-2",
+     "total": 448,
+     "hash": "cdd4494f"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-warehouse-1",
+     "total": 29,
+     "hash": "f3d94dcf"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-warehouse-1",
+     "total": 666,
+     "hash": "73782119"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-warehouse-2",
+     "total": 29,
+     "hash": "b5ae70d2"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-warehouse-2",
+     "total": 480,
+     "hash": "0eff2c44"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-well-1",
+     "total": 11,
+     "hash": "36a37b0f"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-well-1",
+     "total": 75,
+     "hash": "9f3bf248"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-well-2",
+     "total": 75,
+     "hash": "ef317074"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-well-3",
+     "total": 75,
+     "hash": "5acc6fbb"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-well-4",
+     "total": 75,
+     "hash": "1457dd0e"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_l-1",
+     "total": 338,
+     "hash": "0b60637f"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_m-1",
+     "total": 239,
+     "hash": "083fee33"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-house_m-2",
+     "total": 4,
+     "hash": "3701c3d8"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_m-2",
+     "total": 269,
+     "hash": "108ba878"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_m-3",
+     "total": 239,
+     "hash": "d0769e12"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_s-1",
+     "total": 148,
+     "hash": "468dcb39"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-house_s-2",
+     "total": 15,
+     "hash": "f89a4381"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_s-2",
+     "total": 148,
+     "hash": "1804c863"
+    },
+    {
+     "stage": "dressing",
+     "id": "stairs-1",
+     "total": 28,
+     "hash": "9bfc5910"
+    },
+    {
+     "stage": "dressing",
+     "id": "stairs-2",
+     "total": 28,
+     "hash": "3ca1946b"
+    },
+    {
+     "stage": "dressing",
+     "id": "stairs-3",
+     "total": 28,
+     "hash": "816e2fcd"
+    },
+    {
+     "stage": "dressing",
+     "id": "stairs-4",
+     "total": 36,
+     "hash": "363e4a1c"
+    },
+    {
+     "stage": "dressing",
+     "id": "stairs-5",
+     "total": 28,
+     "hash": "3dae32c0"
+    }
+   ]
+  },
+  "seed 7 flat": {
+   "seed": 7,
+   "relief": 2,
+   "checksum": "0100b51f",
+   "siteOpCount": 61019,
+   "opCount": 61019,
+   "opsSha256": "1b72bd58287d355d66f18eba03f581e61312f384d56b19c447d8c84702e1dab2",
+   "elements": [
+    {
+     "stage": "clear",
+     "id": "clear-wall-1",
+     "total": 6,
+     "hash": "7c7c3d85"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-wall-3",
+     "total": 5,
+     "hash": "4417aaf5"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-wall-9",
+     "total": 2,
+     "hash": "bcefba86"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-hq_citadel-1",
+     "total": 60,
+     "hash": "39700762"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-armoury-1",
+     "total": 14,
+     "hash": "5f7f7d00"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-barracks-1",
+     "total": 9,
+     "hash": "6230dd92"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-barracks-2",
+     "total": 7,
+     "hash": "87d82064"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-barracks-3",
+     "total": 2,
+     "hash": "675fa575"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-command_hall-1",
+     "total": 39,
+     "hash": "04eb16a0"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-drill_ground-1",
+     "total": 5,
+     "hash": "a6355310"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-guard_post-1",
+     "total": 1,
+     "hash": "1cc431aa"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-guard_post-10",
+     "total": 5,
+     "hash": "9f18fcfb"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-watchtower-1",
+     "total": 3,
+     "hash": "02f2bc92"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-garden-1",
+     "total": 11,
+     "hash": "af4d2591"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-garden-2",
+     "total": 1,
+     "hash": "20126e65"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-hospital-1",
+     "total": 24,
+     "hash": "7a951b19"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-market_stall-1",
+     "total": 4,
+     "hash": "83aae2e4"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-market_stall-2",
+     "total": 5,
+     "hash": "07df5b9a"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-market_stall-4",
+     "total": 4,
+     "hash": "6130da02"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-shop-1",
+     "total": 9,
+     "hash": "a2e6d03b"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-stable-2",
+     "total": 4,
+     "hash": "2e6e31bc"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-well-2",
+     "total": 5,
+     "hash": "e386c11f"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-well-4",
+     "total": 7,
+     "hash": "5065b5a9"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-d1-house_m-2",
+     "total": 5,
+     "hash": "b62aee78"
+    },
+    {
+     "stage": "clear",
+     "id": "clear-roads",
+     "total": 128,
+     "hash": "4e2730d8"
+    },
+    {
+     "stage": "walls",
+     "id": "wall-1",
+     "total": 10605,
+     "hash": "14f7b1dd"
+    },
+    {
+     "stage": "walls",
+     "id": "wall-3",
+     "total": 15030,
+     "hash": "01224bbf"
+    },
+    {
+     "stage": "walls",
+     "id": "wall-9",
+     "total": 5334,
+     "hash": "148dd4fc"
+    },
+    {
+     "stage": "gates",
+     "id": "gate-1",
+     "total": 459,
+     "hash": "f58a9c2f"
+    },
+    {
+     "stage": "gates",
+     "id": "gate-10",
+     "total": 459,
+     "hash": "ee5f61e9"
+    },
+    {
+     "stage": "gates",
+     "id": "gate-2",
+     "total": 459,
+     "hash": "f598a534"
+    },
+    {
+     "stage": "gates",
+     "id": "gate-7",
+     "total": 459,
+     "hash": "60df3b57"
+    },
+    {
+     "stage": "gates",
+     "id": "gate-8",
+     "total": 459,
+     "hash": "90b71a00"
+    },
+    {
+     "stage": "gates",
+     "id": "gate-9",
+     "total": 459,
+     "hash": "300223ca"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-hq_citadel-1",
+     "total": 14,
+     "hash": "90ab3f1b"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-armoury-1",
+     "total": 4,
+     "hash": "3f32de22"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-barracks-1",
+     "total": 6,
+     "hash": "df785473"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-barracks-2",
+     "total": 7,
+     "hash": "86fe0710"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-barracks-3",
+     "total": 6,
+     "hash": "a66abcd3"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-command_hall-1",
+     "total": 4,
+     "hash": "73e22b92"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-drill_ground-1",
+     "total": 7,
+     "hash": "a36a3343"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-1",
+     "total": 6,
+     "hash": "6e89c3da"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-10",
+     "total": 11,
+     "hash": "080d522b"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-11",
+     "total": 4,
+     "hash": "2a3bb03a"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-2",
+     "total": 4,
+     "hash": "7fabdf2e"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-3",
+     "total": 4,
+     "hash": "d33092ed"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-4",
+     "total": 8,
+     "hash": "a19c0ac3"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-5",
+     "total": 4,
+     "hash": "8e155e6b"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-6",
+     "total": 4,
+     "hash": "c528349e"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-7",
+     "total": 4,
+     "hash": "4b1ed01f"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-8",
+     "total": 5,
+     "hash": "54efdd39"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-guard_post-9",
+     "total": 3,
+     "hash": "93d33e88"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-watchtower-1",
+     "total": 5,
+     "hash": "0b0ed4d5"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-watchtower-2",
+     "total": 4,
+     "hash": "c9ab7da3"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-farm_kitchen-1",
+     "total": 4,
+     "hash": "9fca6228"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-farm_kitchen-2",
+     "total": 5,
+     "hash": "21953d12"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-garden-1",
+     "total": 4,
+     "hash": "78d3f6f3"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-garden-2",
+     "total": 8,
+     "hash": "cd3b7f90"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-garden-3",
+     "total": 10,
+     "hash": "d36eff4a"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-granary-1",
+     "total": 6,
+     "hash": "158b9a8a"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-hospital-1",
+     "total": 2,
+     "hash": "b08e1d5a"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-market_stall-1",
+     "total": 4,
+     "hash": "c2249182"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-market_stall-2",
+     "total": 4,
+     "hash": "7502665b"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-market_stall-3",
+     "total": 6,
+     "hash": "a0d5fce3"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-market_stall-4",
+     "total": 3,
+     "hash": "47a7b5fe"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-pen-1",
+     "total": 6,
+     "hash": "93f20a22"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-pen-2",
+     "total": 7,
+     "hash": "e8d90cf0"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-shop-1",
+     "total": 6,
+     "hash": "fc2a77c6"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-stable-1",
+     "total": 6,
+     "hash": "2e093be8"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-stable-2",
+     "total": 12,
+     "hash": "5bce413d"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-warehouse-1",
+     "total": 8,
+     "hash": "aaf3b37e"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-warehouse-2",
+     "total": 3,
+     "hash": "e9c306f6"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-well-1",
+     "total": 4,
+     "hash": "67baa2eb"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-well-2",
+     "total": 4,
+     "hash": "91663f8c"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-well-3",
+     "total": 3,
+     "hash": "9d092495"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-well-4",
+     "total": 2,
+     "hash": "0221d2b3"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_l-1",
+     "total": 6,
+     "hash": "cbdf75e6"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_m-1",
+     "total": 8,
+     "hash": "17d2575d"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_m-2",
+     "total": 8,
+     "hash": "d792ad59"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_m-3",
+     "total": 4,
+     "hash": "ab4a6bd7"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_s-1",
+     "total": 6,
+     "hash": "265b2552"
+    },
+    {
+     "stage": "roads",
+     "id": "approach-d1-house_s-2",
+     "total": 7,
+     "hash": "78690527"
+    },
+    {
+     "stage": "roads",
+     "id": "patrol-lane",
+     "total": 2099,
+     "hash": "67b7cd5d"
+    },
+    {
+     "stage": "roads",
+     "id": "connector-1",
+     "total": 1,
+     "hash": "3fcc976b"
+    },
+    {
+     "stage": "roads",
+     "id": "connector-2",
+     "total": 1,
+     "hash": "27d2c15e"
+    },
+    {
+     "stage": "roads",
+     "id": "road-10",
+     "total": 49,
+     "hash": "beb455b5"
+    },
+    {
+     "stage": "roads",
+     "id": "road-11",
+     "total": 108,
+     "hash": "04cb9e74"
+    },
+    {
+     "stage": "roads",
+     "id": "road-12",
+     "total": 71,
+     "hash": "120ec045"
+    },
+    {
+     "stage": "roads",
+     "id": "road-13",
+     "total": 103,
+     "hash": "6fb4372b"
+    },
+    {
+     "stage": "roads",
+     "id": "road-14",
+     "total": 76,
+     "hash": "e8ae9519"
+    },
+    {
+     "stage": "roads",
+     "id": "road-15",
+     "total": 49,
+     "hash": "28db7192"
+    },
+    {
+     "stage": "roads",
+     "id": "road-16",
+     "total": 106,
+     "hash": "c67a74ec"
+    },
+    {
+     "stage": "roads",
+     "id": "road-17",
+     "total": 109,
+     "hash": "9a4fed22"
+    },
+    {
+     "stage": "roads",
+     "id": "road-18",
+     "total": 108,
+     "hash": "b12118d8"
+    },
+    {
+     "stage": "roads",
+     "id": "road-7",
+     "total": 81,
+     "hash": "aaf38038"
+    },
+    {
+     "stage": "roads",
+     "id": "road-8",
+     "total": 42,
+     "hash": "71cbb518"
+    },
+    {
+     "stage": "roads",
+     "id": "road-9",
+     "total": 39,
+     "hash": "f15a9027"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s1",
+     "total": 10,
+     "hash": "764bfa17"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s2",
+     "total": 63,
+     "hash": "8ef89f06"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s3",
+     "total": 21,
+     "hash": "1cfd956e"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s4",
+     "total": 34,
+     "hash": "5c7d5150"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s5",
+     "total": 38,
+     "hash": "cecb85aa"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s6",
+     "total": 18,
+     "hash": "bfa3e2c7"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s7",
+     "total": 39,
+     "hash": "ae37e5a3"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s8",
+     "total": 33,
+     "hash": "a53e4649"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s9",
+     "total": 27,
+     "hash": "dc61098e"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s10",
+     "total": 83,
+     "hash": "fbc17909"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s11",
+     "total": 72,
+     "hash": "dfd775a4"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s12",
+     "total": 73,
+     "hash": "b546f54f"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s13",
+     "total": 34,
+     "hash": "bc9e26aa"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s14",
+     "total": 147,
+     "hash": "41b4b5da"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s15",
+     "total": 91,
+     "hash": "b72b407b"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s16",
+     "total": 105,
+     "hash": "a5767c02"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s17",
+     "total": 89,
+     "hash": "e0fdec63"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s18",
+     "total": 74,
+     "hash": "cbd03496"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s19",
+     "total": 59,
+     "hash": "4d344d39"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s20",
+     "total": 40,
+     "hash": "c931eeef"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s21",
+     "total": 51,
+     "hash": "32c8d4de"
+    },
+    {
+     "stage": "roads",
+     "id": "d1-s22",
+     "total": 43,
+     "hash": "71389411"
+    },
+    {
+     "stage": "roads",
+     "id": "road-85",
+     "total": 71,
+     "hash": "23b4d139"
+    },
+    {
+     "stage": "roads",
+     "id": "road-86",
+     "total": 75,
+     "hash": "4e1ef94a"
+    },
+    {
+     "stage": "roads",
+     "id": "road-91",
+     "total": 71,
+     "hash": "dac8dfe1"
+    },
+    {
+     "stage": "roads",
+     "id": "road-92",
+     "total": 75,
+     "hash": "3f8656ec"
+    },
+    {
+     "stage": "roads",
+     "id": "road-93",
+     "total": 75,
+     "hash": "5025b468"
+    },
+    {
+     "stage": "roads",
+     "id": "road-94",
+     "total": 66,
+     "hash": "ef0be223"
+    },
+    {
+     "stage": "roads",
+     "id": "apron-gate-10",
+     "total": 10,
+     "hash": "ad7ee3ba"
+    },
+    {
+     "stage": "roads",
+     "id": "road-1",
+     "total": 124,
+     "hash": "91d35cee"
+    },
+    {
+     "stage": "roads",
+     "id": "road-2",
+     "total": 301,
+     "hash": "f5c5a776"
+    },
+    {
+     "stage": "roads",
+     "id": "road-3",
+     "total": 127,
+     "hash": "83ffb507"
+    },
+    {
+     "stage": "roads",
+     "id": "road-4",
+     "total": 509,
+     "hash": "d3631296"
+    },
+    {
+     "stage": "roads",
+     "id": "road-5",
+     "total": 608,
+     "hash": "6b52b5f6"
+    },
+    {
+     "stage": "roads",
+     "id": "road-6",
+     "total": 256,
+     "hash": "8920eb9c"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-hq_citadel-1",
+     "total": 112,
+     "hash": "5ce618f2"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-hq_citadel-1",
+     "total": 3078,
+     "hash": "af70ec41"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-armoury-1",
+     "total": 17,
+     "hash": "3917965f"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-armoury-1",
+     "total": 611,
+     "hash": "6b39da25"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-barracks-1",
+     "total": 47,
+     "hash": "bfedc9c4"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-barracks-1",
+     "total": 669,
+     "hash": "c84e8172"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-barracks-2",
+     "total": 669,
+     "hash": "f30ecf30"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-barracks-3",
+     "total": 20,
+     "hash": "372cf6fc"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-barracks-3",
+     "total": 669,
+     "hash": "4121b22d"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-command_hall-1",
+     "total": 2322,
+     "hash": "0da3a2d8"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-drill_ground-1",
+     "total": 854,
+     "hash": "f11aa7e7"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-drill_ground-1",
+     "total": 856,
+     "hash": "171a7f60"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-1",
+     "total": 17,
+     "hash": "39fc226f"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-1",
+     "total": 187,
+     "hash": "0fe21958"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-10",
+     "total": 187,
+     "hash": "9f28a78d"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-11",
+     "total": 187,
+     "hash": "e76f4c9a"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-2",
+     "total": 18,
+     "hash": "586d7a35"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-2",
+     "total": 187,
+     "hash": "0a5bdc8c"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-3",
+     "total": 6,
+     "hash": "8a0c3a09"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-3",
+     "total": 187,
+     "hash": "7759514a"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-4",
+     "total": 187,
+     "hash": "65a77107"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-5",
+     "total": 18,
+     "hash": "63e23a8d"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-5",
+     "total": 187,
+     "hash": "60cd5240"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-6",
+     "total": 187,
+     "hash": "257f8896"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-guard_post-7",
+     "total": 1,
+     "hash": "fac5c96e"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-7",
+     "total": 187,
+     "hash": "9c5267bf"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-8",
+     "total": 187,
+     "hash": "bfc49d8b"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-guard_post-9",
+     "total": 187,
+     "hash": "951b5198"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-watchtower-1",
+     "total": 11,
+     "hash": "0f9e6162"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-watchtower-1",
+     "total": 251,
+     "hash": "b4cb1398"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-watchtower-2",
+     "total": 1,
+     "hash": "4eddeca8"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-watchtower-2",
+     "total": 251,
+     "hash": "60076698"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-farm_kitchen-1",
+     "total": 40,
+     "hash": "022637df"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-farm_kitchen-1",
+     "total": 309,
+     "hash": "32a17cca"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-farm_kitchen-2",
+     "total": 55,
+     "hash": "b21ec0bd"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-farm_kitchen-2",
+     "total": 309,
+     "hash": "db5dd7bd"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-garden-1",
+     "total": 30,
+     "hash": "e4f7f1df"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-garden-1",
+     "total": 113,
+     "hash": "2bf14d90"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-garden-2",
+     "total": 82,
+     "hash": "e3b03775"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-garden-2",
+     "total": 95,
+     "hash": "4dd86d00"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-garden-3",
+     "total": 122,
+     "hash": "02d89bc6"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-granary-1",
+     "total": 489,
+     "hash": "4d485a79"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-hospital-1",
+     "total": 450,
+     "hash": "3bd83d53"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-market_stall-1",
+     "total": 4,
+     "hash": "6209fea4"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-market_stall-1",
+     "total": 43,
+     "hash": "3caf9aa2"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-market_stall-2",
+     "total": 43,
+     "hash": "72d56727"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-market_stall-3",
+     "total": 22,
+     "hash": "54a14007"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-market_stall-3",
+     "total": 43,
+     "hash": "81c4e852"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-market_stall-4",
+     "total": 43,
+     "hash": "84818c69"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-pen-1",
+     "total": 142,
+     "hash": "3d6a05db"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-pen-1",
+     "total": 189,
+     "hash": "0a58f735"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-pen-2",
+     "total": 244,
+     "hash": "0ac5d987"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-shop-1",
+     "total": 284,
+     "hash": "ebeb6fea"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-stable-1",
+     "total": 448,
+     "hash": "4cdcebe8"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-stable-2",
+     "total": 12,
+     "hash": "c93d12ed"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-stable-2",
+     "total": 448,
+     "hash": "bfbdbc14"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-warehouse-1",
+     "total": 29,
+     "hash": "64795edc"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-warehouse-1",
+     "total": 480,
+     "hash": "62c81744"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-warehouse-2",
+     "total": 666,
+     "hash": "066a2145"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-well-1",
+     "total": 75,
+     "hash": "36405a86"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-well-2",
+     "total": 75,
+     "hash": "bf721a28"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-well-3",
+     "total": 75,
+     "hash": "13d79632"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-well-4",
+     "total": 61,
+     "hash": "d807bd29"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-well-4",
+     "total": 75,
+     "hash": "b4655f42"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-house_l-1",
+     "total": 8,
+     "hash": "15717e83"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_l-1",
+     "total": 607,
+     "hash": "0bf8b6e7"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_m-1",
+     "total": 239,
+     "hash": "9ccea8c8"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-house_m-2",
+     "total": 59,
+     "hash": "94c836ff"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_m-2",
+     "total": 239,
+     "hash": "97ba3ed7"
+    },
+    {
+     "stage": "lots",
+     "id": "pad-d1-house_m-3",
+     "total": 76,
+     "hash": "d8f97008"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_m-3",
+     "total": 239,
+     "hash": "1769ea1a"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_s-1",
+     "total": 139,
+     "hash": "e8ad0265"
+    },
+    {
+     "stage": "lots",
+     "id": "building-d1-house_s-2",
+     "total": 139,
+     "hash": "01022646"
+    },
+    {
+     "stage": "dressing",
+     "id": "stairs-1",
+     "total": 28,
+     "hash": "a1d644e3"
+    },
+    {
+     "stage": "dressing",
+     "id": "stairs-2",
+     "total": 28,
+     "hash": "a1fcfd2e"
+    },
+    {
+     "stage": "dressing",
+     "id": "stairs-3",
+     "total": 28,
+     "hash": "44aa1ff3"
+    },
+    {
+     "stage": "dressing",
+     "id": "stairs-4",
+     "total": 28,
+     "hash": "cdd11fdb"
+    }
+   ]
+  }
+ }
+}
