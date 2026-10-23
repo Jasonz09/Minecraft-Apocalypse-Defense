@@ -202,3 +202,11 @@ the 14 registry kinds (`orchard`, `customs_yard`, `command_hall`, `stable`, `dri
 not honesty; and the shared band's duplicate ownership is the root cause the wall-versus-clearance rule works around
 (dev task 27). `template:release-check` exits 1 and `--zip` stays refused until all five are built and verified in
 game. See FIVE_DISTRICT_BUILD.md, CIVILIZATION_PLAN_DESIGN.md, STARTER_WORLD.md.
+
+## Goal pass (offline)
+- Siege balance: all-lost deadlock removed (0 of 16 seeds versus 16 of 16 before); difficulty to playtest (SIEGE_BALANCE.md).
+- Districts 2-5 on the Hearthgate path, behind civ_devgate; golden keeps Hearthgate unchanged (FIVE_DISTRICT_BUILD.md).
+- Invasion director: built, disabled, tick no-op (INVASION_DIRECTOR.md).
+- Population LOD: built, spawning disabled, unwired (POPULATION_LOD.md).
+- Commander's Ledger: presenters, runtime, dev-gated wiring; manifest dependency on server-ui 2.1.0 unverified in game (LEDGER_PLAN.md).
+- Known gaps: civ_ledger_dev is not in the starter wipe list; any sender of the Ledger dev switch can turn it on (no operator check).
