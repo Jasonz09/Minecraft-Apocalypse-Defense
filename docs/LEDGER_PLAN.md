@@ -63,8 +63,7 @@ decision on first-join grant (default: off, grant only by `civ:ledger`).
 - Recovery: `civ:ledger` grants one Ledger only when the player holds none. Nothing is granted at join or activation.
 - Resume from the Ledger runs `civ:generate_resume district=N` as the player (`player.runCommand`). Whether a
   non-operator may run that scriptevent is UNVERIFIED IN GAME; the result is reported as "requested".
-- Known gap: `civ_ledger_dev` is not in `STARTER.wipeKeyPrefixes`. The starter list must match `starter/template.json`
-  (release-readiness checks both), so adding it is a template change. Until that is done, a world armed from a
-  development world with the gate on keeps the gate on.
+- `civ_ledger_dev` is in `STARTER.wipeKeyPrefixes` (config.js) and in starter/template.json; release-readiness checks the two match.
+  A world armed from a development world therefore no longer keeps the Ledger gate on.
 - Tests: `dev/test/ledger-binding.test.mjs`. `dev/test/reliability-runtime.test.mjs` now expects eight script-event
   subscribers, the eighth being the development switch.
