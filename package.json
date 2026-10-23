@@ -17,7 +17,6 @@
     "devDependencies": {
         "@minecraft/common": "^1.2.0",
         "@minecraft/server": "2.7.0",
-        "@minecraft/server-ui": "2.1.0",
         "typescript": "^5.9.3"
     }
 }
