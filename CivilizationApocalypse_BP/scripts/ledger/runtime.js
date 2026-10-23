@@ -15,10 +15,6 @@ import { line, sanitize } from "./text.js";
  * the integrator, see the report) imports the real `world`, `system`, `ui`, `ItemStack` and
  * `ItemLockMode` and passes them here.
  *
- * The development gate (ledger/devgate.js) is read live through `deps.gateOpen`. While it is off, a use of the
- * item and the recovery command both refuse with GATE_OFF_LINES and grant nothing, even if the handlers were
- * registered earlier in the session. An absent `gateOpen` means open (the binding always supplies one).
- *
  * Use-event rules:
  *  - the item is the marker stack (ledger/item.js); nothing else opens the Ledger;
  *  - a use is ignored for LEDGER_RUNTIME.debounceTicks after the last accepted use by the same player
@@ -40,7 +36,7 @@ import { line, sanitize } from "./text.js";
  *     currentTick: number,
  *     run: (callback: () => void) => unknown,
  *     runTimeout: (callback: () => void, ticks?: number) => unknown,
- *     afterEvents: { scriptEventReceive: { subscribe: (callback: (event: any) => void, options: { namespaces: string[] }) => unknown } },
+ *     afterEvents: { scriptEventReceive: { subscribe: (callback: (event: any) => void, options?: { namespaces?: string[] }) => unknown } },
  *   },
  *   ui: { ActionFormData: new () => any, MessageFormData: new () => any },
  *   ItemStack: new (typeId: string, amount?: number) => any,
@@ -48,7 +44,6 @@ import { line, sanitize } from "./text.js";
  *   kingdomStore: { load: () => { kingdom?: any, reason?: string }, save: (kingdom: any) => void },
  *   services?: any,
  *   live?: () => any,
- *   gateOpen?: () => boolean,
  * }} LedgerDeps
  * @typedef {{ player: any, key: string, stack: Frame[], current: MenuModel | undefined, notice: string[] | undefined, busySince: number | undefined }} Session
  */
@@ -63,12 +58,6 @@ export const LEDGER_RUNTIME = Object.freeze({
 });
 
 const PLAYER_TYPE = "minecraft:player";
-
-/** What a player is told when the development gate is off (the item use and the recovery command). */
-export const GATE_OFF_LINES = Object.freeze([
-    "The Commander's Ledger is switched off in this build: it is still in development.",
-    "A developer turns it on with: scriptevent civ:ledger_devgate on",
-]);
 
 /**
  * @param {unknown} entity
@@ -129,21 +118,6 @@ export function createLedgerUi(deps) {
             return { kingdom: undefined, reason: String(loaded.reason ?? "no kingdom is saved") };
         } catch (error) {
             return { kingdom: undefined, reason: String(error) };
-        }
-    }
-
-    /**
-     * The development gate, read on every use. A gate that cannot be read is closed.
-     * @returns {boolean}
-     */
-    function gateIsOpen() {
-        if (deps.gateOpen === undefined) {
-            return true;
-        }
-        try {
-            return deps.gateOpen() === true;
-        } catch (_error) {
-            return false;
         }
     }
 
@@ -415,10 +389,6 @@ export function createLedgerUi(deps) {
                 return;
             }
             lastAccepted.set(key, tick);
-            if (!gateIsOpen()) {
-                tell(player, [...GATE_OFF_LINES]);
-                return;
-            }
             openFor(player);
         } catch (_error) {
             // a failed use must never break the event loop
@@ -465,11 +435,6 @@ export function createLedgerUi(deps) {
         const player = event?.sourceEntity;
         if (!isPlayer(player)) {
             return { status: "not-a-player", lines: [] };
-        }
-        if (!gateIsOpen()) {
-            const refused = { status: "gate-off", lines: [...GATE_OFF_LINES] };
-            tell(player, refused.lines);
-            return refused;
         }
         const outcome = grantLedger(player, deps);
         tell(player, outcome.lines);

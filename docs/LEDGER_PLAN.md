@@ -48,23 +48,3 @@ The existing script-event commands stay as developer/debug tools.
 ## Remaining dependencies
 Enlarged Hearthgate in-game pass; functional gate controls verified in-game; civ generation status/abort/resume commands stable;
 decision on first-join grant (default: off, grant only by `civ:ledger`).
-
-## Wiring status (built, not deployed)
-- Manifest: `@minecraft/server-ui` 2.1.0 is in `CivilizationApocalypse_BP/manifest.json` dependencies and in
-  `package.json` devDependencies (typings installed). **UNVERIFIED IN GAME**: the manifest entry has not been tried in
-  Minecraft. `scripts/main.js` imports `integration/ledgerBindings.js` statically, which imports `@minecraft/server-ui`,
-  so if the game cannot resolve that module the whole pack fails to load, not only the Ledger. Check it in a throwaway
-  world with the gate off before any release.
-- Development gate: world dynamic property `civ_ledger_dev` (`LEDGER_DEV_GATE_KEY`, absent = off). Switched by the
-  development command `civ:ledger_devgate on|off` (write it as a scriptevent). The switch is the one Ledger listener
-  that runs while the gate is off, because it is the only way to turn the gate on. With the gate on at load, the Ledger
-  registers on the first tick; `on` registers it at once. While the gate is off, the item use and `civ:ledger` refuse
-  with the message in `GATE_OFF_LINES` and grant nothing.
-- Recovery: `civ:ledger` grants one Ledger only when the player holds none. Nothing is granted at join or activation.
-- Resume from the Ledger runs `civ:generate_resume district=N` as the player (`player.runCommand`). Whether a
-  non-operator may run that scriptevent is UNVERIFIED IN GAME; the result is reported as "requested".
-- Known gap: `civ_ledger_dev` is not in `STARTER.wipeKeyPrefixes`. The starter list must match `starter/template.json`
-  (release-readiness checks both), so adding it is a template change. Until that is done, a world armed from a
-  development world with the gate on keeps the gate on.
-- Tests: `dev/test/ledger-binding.test.mjs`. `dev/test/reliability-runtime.test.mjs` now expects eight script-event
-  subscribers, the eighth being the development switch.
