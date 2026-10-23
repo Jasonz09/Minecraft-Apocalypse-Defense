@@ -464,7 +464,8 @@ function finishWave(next, step, outcome, district, directives, events) {
     const wave = next.wave;
     let verdict = outcome;
     if (district && district.security === "lost") {
-        verdict = "fallen";
+        // A wave that never landed did not take the district: its target fell while it was still on the way.
+        verdict = wave.landedStep === null || wave.landedStep === undefined ? "withdrawn" : "fallen";
     } else if (wave.breached && outcome !== "aborted") {
         verdict = "breached";
     }
