@@ -21,7 +21,7 @@ The existing script-event commands stay as developer/debug tools.
 
 ## Architecture
 - `scripts/ledger/` pure presenters (build menu models `{title, lines[], buttons[{id,label,enabled,reason}]}` from the kingdom; fully
-  unit-tested offline, no `@minecraft/server`), `scripts/integration/ledgerUi.js` (runtime: item events, form rendering, navigation
+  unit-tested offline, no `@minecraft/server`), `scripts/ledger/runtime.js` (runtime: item events, form rendering, navigation
   stack, busy-retry, debounce), `scripts/commands/ledger.js` (`civ:ledger` recover). Actions call the SAME functions the commands use
   (policy setter, `openRecruitment`, gate adapter, civ generation job control), never a parallel implementation.
 - Every action that changes the world or kingdom asks a `MessageFormData` confirmation naming the effect; results are shown

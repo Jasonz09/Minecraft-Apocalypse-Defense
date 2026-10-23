@@ -1,4 +1,4 @@
-// Commander's Ledger, part B: the runtime (integration/ledgerUi.js) against the offline harness.
+// Commander's Ledger, part B: the runtime (ledger/runtime.js) against the offline harness.
 //
 // The runtime takes every Minecraft object as a dependency. These tests drive it with the fake world,
 // fake forms and a tick clock from dev/lib/ledgerharness.mjs: item use, debounce, one form per
@@ -31,7 +31,7 @@ export async function resolve(specifier, context, nextResolve) {
 `;
 register("data:text/javascript," + encodeURIComponent(hooksSource));
 
-const runtime = await import(fileUrl("integration", "ledgerUi.js"));
+const runtime = await import(fileUrl("ledger", "runtime.js"));
 const { createLedgerUi, grantLedger, LEDGER_RUNTIME } = runtime;
 const harness = await import(pathToFileURL(join(root, "dev", "lib", "ledgerharness.mjs")).href);
 const { createLedgerHarness, kingdomStates, liveStatus, makeMarkerStack, makePlainBook, FakeItemStack, FakeItemLockMode } = harness;
@@ -74,7 +74,7 @@ function markerCount(player) {
  * ------------------------------------------------------------------ */
 
 test("importing the runtime touches no world; the runtime file names no Minecraft package", () => {
-    const source = readFileSync(join(scripts, "integration", "ledgerUi.js"), "utf8");
+    const source = readFileSync(join(scripts, "ledger", "runtime.js"), "utf8");
     assert.doesNotMatch(source, /@minecraft\//);
     assert.doesNotMatch(source, /\bconsole\./);
     assert.doesNotMatch(source, /playerSpawn|worldInitialize|worldLoad/, "no world-start hook and no join grant");

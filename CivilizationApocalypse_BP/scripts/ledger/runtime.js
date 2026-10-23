@@ -1,10 +1,10 @@
-import { LEDGER_EVENT_IDS, LEDGER_NAMESPACE } from "../ledger/ids.js";
-import { findLedgerSlot, isLedgerStack, makeLedgerStack } from "../ledger/item.js";
-import { actionSpec, navigateAction, runAction } from "../ledger/actions.js";
-import { buildConfirmModel, buildMenu, buildResultModel } from "../ledger/menus.js";
-import { currentFrame, goBack, goHome, newStack, openFrame, replaceFrame } from "../ledger/navigation.js";
-import { enabledButton, menuModel } from "../ledger/model.js";
-import { line, sanitize } from "../ledger/text.js";
+import { LEDGER_EVENT_IDS, LEDGER_NAMESPACE } from "./ids.js";
+import { findLedgerSlot, isLedgerStack, makeLedgerStack } from "./item.js";
+import { actionSpec, navigateAction, runAction } from "./actions.js";
+import { buildConfirmModel, buildMenu, buildResultModel } from "./menus.js";
+import { currentFrame, goBack, goHome, newStack, openFrame, replaceFrame } from "./navigation.js";
+import { enabledButton, menuModel } from "./model.js";
+import { line, sanitize } from "./text.js";
 
 /**
  * The Commander's Ledger at runtime: item use, the navigation stack per player, forms, confirmation,
@@ -27,9 +27,9 @@ import { line, sanitize } from "../ledger/text.js";
  *  - show() is always called inside try/catch and its promise is handled, so a player who has left
  *    cannot throw into the event loop; playerLeave drops the player's state.
  *
- * @typedef {import("../ledger/navigation.js").Frame} Frame
- * @typedef {import("../ledger/model.js").MenuModel} MenuModel
- * @typedef {import("../ledger/model.js").Button} Button
+ * @typedef {import("./navigation.js").Frame} Frame
+ * @typedef {import("./model.js").MenuModel} MenuModel
+ * @typedef {import("./model.js").Button} Button
  * @typedef {{
  *   world: { afterEvents: { itemUse: { subscribe: (callback: (event: any) => void) => unknown }, playerLeave?: { subscribe: (callback: (event: any) => void) => unknown } } },
  *   system: {
