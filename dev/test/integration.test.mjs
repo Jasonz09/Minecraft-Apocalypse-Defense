@@ -265,6 +265,8 @@ test("command argument parsing rejects invalid input instead of guessing", () =>
 
 test("the offline core stays free of the Minecraft runtime, and the adapters are the only things that use it", () => {
     const runtimeImport = /(^|\n)\s*import\s[^;\n]*from\s*["']@minecraft\/server["']/;
+    // Pure code must not import ANY Minecraft module, including the UI module.
+    const anyMinecraftImport = /(^|\n)\s*import\s[^;\n]*from\s*["']@minecraft\/server(-ui)?["']/;
     const pureDirs = ["sim", "kingdom", "ui", "structures", "civ", "population", "ledger", "sim/invasion"];
     const runtimeDirs = ["integration", "commands", "events"];
 
@@ -273,7 +275,7 @@ test("the offline core stays free of the Minecraft runtime, and the adapters are
         for (const file of readdirSync(join(scriptsRoot, dir))) {
             if (!file.endsWith(".js")) continue;
             pureChecked += 1;
-            assert.ok(!runtimeImport.test(readFileSync(join(scriptsRoot, dir, file), "utf8")), `${dir}/${file} must not import @minecraft/server at runtime`);
+            assert.ok(!anyMinecraftImport.test(readFileSync(join(scriptsRoot, dir, file), "utf8")), `${dir}/${file} must not import any Minecraft module`);
         }
     }
     assert.ok(pureChecked >= 30, `expected the whole pure core to be scanned, only saw ${String(pureChecked)} files`);

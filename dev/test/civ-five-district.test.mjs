@@ -531,13 +531,24 @@ test("the cross-district check is a real measurement: the production write path 
     assert.ok(raw.replaced.length > 0, "the raw planner output does contain overlapping barrier claims");
 });
 
-test("devgate: districts 2-5 and district=all are refused with the gate off, and continue to work with it on", { timeout: 900000 }, async () => {
+test("devgate: building districts 2-5 is refused with the gate off; district=all planning stays read-only (pre-goal behaviour); both continue with the gate on", { timeout: 900000 }, async () => {
     resetWorld(1);
-    const off = makePlayer();
-    send(CIV_EVENT_IDS.plan, "district=all", off);
+    // Pre-goal behaviour (143afa9): the whole-civilization overview is read-only and needs no gate.
+    const overview = makePlayer();
+    send(CIV_EVENT_IDS.plan, "district=all", overview);
     await flush();
-    assert.match(text(off), /district=all covers districts 2-5 as well, so it is development-only: the development gate is off/);
-    assert.match(text(off), /civ:generate_devgate on/);
+    assert.doesNotMatch(text(overview), /development-only/, "the read-only overview is not gated");
+    assert.equal(mc.writes, 0, "the overview writes nothing");
+    // Building district=all is still refused as read-only, with the gate off or on.
+    const build = makePlayer();
+    send(CIV_EVENT_IDS.generate, "district=all", build);
+    await flush();
+    assert.match(text(build), /district=all is read-only/);
+    assert.equal(mc.writes, 0, "a refusal writes nothing");
+    const off = makePlayer();
+    send(CIV_EVENT_IDS.generate, "district=2", off);
+    await flush();
+    assert.match(text(off), /Ironquarry \(district-2\) is development-only: the development gate is off/);
     assert.equal(mc.writes, 0, "a refusal writes nothing");
     assert.equal(mc.reads, 0, "a refusal reads nothing from the world");
 
@@ -553,8 +564,8 @@ test("devgate: districts 2-5 and district=all are refused with the gate off, and
     const resumeOff = makePlayer();
     send(CIV_EVENT_IDS.resume, "district=2", resumeOff);
     await flush();
-    assert.match(text(resumeOff), /Ironquarry \(district-2\) is development-only: the development gate is off, so its build cannot be continued/);
-    assert.equal(mc.writes, 0);
+    // Pre-goal behaviour: resume itself is not gated by the development switch (the build is only ever started with it on).
+    assert.doesNotMatch(text(resumeOff), /development-only/, "resume is not gated by the development switch");
     // with the gate on the same command gets past the gate
     send(CIV_EVENT_IDS.devgate, "on", makePlayer());
     await flush();
