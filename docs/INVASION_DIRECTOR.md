@@ -1,7 +1,8 @@
 # Invasion director
 
-Status: built, tested offline, **not wired into the tick and disabled by default**. Nothing in the
-shipped pack calls it yet. Roadmap section B asks for this; see [ROADMAP.md](ROADMAP.md).
+Status: built, tested offline, **wired into the tick as a no-op and disabled by default**. `sim/tick.js`
+calls `runInvasionDirectorStep` every step; it returns nothing unless `kingdom.invasion` exists, and nothing
+in the shipped pack creates that record yet (`enableInvasion` has no callers). Roadmap section B asks for this; see [ROADMAP.md](ROADMAP.md).
 
 The director is a staged, seeded planner that drives the existing war simulation in `sim/war.js`.
 It never spawns entities, never reads the world, and never touches walls or population directly.
@@ -126,7 +127,7 @@ the planner with one event and changes nothing. Recreate it with `createInvasion
 
 ## Integration (for the integrator)
 
-Add one call to `advanceKingdomStep` in `sim/tick.js`, inside the `try` block, after the step counter
+The tick call is already in place (commit aa8977d). It sits inside the `try` block, after the step counter
 moves and before `runWarStep`:
 
 ```js

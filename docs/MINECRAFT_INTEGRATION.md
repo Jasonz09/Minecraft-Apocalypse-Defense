@@ -47,7 +47,7 @@ engine. See docs/TESTING.md for the in-game checklist.
 8. Project ids could collide after pruning → suffix is now max+1.
 
 ## Known bugs / limitations (not fixed)
-- **Siege deadlock (balance):** over ~1000+ default-seed steps (≈40+ in-game days) every district can end
+- **Siege deadlock (balance) - ADDRESSED offline in 8810ef9 (docs/SIEGE_BALANCE.md); the original note follows:** over ~1000+ default-seed steps (≈40+ in-game days) every district can end
   `lost` (1–2 raiders cause 0 losses, counterattack needs 1.5× strength, repairs blocked while assault>0).
   Needs a design decision; short play sessions won't reach it.
 - No production source of external victories: expansion only occurs via `civ:debug_scenario expansion`.
@@ -131,3 +131,11 @@ has a layout. Simulation gate/wall state does not drive the physical blocks. Ent
 armor stands) are not checked. A stuck build can always be re-surveyed with `resume`; an aborted district is left as is.
 
 Independent adversarial run (about 80 scenarios on a fake world): no block that was not natural ground, a plant or a natural tree changed inside the footprint, and nothing changed outside it. It cannot prove real-engine behaviour (block ids/states, liquid flow, gravity blocks, ticking areas).
+
+## Status after the goal pass (offline only; nothing below has run in Minecraft)
+
+- Siege balance: fixed offline (8810ef9); difficulty needs playtesting.
+- Districts 2-5: build through the Hearthgate path behind the development gate (ad23eef); shared-wall deviation documented in FIVE_DISTRICT_BUILD.md.
+- Invasion director: built and disabled by default; the tick calls it as a no-op (aa8977d, 86f14eb).
+- Population LOD: built, spawning disabled, not wired into main.js (9d5e50b).
+- Commander's Ledger: presenters and UI layer committed (e354a59, 02ce732); runtime binding and manifest dependency in progress.

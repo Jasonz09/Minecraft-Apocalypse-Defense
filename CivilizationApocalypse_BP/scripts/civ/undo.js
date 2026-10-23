@@ -323,7 +323,7 @@ function decodeOrThrow(text) {
 
 /**
  * The store for one district's journal. Same protocol as the plan store (chunks, checksum, one meta flip).
- * Use one prefix per district, for example `civ:undo:d1`.
+ * Use one prefix per district: UNDO_PREFIX plus the district id, with the separator the store uses.
  * @param {Parameters<typeof createChunkedStore>[0]} world
  * @param {{ prefix?: string, maxBytes?: number, chunkChars?: number }} [options]
  */

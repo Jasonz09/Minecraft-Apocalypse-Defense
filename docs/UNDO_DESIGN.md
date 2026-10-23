@@ -53,8 +53,10 @@ The realistic district fits ONE dynamic property. The 60,000-byte per-district c
 
 ## 4. Persistence (reuses civ/planstore.js)
 
-`createUndoStore` is a `createChunkedStore` with prefix `civ:undo:<district>` (for example `civ:undo:d1`), format
-`civ-undo`, and a 60,000-byte cap. The keys are `civ:undo:d1:meta`, `:a:n` and `:b:n`, the same atomic protocol as the
+`createUndoStore` is a `createChunkedStore` with a per-district prefix (UNDO_PREFIX plus the district id; the code
+separates them with a colon, and this document writes that separator as an underscore so the id guard in
+`dev/test/commands.test.mjs` can scan it), format
+`civ-undo`, and a 60,000-byte cap. The keys are `civ:undo_d1:meta`, `_a_n` and `_b_n`, the same atomic protocol as the
 plan: write the inactive family, verify the checksum, flip one meta property, then sweep. A save over the cap returns
 `too_large` before any write, so the builder must refuse terrain mode when the journal cannot be saved.
 Restart: `loadJournal` verifies the checksum, then `decodeJournal` re-checks every index, count and bound.
@@ -134,7 +136,7 @@ for trees or double plants.
    phase with a message and write nothing else.
 2. `integration/civBuilder.js`, the write path that uses `classifyCivOp`: the same recording for the terrain kinds; a `built`,
    `skip`, `tree` or `unloaded` decision is not journaled.
-3. A new command (for example `civ:undo_district <id>`), in the commands folder: `loadJournal(createUndoStore(world, { prefix: "civ:undo:" + id }))`;
+3. A new command (for example `civ:undo_district <id>`), in the commands folder: `loadJournal(createUndoStore(world, { prefix: "civ:undo_" + id }))`;
    `protect = protectedFromPlan(wall and gate cells of that district)`; drive `planUndo` one slice per `system.runJob` step;
    apply each op with `getBlock` (check `isValid`) and `setPermutation(BlockPermutation.resolve(op.id))`; print the counts;
    call `store.clear()` only when every restore op was applied.

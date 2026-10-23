@@ -265,7 +265,7 @@ test("command argument parsing rejects invalid input instead of guessing", () =>
 
 test("the offline core stays free of the Minecraft runtime, and the adapters are the only things that use it", () => {
     const runtimeImport = /(^|\n)\s*import\s[^;\n]*from\s*["']@minecraft\/server["']/;
-    const pureDirs = ["sim", "kingdom", "ui", "structures", "civ"];
+    const pureDirs = ["sim", "kingdom", "ui", "structures", "civ", "population", "ledger", "sim/invasion"];
     const runtimeDirs = ["integration", "commands", "events"];
 
     let pureChecked = 0;
