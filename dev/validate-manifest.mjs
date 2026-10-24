@@ -111,6 +111,37 @@ for (const [index, dependency] of dependencies.entries()) {
     }
 }
 
+// Every other @minecraft module the pack imports at load time gets the same treatment as the server pin
+// above. main.js imports the Ledger bindings unconditionally, so an unresolvable or drifted server-ui pin
+// is not a degraded feature - it is a pack that never starts, and the typecheck would still be green
+// against whichever typings happen to be installed.
+for (const dependency of dependencies) {
+    const moduleName = String(dependency.module_name ?? "");
+    if (!moduleName.startsWith("@minecraft/") || moduleName === "@minecraft/server") {
+        continue;
+    }
+    const shortName = moduleName.slice("@minecraft/".length);
+    check(
+        typeof dependency.version === "string" && /^\d+\.\d+\.\d+$/.test(dependency.version),
+        `${moduleName} dependency is an exact stable version`,
+        String(dependency.version),
+    );
+    const typesPath = join(projectRoot, "node_modules", "@minecraft", shortName, "package.json");
+    if (check(existsSync(typesPath), `the ${moduleName} types used for typechecking are installed`)) {
+        const installed = JSON.parse(readFileSync(typesPath, "utf8"));
+        check(
+            installed.version === dependency.version,
+            `manifest pin matches the installed ${moduleName} types version`,
+            `manifest ${String(dependency.version)} vs node_modules ${String(installed.version)}`,
+        );
+    }
+    const declared = existsSync(join(projectRoot, "package.json"))
+        ? Object.keys(JSON.parse(readFileSync(join(projectRoot, "package.json"), "utf8")).devDependencies ?? {})
+        : [];
+    check(declared.length > 0, `devDependencies are readable for the ${moduleName} pin check`, join(projectRoot, "package.json"));
+    check(declared.includes(moduleName), `${moduleName} is declared in devDependencies so the gate can verify it`, declared.join(", "));
+}
+
 const packRootEntries = readdirSync(packRoot);
 for (const forbidden of ["node_modules", "package.json", "package-lock.json", "tsconfig.json"]) {
     check(!packRootEntries.includes(forbidden), `pack root stays clean (no ${forbidden})`);

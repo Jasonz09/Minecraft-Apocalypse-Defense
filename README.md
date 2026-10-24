@@ -243,7 +243,7 @@ npm run verify     # runs all four gates, reports every one even if an earlier o
 
 | Gate | What it proves |
 | --- | --- |
-| `npm run validate` | 903 checks: manifest structure, real unique UUIDs, entry file exists, the pinned API version equals the installed types version, every relative import carries a `.js` extension and resolves, and the pack root has no dev junk in it |
+| `npm run validate` | 934 checks: manifest structure, real unique UUIDs, entry file exists, every `@minecraft/*` module dependency pinned to an exact stable version that equals the installed types and is declared in `devDependencies`, every relative import carries a `.js` extension and resolves, and the pack root has no dev junk in it |
 | `npm run typecheck` | Every pack script checked with `checkJs` **strict** against the real 2.7.0 declarations |
 | `npm run test` | 1029 offline unit tests across the tracked test files (clean export of HEAD): starting values, population splits, derived totals, validation, seed-once, restart round-trip, migration, quarantine, siege/evacuation/fallback/construction/expansion/population/policy behaviour |
 | `npm run e2e` | A headless 52-stage kingdom run: migrate a v1 save, hold the realm, take a siege, evacuate, reinforce, counterattack, win beyond the border, claim and plan new land, be refused by a shortage, build, recruit, reload, and replay identically |

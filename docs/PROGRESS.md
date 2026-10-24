@@ -172,7 +172,7 @@ Suite now 711 tests, all five verify gates green, `template:release-check` exits
 All five enlarged physical layouts are registered (`hearthgate/ironquarry/whitethorn/saltmere/ashfall-enlarged`) and
 plan from ONE master CivPlan in ONE coordinate system: measured at plan seed 21, areas 40,400 / 35,200 / 38,208 /
 40,112 / 37,792 columns (191,712 total), compactness 0.57-0.80, bbox fill 0.56-0.66, `validatePlan` clean. Each
-district is 58k-75k block operations (331,961 total; 2,491 write-phase slices). `civ:generate` takes `district=` and
+district is 58k-75k block operations (331,759 total at seed 21 on commit `e8b5622`; 2,491 write-phase slices). `civ:generate` takes `district=` and
 `site=here` (bounded survey: radius 316, 341,988 column reads, farthest read 320 - the unbounded site search reads
 376,512 and reaches 512). Building district N closes its finished neighbours' land to everything except the wall it
 shares with them: measured, a finished district's masonry reaches exactly 3 blocks past its outline (hence a
@@ -184,8 +184,8 @@ sited, on every terrain in the battery), names the kinds the siting stage cannot
 and refuses any shortfall the record did not announce; `civ:generate_plan` prints it instead of hiding it (reference
 plan: 0 facility problems, 2 announced shortfalls).
 OFFLINE EVIDENCE - a fake Bedrock world, NOT Minecraft: districts 1 to 5 built in order in one run, all five reporting
-"is built" and status `complete`; 266,473 blocks written, 1,912,722 reads across 27,011 slices, zero ticking areas left,
-zero area violations; 4,036 / 3,970 / 1,041 / 8,623 operations refused for standing in a finished neighbour's land;
+"is built" and status `complete`; 266,473 blocks written, 1,912,599 reads across 27,007 slices, zero ticking areas left,
+zero area violations; 4,026 / 3,961 / 1,037 / 8,525 operations refused for standing in a finished neighbour's land;
 afterward the save holds 155,697 B of plan in 13 keys, 11,029 B of queues in 10 keys, a 6,611-character kingdom blob
 whose five `district.civ` pointers total 1,546 B, and 15 registered gates. New offline coverage:
 `dev/test/civ-fivedistrict.test.mjs` (14 tests: sealed separation on the wall+gate barrier built from the records,
@@ -193,9 +193,10 @@ exterior cannot reach any interior, one connected road network crossing between 
 write guard's effect on the line that actually gets built, shared walls planned by both neighbours, role identity and
 the siting registry, spacing/density, per-district budgets, determinism) plus 7 runtime tests (crash-and-restart
 equivalence, per-district persistence and independent wipes, refusal while a neighbour builds, legacy single-slot
-worlds still resume). Suite 745 tests, five verify gates green. District 1's checksum is pinned unchanged
+worlds still resume). Suite on commit `e8b5622`: 1202 unit tests, 0 failures, 934 manifest/packaging checks, five
+verify gates green. District 1's checksum is pinned unchanged
 (`53c81775`), so existing Hearthgate saves are untouched. NOT DONE: nothing has been built in Minecraft; the wall
-stage's own reported column count exceeds the columns its operations cover by 179 at seed 21 (260 on flat ground) -
+stage's own reported column count exceeds the columns its operations cover by 194 at seed 21 (282 on flat ground) -
 sound, but to be closed in `civ/walls.js`, which moves district 1's checksum, so it is scheduled rather than slipped;
 the 14 registry kinds (`orchard`, `customs_yard`, `command_hall`, `stable`, `drill_ground`, `mill`, `market_square`,
 `pen`, `shop`, `garden`, `warehouse`, `barracks`, `farm_veg`, `farm_kitchen`) cannot always be sited, which is capacity,

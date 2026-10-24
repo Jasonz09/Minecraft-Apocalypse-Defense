@@ -29,10 +29,11 @@ tests added during integration). **None of this proves in-game behaviour.**
 ## Deployment
 `node dev/deploy.mjs` copies `CivilizationApocalypse_BP` into the dev folder and verifies sha256 of
 every file. It refuses to replace a folder with a different manifest UUID and never touches worlds
-or other packs. Deployed as of commit 4b5691e: **73 files**, each re-checked with
+or other packs. Deployed as of commit `e8b5622`: **112 files**, each re-checked with
 `git hash-object --path <pack path> <deployed file>` against the blob id stored in that commit - 0
 mismatches, 0 missing, 0 extra; header UUID `fd04cb50-dddc-4ebe-83fc-5b5375819bcb`, the same as the
-source manifest. Re-run `node dev/deploy.mjs` after any change and confirm the same 73/0/0/0.
+source manifest, and the manifest now declares `@minecraft/server-ui` 2.1.0 for the Ledger (never resolved
+by a real game). Re-run `node dev/deploy.mjs` after any change and confirm the same file count with 0/0/0.
 Deploying is not running: Minecraft has still never loaded this pack, so nothing here validates the
 engine. See docs/TESTING.md for the in-game checklist.
 

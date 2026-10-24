@@ -71,16 +71,21 @@ the line that was planned, and no write lands on a finished district's own land.
 wider is not a fix: at 10 blocks it suppresses 1,581 of the district's own building operations and 3,133
 road operations on land nobody had built on.
 
-## 4. Measured cost (offline, synthetic terrain, reference plan seed 21 - an estimate, not a prediction)
+## 4. Measured cost (offline, synthetic terrain, reference plan seed 21, commit `e8b5622` - an estimate, not a prediction)
 
-| district | role | enclosed columns | ops | build slices | full-resolution survey | worst-case chunks |
+| district | role | enclosed columns | ops | write slices | site record | job queue |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1 Hearthgate | command | 40,400 | 75,155 | 564 | 96,673 columns | 576 |
-| 2 Ironquarry | industrial | 35,200 | 58,261 | 437 | 73,920 columns | 576 |
-| 3 Whitethorn | agricultural | 38,208 | 67,182 | 504 | 86,609 columns | 576 |
-| 4 Saltmere | commercial | 40,112 | 65,967 | 495 | 87,912 columns | 576 |
-| 5 Ashfall | residential | 37,792 | 65,396 | 491 | 80,085 columns | 576 |
-| total | | 191,712 | 331,961 | 2,491 | 425,199 columns | bounded per district |
+| 1 Hearthgate | command | 40,400 | 75,155 | 564 | 68,864 B | 2,202 B in 234 elements |
+| 2 Ironquarry | industrial | 35,200 | 58,221 | 437 | 66,376 B | 2,068 B in 219 elements |
+| 3 Whitethorn | agricultural | 38,208 | 67,125 | 504 | 83,721 B | 2,596 B in 281 elements |
+| 4 Saltmere | commercial | 40,112 | 65,924 | 495 | 72,835 B | 2,297 B in 246 elements |
+| 5 Ashfall | residential | 37,792 | 65,334 | 491 | 85,810 B | 2,745 B in 299 elements |
+| total | | 191,712 | 331,759 | 2,491 | 120,000 B budget | 16,000 B budget |
+
+District 1's record is still byte-identical to the pinned `53c81775`; districts 2-5 were re-planned by
+`ad23eef` (cross-district wall priority at plan time), which is why their operation counts and checksums are
+not the numbers an older copy of this table carried. The per-district survey cost is measured in the fake
+world below rather than tabulated here, because it depends on the terrain the run actually reads.
 
 The slices column is `describePlan`'s own basis - `ceil(ops x 3 / 400)` for the write phase (stage ends,
 chunk holds and tree clearing make real windows about three times the ideal), one slice per tick assumed.
@@ -102,14 +107,16 @@ of it (it does not pin the counts, which are re-measured per run).
 
 ## 4a. The whole city, built once, in the fake world (offline evidence - not Minecraft)
 
-Districts 1 to 5 built in order in one run of `dev/lib/civharness.mjs`: every district reported `is built` and ended
-`complete`, writing 266,473 blocks from 1,912,722 reads in 27,011 slices, leaving no ticking area and no area
-violation. Operations refused for standing in a finished neighbour's land: 4,036 (district 2), 3,970 (3), 1,041 (4),
-8,623 (5) - the shared wall and the shared band around it. The save afterwards: 155,697 B of plan in 13 keys (longest
+Districts 1 to 5 built in order in one run of `dev/lib/civharness.mjs` (world seed 1, plan seed 1, commit
+`e8b5622`): every district reported `is built` and ended `complete`, writing 266,473 blocks - 75,976 / 56,614 /
+59,070 / 35,470 / 39,343 per district - from 1,912,599 reads in 27,007 slices, leaving no ticking area and no area
+violation. Operations refused for standing in a finished neighbour's land: 4,026 (district 2), 3,961 (3), 1,037 (4),
+8,525 (5) - the shared wall and the shared band around it. The save afterwards: 155,697 B of plan in 13 keys (longest
 value 30,000 chars, which is the store's chunk size), 11,029 B of queues in 10 keys, a 6,611-character kingdom blob
-whose five `district.civ` pointers total 1,546 B, and 15 registered gates. This proves the *workflow* - dependency
-order, bounded per-district survey, independent slots, nothing removed from a finished district - against a fake
-engine. It proves nothing about real chunk latency, the watchdog, or whether the engine accepts these block states.
+whose five `district.civ` pointers total 1,546 B, 2,725 B of gate registry and 15 registered gates. This proves the
+*workflow* - dependency order, bounded per-district survey, independent slots, nothing removed from a finished
+district - against a fake engine. It proves nothing about real chunk latency, the watchdog, or whether the engine
+accepts these block states.
 
 ## 5. What to capture from the in-game run
 
@@ -135,9 +142,9 @@ that output, export the world, and follow `docs/STARTER_WORLD.md`.
   A district becomes `built` only after it has been built and inspected in Minecraft, and
   `template:release-check` plus `--zip` enforce that. Do not edit the flags to get a package out.
 * Known geometry imperfection, inside the wall stage: summed over the five districts, the wall elements
-  report more band columns than their own operations cover - 15,146 reported against 14,967 distinct
-  columns at seed 21 (179 apart, the worst single element 30), and 14,650 against 14,390 on flat ground
-  (260 apart, worst 34). The sealed-separation tests above prove the line that *is* built admits no
+  report more band columns than their own operations cover - 15,146 reported against 14,952 distinct
+  columns at seed 21 (194 apart, the worst single element 30), and 14,650 against 14,368 on flat ground
+  (282 apart, worst 39). The sealed-separation tests above prove the line that *is* built admits no
   walkable corridor, so this is a bookkeeping gap in `civ/walls.js`, not a hole in the wall; closing it
   moves district 1's stored checksum, so it is a scheduled change rather than something to slip in.
 * Known siting shortfall: the auditor keeps a named registry (`civ/facilities.js` `SITING_GAPS`) of the
@@ -148,8 +155,13 @@ that output, export the world, and follow `docs/STARTER_WORLD.md`.
   the registry that vanishes is a hard failure, and a registry entry can only be removed by siting it
   everywhere. What the role is *defined* by (`hq_citadel`, `smithy`, `longhouse`, `market_stall`, the houses,
   `chapel`, `school`, wells) is required to be physically present in every district on every terrain.
-* Physical entities: none. Civilians and soldiers remain simulation values; the Commander's Ledger,
-  zombie sieges, NPCs and diplomacy are later milestones.
+* Physical entities: none reach the world. War, evacuation and siege are simulation values (built and tested
+  offline); the Commander's Ledger is wired behind `civ_ledger_dev`, default off, and its
+  `@minecraft/server-ui` 2.1.0 dependency has never been resolved by a real game - `main.js` imports the
+  bindings unconditionally, so that pin is a pack-start risk, not a feature flag; `manifest validation` now
+  checks every `@minecraft/*` pin against the installed typings. The population-LOD and people modules are
+  offline-tested but unwired, with spawning disabled by default. A built world therefore contains buildings,
+  roads and gates - not inhabitants.
 
 ## WP2 audit (districts 2-5 through the district-1 code path)
 

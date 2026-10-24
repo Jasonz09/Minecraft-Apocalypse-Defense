@@ -145,7 +145,7 @@ the procedural pipeline stays intact for later conquest and rebuilding.
   value 30,000 chars (the store's own chunk ceiling, below the engine's 32,767), and the five queues
   11,029 B in 10 keys - 2,068-2,745 B each against the 16 KB `maxJobBytes`. The kingdom blob is 6,611
   chars with all five districts complete, of which the five `district.civ` pointers are 1,546 B
-  (305-313 B each). Per-district block operations 58k-75k against the 400k per-district ceiling, 331,961
+  (305-313 B each). Per-district block operations 58k-75k against the 400k per-district ceiling, 331,759
   for the whole civilization at the reference seed, 266,473 blocks actually written in the offline build.
 - **Build order.** Neighbour ring 1-2-3-4-5-1, capital first. A shared wall is included in BOTH
   neighbours' records, so neither district's enclosure depends on which of them was built first. That
@@ -173,6 +173,6 @@ the procedural pipeline stays intact for later conquest and rebuilding.
   corner cells, and the safety question is whether anything can walk through, which the sealed-separation
   tests answer directly. What IS measured is an internal inconsistency in the wall stage: summed over the
   five districts its elements report more band columns than their own operations cover - 15,146 against
-  14,967 at seed 21 (179 apart, worst single element 30), 14,650 against 14,390 on flat ground (260
+  14,952 at seed 21 (194 apart, worst single element 30), 14,650 against 14,368 on flat ground (282
   apart, worst 34). The built line admits no walkable corridor, so this is bookkeeping in `civ/walls.js`,
   and fixing it moves district 1's stored checksum - a scheduled change, not something to slip in here.
