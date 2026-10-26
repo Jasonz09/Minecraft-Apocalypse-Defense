@@ -431,19 +431,33 @@ function onTrouble(player, prog, reason) {
 // civ:generate / civ:generate_plan
 
 /**
+ * The scriptevent entry point. The generation itself lives in runGenerate(), so the Horn of
+ * Hearthgate can start the same build through the same refusals and the same stored queue.
+ *
  * @param {KingdomStore} kingdomStore
  * @param {string[]} args
  * @param {ScriptEvent} event
  * @param {boolean} planOnly
  */
 async function handleGenerate(kingdomStore, args, event, planOnly) {
-    const title = planOnly ? "Plan refused" : "Generate refused";
     const player = playerOf(event);
     if (player === undefined) {
-        reply(formatErrorLines(title, ["Run this as a player: the search is centred on you."]), event);
+        reply(formatErrorLines(planOnly ? "Plan refused" : "Generate refused", ["Run this as a player: the search is centred on you."]), event);
         return;
     }
-    const options = parseCivArgs(args);
+    return runGenerate(kingdomStore, player, parseCivArgs(args), planOnly);
+}
+
+/**
+ * Survey, plan, store and build one district, as a player.
+ *
+ * @param {KingdomStore} kingdomStore
+ * @param {Player} player
+ * @param {ReturnType<typeof parseCivArgs>} options
+ * @param {boolean} planOnly
+ */
+export async function runGenerate(kingdomStore, player, options, planOnly) {
+    const title = planOnly ? "Plan refused" : "Generate refused";
     if (options.error !== undefined) {
         say(player, formatErrorLines(title, [options.error, `Usage: /scriptevent ${planOnly ? CIV_EVENT_IDS.plan : CIV_EVENT_IDS.generate} [district=1-${String(DISTRICT_INDEXES.length)}${planOnly ? "|all" : ""}] [site=here] [radius=24-${String(CIV.maxSearchRadius)}] [seed=N]`]));
         return;
@@ -760,18 +774,28 @@ export function resumableDistrict(kingdom) {
 }
 
 /**
+ * The scriptevent entry point for a resume; the work lives in runResume().
  * @param {KingdomStore} kingdomStore
  * @param {string[]} args
  * @param {ScriptEvent} event
  */
 async function handleResume(kingdomStore, args, event) {
-    const title = "Resume refused";
     const player = playerOf(event);
     if (player === undefined) {
-        reply(formatErrorLines(title, ["Run this as a player."]), event);
+        reply(formatErrorLines("Resume refused", ["Run this as a player."]), event);
         return;
     }
-    const options = parseCivArgs(args);
+    return runResume(kingdomStore, player, parseCivArgs(args));
+}
+
+/**
+ * Continue an interrupted district from its own stored plan and queue, as a player.
+ * @param {KingdomStore} kingdomStore
+ * @param {Player} player
+ * @param {ReturnType<typeof parseCivArgs>} options
+ */
+export async function runResume(kingdomStore, player, options) {
+    const title = "Resume refused";
     if (options.error !== undefined) {
         say(player, formatErrorLines(title, [options.error, `Usage: /scriptevent ${CIV_EVENT_IDS.resume} [district=1-${String(DISTRICT_INDEXES.length)}]`]));
         return;

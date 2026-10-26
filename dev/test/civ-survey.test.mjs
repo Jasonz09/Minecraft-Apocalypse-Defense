@@ -169,10 +169,10 @@ test("a lone stalled tile is skipped (its columns stay unread, never guessed); t
     assertClean("one hung attempt");
 });
 
-test("a tile whose every attempt hangs is skipped; fewer than 3 in a row do not abort the run", T, async () => {
+test("a tile that stalls both attempts is asked for again once the ring is generated, and its columns are recovered", T, async () => {
     setup();
     CIV.holdTimeoutTicks = 60;
-    // both attempts of the 4th tile hang: calls 4 and 5; everything else instant
+    // both attempts of the 4th tile hang: calls 4 and 5; the retry pass asks again and succeeds
     mc.createMode = (chunks, options, n) => (n >= 4 && n <= 5 ? "never" : undefined);
     let outcome;
     builder.seams.onOutcome = (o) => {
@@ -181,12 +181,50 @@ test("a tile whose every attempt hangs is skipped; fewer than 3 in a row do not 
     const player = makePlayer();
     await planOnly(player);
     const out = text(player);
-    // the skipped tile is part of the ring that holds the site -> either a valid plan or an honest refusal, never a guess
-    assert.ok(/Plan is valid/.test(out) || /Stopped at/.test(out), out.slice(-600));
-    const status = asked(player, CIV_EVENT_IDS.status);
-    assert.match(status, /tiles skipped 1/);
-    if (outcome) assert.equal(outcome.stats.coarse.stalledTiles.length, 1);
-    assertClean("one skipped tile");
+    assert.match(out, /Plan is valid/, out.slice(-600));
+    assert.equal(outcome.stats.coarse.retriedTiles, 1, "the stalled tile was asked for again");
+    assert.ok(outcome.stats.coarse.recoveredTiles > 0, "its columns were read on the second pass");
+    assert.equal(outcome.stats.coarse.stalledTiles.length, 0);
+    assert.equal(outcome.stats.coarse.skippedColumns, 0);
+    assert.doesNotMatch(out, /never finished loading/, "nothing was left unread, so nothing is reported");
+    assertClean("recovered tile");
+});
+
+test("a tile that never loads on either pass is reported with its unread columns, never guessed", T, async () => {
+    setup();
+    CIV.holdTimeoutTicks = 60;
+    // one specific tile never loads, on both original attempts and on the retry pass; every other tile is instant
+    mc.createMode = (chunks, options) => (options.from.x === 0 && options.from.z === 128 ? "never" : undefined);
+    let outcome;
+    builder.seams.onOutcome = (o) => {
+        outcome = o;
+    };
+    const player = makePlayer();
+    await planOnly(player);
+    const out = text(player);
+    // either the remaining ground still holds a site, or the refusal is honest - never a guess
+    assert.ok(/Plan is valid/.test(out) || /Stopped at site/.test(out), out.slice(-800));
+    assert.match(out, /1 survey tile\(s\) never finished loading/, "the summary names the skipped tile");
+    assert.match(out, /column\(s\) of ground were never read/, "and counts the unread ground");
+    if (outcome) {
+        assert.equal(outcome.stats.coarse.retriedTiles, 1);
+        assert.equal(outcome.stats.coarse.recoveredTiles, 0);
+        assert.equal(outcome.stats.coarse.stalledTiles.length, 1);
+        assert.ok(outcome.stats.coarse.skippedColumns > 0, "the unread columns are counted");
+    }
+    assert.equal(mc.writes, 0);
+    assertClean("never-loaded tile");
+});
+
+test("coverageProblem names the unread ground, and says nothing when nothing was skipped", () => {
+    assert.equal(builder.coverageProblem({ stalledTiles: [] }), undefined);
+    assert.equal(builder.coverageProblem({}), undefined);
+    const line = builder.coverageProblem({ stalledTiles: [{}, {}], skippedColumns: 512, retriedTiles: 2, recoveredTiles: 0 });
+    assert.match(line, /2 survey tile\(s\) never finished loading/);
+    assert.match(line, /asked for again 2 time\(s\); 0 column\(s\) recovered/);
+    assert.match(line, /512 column\(s\) of ground were never read/);
+    assert.match(line, /every candidate window over them is disqualified/);
+    assert.match(line, /smaller radius=/);
 });
 
 test("slow chunk generation (resolves after 250 ticks per tile) is waited for: heartbeats, no timeout, valid plan", T, async () => {

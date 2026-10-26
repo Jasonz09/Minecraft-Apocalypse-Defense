@@ -381,6 +381,27 @@ export function loadMasterPlan() {
 }
 
 /**
+ * Why a survey with unread ground cannot be read as a terrain verdict. Tiles the engine never generated leave
+ * their lattice points `unloaded`, and rankSites disqualifies any window containing one - so a terrain figure
+ * beside an incomplete survey describes only the ground that WAS read. Undefined when nothing was skipped.
+ *
+ * @param {{ stalledTiles?: unknown[], skippedColumns?: number, retriedTiles?: number, recoveredTiles?: number }} stats
+ * @returns {string | undefined}
+ */
+export function coverageProblem(stats) {
+    const stalled = Array.isArray(stats.stalledTiles) ? stats.stalledTiles.length : 0;
+    if (stalled === 0) {
+        return undefined;
+    }
+    const retriedCount = typeof stats.retriedTiles === "number" ? stats.retriedTiles : 0;
+    const skipped = typeof stats.skippedColumns === "number" ? stats.skippedColumns : 0;
+    const recovered = typeof stats.recoveredTiles === "number" ? stats.recoveredTiles : 0;
+    const retried = retriedCount > 0 ? ` (asked for again ${String(retriedCount)} time(s); ${String(recovered)} column(s) recovered)` : "";
+    const columns = skipped > 0 ? `${String(skipped)} column(s) of ground` : "some of the ground";
+    return `${String(stalled)} survey tile(s) never finished loading${retried}, so ${columns} were never read; every candidate window over them is disqualified. Retry once the area is generated, or use a smaller radius=.`;
+}
+
+/**
  * Plan ONE district, read-only. If the world already holds a master plan, only that district's own region is
  * surveyed (no site search, no distant chunks); otherwise the civilization's master plan is made first, either by
  * searching nearest-first (`siteMode` unset - the behaviour of every run so far) or on the spot the developer is
@@ -675,6 +696,15 @@ async function planNewMaster(ctx, index) {
     // (b) the ranking of the last evaluated ring decides - or, with `site=here`, the one window centred on you
     setPhase(progress, 2, "ranking sites");
     ctx.say([`[2/6] Surveyed ${String(coarse.stats.attempted)} of ${String(coarse.tilesTotal)} tiles (${String(coarse.stats.chunksScanned)} chunks, ${String(coarse.field.columnsRead)} columns read, ${String(coarse.stats.unloaded)} unloaded${coarse.early ? ", stopped early" : ""}).`]);
+    const coverage = coverageProblem(coarse.stats);
+    if (coverage !== undefined) {
+        ctx.say([`      ${coverage}`]);
+    }
+    // The last ring's ranking ran before the retry pass filled the tiles that stalled, so a field that has
+    // just been completed would otherwise be judged on its holes.
+    if (!explicit && coarse.stats.recoveredTiles > 0) {
+        ranking = rankSites(coarse.field, ctx.anchor, { ...rankOptions, searchRadius: ctx.radius });
+    }
     if (explicit) {
         ranking = rankSites(coarse.field, ctx.anchor, { ...rankOptions, searchRadius: 0 });
     }
@@ -684,7 +714,11 @@ async function planNewMaster(ctx, index) {
     const found = /** @type {ReturnType<typeof rankSites>} */ (ranking);
     out.stats.ranking = { evaluated: found.evaluated, reads: found.reads, mode: explicit ? "here" : "search" };
     if (found.site === null) {
-        return fail("site", explicit ? [`where you stand is not suitable: ${found.reasons.slice(0, 6).join("; ")}`] : found.reasons.slice(0, 8));
+        const reasons = explicit ? [`where you stand is not suitable: ${found.reasons.slice(0, 6).join("; ")}`] : found.reasons.slice(0, 8);
+        if (coverage !== undefined) {
+            reasons.push(coverage);
+        }
+        return fail("site", reasons);
     }
     const siteFound = found.site;
     out.site = siteFound;

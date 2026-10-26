@@ -88,6 +88,22 @@ export const CIV = {
 };
 
 /**
+ * The Horn of Hearthgate: the player-facing way to start the civilization build. A vanilla,
+ * non-stackable item carrying a marker dynamic property, because a custom item needs an item
+ * definition (and a texture) in the pack, and a stackable item cannot carry a marker at all.
+ */
+export const BEACON = {
+    itemId: "minecraft:goat_horn",
+    /** Identity is typeId plus this marker, exactly like the Commander's Ledger. */
+    marker: "ca:beacon",
+    nameTag: "Horn of Hearthgate",
+    /** Ticks between action-bar guide refreshes for a player holding the horn. */
+    guideTicks: 20,
+    /** One press can arrive twice (the item is aimed at a block); ignore a repeat inside this window. */
+    dupUseTicks: 10,
+};
+
+/**
  * Starter-world arming. The shipped game is a world template: the civilization is already
  * built, so the simulation must start from its published baseline instead of inheriting
  * whatever a development world accumulated while the city was being generated and tested.

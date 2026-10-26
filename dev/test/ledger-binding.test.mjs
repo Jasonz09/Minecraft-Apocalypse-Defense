@@ -121,8 +121,9 @@ props.set(STORAGE_KEYS.kingdom, serializeKingdom(createInitialKingdom()));
 await import(fileUrl("main.js"));
 await system.advance(1);
 
-test("gate off at load: no item-use or leave handler, and the recovery command does nothing", async () => {
-    assert.deepEqual(world.subscriberCounts(), { itemUse: 0, playerLeave: 0 }, "the Ledger's own world handlers are not registered");
+test("gate off at load: no Ledger item-use or leave handler, and the recovery command does nothing", async () => {
+    // The horn's own use handler is always on (integration/beaconBindings.js); the Ledger's is not.
+    assert.deepEqual(world.subscriberCounts(), { itemUse: 1, playerLeave: 0 }, "only the horn listens; the Ledger's own world handlers are not registered");
     const player = createPlayer(world, { name: "Idle" });
     scriptEvent(LEDGER_EVENT_IDS.recover, "", player);
     await system.advance(1);
@@ -146,10 +147,10 @@ test("the development switch listens while the gate is off; 'on' turns the gate 
     await system.advance(1);
     assert.equal(props.get(LEDGER_DEV_GATE_KEY), true, "the gate property is on");
     assert.match(admin.messages.join("\n"), /development gate is on/, "the operator is told the gate is on");
-    assert.deepEqual(world.subscriberCounts(), { itemUse: 1, playerLeave: 1 }, "the Ledger registered its handlers");
+    assert.deepEqual(world.subscriberCounts(), { itemUse: 2, playerLeave: 1 }, "the Ledger registered its handlers next to the horn's");
 
     scriptEvent(LEDGER_EVENT_IDS.devgate, "on", admin);
-    assert.deepEqual(world.subscriberCounts(), { itemUse: 1, playerLeave: 1 }, "a second 'on' adds no duplicate handler");
+    assert.deepEqual(world.subscriberCounts(), { itemUse: 2, playerLeave: 1 }, "a second 'on' adds no duplicate handler");
 });
 
 test("gate on: a use opens the Ledger; a use alone grants no item; a plain book opens nothing", async () => {
@@ -216,7 +217,7 @@ test("a world whose gate is on at load registers the Ledger on the first tick", 
     });
     assert.equal(child.status, 0, `child exited ${String(child.status)}: ${child.stderr}`);
     const report = JSON.parse(child.stdout.trim().split("\n").pop());
-    assert.deepEqual({ itemUse: report.itemUse, playerLeave: report.playerLeave }, { itemUse: 1, playerLeave: 1 });
+    assert.deepEqual({ itemUse: report.itemUse, playerLeave: report.playerLeave }, { itemUse: 2, playerLeave: 1 }, "the horn's handler plus the Ledger's, registered on the first tick");
     assert.equal(report.granted, 1, "the recovery command works once the gate is on at load");
 });
 
@@ -234,11 +235,12 @@ function walk(dir) {
     return found;
 }
 
-test("the binding file is the only file that imports @minecraft/server-ui", () => {
+test("only the two binding files import @minecraft/server-ui", () => {
     const importers = walk(scripts)
         .filter((file) => /from\s*"@minecraft\/server-ui"/.test(readFileSync(file, "utf8")))
-        .map((file) => relative(scripts, file).split("\\").join("/"));
-    assert.deepEqual(importers, ["integration/ledgerBindings.js"]);
+        .map((file) => relative(scripts, file).split("\\").join("/"))
+        .sort();
+    assert.deepEqual(importers, ["integration/beaconBindings.js", "integration/ledgerBindings.js"], "every UI use is confined to an integration binding, so a broken UI pin cannot spread through the pack");
 });
 
 test("the Ledger modules never import a Minecraft module: the binding is the only Minecraft-facing file", () => {

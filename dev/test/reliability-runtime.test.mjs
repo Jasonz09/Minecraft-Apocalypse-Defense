@@ -25,6 +25,7 @@ const mc = {
     properties: new Map(),
     worldMessages: [],
     spawnSubscribers: [],
+    itemUseSubscribers: [],
     scriptEventSubscribers: [],
     intervals: [],
     clearedRuns: [],
@@ -41,7 +42,10 @@ function guard(what) {
 }
 
 mc.world = {
-    afterEvents: { playerSpawn: { subscribe: (callback) => mc.spawnSubscribers.push(callback) } },
+    afterEvents: {
+        playerSpawn: { subscribe: (callback) => mc.spawnSubscribers.push(callback) },
+        itemUse: { subscribe: (callback) => mc.itemUseSubscribers.push(callback) },
+    },
     getDynamicPropertyIds() {
         guard("world.getDynamicPropertyIds");
         return [...mc.properties.keys()];
@@ -123,7 +127,7 @@ export async function resolve(specifier, context, nextResolve) {
 register("data:text/javascript," + encodeURIComponent(hooksSource));
 
 const load = (...parts) => import(fileUrl(...parts));
-const { STORAGE_KEYS, KINGDOM_SCHEMA_VERSION, SIM, STARTER, STARTER_EVENT_IDS } = await load("config.js");
+const { STORAGE_KEYS, KINGDOM_SCHEMA_VERSION, SIM, STARTER, STARTER_EVENT_IDS, BEACON } = await load("config.js");
 const { createInitialKingdom, serializeKingdom, findValidationProblems } = await load("kingdom", "state.js");
 const report = await load("ui", "report.js");
 const { listScenarios } = await load("sim", "scenarios.js");
@@ -140,6 +144,7 @@ try {
 const earlySnapshot = {
     accesses: [...mc.earlyAccesses],
     spawn: mc.spawnSubscribers.length,
+    itemUse: mc.itemUseSubscribers.length,
     scriptEvents: mc.scriptEventSubscribers.length,
     intervals: mc.intervals.map((entry) => entry.ticks),
 };
@@ -195,10 +200,11 @@ test("main.js: importing it during early execution does not touch world state an
     assert.deepEqual(earlySnapshot.accesses, [], "no world reads, writes, dimension lookups or messages at module scope");
 });
 
-test("main.js: registers exactly the subscriptions the pack needs and one hourly interval", () => {
-    assert.equal(earlySnapshot.spawn, 1, "one playerSpawn subscriber");
+test("main.js: registers exactly the subscriptions the pack needs, the horn ticker and one hourly interval", () => {
+    assert.equal(earlySnapshot.spawn, 2, "the welcome greeting and the horn grant both follow playerSpawn");
+    assert.equal(earlySnapshot.itemUse, 1, "the horn's use handler");
     assert.equal(earlySnapshot.scriptEvents, 8, "status + inspection + debug + physical + gates + civ + starter script-event subscribers, + the Ledger development switch (the only Ledger listener while the gate is off)");
-    assert.deepEqual([...earlySnapshot.intervals].sort((a, b) => a - b), [40, SIM.stepTicks], "gate-adapter poll (40 ticks) plus one interval at the in-game-hour cadence");
+    assert.deepEqual([...earlySnapshot.intervals].sort((a, b) => a - b), [BEACON.guideTicks, 40, SIM.stepTicks], "gate-adapter poll (40 ticks), the horn's guide ticker, and one interval at the in-game-hour cadence");
     for (const { options } of mc.scriptEventSubscribers) {
         assert.deepEqual(options?.namespaces, ["civ"], "every script-event subscription is namespace-filtered");
     }
@@ -214,10 +220,12 @@ test("registration is idempotent: calling the register functions again adds no d
     (await load("commands", "gates.js")).registerGateCommands(store);
     (await load("commands", "civ.js")).registerCivCommands(store);
     (await load("commands", "starter.js")).registerStarterCommands(store);
-    assert.equal(mc.spawnSubscribers.length, 1);
+    (await load("integration", "beaconBindings.js")).registerSeedBeacon(store);
+    assert.equal(mc.spawnSubscribers.length, 2);
+    assert.equal(mc.itemUseSubscribers.length, 1);
     assert.equal(mc.scriptEventSubscribers.length, 8);
     assert.equal(loop.isSimulationLoopRunning(), true);
-    assert.equal(mc.intervals.length, 2, "re-registering starts no extra interval (gate poll + simulation hour)");
+    assert.equal(mc.intervals.length, 3, "re-registering starts no extra interval (gate poll + horn guide + simulation hour)");
 });
 
 // ---- welcome --------------------------------------------------------------------------

@@ -7,6 +7,7 @@ import { registerPhysicalCommands } from "./commands/physical.js";
 import { registerStatusCommand } from "./commands/status.js";
 import { registerStarterCommands } from "./commands/starter.js";
 import { registerWelcomeOnJoin } from "./events/welcome.js";
+import { registerSeedBeacon } from "./integration/beaconBindings.js";
 import { registerLedger, registerLedgerDevGate } from "./integration/ledgerBindings.js";
 import { startSimulationLoop } from "./integration/simulationLoop.js";
 import { ledgerGateOn } from "./ledger/devgate.js";
@@ -28,6 +29,7 @@ registerPhysicalCommands(kingdomStore);
 registerGateCommands(kingdomStore);
 registerCivCommands(kingdomStore);
 registerStarterCommands(kingdomStore);
+registerSeedBeacon(kingdomStore);
 startSimulationLoop(kingdomStore);
 
 // The Commander's Ledger is off unless the development gate is on. The switch always listens, because it is the

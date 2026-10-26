@@ -29,6 +29,7 @@ import { readColumn } from "./terrainScan.js";
  *   slices: number, maxReadsPerSlice: number, maxColumnsPerSlice: number, columns: number, reads: number,
  *   unloaded: number, tiles: number, unheldTiles: number, notes: string[],
  *   tilesTotal: number, chunksScanned: number, stalledTiles: Rect[], consecutiveStalls: number, attempted: number, ringsDone: number,
+ *   retriedTiles: number, recoveredTiles: number, skippedColumns: number,
  *   aborted: string | undefined
  * }} ScanStats
  */
@@ -44,7 +45,7 @@ const COLUMN_WORST_READS = 98;
 
 /** @returns {ScanStats} */
 export function newScanStats() {
-    return { slices: 0, maxReadsPerSlice: 0, maxColumnsPerSlice: 0, columns: 0, reads: 0, unloaded: 0, tiles: 0, unheldTiles: 0, notes: [], tilesTotal: 0, chunksScanned: 0, stalledTiles: [], consecutiveStalls: 0, attempted: 0, ringsDone: 0, aborted: undefined };
+    return { slices: 0, maxReadsPerSlice: 0, maxColumnsPerSlice: 0, columns: 0, reads: 0, unloaded: 0, tiles: 0, unheldTiles: 0, notes: [], tilesTotal: 0, chunksScanned: 0, stalledTiles: [], consecutiveStalls: 0, attempted: 0, ringsDone: 0, retriedTiles: 0, recoveredTiles: 0, skippedColumns: 0, aborted: undefined };
 }
 
 /**
@@ -564,6 +565,16 @@ export async function scanProgressive(token, dimension, anchor, radius, step, op
     const done = new Set();
     let scannedRadius = 0;
     let early = false;
+    /** Lattice points a rect owns, and how many there are (a skipped tile's unread ground). */
+    const pointsIn = (/** @type {Rect} */ r) => scanPlan.points.filter((p) => p.x >= r.x0 && p.x <= r.x1 && p.z >= r.z0 && p.z <= r.z1);
+    /** @param {Iterable<{ x: number, z: number }>} points @returns {number} */
+    const countPoints = (points) => {
+        let count = 0;
+        for (const _point of points) {
+            count += 1;
+        }
+        return count;
+    };
     try {
         for (let k = 0; k < rings.length; k += 1) {
             const ring = /** @type {number} */ (rings[k]);
@@ -595,6 +606,32 @@ export async function scanProgressive(token, dimension, anchor, radius, step, op
                 break;
             }
         }
+
+        // A tile the engine could not generate in time is not lost: by the time the rest of the scan has run,
+        // its neighbours exist, so ask for it once more. Read-only and bounded - a tile that still refuses
+        // stays in stalledTiles, its columns stay unread, and skippedColumns says how many were never read.
+        if (stats.stalledTiles.length > 0 && !cancelledNow(token)) {
+            const pending = stats.stalledTiles.splice(0);
+            stats.retriedTiles = pending.length;
+            stats.consecutiveStalls = 0;
+            const knownBefore = field.columnsRead;
+            // The retry attempts are reported as retriedTiles, not as extra surveyed tiles.
+            const attemptedBefore = stats.attempted;
+            const tilesBefore = stats.tiles;
+            for (const r of pending) {
+                const outcome = await surveyTile(token, dimension, r, pointsIn, field, stats, progress);
+                if (outcome === "cancelled") {
+                    return { field, stats, cancelled: true, scannedRadius, tilesTotal: tiles.length, early };
+                }
+                if (outcome === "aborted") {
+                    return { field, stats, cancelled: false, scannedRadius, tilesTotal: tiles.length, early };
+                }
+            }
+            stats.attempted = attemptedBefore;
+            stats.tiles = tilesBefore;
+            stats.recoveredTiles = field.columnsRead - knownBefore;
+        }
+        stats.skippedColumns = stats.stalledTiles.reduce((sum, r) => sum + countPoints(pointsIn(r)), 0);
     } finally {
         releaseArea(token);
     }

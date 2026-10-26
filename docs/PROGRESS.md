@@ -211,3 +211,92 @@ game. See FIVE_DISTRICT_BUILD.md, CIVILIZATION_PLAN_DESIGN.md, STARTER_WORLD.md.
 - Population LOD: built, spawning disabled, unwired (POPULATION_LOD.md).
 - Commander's Ledger: presenters, runtime and dev-gated wiring on master (50590e3); manifest dependency on server-ui 2.1.0 (7f35c71), UNVERIFIED in game.
 - Approved expectation changes (user option A): war.test.mjs wall-crew values (standing crew 2); evacuation.test.mjs repair expectations (integrity 100, materials 135) and the 'wall rebuilt first' check now asserts integrity above breachIntegrity; reliability-runtime.test.mjs subscriber count 7 to 8 (the Ledger development switch) and harness stubs; siege-longhorizon.test.mjs first-breach bound 1000 to 1500 (its own new file). Verified on a clean export of 89f442c: exit 0, 903/903 manifest, 1029/1029 unit, e2e 52/52.
+
+## The Horn of Hearthgate (player-facing entry point)
+`inventory/beaconRules.js` (pure: identity, intent, bearing, guide text) and
+`integration/beaconBindings.js` (the Minecraft-facing half: grant, use, confirmation, guide ticker).
+The horn is a vanilla `minecraft:goat_horn` carrying the marker dynamic property `ca:beacon`, named and
+lored, locked to the inventory and kept on death - the same identity mechanism as the Commander's Ledger
+(`ledger/item.js`). A horn rather than a compass because `ItemStack.setDynamicProperty` refuses stackable
+items, and a custom item would need an item definition plus a texture in the pack.
+
+Granted on the first spawn of each session when absent. A use runs `beaconIntent`:
+no Hearthgate record -> **build** (confirmation form, then the same `runGenerate` the typed command calls);
+`building`/`paused` -> **resume** (`runResume`, stored plan and queue); `complete` -> **guide** (chat readout
+with centre, distance, compass point and a `/tp` line). While the horn is held, a 20-tick ticker sets the
+action bar to `Hearthgate · <n>m <point>` (with `· rising` / `· paused`), so the city can be found from any
+distance. Everything dangerous still goes through the command path: the one-district-at-a-time rule, the
+dev gate for districts 2-5, the write guard, and the persisted queue are unchanged, and the horn writes
+nothing itself.
+
+Tests: `dev/test/beacon.test.mjs` (11 tests: identity by type+marker, slot search, stack construction,
+intent matrix including guide-wins-when-busy, centre validation, bearing conventions with Minecraft's axes,
+compass wrap, guide line suffixes, chat readout, confirmation copy). The Ledger's binding tests now count
+`itemUse: 1` (the horn) as the baseline and `2` once the Ledger registers; `reliability-runtime.test.mjs`
+expects two `playerSpawn` subscribers and three intervals (gate poll 40, horn guide 20, simulation hour),
+and the server-ui rule now names both integration binding files. Verified offline: 954 manifest checks,
+1213/1213 unit tests, e2e 52/52, five gates green. NOT DONE: none of this has run in Minecraft yet.
+
+## First in-game run (2026-10-26, Minecraft 1.26.5203)
+The pack was deployed with `node dev/deploy.mjs` (114 files, sha256-verified) and loaded in the existing
+Creative test world "CivTest Hearthgate". **The pack loads**: `@minecraft/server` 2.7.0 and
+`@minecraft/server-ui` 2.1.0 both resolved (no pack-level failure), the horn was granted on the first spawn
+and appeared in hotbar slot 1, a right-click opened "Raise Hearthgate?", and confirming it started the real
+`runGenerate` survey. Input note: synthetic mouse clicks land on the form's default-focused button (Cancel);
+keyboard focus (`UP`, `ENTER`) selects "Build Hearthgate here", so the run was driven by keyboard.
+
+Both site searches refused, correctly writing no blocks:
+- around spawn (hills): "180 of 261 candidates: unloaded", next "52 ... steep ground"; 17,089 columns read.
+- on plains at (-288, -96) after teleporting: 81/81 tiles, 4,288 chunks, **15,089 columns read, 0 unloaded**,
+  then "260 of 261 candidates: unloaded"; the single readable candidate was steep (33.1% > 4%) with usable
+  land 65.8% < 82.5%.
+
+Root cause of the "unloaded" verdict, found from those two runs:
+1. `planScan(anchor, 536, 8)` plans (2×67+1)² = 18,225 lattice columns, but only 15,089 were read. The
+   difference (3,136 columns, 17%) was never attempted, and `stats.unloaded` stayed 0 because that counter
+   only counts columns that were *attempted and unread*.
+2. The unread columns belong to survey tiles that **stalled and were skipped** (`surveyTile` -> `stalledTiles`,
+   silent unless three in a row or >25% abort). A 128-block tile is 64 chunks; in a fresh world they do not
+   finish generating inside `holdTimeoutTicks` (60 s) × 2 attempts, so the tile is dropped and its lattice
+   points stay `unloaded` for ever.
+3. `rankSites` disqualifies any window with a single unknown cell (`unknown > 0`), so a 17%-hole field fails
+   almost every candidate, and the refusal text then leads with "unloaded" and reads like a terrain verdict.
+
+The offline harness cannot see any of this: `dev/lib/fakefield.mjs` answers every coordinate, so its field has
+no holes and its surveys never stall. Fix candidates (not yet implemented): report skipped tiles in the
+`[2/6]` line and the site refusal; retry a stalled tile after its neighbours are generated instead of dropping
+it; only rank windows whose lattice lies inside fully-read tiles; and raise or make adaptive the hold timeout
+for fresh terrain. The guide ticker was not exercised in game because no district record exists (the run never
+reached planning).
+
+## Fix (2026-10-26): stalled tiles are retried, and unread ground is named
+`scanProgressive` now makes one bounded second pass over the tiles that stalled, after the rest of the ring
+has been generated (`retriedTiles`). A tile that still refuses stays in `stalledTiles`, and `skippedColumns`
+counts the lattice columns that were never read. The `[2/6]` line prints `coverageProblem(...)` whenever a
+tile was skipped ("N survey tile(s) never finished loading ... M column(s) of ground were never read; every
+candidate window over them is disqualified"), and the site refusal carries the same sentence, so an
+incomplete survey can no longer read as a terrain verdict. Because the last ring's ranking runs before the
+retry pass, `planWorld` re-ranks after a recovery (`recoveredTiles > 0`) instead of judging a completed
+field on its holes. The retry attempts are not counted as extra surveyed tiles.
+
+Offline proof (`dev/test/civ-survey.test.mjs`, 30 tests): a tile whose two attempts hang is asked for again
+and its columns are recovered (`retriedTiles 1`, `recoveredTiles 256`, plan valid, no coverage line); a tile
+that never loads on either pass keeps `stalledTiles 1` and `skippedColumns > 0`, the summary and the refusal
+name it, and nothing is written; `coverageProblem` is unit-tested for both cases. The debug probe showed the
+stale-ranking bug directly: without the re-rank a complete field was refused with "the anchor itself is
+unloaded"; with it the same run produces a valid plan. All five gates green, 1215 tests.
+
+## Second in-game attempt (2026-10-26): the 30-minute deadline is the binding limit
+Re-ran the horn on the same plains spot with the fixed pack. The survey reached tile 81/81 (29 min 50 s) and
+was then cancelled by the overall planning deadline: "Planning timed out - cancelled, nothing was changed -
+Planning ran past its deadline of 30 min 0 s (phase 1/6 survey)." Nothing was written. In that world chunk
+generation costs ~20 s per 128-block tile (64 chunks), so a full 536-block radius survey (81 tiles) cannot
+finish inside 30 minutes on first-visit terrain; it needs ~27 min of tiles alone, plus the retry pass and
+ranking. The deadline is therefore what stops the build, not the scan holes.
+
+That run also revealed a world-state problem worth its own task: "CivTest Hearthgate" is the prebuilt starter
+world and already holds a kingdom (5 districts, 1590 civilians, 227 soldiers: Hearthgate, Ironquarry,
+Whitetorn, Saltmere, Ashfall) with 10-11 active construction projects. It ships district records but no
+master plan, so a new `civ:generate` searches for a site instead of refusing or resuming. The horn and the
+command therefore need a populated-world policy (resume / extend / refuse), and end-to-end build proof needs
+a world with no district records.

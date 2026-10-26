@@ -122,6 +122,21 @@ powershell -NoProfile -Command "Get-ChildItem -Path $env:LOCALAPPDATA\Packages -
 
 ---
 
+## The Horn of Hearthgate (new, unverified in game)
+
+Every player is given a **Horn of Hearthgate** on their first spawn (`minecraft:goat_horn`, named, marked with
+`ca:beacon`, locked to the inventory and kept on death). Use it:
+
+- **Before the city exists** - a confirmation form states the search radius and what may be overwritten; confirming
+  runs the same survey/plan/build the `civ:generate district=1` command runs, at the nearest suitable site within
+  220 blocks.
+- **While the build is unfinished** - asks to resume from the stored plan and queue.
+- **After Hearthgate stands** - prints its centre, distance, compass point and a `/tp` line.
+
+While you hold it, the action bar reads `Hearthgate · 187m NE` (plus `· rising` or `· paused`), refreshed once a
+second, so you can walk to the city from anywhere. The horn itself writes nothing: every rule of the command path
+(one district at a time, the dev gate for districts 2-5, the write guard) still applies.
+
 ## Five-district construction (new, unverified in game)
 
 `civ:generate_plan` (read-only) plans a five-district irregular civilization; `civ:generate [district=N]` builds one
