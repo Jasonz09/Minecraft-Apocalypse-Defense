@@ -128,14 +128,24 @@ Every player is given a **Horn of Hearthgate** on their first spawn (`minecraft:
 `ca:beacon`, locked to the inventory and kept on death). Use it:
 
 - **Before the city exists** - a confirmation form states the search radius and what may be overwritten; confirming
-  runs the same survey/plan/build the `civ:generate district=1` command runs, at the nearest suitable site within
-  220 blocks.
+  runs the same survey/plan/build the `civ:generate district=1` command runs, at the nearest buildable site within
+  220 blocks. The terrain does not have to be flat or dry: the city adapts to it. Houses on a slope or over water
+  stand on decks carried by pillars (down to the sea bed where there is sea), stone-brick stairs and slabs carry the
+  streets up and down the slope, and streets over water are piers with railings. Nothing is levelled wholesale and
+  the sea is not drained. Lava and unread ground are still refused, and so is a window that is mostly a lake or bay
+  enclosed by land (the districts would have to claim it); the survey then picks a nearby dry, coastal or open-sea
+  window instead.
 - **While the build is unfinished** - asks to resume from the stored plan and queue.
 - **After Hearthgate stands** - prints its centre, distance, compass point and a `/tp` line.
 
 While you hold it, the action bar reads `Hearthgate · 187m NE` (plus `· rising` or `· paused`), refreshed once a
 second, so you can walk to the city from anywhere. The horn itself writes nothing: every rule of the command path
 (one district at a time, the dev gate for districts 2-5, the write guard) still applies.
+
+The survey reports a site as soon as one is certifiable, not after a whole ring: every 128-block tile is ranked, and
+the chat prints `suitable terrain N blocks away; confirming the rest of its window before stopping`. A site is only
+certified when every lattice sample of its 480-block window lies in tiles that actually loaded, so the faster stop
+never guesses. Heartbeats name the tile being read and the columns read so far.
 
 ## Five-district construction (new, unverified in game)
 

@@ -18,6 +18,16 @@ import { assessCell } from "./field.js";
 /** @typedef {import("./field.js").FieldCell} FieldCell */
 
 /**
+ * How a chosen window must be built on. Persisted with the plan so a resume replans identically.
+ * `allowWater` lets a district bridge and pier over open water; `adaptive` makes lots stand on
+ * decks and pillars (instead of being levelled) wherever the ground falls away or is wet.
+ * @typedef {{ allowWater: boolean, adaptive: boolean, maxRelief: number }} TerrainPolicy
+ */
+
+/** A window the old flat/dry-land rules would have accepted keeps exactly these numbers. */
+export const TERRAIN_POLICY_DEFAULT = Object.freeze({ allowWater: false, adaptive: false, maxRelief: 8 });
+
+/**
  * @typedef {{ x0: number, z0: number, x1: number, z1: number }} Rect
  * @typedef {Rect | { type?: "rect" } & Rect | { type?: "poly", points: [number, number][] } | { polygon: [number, number][] } | { cx: number, cz: number, half: number }} Exclusion
  * @typedef {{
@@ -29,9 +39,9 @@ import { assessCell } from "./field.js";
  */
 
 export const SITE_DEFAULTS = Object.freeze({
-    /** Square analysis window in blocks. 480 x 480 = 230k columns, so ~190k usable needs ~82%. */
+    /** Square analysis window in blocks. 480 x 480 = 230k columns, so ~190k preparable needs ~82%. */
     windowSize: 480,
-    /** Enclosed columns the settlement needs; sets the default usable-land requirement. */
+    /** Columns the settlement can be BUILT on, counting land, water (piers) and steep ground (decks on pillars). */
     requiredColumns: 190000,
     /** Search radius (blocks) for the window CENTRE around the anchor. */
     searchRadius: 220,
@@ -39,11 +49,24 @@ export const SITE_DEFAULTS = Object.freeze({
     step: 8,
     /** Spacing of candidate window centres, in blocks (multiple of step). */
     candidateStep: 24,
-    maxWaterFraction: 0.12,
+    /**
+     * Terrain is not a land-use veto any more: water is crossed on piers, steep ground carries decks on
+     * pillars and trees are cleared, so these caps only bound the ESTIMATE. Lava stays a hard refusal
+     * (nothing is built on it).
+     */
+    maxWaterFraction: 1,
     maxLavaFraction: 0,
-    maxSteepFraction: 0.04,
-    maxTreeFraction: 0.7,
-    /** Hard cap on estimated cut + fill + clear blocks. */
+    /**
+     * Water that is ENCLOSED by a window (a lake or inland bay) cannot join a district without breaking
+     * the plan's solid-region and area contract, so such windows are refused with a reason; the survey
+     * then picks a nearby dry, coastal or all-sea window. Water is "open" when a fair share of the
+     * window BORDER is water too (a sea coast, a wide river mouth, an all-sea window).
+     */
+    mixedWaterMin: 0.12,
+    mixedWaterEdgeMin: 0.2,
+    maxSteepFraction: 1,
+    maxTreeFraction: 1,
+    /** Hard cap on estimated cut + fill + clear blocks. Water costs one cap block per column. */
     maxPrepBlocks: 2_500_000,
     /** Prep blocks that cost the same as one block of extra distance from the anchor. */
     prepWeight: 1500,
@@ -120,11 +143,11 @@ export function estimateScan(options = {}, budget = {}) {
 
 /**
  * Estimate world-write operations for a ranked site's preparation.
- * @param {{ prep: { cut: number, fill: number, clear: number } }} site @param {{ writesPerSlice?: number }} [budget]
+ * @param {{ prep: { cut: number, fill: number, clear: number, terrace?: number } }} site @param {{ writesPerSlice?: number }} [budget]
  */
 export function estimateOperations(site, budget = {}) {
-    const total = site.prep.cut + site.prep.fill + site.prep.clear;
-    return { cut: site.prep.cut, fill: site.prep.fill, clear: site.prep.clear, total, slices: Math.ceil(total / (budget.writesPerSlice ?? 4000)) };
+    const total = site.prep.cut + site.prep.fill + site.prep.clear + (site.prep.terrace ?? 0);
+    return { cut: site.prep.cut, fill: site.prep.fill, clear: site.prep.clear, terrace: site.prep.terrace ?? 0, total, slices: Math.ceil(total / (budget.writesPerSlice ?? 4000)) };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -234,10 +257,13 @@ function countCandidates(r) {
 /**
  * Evaluate civilization sites around `anchor` and pick the nearest suitable one.
  *
- * Suitable means: window fully loaded, centre cell buildable, no exclusion overlap, lava / water /
- * steep / tree fractions under their caps, enough usable (buildable) land, and estimated
- * preparation under `maxPrepBlocks`. Among suitable candidates the winner minimises
- * `distance + prepBlocks / prepWeight` (distance = window centre to anchor, in blocks).
+ * Suitable means: window fully loaded, centre cell not lava/unloaded/blocked/protected, no
+ * exclusion overlap, lava under its cap, enough PREPARABLE land (land + water + steep ground:
+ * water is crossed on piers and steep ground carries decks on pillars), and estimated preparation
+ * under `maxPrepBlocks`. Among suitable candidates the winner minimises
+ * `distance + prepBlocks / prepWeight` (distance = window centre to anchor, in blocks). Water and
+ * steep work is charged per column, so flat dry land still wins when it is equally close - but it
+ * is a price, not a veto.
  *
  * @param {HeightField} field @param {{ x: number, z: number }} anchor @param {SiteOptions} [options]
  */
@@ -347,12 +373,25 @@ export function rankSites(field, anchor, options = {}) {
         const devSum = box(sums.dev, i0, j0, i1, j1);
         const exclCells = box(sums.excl, i0, j0, i1, j1);
         const cutFill = Math.round(devSum * s * s);
-        const prep = { cut: Math.round(cutFill / 2), fill: cutFill - Math.round(cutFill / 2), clear: Math.round(trees * s * s * 0.6), total: 0 };
-        prep.total = prep.cut + prep.fill + prep.clear;
+        // Water costs a deck block per column (a pier lot/road, never a fill); steep ground costs an
+        // estimated two support blocks per column (a deck on pillars). Both are prices that push a
+        // window down the ranking, never vetoes.
+        const waterFill = Math.round(water * s * s);
+        const terrace = Math.round(steep * s * s * 2);
+        const prep = { cut: Math.round(cutFill / 2), fill: cutFill - Math.round(cutFill / 2) + waterFill, clear: Math.round(trees * s * s * 0.6), water: waterFill, terrace, total: 0 };
+        prep.total = prep.cut + prep.fill + prep.clear + prep.terrace;
         const distance = Math.hypot(o.i * s, o.j * s);
-        const usableColumns = build * s * s;
-        const usableFraction = build / cells;
+        const preparable = build + water + steep;
+        const usableColumns = preparable * s * s;
+        const usableFraction = preparable / cells;
+        const solidFraction = build / cells;
         const waterFraction = water / cells;
+        // Water the window ENCLOSES (a lake / inland bay) would have to be claimed by a district, which
+        // the plan's solid-region and area contract cannot hold. Open water (a coast, an all-sea window)
+        // has water on the window BORDER as well, so it is fine.
+        const borderCells = n > 2 ? cells - (n - 2) * (n - 2) : cells;
+        const borderWater = n > 2 ? water - box(sums.water, i0 + 1, j0 + 1, i1 - 1, j1 - 1) : water;
+        const borderWaterShare = borderCells > 0 ? borderWater / borderCells : 0;
         const lavaFraction = lava / cells;
         const steepFraction = steep / cells;
         const treeFraction = build > 0 ? trees / build : 0;
@@ -361,11 +400,14 @@ export function rankSites(field, anchor, options = {}) {
         const failures = [];
         if (unknown > 0) failures.push(`unloaded: ${String(unknown)} unread cell(s) in the window`);
         if (r.exclusionMode === "avoid" && (exclCells > 0 || overlapsExclusion(window, r.exclusions, r.exclusionMargin))) failures.push("overlaps a protected district");
-        if (centreCode !== 1) failures.push(`centre is ${["unloaded", "buildable", "too steep", "water", "lava", "blocked", "protected"][centreCode] ?? "unusable"}`);
+        // 1 = land, 2 = steep, 3 = water. All three can be built on (steep carries decks on pillars, water
+        // carries piers); lava, blocked (caves/foreign blocks), unloaded and protected cells cannot.
+        if (centreCode < 1 || centreCode > 3) failures.push(`centre is ${["unloaded", "buildable", "steep", "water", "lava", "blocked", "protected"][centreCode] ?? "unusable"}`);
         if (lavaFraction > r.maxLavaFraction) failures.push(`lava exposure ${(lavaFraction * 100).toFixed(2)}% > ${(r.maxLavaFraction * 100).toFixed(2)}%`);
         if (waterFraction > r.maxWaterFraction) failures.push(`water ${(waterFraction * 100).toFixed(1)}% > ${(r.maxWaterFraction * 100).toFixed(1)}%`);
+        if (waterFraction > r.mixedWaterMin && borderWaterShare < r.mixedWaterEdgeMin) failures.push(`enclosed water (${(waterFraction * 100).toFixed(1)}% of the window, ${(borderWaterShare * 100).toFixed(0)}% of its border): a lake or inland bay cannot form one solid district - a dry, coastal or open-sea window is needed`);
         if (steepFraction > r.maxSteepFraction) failures.push(`steep ground ${(steepFraction * 100).toFixed(1)}% > ${(r.maxSteepFraction * 100).toFixed(1)}%`);
-        if (usableFraction < r.minUsableFraction) failures.push(`usable land ${(usableFraction * 100).toFixed(1)}% < ${(r.minUsableFraction * 100).toFixed(1)}%`);
+        if (usableFraction < r.minUsableFraction) failures.push(`preparable terrain ${(usableFraction * 100).toFixed(1)}% < ${(r.minUsableFraction * 100).toFixed(1)}%`);
         if (treeFraction > r.maxTreeFraction) failures.push(`trees on ${(treeFraction * 100).toFixed(0)}% of land > ${(r.maxTreeFraction * 100).toFixed(0)}%`);
         if (prep.total > r.maxPrepBlocks) failures.push(`preparation ~${String(prep.total)} blocks > ${String(r.maxPrepBlocks)}`);
         const score = distance + prep.total / r.prepWeight;
@@ -378,6 +420,7 @@ export function rankSites(field, anchor, options = {}) {
             failures,
             usableColumns,
             usableFraction: Math.round(usableFraction * 1000) / 1000,
+            solidFraction: Math.round(solidFraction * 1000) / 1000,
             waterFraction: Math.round(waterFraction * 1000) / 1000,
             lavaFraction: Math.round(lavaFraction * 10000) / 10000,
             steepFraction: Math.round(steepFraction * 1000) / 1000,
@@ -401,7 +444,7 @@ export function rankSites(field, anchor, options = {}) {
         if (all.length === 0) reasons.push("no candidate windows fit inside the search radius");
         const known = samples.filter((c) => c.k !== "unloaded").length;
         if (known === 0) reasons.push("no terrain has been scanned around the anchor");
-        if (anchorCode !== 1) reasons.push(`the anchor itself is ${["unloaded", "buildable", "too steep", "water", "lava or next to lava", "blocked", "protected"][anchorCode] ?? "unusable"}`);
+        if (anchorCode < 1 || anchorCode > 3) reasons.push(`the anchor itself is ${["unloaded", "buildable", "steep", "water", "lava or next to lava", "blocked", "protected"][anchorCode] ?? "unusable"}`);
         /** @type {Map<string, number>} */
         const tally = new Map();
         for (const c of all) {
@@ -414,4 +457,30 @@ export function rankSites(field, anchor, options = {}) {
     }
     const site = winner === null ? null : { ...winner, anchor: { x: ax, z: az } };
     return { site, reasons, candidates, reads, evaluated: all.length, cells: D * D, anchorCode, windowCells: n, step: s };
+}
+
+/**
+ * How the chosen window's terrain must be built on. A pure function of the ranked site, so the same
+ * site always yields the same policy (it is persisted with the master plan and with each district's
+ * site payload):
+ *  - `allowWater`: the window holds open water, so roads may bridge / stand on piers over it;
+ *  - `adaptive`: wet or rough ground - lots stand on a deck carried by pillars down to the ground or
+ *    the sea bed, and only the uphill side is cut (no levelling of a mountain, no draining of a sea);
+ *  - `maxRelief`: the master plan may settle ground the default analysis calls impassable.
+ * Each threshold is the OLD rejection boundary, so a window that was buildable before keeps the old
+ * numbers and its saved plans rehydrate byte-identically.
+ *
+ * @param {{ waterFraction?: number, steepFraction?: number, flatness?: number } | null | undefined} site
+ * @returns {TerrainPolicy}
+ */
+export function siteTerrainPolicy(site) {
+    const water = Number(site?.waterFraction ?? 0);
+    const steep = Number(site?.steepFraction ?? 0);
+    const flatness = Number(site?.flatness ?? 0);
+    const rough = steep > 0.04 || flatness > 3;
+    return {
+        allowWater: water > 0,
+        adaptive: water > 0 || rough,
+        maxRelief: rough ? 16 : 8,
+    };
 }

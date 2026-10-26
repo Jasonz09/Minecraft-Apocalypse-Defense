@@ -221,7 +221,7 @@ test("preparation cost can beat a slightly nearer site, and cost weight is honou
     for (const c of brute) assert.ok(c.distance >= cheap.site.distance - 1e-9);
 });
 
-test("hills, river, cliffs, forest: sites obey the hard caps and are reproducible", () => {
+test("hills, river, cliffs, forest: sites adapt to the terrain and are reproducible", () => {
     const terrains = {
         hills: makeField(3, { size: 1600, relief: 14, hills: 90 }),
         river: makeField(4, { size: 1600, relief: 4, river: { z: 10, width: 70, wiggle: 20 } }),
@@ -232,21 +232,23 @@ test("hills, river, cliffs, forest: sites obey the hard caps and are reproducibl
         const a = S.rankSites(field, ANCHOR);
         const b = S.rankSites(field, ANCHOR);
         assert.deepEqual(a, b, name);
-        if (a.site === null) {
-            assert.ok(a.reasons.length > 0, `${name}: a missing site must be explained`);
-            continue;
-        }
+        assert.ok(a.site, `${name}: ${a.reasons.join(" | ")}`);
         const o = uniqueKinds(field, a.site);
-        assert.ok(o.water <= 0.12 && o.lava === 0 && o.unloaded === 0, `${name} ${JSON.stringify(o)}`);
-        assert.equal(field.at(a.site.x, a.site.z).k, "land", `${name}: centre must be land`);
+        assert.ok(o.lava === 0 && o.unloaded === 0, `${name} ${JSON.stringify(o)}`);
+        const centre = field.at(a.site.x, a.site.z).k;
+        assert.ok(centre === "land" || centre === "water", `${name}: centre is ${centre}, never lava or unknown`);
         assert.ok(a.site.usableColumns >= 190000 * 0.99, `${name}: ${String(a.site.usableColumns)} usable columns`);
         for (const c of a.candidates) if (c.suitable) assert.ok(c.score >= a.site.score - 1e-9, `${name}: winner has the lowest score`);
     }
-    // cliff line at x=60: the winning window must not straddle the 30-block drop
-    const c = S.rankSites(terrains.cliffs, ANCHOR);
-    assert.ok(c.site, c.reasons.join(" | "));
-    assert.ok(c.site.window.x1 < 60 - 8 || c.site.window.x0 > 60 + 8 || c.site.steepFraction <= 0.04);
-    assert.ok(c.site.steepFraction <= 0.04);
+    // water and steep ground are costed, not vetoed: a river window carries a pier estimate, a cliff
+    // window carries terrace work, and the winner still keeps most of its window off the drop.
+    const river = S.rankSites(terrains.river, ANCHOR).site;
+    assert.ok(river.prep.water > 0 && river.waterFraction > 0.12, "an open river is spanned, its columns costed");
+    const cliff = S.rankSites(terrains.cliffs, ANCHOR).site;
+    assert.ok(cliff.prep.terrace > 0, "cliff work is estimated rather than refused");
+    assert.ok(cliff.steepFraction < 1, "the winner keeps most of its window off the drop");
+    const hills = S.rankSites(terrains.hills, ANCHOR).site;
+    assert.ok(hills.prep.cut > 0 && hills.prep.fill > 0, "rough ground is cut and filled to a common level");
     // forest: tree clearing shows up in the preparation estimate
     const dense = custom((x, z) => land(70, ((x >> 3) + (z >> 3)) % 3 === 0));
     const clear = S.rankSites(dense, ANCHOR).site;
@@ -291,17 +293,28 @@ test("exclusion polygon edge crossing a window without containing any corner is 
     assert.equal(S.overlapsExclusion({ x0: -50, z0: 20, x1: 50, z1: 80 }, [thin], 12), true);
 });
 
-test("no site: all water, all cliff, lava anchor, unloaded, dense trees, tiny world - each explained", () => {
-    const water = S.rankSites(custom(() => ({ g: 60, k: "water", tree: false })), ANCHOR);
-    assert.equal(water.site, null);
-    assert.ok(water.reasons.some((r) => /anchor itself is water/.test(r)), water.reasons.join(" | "));
-    assert.ok(water.reasons.some((r) => /water/.test(r) && /candidates/.test(r)));
-    assert.ok(water.candidates.every((c) => !c.suitable));
+test("adaptive sites: open sea and steep ground are accepted; lava, unloaded, enclosed water, empty ground and an unreachable shore are explained", () => {
+    // all sea: every column is buildable as a pier, and the centre may stand in water
+    const seaField = custom(() => ({ g: 60, k: "water", tree: false }));
+    const water = S.rankSites(seaField, ANCHOR);
+    assert.ok(water.site, water.reasons.join(" | "));
+    assert.equal(water.site.waterFraction, 1);
+    assert.equal(seaField.at(water.site.x, water.site.z).k, "water");
+    assert.equal(water.site.usableColumns, 230400, "land, water (piers) and steep ground (decks) are all preparable");
+    assert.ok(water.site.prep.water > 0, "pier cost is estimated");
 
+    // a 25-block checkerboard: steep ground is estimated as terrace work, not a veto
     const stairs = custom((x, z) => land(70 + (((x >> 4) + (z >> 4)) & 1) * 25));
     const cliff = S.rankSites(stairs, ANCHOR);
-    assert.equal(cliff.site, null);
-    assert.ok(cliff.reasons.some((r) => /steep/.test(r)), cliff.reasons.join(" | "));
+    assert.ok(cliff.site, cliff.reasons.join(" | "));
+    assert.equal(cliff.site.steepFraction, 1);
+    assert.ok(cliff.site.prep.terrace > 0);
+
+    // a lake wholly inside every reachable window cannot form one solid district: refused with a reason
+    const lake = custom((x, z) => (x * x + z * z <= 130 ** 2 ? { g: 66, k: "water", tree: false } : land()));
+    const enclosed = S.rankSites(lake, ANCHOR, { searchRadius: 0 });
+    assert.equal(enclosed.site, null);
+    assert.ok(enclosed.reasons.some((r) => /enclosed water/.test(r)), enclosed.reasons.join(" | "));
 
     const lava = S.rankSites(custom((x, z) => (x * x + z * z <= 100 ** 2 ? { g: 70, k: "lava", tree: false } : land())), ANCHOR);
     assert.equal(lava.site, null);
@@ -315,12 +328,16 @@ test("no site: all water, all cliff, lava anchor, unloaded, dense trees, tiny wo
     assert.equal(empty.site, null);
     assert.ok(empty.reasons.some((r) => /no terrain has been scanned/.test(r)));
 
+    // dense forest is cleared, its cost is counted
     const forest = S.rankSites(custom(() => land(70, true)), ANCHOR);
-    assert.equal(forest.site, null);
-    assert.ok(forest.reasons.some((r) => /trees/.test(r)), forest.reasons.join(" | "));
+    assert.ok(forest.site, forest.reasons.join(" | "));
+    assert.equal(forest.site.treeFraction, 1);
+    assert.ok(forest.site.prep.clear > 0, "clearing every tree is costed");
 
+    // an all-sea window is itself a site, so a shore beyond the radius never needs to be reached
     const sea = custom((x, z) => (Math.abs(x) < 400 && Math.abs(z) < 400 ? { g: 60, k: "water", tree: false } : land()), 1600);
-    assert.equal(S.rankSites(sea, ANCHOR).site, null, "search radius is a hard bound: the far shore is not reached");
+    const far = S.rankSites(sea, ANCHOR);
+    assert.ok(far.site && far.site.waterFraction === 1, "the sea is built on, not crossed to the far shore");
 });
 
 test("never selects lava: a small lava pool pushes the window away from it", () => {

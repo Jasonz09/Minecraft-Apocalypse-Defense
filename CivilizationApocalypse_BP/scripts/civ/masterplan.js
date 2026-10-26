@@ -66,6 +66,7 @@ export class CivPlanError extends Error {
  * @property {number} [radius] search radius in blocks (default 300; ~190k columns do not fit in 220)
  * @property {number} [maxAttempts] re-seeding attempts (default 16)
  * @property {Ops} [ops] caller-owned operation counters (read ops.maxRun / ops.work after planning)
+ * @property {{ allowWater?: boolean, adaptive?: boolean, maxRelief?: number }} [policy] terrain policy of the chosen site
  * @property {(plan: any) => { ok: boolean, errors: string[] } | string[] | null | undefined} [validate] optional external validator
  */
 
@@ -99,7 +100,7 @@ function runSites(chain) {
  * @param {{ x: number, z: number }} anchor @param {number} attempt @param {Ops} ops
  * @returns {Generator<void, { plan: any | null, errors: string[] }, void>}
  */
-function* attemptPlan(field, t, seed, anchor, attempt, ops) {
+function* attemptPlan(field, t, seed, anchor, attempt, ops, allowWaterPolicy = false) {
     void field;
     const salt = (seed ^ Math.imul(attempt + 7, 0x85ebca6b)) >>> 0;
     const rng = makeRng(salt);
@@ -132,10 +133,13 @@ function* attemptPlan(field, t, seed, anchor, attempt, ops) {
     for (let r = 0; r < 5; r += 1) {
         if (grown.counts[r + 1] < capCells[r] * 0.93) return { plan: null, errors: [`district ${String(r + 1)} starved (${String(grown.counts[r + 1])}/${String(capCells[r])} cells)`] };
     }
+    const allowWater = allowWaterPolicy === true;
     for (let pass = 0; pass < 2; pass += 1) {
         ops.cleanupPasses += 1;
         yield* keepLargestComponents(labels, w, h, ops);
-        if ((yield* fillHoles(labels, w, h, ops)) > 700) return { plan: null, errors: ["large enclosed hole"] };
+        // A large enclosed pocket cannot join a district without breaking the area caps: it is a lake or
+        // bay inside land, which the site rule already refuses, so treat it as a malformed plan.
+        if ((yield* fillHoles(labels, w, h, ops)) > 700) return { plan: null, errors: [allowWater ? "large enclosed hole (a lake or bay inside the site)" : "large enclosed hole"] };
         yield* smoothLabels(labels, w, h, 2, ops);
         yield* closeSlits(labels, t.crossable, w, h, 2, ops);
         yield* pruneSlivers(labels, w, h, ops);
@@ -518,12 +522,12 @@ export function* planCivilizationDetailedSteps(field, options = {}) {
     const radius = Math.min(options.radius ?? 300, 340);
     const maxAttempts = options.maxAttempts ?? 16;
     const ops = options.ops ?? newOps();
-    const t = yield* analyzeTerrainSteps(field, anchor, radius, ops);
+    const t = yield* analyzeTerrainSteps(field, anchor, radius, ops, options.policy);
     /** @type {string[]} */
     let lastErrors = [];
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         ops.attempts = attempt + 1;
-        const res = yield* attemptPlan(field, t, seed, anchor, attempt, ops);
+        const res = yield* attemptPlan(field, t, seed, anchor, attempt, ops, options.policy?.allowWater === true);
         let errors = res.errors;
         if (res.plan && errors.length === 0) {
             ops.work += 3000;

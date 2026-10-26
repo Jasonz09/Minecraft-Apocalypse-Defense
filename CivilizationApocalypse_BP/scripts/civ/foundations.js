@@ -22,6 +22,7 @@ export const IDS = Object.freeze({
     air: "minecraft:air",
     retain: "minecraft:stone_bricks",
     stair: "minecraft:stone_brick_stairs",
+    slab: "minecraft:stone_brick_slab",
     footTop: "minecraft:stone_bricks",
     footDeep: "minecraft:cobblestone",
     wall: "minecraft:stone_bricks",
@@ -77,7 +78,8 @@ const opposite = (d) => (d === "north" ? "south" : d === "south" ? "north" : d =
  * Level a rectangular foundation pad (inclusive rect) with cut/fill, ringed by a 1-block apron
  * that carries retaining walls (|height difference| >= 2) or a single stair block (difference 1).
  * Nothing outside rect + 1 is ever touched. The pad height is the cheapest one within the cut/fill
- * limits whose apron walls are also within `maxWall`.
+ * limits whose apron walls are also within `maxWall`. Water is a refusal: a lot over water or a
+ * large drop uses `planDeck` instead, so the sea is never capped and a slope is never flattened.
  *
  * @param {Profile} profile @param {Rect} rect
  * @param {{ maxCut?: number, maxFill?: number, maxWall?: number, baseY?: number }} [limits]
@@ -176,6 +178,105 @@ export function planPad(profile, rect, limits = {}) {
     stairs.sort((a, b) => a.x - b.x || a.z - b.z);
     const ops = [...cuts, ...fills, ...retains, ...tops, ...stairs];
     return { ok: true, baseY, ops, counts: { cut: cuts.length, fill: fills.length, top: tops.length, retain: retains.length, stair: stairs.length }, problems: [], touched };
+}
+
+// ---------------------------------------------------------------------------------------------
+// Deck on pillars
+
+/**
+ * A raised deck platform ("stilts"): ONE flat surface over uneven ground, a drop or open water,
+ * carried by spaced pillars down to natural ground / the sea bed. Only ground standing above the
+ * deck is cut (at most `maxCut`); nothing is filled, so a slope is not flattened and the sea is not
+ * drained - the water stays beside and under the deck. The apron carries a half-step slab where the
+ * ground is one below the deck, a stair where it is one above, and a railing wherever the drop is
+ * two or more (water included). The door lane's columns override apron ops (commitLot), so the
+ * entrance stays open.
+ *
+ * @param {Profile} profile @param {Rect} rect
+ * @param {{ baseY?: number, maxCut?: number, pillarEvery?: number, maxDepth?: number }} [limits]
+ * @returns {{ ok: boolean, baseY: number, ops: Op[], counts: { cut: number, fill: number, top: number, retain: number, stair: number, deck: number, pillar: number, rail: number }, problems: string[], touched: Rect }}
+ */
+export function planDeck(profile, rect, limits = {}) {
+    const maxCut = limits.maxCut ?? 2;
+    const pillarEvery = limits.pillarEvery ?? 3;
+    const maxDepth = limits.maxDepth ?? 64;
+    const touched = { x0: rect.x0 - 1, z0: rect.z0 - 1, x1: rect.x1 + 1, z1: rect.z1 + 1 };
+    const counts = { cut: 0, fill: 0, top: 0, retain: 0, stair: 0, deck: 0, pillar: 0, rail: 0 };
+    /** @param {string} problem */
+    const fail = (problem) => ({ ok: false, baseY: 0, ops: [], counts, problems: [problem], touched });
+    if (![rect.x0, rect.z0, rect.x1, rect.z1].every(Number.isInteger) || rect.x1 < rect.x0 || rect.z1 < rect.z0) return fail("deck rectangle is invalid");
+    if (!Number.isInteger(pillarEvery) || pillarEvery < 1) return fail("pillarEvery must be a positive integer");
+    /** @type {{ x: number, z: number, g: number, water: number | undefined }[]} */
+    const inner = [];
+    /** @type {{ x: number, z: number, g: number, water: number | undefined }[]} */
+    const apron = [];
+    for (let z = touched.z0; z <= touched.z1; z += 1) {
+        for (let x = touched.x0; x <= touched.x1; x += 1) {
+            const p = profileAt(profile, x, z);
+            if (p === null) return fail(`ground profile does not cover (${String(x)}, ${String(z)}) (deck + 1 block apron)`);
+            if (p.hollow) return fail(`hollow ground at (${String(x)}, ${String(z)}): nothing solid to carry a pillar`);
+            const cell = { x, z, g: p.g, water: p.water };
+            const isInner = x >= rect.x0 && x <= rect.x1 && z >= rect.z0 && z <= rect.z1;
+            (isInner ? inner : apron).push(cell);
+        }
+    }
+    const surface = (/** @type {{ g: number, water: number | undefined }} */ c) => (c.water !== undefined ? c.water : c.g);
+    const baseY = limits.baseY ?? Math.max(...inner.map(surface));
+    for (const c of inner) {
+        if (c.water !== undefined && baseY < c.water) return fail(`deck at y=${String(baseY)} would be under the water surface (y=${String(c.water)}) at (${String(c.x)}, ${String(c.z)})`);
+        if (c.g - baseY > maxCut) return fail(`ground at (${String(c.x)}, ${String(c.z)}) stands ${String(c.g - baseY)} above the deck (max cut ${String(maxCut)}): build the deck higher or move it`);
+    }
+    /** @type {Op[]} */
+    const cuts = [];
+    /** @type {Op[]} */
+    const decks = [];
+    /** @type {Op[]} */
+    const pillars = [];
+    /** @type {Op[]} */
+    const rails = [];
+    /** @type {Op[]} */
+    const stairs = [];
+    /** @type {Op[]} */
+    const slabs = [];
+    for (const c of inner) {
+        if (c.g > baseY) for (let y = c.g; y > baseY; y -= 1) cuts.push({ x: c.x, y, z: c.z, id: IDS.air, kind: "cut" });
+        decks.push({ x: c.x, y: baseY, z: c.z, id: IDS.deck, kind: "deck" });
+        const onEdge = c.x === rect.x0 || c.x === rect.x1 || c.z === rect.z0 || c.z === rect.z1;
+        const onGrid = (c.x - rect.x0) % pillarEvery === 0 && (c.z - rect.z0) % pillarEvery === 0;
+        if (!onEdge && !onGrid) continue;
+        const depth = baseY - 1 - c.g;
+        if (depth <= 0) continue;
+        if (depth > maxDepth) return fail(`pillar at (${String(c.x)}, ${String(c.z)}) would be ${String(depth)} deep (max ${String(maxDepth)}): no sea floor within reach`);
+        for (let y = c.g + 1; y < baseY; y += 1) pillars.push({ x: c.x, y, z: c.z, id: y === baseY - 1 ? IDS.footTop : IDS.footDeep, kind: "pillar" });
+    }
+    for (const c of apron) {
+        const diff = c.g - baseY;
+        if (diff <= -2 || c.water !== undefined) {
+            rails.push({ x: c.x, y: baseY + 1, z: c.z, id: IDS.rail, kind: "rail" });
+            continue;
+        }
+        const edgeX = c.x >= rect.x0 && c.x <= rect.x1;
+        const edgeZ = c.z >= rect.z0 && c.z <= rect.z1;
+        if (!edgeX && !edgeZ) continue;
+        const away = edgeX ? (c.z < rect.z0 ? "north" : "south") : c.x < rect.x0 ? "west" : "east";
+        if (diff === -1) slabs.push({ x: c.x, y: baseY, z: c.z, id: IDS.slab, kind: "stair" });
+        else if (diff === 1) stairs.push({ x: c.x, y: c.g, z: c.z, id: IDS.stair, kind: "stair", dir: away });
+    }
+    cuts.sort((a, b) => b.y - a.y || a.x - b.x || a.z - b.z);
+    pillars.sort((a, b) => a.y - b.y || a.x - b.x || a.z - b.z);
+    decks.sort((a, b) => a.x - b.x || a.z - b.z);
+    rails.sort((a, b) => a.x - b.x || a.z - b.z);
+    stairs.sort((a, b) => a.x - b.x || a.z - b.z);
+    slabs.sort((a, b) => a.x - b.x || a.z - b.z);
+    const ops = [...cuts, ...pillars, ...decks, ...rails, ...stairs, ...slabs];
+    return {
+        ok: true,
+        baseY,
+        ops,
+        counts: { fill: 0, top: 0, retain: 0, cut: cuts.length, stair: stairs.length + slabs.length, deck: decks.length, pillar: pillars.length, rail: rails.length },
+        problems: [],
+        touched,
+    };
 }
 
 // ---------------------------------------------------------------------------------------------

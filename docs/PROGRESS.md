@@ -300,3 +300,75 @@ Whitetorn, Saltmere, Ashfall) with 10-11 active construction projects. It ships 
 master plan, so a new `civ:generate` searches for a site instead of refusing or resuming. The horn and the
 command therefore need a populated-world policy (resume / extend / refuse), and end-to-end build proof needs
 a world with no district records.
+
+## Fix (2026-10-26): "no progress", and any terrain
+
+**Why it showed no progress.** `scanProgressive` evaluated candidate windows only after a whole ring: the first
+ring is a 340-block square = 36 tiles, so the first possible "site found" message came after ~12 minutes at the
+in-game 20 s/tile, and the heartbeat said `tile 0/81` until the first tile finished. With the old land vetoes
+(82.5% usable, ≤4% steep, ≤12% water, 0 lava) a mountain or ocean start qualified nowhere, so the scan ran all 81
+tiles and was cancelled by the 30-minute planning deadline — the user-visible result was "it just sits there".
+
+**Fix: evaluate every tile, and never guess.**
+- `scanProgressive` calls `evaluate` after every tile with `knownHalf`, the largest square centred on the anchor
+  that is covered by tiles that actually loaded (world-aligned tile rectangles, so it is exact; a stalled tile is
+  removed from the set). `planWorld` only ranks within `knownHalf - window/2 - 2*step`, so the early stop cannot
+  miss a closer window. A site is announced the moment it appears
+  (`suitable terrain N blocks away; confirming the rest of its window before stopping`), and the chat heartbeat now
+  names the tile being read and the columns read. In the fake world the survey now stops at 36 of 100 tiles and can
+  stop mid-ring; `rings` can legitimately be 0 because no full ring was needed.
+- The heartbeat no longer says "no progress for …" while `chunksPending > 0`: a hold that is generating chunks is
+  working. The stall detector and its 3-minute cancel are unchanged (a hold that never loads is still stalled).
+
+**Any terrain, adapted to - not flattened.** Site selection no longer treats terrain as a land-use veto. A window's
+*preparable* columns are land + water + steep ground (water costs a deck block per column, steep ground two support
+blocks per column); only lava, blocked (cave/foreign) and unread columns are excluded. Lava is still a hard refusal
+because the write side does not build on it. Water the window ENCLOSES (a lake or inland bay: >12% of the window
+with less than 20% of its border under water) is refused with a reason - the districts would have to claim it, which
+the solid-region and area contract cannot hold - and the survey picks a nearby dry, coastal or open-sea window. The
+ranked site yields a `TerrainPolicy` (a pure function of the window): `allowWater` when the window holds any water,
+`adaptive` when it is wet or rough, `maxRelief 16` when the old 4% steep cap would have rejected it. The policy is
+stored in the master plan and in every district's persisted site options, so a resume replans byte-identically. A
+window the old rules accepted keeps the old numbers, and a land plan's options object is unchanged - the
+five-district golden snapshots still match.
+
+Downstream, on a rough or wet site nothing is levelled and nothing is drained:
+- `planDeck` (civ/foundations.js) replaces the pad for such lots (ground relief under the lot > 3, or any water):
+  ONE flat deck at a level near the street, cut only on the uphill side (max 16, the deepest levelling tier the old
+  planner tried), carried by pillars down to the natural ground - or, over water, down to the sea bed (max 64).
+  Nothing is filled, so the water stays beside and under the deck. The apron carries half-step slabs where the
+  ground is one lower, stairs where it is one higher, and railings wherever the drop is two or more (water
+  included). `planDeckSteps` is its budgeted twin (it calls the same function), and `tryPadAt` tries the nearest
+  street level first, then alternates above/below within the door lane's reach.
+- Door lanes and lots accept water (`isBuildable`). A lane over water is a pier: `surfaceOps` writes a deck on a
+  pillar down to the bed at every water cell instead of a trench of fills, and the approach profile is pinned to the
+  water surface (not the bed) so the walker stays dry.
+- Streets cross water with a bridge when a straight one fits, else with a pier deck: a deck at the highest surface of
+  the span, pillars every 6 cells down to the bed, railings on the outer edges (`pierOpsFor`). The old capped
+  causeway (which filled the sea) is gone. A road's dry shoulder is only filled over land (`G.isLand`).
+- A district's own roads are clipped to its own plan labels (a link is not clipped), which is the containment
+  contract the runtime checks; on land this filters nothing.
+- The write guard lets additive kinds stand in still water (`fill`, `pad`, footing, wall/tower/merlon/walk/rubble/
+  gate, road/stair/deck/bridge/pillar/rail/retain). A `cut` or `clear` still refuses to remove water, and a player's
+  block is still protected.
+
+**Survey: the sea bed is now read.** A pier needs the floor under the water, so `terrainScan.readColumn` accepts
+`{ bed: true }` (used only by the civ survey): under still water it keeps walking to the natural ground and reports
+`surface` and `bed`. `cellFromColumn` returns `g = bed` plus `surface`, the full-resolution field keeps a water
+plane (`makeGridField({ water: true })`), and the frozen ground format gains an optional `s` stream: one rice-coded
+residual per water column (nothing for land), so a sea district's ground stays small (a 253x329 sea region: 263,697
+-> 27,879 bytes of JSON with the surface stream included). A region without water omits `s`, so land plans remain
+byte-identical.
+
+Offline proof: `dev/test/civ-reclaim.test.mjs` (13 tests: policy thresholds, ocean and cliff sites, lava refusal,
+deck-on-pillars parity and refusals, a slope deck that cuts only uphill, water-surface ground round-trip, master plan
+on the sea with and without `allowWater`, a full sea district whose lots are decks with `padPillars > 0`, zero fills
+at/above the surface and identical rehydration, unchanged land options, a mountainside district on pillars with clean
+containment) and `dev/test/civ-reclaim-runtime.test.mjs` (3 tests through the production runtime: an all-sea world is
+surveyed and planned, a full `civ:generate` completes with no skipped water op, and the write guard's water matrix).
+The survey now stops at 64 of 100 tiles on that world and the district plan is stored at 46,447 / 120,000 bytes.
+
+In-game caveats: a sea district is a deck city on piles, not a drained seabed; pillars reach the scanned floor (a
+column deeper than 64 blocks is refused, never guessed). The read walk is bounded by `MAX_WALK` (96 cells from the
+topmost block), so an abyss deeper than that is planned without pillars. Lava, unread ground and protected blocks
+still refuse, as before.

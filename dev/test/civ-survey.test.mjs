@@ -371,7 +371,9 @@ test("expansion: when the ground next to the anchor is unsuitable the survey wid
 });
 
 test("no site anywhere: every ring is scanned (worst case), the refusal lists reasons, zero writes", T, async () => {
-    setup(1, { field: { relief: 70, hills: 18 } });
+    // Lava is the one terrain left that cannot be built on, so it is what makes every window unsuitable now
+    // that steep ground and water are accepted (they are adapted to, not vetoed).
+    setup(1, { field: { relief: 70, hills: 18 }, lavaEvery: 8 });
     const player = makePlayer();
     await planOnly(player);
     assert.match(text(player), /Stopped at site/);
@@ -719,4 +721,28 @@ test("a stalled session returns to running the moment it makes progress again", 
     progressModule.touch(p);
     assert.equal(p.state, "running");
     progressModule.finishProgress(p, "done");
+});
+
+// ---------------------------------------------------------------------------- survey certificates (pure)
+
+test("knownHalfFromTiles certifies only squares whose tiles ALL loaded", () => {
+    const anchor = { x: 0, z: 0 };
+    const known = new Set();
+    assert.equal(scan.knownHalfFromTiles(anchor, known, 128, 512, 8), 0, "nothing read: no certificate");
+    for (const key of ["-1,-1", "0,-1", "-1,0", "0,0"]) known.add(key);
+    // ±120 is the largest multiple of 8 that stays inside the four central tiles
+    assert.equal(scan.knownHalfFromTiles(anchor, known, 128, 512, 8), 120);
+    for (const key of ["-2,-2", "-1,-2", "0,-2", "1,-2", "-2,-1", "1,-1", "-2,0", "1,0", "-2,1", "-1,1", "0,1", "1,1"]) known.add(key);
+    assert.equal(scan.knownHalfFromTiles(anchor, known, 128, 512, 8), 248);
+    known.delete("1,1");
+    const shrunk = scan.knownHalfFromTiles(anchor, known, 128, 512, 8);
+    assert.ok(shrunk < 248 && shrunk > 0, `a missing tile must shrink the certificate (got ${shrunk})`);
+});
+
+test("cellFromColumn reports the sea bed as g and the water surface as surface", () => {
+    assert.deepEqual(scan.cellFromColumn({ above: [], surface: 62, bed: 30, problem: "water at y=62" }), { g: 30, k: "water", tree: false, surface: 62 });
+    const unreadBed = scan.cellFromColumn({ above: [], surface: 62, problem: "water at y=62" });
+    assert.equal(unreadBed.g, 61, "an unread bed falls back to one block below the surface");
+    assert.equal(unreadBed.surface, 62);
+    assert.equal(scan.cellFromColumn({ above: [], problem: "lava at y=40" }).k, "lava");
 });

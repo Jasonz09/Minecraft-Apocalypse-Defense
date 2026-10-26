@@ -166,7 +166,7 @@ export function describeProgress(p) {
     /** @type {string[]} */
     const lines = [];
     lines.push(`Session ${String(p.id)} (${p.kind}): ${p.state}, phase ${String(p.phaseIndex)}/${String(p.phases)} ${p.phaseName}, elapsed ${formatTicks(end - p.startedTick)}${progressPercent(p) !== undefined ? `, ${String(progressPercent(p))}%${p.kind !== "build" && p.phaseIndex === 1 ? " of the current ring plan (grows if the survey widens)" : ""}` : ""}.`);
-    if (p.tilesTotal > 0) {
+    if (p.tilesTotal > 0 && p.phaseIndex === 1) {
         lines.push(`  survey: tile ${String(p.tilesDone)}/${String(p.tilesTotal)}${p.tile ? ` (now ${String(p.tile.x0)},${String(p.tile.z0)} to ${String(p.tile.x1)},${String(p.tile.z1)})` : ""}; ${String(p.chunksScanned)} of ${String(p.chunksTotal)} chunks scanned (${String(p.chunksScanned * 256)} blocks), ${String(p.columnsScanned)} columns read, ${String(p.chunksPending)} chunk(s) still loading.`);
     }
     if (p.endedTick === undefined) {
@@ -185,9 +185,12 @@ export function heartbeat(p, force = false) {
     const now = nowTick();
     if (!force && now - p.lastHeartbeatTick < CIV.heartbeatTicks) return;
     p.lastHeartbeatTick = now;
-    const tiles = p.tilesTotal > 0 && p.kind !== "build" ? ` tile ${String(p.tilesDone)}/${String(p.tilesTotal)},` : "";
+    const tiles = p.tilesTotal > 0 && p.kind !== "build" && p.phaseIndex === 1 ? ` tile ${String(p.tilesDone)}/${String(p.tilesTotal)},` : "";
     const pct = progressPercent(p);
-    p.say([`  ... ${p.phaseName} (phase ${String(p.phaseIndex)}/${String(p.phases)}):${tiles}${pct !== undefined ? ` ${String(pct)}%,` : ""} ${String(p.chunksPending)} chunk(s) loading, ${formatTicks(now - p.startedTick)} elapsed${now - p.lastProgressTick >= CIV.heartbeatTicks * 2 ? `, no progress for ${formatTicks(now - p.lastProgressTick)}` : ""}.`]);
+    const where = p.tile !== undefined ? ` (tile ${String(p.tile.x0)},${String(p.tile.z0)})` : "";
+    // "no progress" is only said when nothing at all is pending: a hold that is generating chunks is working.
+    const quiet = p.chunksPending === 0 && now - p.lastProgressTick >= CIV.heartbeatTicks * 2;
+    p.say([`  ... ${p.phaseName} (phase ${String(p.phaseIndex)}/${String(p.phases)}):${tiles}${pct !== undefined ? ` ${String(pct)}%,` : ""} ${String(p.chunksPending)} chunk(s) loading${where}, ${String(p.columnsScanned)} columns read, ${formatTicks(now - p.startedTick)} elapsed${quiet ? `, no progress for ${formatTicks(now - p.lastProgressTick)}` : ""}.`]);
 }
 
 /**

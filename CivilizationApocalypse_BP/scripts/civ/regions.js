@@ -158,12 +158,21 @@ export function bfsDistance(w, h, isSource, cap) {
  */
 
 /**
- * Coarse suitability analysis around the anchor. Water, lava, blocked, unloaded and steep (> 8 relief per
- * 4 blocks) cells are impassable for settlement; slope, trees and shore proximity add cost.
+ * Coarse suitability analysis around the anchor. Water, lava, blocked, unloaded and ground steeper than
+ * `maxRelief` per 4 blocks are impassable for settlement; slope, trees and shore proximity add cost.
+ *
+ * A site policy may widen this: `allowWater` makes open water passable (lots and roads there stand on
+ * piers) and a higher `maxRelief` lets a rough, mountainous window be settled on decks and pillars.
+ * The defaults reproduce the old rules.
+ *
  * @param {HeightField} field @param {{ x: number, z: number }} anchor @param {number} radius @param {Ops} ops
+ * @param {{ allowWater?: boolean, maxRelief?: number }} [policy]
  * @returns {Generator<void, Terrain, void>}
  */
-export function* analyzeTerrainSteps(field, anchor, radius, ops) {
+export function* analyzeTerrainSteps(field, anchor, radius, ops, policy = {}) {
+    const maxSettleRelief = Number.isFinite(policy.maxRelief) ? /** @type {number} */ (policy.maxRelief) : 8;
+    const maxCrossRelief = maxSettleRelief + 14;
+    const allowWater = policy.allowWater === true;
     const x0 = Math.floor((anchor.x - radius) / CELL) * CELL - 8 * CELL;
     const z0 = Math.floor((anchor.z - radius) / CELL) * CELL - 8 * CELL;
     const w = Math.ceil((2 * radius) / CELL) + 16;
@@ -206,7 +215,7 @@ export function* analyzeTerrainSteps(field, anchor, radius, ops) {
             gsums[idx] = gsum;
             tree[idx] = trees / offs.length;
             if (wet) water[idx] = 1;
-            if (!bad && !wet && relief[idx] <= 8) passable[idx] = 1;
+            if (!bad && (!wet || allowWater) && relief[idx] <= maxSettleRelief) passable[idx] = 1;
         }
     }
     const cost = new Float32Array(n).fill(50);
@@ -218,6 +227,8 @@ export function* analyzeTerrainSteps(field, anchor, radius, ops) {
         }
         if (!passable[idx]) continue;
         cost[idx] = 1 + 0.22 * relief[idx] + (relief[idx] > 4 ? 2.5 : 0) + 0.35 * tree[idx] + (distWater[idx] <= 1 ? 0.35 : 0);
+        // Open water is buildable on piers but should lose to dry ground at equal distance.
+        if (allowWater && water[idx] === 1) cost[idx] += 2;
     }
     const crossable = new Uint8Array(n);
     const gcost = new Float32Array(n).fill(50);
@@ -228,8 +239,8 @@ export function* analyzeTerrainSteps(field, anchor, radius, ops) {
             if (ops.work - ops.lastYield >= WORK_LIMIT) { markYield(ops); yield; }
         }
         if (passable[idx]) { crossable[idx] = 1; gcost[idx] = cost[idx]; }
-        else if (water[idx] && landDist[idx] <= 3 && relief[idx] <= 8) { crossable[idx] = 1; gcost[idx] = 4; }
-        else if (!water[idx] && !blockedKind[idx] && relief[idx] > 8 && relief[idx] <= 22) { crossable[idx] = 1; gcost[idx] = 14; }
+        else if (water[idx] && landDist[idx] <= 3 && relief[idx] <= maxSettleRelief) { crossable[idx] = 1; gcost[idx] = 4; }
+        else if (!water[idx] && !blockedKind[idx] && relief[idx] > maxSettleRelief && relief[idx] <= maxCrossRelief) { crossable[idx] = 1; gcost[idx] = 14; }
     }
     const rough = yield* boxMean(relief, w, h, 2, ops);
     // percentiles by counting: ground heights are integers, so the sum of the 5 samples is a small integer

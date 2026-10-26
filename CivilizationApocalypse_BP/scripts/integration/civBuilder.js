@@ -9,7 +9,7 @@ import { markYield, newOps } from "../civ/regions.js";
 import { normalizeOp } from "../civ/opnorm.js";
 import { PLAN_PREFIX, PLAN_VERSION, createPlanStore, utf8Length } from "../civ/planstore.js";
 import { clipField, exportSiteGroundSteps, siteGroundBytes, siteGroundRegion } from "../civ/siteprofile.js";
-import { SITE_DEFAULTS, overlapsExclusion, rankSites, scanRadiusFor } from "../civ/siteselect.js";
+import { SITE_DEFAULTS, TERRAIN_POLICY_DEFAULT, overlapsExclusion, rankSites, scanRadiusFor, siteTerrainPolicy } from "../civ/siteselect.js";
 import { validatePlanSteps } from "../civ/validatesteps.js";
 import { classifyTerrainCell, isLeaves, isLog, isNaturalGround, isPlant, isTreePart } from "../structures/terrain.js";
 import { activeToken, cancelActiveJob, finishJob } from "./districtBuilder.js";
@@ -150,8 +150,17 @@ const CIV_TREE_CAP = 600;
 /** Chebyshev radius around the blocked cell within which a tree is examined and cleared (forests merge canopies; the remainder decays by itself). */
 const CIV_TREE_RADIUS = 8;
 
-/** Kinds that may stand in / replace still water (bridge supports and foundations). */
-const WATER_KINDS = new Set(["support", "footing", "fill"]);
+/**
+ * Kinds that may stand in / replace still water. A pier site genuinely builds over the sea: decks stand
+ * on pillars down to the bed and walls/decks rise through the water. Every kind here only ADDS a block -
+ * a cut is never in this set - and player blocks are still protected by the checks before this test.
+ * Kinds not listed (clear, note, ...) still refuse to overwrite water.
+ */
+const WATER_KINDS = new Set([
+    "support", "footing", "fill", "pad",
+    "wall", "tower", "merlon", "walk", "rubble", "gate",
+    "road", "stair", "deck", "bridge", "pillar", "rail", "retain",
+]);
 const AIR_IDS = new Set(["minecraft:air", "minecraft:cave_air", "minecraft:void_air"]);
 
 // ---------------------------------------------------------------------------------------------
@@ -336,7 +345,8 @@ export function inProtectedArea(areas, x, z) {
  *   exclusions: ProtectedArea[], plannerFootprints?: ProtectedArea[],
  *   say: (lines: string[]) => void, maxPlanBytes?: number,
  *   progress?: import("./civProgress.js").Progress,
- *   district?: number, siteMode?: "search" | "here", planSeed?: number
+ *   district?: number, siteMode?: "search" | "here", planSeed?: number,
+ *   policy?: import("../civ/siteselect.js").TerrainPolicy
  * }} PlanContext
  * @typedef {{
  *   ok: boolean, cancelled?: boolean, fatal?: boolean, stage: string, reasons: string[],
@@ -415,9 +425,22 @@ export async function planWorld(ctx) {
     assertIndex(index);
     const stored = loadMasterPlan();
     if (stored.plan !== undefined && stored.plan !== null) {
+        // The terrain policy rides with the stored master plan: every district of one civilization is
+        // built under the policy its own site was chosen by (old plans have none and keep the old rules).
+        ctx.policy = policyOf(stored.payload?.policy);
         return planOnStoredMaster(ctx, stored.plan, index, stored.planSeed);
     }
     return planNewMaster(ctx, index);
+}
+
+/** @param {any} policy @returns {import("../civ/siteselect.js").TerrainPolicy} */
+function policyOf(policy) {
+    if (policy === null || typeof policy !== "object") return /** @type {any} */ (TERRAIN_POLICY_DEFAULT);
+    return {
+        allowWater: policy.allowWater === true,
+        adaptive: policy.adaptive === true,
+        maxRelief: Number.isFinite(policy.maxRelief) ? Math.trunc(policy.maxRelief) : 8,
+    };
 }
 
 /**
@@ -548,7 +571,7 @@ async function planDistrictTail(ctx, plan, index, planSeed, out, numbered) {
     setPhase(ctx.progress, 5, "district plan");
     ctx.say(numbered ? ["[5/6] Planning walls, gates, roads and buildings..."] : [`Planning ${label}'s walls, gates, roads and buildings...`]);
     const clipped = clipField(out.groundField, region);
-    const done = await runJobAsync(ctx.token, planSiteSteps(plan, index, clipped, region, out.groundField, { seed: planSeed, excludeFootprints: ctx.plannerFootprints ?? ctx.exclusions, ops }), ctx.progress);
+    const done = await runJobAsync(ctx.token, planSiteSteps(plan, index, clipped, region, out.groundField, { seed: planSeed, excludeFootprints: ctx.plannerFootprints ?? ctx.exclusions, ops, policy: ctx.policy }), ctx.progress);
     if (ctx.token.cancelled || done === undefined) {
         out.cancelled = true;
         return fail("cancelled", ["cancelled"]);
@@ -572,7 +595,10 @@ async function planDistrictTail(ctx, plan, index, planSeed, out, numbered) {
     const maxBytes = ctx.maxPlanBytes ?? seams.maxPlanBytes;
     const options = maxBytes === undefined ? {} : { maxBytes };
     const measure = siteStoreFor(index, options).measurePlan(payload);
-    const masterPayload = out.masterIsNew ? { version: PLAN_VERSION, plan, seed: ctx.seed, planSeed, anchor: { x: plan.anchor.x, z: plan.anchor.z } } : undefined;
+    // A non-default terrain policy is part of what later districts must reproduce; a normal land plan
+    // stores exactly the old payload (no new key, no size change).
+    const storedPolicy = ctx.policy !== undefined && (ctx.policy.allowWater || ctx.policy.adaptive || ctx.policy.maxRelief !== 8) ? ctx.policy : undefined;
+    const masterPayload = out.masterIsNew ? { version: PLAN_VERSION, plan, seed: ctx.seed, planSeed, anchor: { x: plan.anchor.x, z: plan.anchor.z }, ...(storedPolicy === undefined ? {} : { policy: storedPolicy }) } : undefined;
     const masterMeasure = masterPayload === undefined ? undefined : createPlanStore(world, options).measurePlan(masterPayload);
     const masterBytes = masterMeasure?.bytes ?? 0;
     const masterChunks = masterMeasure?.chunks ?? 0;
@@ -651,6 +677,9 @@ async function planNewMaster(ctx, index) {
     /** @type {ReturnType<typeof rankSites> | undefined} */
     let ranking;
     let lastTileTick = nowTick();
+    let lastSiteTick = 0;
+    let lastSiteDistance = -1;
+    const windowHalf = Math.ceil(SITE_DEFAULTS.windowSize / (2 * SITE_DEFAULTS.step)) * SITE_DEFAULTS.step;
     const coarse = await scanProgressive(token, ctx.dimension, ctx.anchor, scanRadius, SITE_DEFAULTS.step, {
         rings,
         progress,
@@ -661,23 +690,42 @@ async function planNewMaster(ctx, index) {
             }
             lastTileTick = now;
         },
-        evaluate(field, ring, last) {
+        evaluate(field, ring, last, info) {
             if (explicit) {
                 return false;
             }
-            const searchRadius = last ? ctx.radius : Math.min(ctx.radius, ring - reach);
+            // Every tile is evaluated: a window is only certifiable once the read ground provably covers it
+            // (`knownHalf`), and a caller can stop the survey many tiles before the end of a ring. Never guess:
+            // the square is computed from the tile rectangles that actually loaded.
+            const knownHalf = info !== undefined && Number.isFinite(info.knownHalf) ? info.knownHalf : ring;
+            const searchRadius = last ? ctx.radius : Math.min(ctx.radius, Math.max(0, knownHalf - windowHalf - 2 * SITE_DEFAULTS.step));
             if (!last && searchRadius < 24) {
                 return false;
             }
-            setPhase(progress, 2, "ranking sites");
             const ranked = rankSites(field, ctx.anchor, { ...rankOptions, searchRadius });
             ranking = ranked;
-            setPhase(progress, 1, "survey");
             // A site closer than the part of the radius that is fully scanned cannot be beaten by anything unscanned
             // (score = distance + prep), so the answer equals the full-radius answer.
             const settled = last || (ranked.site !== null && ranked.site.score <= searchRadius);
-            ctx.say([`      ring ${String(Math.round(ring))} scanned (${String(field.columnsRead)} columns): ${ranked.site !== null ? (settled ? "suitable site found" : "a site exists but a closer one could still be hiding, scanning on") : "no suitable site yet"}.`]);
-            return settled;
+            const atRingEnd = info === undefined || info.atRingEnd === true;
+            if (settled) {
+                if (atRingEnd) {
+                    ctx.say([`      ring ${String(Math.round(ring))} scanned (${String(field.columnsRead)} columns): ${ranked.site !== null ? "suitable site found" : "no suitable site"}.`]);
+                }
+                return true;
+            }
+            if (atRingEnd) {
+                ctx.say([`      ring ${String(Math.round(ring))} scanned (${String(field.columnsRead)} columns): ${ranked.site !== null ? "a site exists but a closer one could still be hiding, scanning on" : "no suitable site yet"}.`]);
+            } else if (ranked.site !== null) {
+                const distance = Math.round(ranked.site.distance);
+                const now = nowTick();
+                if (Math.abs(distance - lastSiteDistance) >= 32 || now - lastSiteTick >= 20 * 60) {
+                    lastSiteDistance = distance;
+                    lastSiteTick = now;
+                    ctx.say([`      ${String(info?.tilesDone ?? 0)} of ${String(info?.tilesTotal ?? 0)} tiles read (${String(field.columnsRead)} columns): suitable terrain ${String(distance)} blocks away; confirming the rest of its window before stopping.`]);
+                }
+            }
+            return false;
         },
     });
     out.stats.coarse = coarse.stats;
@@ -722,6 +770,11 @@ async function planNewMaster(ctx, index) {
     }
     const siteFound = found.site;
     out.site = siteFound;
+    ctx.policy = siteTerrainPolicy(siteFound);
+    if (ctx.policy.allowWater || ctx.policy.maxRelief > 8) {
+        const terrain = ctx.policy.allowWater ? "wet: lots and roads stand on pillars over the water" : "rough: houses stand on decks on pillars and climb by stairs";
+        ctx.say([`      Terrain: ${String(Math.round(siteFound.waterFraction * 100))}% water, ${String(Math.round(siteFound.steepFraction * 100))}% steep; ${terrain} (estimated ${String(siteFound.prep.total)} preparation blocks).`]);
+    }
 
     // (c)-(f) master plan, validation, full-resolution ground, district plan: every heavy step is a budgeted generator
     // charged to ONE operation meter (no stretch between yields may exceed ~25,000 elementary operations).
@@ -734,7 +787,7 @@ async function planNewMaster(ctx, index) {
         const planSeed = (ctx.seed + 7919 * attempt) | 0;
         setPhase(progress, 3, "master plan");
         ctx.say([`[3/6] ${explicit ? "Anchor accepted" : `Site found ${String(Math.round(siteFound.distance))} blocks away`}; planning five districts${attempt > 0 ? ` (retry ${String(attempt)}, seed ${String(planSeed)})` : ""}...`]);
-        const made = await runJobAsync(token, planMasterSteps(coarse.field, { seed: planSeed, anchor: { x: siteFound.x, z: siteFound.z }, radius: MASTER_PLAN_RADIUS, ops }), progress);
+        const made = await runJobAsync(token, planMasterSteps(coarse.field, { seed: planSeed, anchor: { x: siteFound.x, z: siteFound.z }, radius: MASTER_PLAN_RADIUS, ops, policy: ctx.policy }), progress);
         if (token.cancelled || made === undefined) {
             out.cancelled = true;
             return fail("cancelled", ["cancelled"]);
@@ -799,11 +852,11 @@ async function planNewMaster(ctx, index) {
 
 /**
  * Master plan + independent validation as one generator.
- * @param {any} field @param {{ seed: number, anchor: { x: number, z: number }, radius: number, ops: import("../civ/regions.js").Ops }} options
+ * @param {any} field @param {{ seed: number, anchor: { x: number, z: number }, radius: number, ops: import("../civ/regions.js").Ops, policy?: any }} options
  * @returns {Generator<void, { ok: true, plan: any } | { ok: false, stage: string, problems: string[] }, void>}
  */
 function* planMasterSteps(field, options) {
-    const made = yield* planCivilizationDetailedSteps(field, { seed: options.seed, anchor: options.anchor, radius: options.radius, ops: options.ops });
+    const made = yield* planCivilizationDetailedSteps(field, { seed: options.seed, anchor: options.anchor, radius: options.radius, ops: options.ops, policy: options.policy });
     if (!made.ok || made.plan === null) {
         return { ok: false, stage: "plan", problems: ["civilization planning failed", ...made.errors.slice(-4)] };
     }
@@ -820,14 +873,14 @@ function* planMasterSteps(field, options) {
  * A district the composer has no layout for is refused here and the refusal reason is what the caller reports.
  *
  * @param {any} plan @param {number} index @param {any} clipped @param {Rect} region @param {any} rawField
- * @param {{ seed: number, excludeFootprints: ProtectedArea[], ops: import("../civ/regions.js").Ops }} options
+ * @param {{ seed: number, excludeFootprints: ProtectedArea[], ops: import("../civ/regions.js").Ops, policy?: any }} options
  * @returns {Generator<void, { ok: true, record: any, ground: any, notes: string[] } | { ok: false, stage: string, problems: string[], retry?: boolean }, void>}
  */
 function* planSiteSteps(plan, index, clipped, region, rawField, options) {
     if (!planHasDistrict(plan, index)) {
         return { ok: false, stage: "site-plan", problems: [`the stored master plan has no district ${String(index)}`], retry: false };
     }
-    const site = yield* seams.planSite(plan, index, clipped, { seed: options.seed, excludeFootprints: options.excludeFootprints, ops: options.ops });
+    const site = yield* seams.planSite(plan, index, clipped, { seed: options.seed, excludeFootprints: options.excludeFootprints, ops: options.ops, policy: options.policy });
     if (!site.ok || site.record === null || site.problems.length > 0) {
         return { ok: false, stage: "site-plan", problems: [`district ${String(index)} has no construction plan yet: ${site.problems.slice(0, 8).join(" | ")}`], retry: true };
     }

@@ -102,9 +102,12 @@ test("classifyCivOp: live-block rules per op class", () => {
     assert.equal(c(op("fill", "minecraft:dirt"), "minecraft:oak_planks").action, "skip");
     assert.equal(c(op("top", "minecraft:grass_block"), "minecraft:dirt").action, "place");
     assert.equal(c(op("top", "minecraft:grass_block"), "minecraft:oak_planks").action, "skip");
-    // water only for support kinds
-    assert.equal(c(op("support"), "minecraft:water").action, "place");
-    assert.equal(c(op("wall"), "minecraft:water").action, "skip");
+    // still water: every ADDITIVE kind may stand in it (decks/pads on piers, walls in the sea), never a cut
+    for (const kind of ["support", "footing", "fill", "pad", "wall", "tower", "merlon", "walk", "gate", "road", "stair", "deck", "bridge", "pillar", "rail", "retain"]) {
+        assert.equal(c(op(kind), "minecraft:water").action, "place", `${kind} must stand in still water`);
+    }
+    assert.equal(c(op("cut", "minecraft:air"), "minecraft:water").action, "skip");
+    assert.equal(c(op("clear", "minecraft:air"), "minecraft:water").action, "skip");
     // trees need proof
     assert.equal(c(op("wall"), "minecraft:oak_leaves").action, "tree");
 });
@@ -214,11 +217,13 @@ function assertUntouched(player, stage) {
 
 // ---------------------------------------------------------------------------- failure paths: zero writes, no residue
 
-test("failure: water everywhere -> no site, zero writes", MIN_TIMEOUT, async () => {
+test("open sea: planning succeeds read-only (piers) and writes nothing", MIN_TIMEOUT, async () => {
     resetWorld(1, { field: { lakes: [{ x: 0, z: 0, r: 4000 }] } });
     const player = makePlayer();
-    await generate(player);
-    assertUntouched(player, "site");
+    send(CIV_EVENT_IDS.plan, "seed=1", player);
+    await pump();
+    assert.match(text(player), /Plan is valid/, text(player).slice(-800));
+    assert.equal(mc.writes, 0, "planning writes nothing");
 });
 
 test("failure: lava through the area -> no site, zero writes", MIN_TIMEOUT, async () => {
@@ -229,12 +234,15 @@ test("failure: lava through the area -> no site, zero writes", MIN_TIMEOUT, asyn
     assert.match(text(player), /lava/);
 });
 
-test("failure: terrain too steep -> no site, reasons listed, zero writes", MIN_TIMEOUT, async () => {
-    resetWorld(1, { field: { relief: 70, hills: 18 } });
+test("a lake at the anchor: the plan adapts (coastal window or piers) and stays read-only", MIN_TIMEOUT, async () => {
+    // Water on the window border is open (sea or river mouth); water inside it is a lake a district cannot
+    // join, so the search moves or the plan spans the water - either way it plans, and writes nothing.
+    resetWorld(1, { field: { lakes: [{ x: 0, z: 0, r: 240 }] } });
     const player = makePlayer();
-    await generate(player);
-    assertUntouched(player, "site");
-    assert.match(text(player), /steep|candidates/);
+    send(CIV_EVENT_IDS.plan, "seed=1", player);
+    await pump();
+    assert.match(text(player), /Plan is valid/, text(player).slice(-800));
+    assert.equal(mc.writes, 0, "planning writes nothing");
 });
 
 test("failure: unloaded columns during the coarse survey are recorded, never guessed -> zero writes", MIN_TIMEOUT, async () => {

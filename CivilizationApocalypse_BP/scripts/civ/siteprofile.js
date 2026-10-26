@@ -66,7 +66,12 @@ export function* fnvPartsSteps(parts, ops) {
  *   - ground height `g`: LOCO-I median predictor (W, N, W+N-NW), residual zig-zagged and written
  *     with an adaptive Golomb-Rice code into a bit stream, 6 bits per URL-safe character;
  *   - kind: run-length pairs (kind code, run) as base-32 varints (water / lava / unloaded are rare);
- *   - tree flag: gap-coded positions of the columns that carry a natural tree, base-32 varints.
+ *   - tree flag: gap-coded positions of the columns that carry a natural tree, base-32 varints;
+ *   - water surface `s` (only present when the region holds water): one rice-coded residual per
+ *     WATER column (the others cost nothing), the depth from the bed (`g`) to the surface. A water
+ *     column's `g` is the BED and `s` records the surface, which piers and decks need. A region
+ *     without water omits the stream entirely, so every land plan's stored ground is byte-identical
+ *     to before.
  * Unloaded columns carry the predicted height (residual 0) and kind 0, so they cost nothing.
  *
  * What the planner may read is exactly the region: `clipField` answers "unloaded" outside it and
@@ -91,8 +96,8 @@ for (let i = 0; i < ALPHABET.length; i += 1) {
 
 /**
  * @typedef {{ x0: number, z0: number, x1: number, z1: number }} SiteRegion
- * @typedef {{ v: number, x0: number, z0: number, w: number, h: number, g: string, k: string, t: string, hash: string }} SiteGroundJSON
- * @typedef {{ bounds: SiteRegion, at: (x: number, z: number) => { g: number, k: string, tree: boolean }, outsideReads: () => number, firstOutside: () => ({ x: number, z: number } | null), readCount: () => number }} ClippedField
+ * @typedef {{ v: number, x0: number, z0: number, w: number, h: number, g: string, k: string, t: string, s?: string, hash: string }} SiteGroundJSON
+ * @typedef {{ bounds: SiteRegion, at: (x: number, z: number) => { g: number, k: string, tree: boolean, surface?: number }, outsideReads: () => number, firstOutside: () => ({ x: number, z: number } | null), readCount: () => number }} ClippedField
  */
 
 // ---------------------------------------------------------------------------------------------
@@ -165,7 +170,12 @@ export function clipField(field, region) {
             if (code === undefined || code === 0) {
                 return unloaded;
             }
-            return { g: Math.floor(cell.g), k: /** @type {string} */ (KIND_NAMES[code]), tree: cell.tree === true };
+            return {
+                g: Math.floor(cell.g),
+                k: /** @type {string} */ (KIND_NAMES[code]),
+                tree: cell.tree === true,
+                ...(Number.isFinite(cell.surface) ? { surface: Math.floor(/** @type {number} */ (cell.surface)) } : {}),
+            };
         },
         outsideReads: () => outside,
         firstOutside: () => first,
@@ -383,6 +393,10 @@ export function* exportSiteGroundSteps(field, region, ops) {
     const kinds = [];
     /** @type {string[]} */
     const trees = [];
+    const swriter = new BitWriter();
+    const srice = new RiceState();
+    let waterCols = 0;
+    let lastDepth = 0;
     let runKind = -1;
     let run = 0;
     let lastTree = -1;
@@ -431,6 +445,26 @@ export function* exportSiteGroundSteps(field, region, ops) {
                 pushVar(trees, i - lastTree - 1);
                 lastTree = i;
             }
+            // water surface: the water cell's `g` is the bed; the depth to the surface is rice-coded
+            // (one short residual per WATER column, nothing for land) so a sea district's ground
+            // stays compact enough for the plan budget
+            if (code === /** @type {number} */ (KIND_CODE["water"])) {
+                waterCols += 1;
+                const depth = Number.isFinite(cell.surface) ? Math.max(0, Math.floor(/** @type {number} */ (cell.surface)) - value - 1) : 0;
+                const szz = zig(depth - lastDepth);
+                const sk = srice.k();
+                const sq = szz >> sk;
+                if (sq >= ESCAPE_Q) {
+                    for (let n = 0; n < ESCAPE_Q; n += 1) swriter.bit(1);
+                    swriter.bits(szz, 17);
+                } else {
+                    for (let n = 0; n < sq; n += 1) swriter.bit(1);
+                    swriter.bit(0);
+                    swriter.bits(szz & ((1 << sk) - 1), sk);
+                }
+                srice.update(szz);
+                lastDepth = depth;
+            }
         }
     }
     if (run > 0) {
@@ -440,8 +474,9 @@ export function* exportSiteGroundSteps(field, region, ops) {
     const gText = writer.finish();
     const kText = kinds.join("");
     const tText = trees.join("");
-    const hash = yield* fnvPartsSteps([`${String(region.x0)},${String(region.z0)},${String(w)},${String(h)}|`, gText, "|", kText, "|", tText], ops);
-    return { v: SITE_GROUND_VERSION, x0: region.x0, z0: region.z0, w, h, g: gText, k: kText, t: tText, hash };
+    const sText = waterCols > 0 ? swriter.finish() : "";
+    const hash = yield* fnvPartsSteps([`${String(region.x0)},${String(region.z0)},${String(w)},${String(h)}|`, gText, "|", kText, "|", tText, ...(sText === "" ? [] : ["|", sText])], ops);
+    return { v: SITE_GROUND_VERSION, x0: region.x0, z0: region.z0, w, h, g: gText, k: kText, t: tText, ...(sText === "" ? {} : { s: sText }), hash };
 }
 
 /**
@@ -474,7 +509,8 @@ export function* importSiteGroundSteps(json, ops) {
     if (typeof data.g !== "string" || typeof data.k !== "string" || typeof data.t !== "string") {
         throw new Error("corrupt site ground: missing streams");
     }
-    const expect = yield* fnvPartsSteps([`${String(x0)},${String(z0)},${String(w)},${String(h)}|`, data.g, "|", data.k, "|", data.t], ops);
+    const sText = typeof data.s === "string" ? data.s : "";
+    const expect = yield* fnvPartsSteps([`${String(x0)},${String(z0)},${String(w)},${String(h)}|`, data.g, "|", data.k, "|", data.t, ...(sText === "" ? [] : ["|", sText])], ops);
     if (expect !== data.hash) {
         throw new Error(`corrupt site ground: hash ${expect} does not match ${String(data.hash)}`);
     }
@@ -525,6 +561,27 @@ export function* importSiteGroundSteps(json, ops) {
         }
         treeBits[at] = 1;
     }
+    /** Surface y per water column; 0 when the export had no surface stream. */
+    const surfaces = new Uint16Array(count);
+    if (sText !== "") {
+        const sreader = new BitReader(sText);
+        const srice = new RiceState();
+        let prevDepth = 0;
+        for (let i = 0; i < count; i += 1) {
+            if (kinds[i] !== /** @type {number} */ (KIND_CODE["water"])) continue;
+            const sk = srice.k();
+            let sq = 0;
+            while (sq < ESCAPE_Q && sreader.bit() === 1) sq += 1;
+            const szz = sq >= ESCAPE_Q ? sreader.bits(17) : (sq << sk) | sreader.bits(sk);
+            srice.update(szz);
+            const depth = prevDepth + unzig(szz);
+            if (depth < 0 || depth > 4096) {
+                throw new Error("corrupt site ground: water depth out of range");
+            }
+            prevDepth = depth;
+            surfaces[i] = /** @type {number} */ (g[i]) + 1 + depth;
+        }
+    }
     const region = { x0, z0, x1: x0 + w - 1, z1: z0 + h - 1 };
     const unloaded = Object.freeze({ g: 0, k: "unloaded", tree: false });
     let outside = 0;
@@ -543,7 +600,10 @@ export function* importSiteGroundSteps(json, ops) {
         if (code === 0) {
             return unloaded;
         }
-        return { g: /** @type {number} */ (g[i]), k: /** @type {string} */ (KIND_NAMES[code]), tree: treeBits[i] === 1 };
+        /** @type {{ g: number, k: string, tree: boolean, surface?: number }} */
+        const cell = { g: /** @type {number} */ (g[i]), k: /** @type {string} */ (KIND_NAMES[code]), tree: treeBits[i] === 1 };
+        if (code === /** @type {number} */ (KIND_CODE["water"]) && surfaces[i] > 0) cell.surface = surfaces[i];
+        return cell;
     };
     return {
         region,
@@ -582,5 +642,5 @@ export function* importSiteGroundSteps(json, ops) {
  */
 export function siteGroundBytes(json) {
     const text = JSON.stringify(json);
-    return { bytes: utf8Length(text), columns: json.w * json.h, bytesPerColumn: utf8Length(text) / (json.w * json.h), streams: { g: json.g.length, k: json.k.length, t: json.t.length } };
+    return { bytes: utf8Length(text), columns: json.w * json.h, bytesPerColumn: utf8Length(text) / (json.w * json.h), streams: { g: json.g.length, k: json.k.length, t: json.t.length, ...(json.s === undefined ? {} : { s: json.s.length }) } };
 }

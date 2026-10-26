@@ -3,7 +3,8 @@
  *
  * Contract (shared with dev/lib/fakefield.mjs): `field.at(x, z) -> { g, k, tree }` and
  * `field.bounds -> { x0, z0, x1, z1 }` (inclusive). Everything outside the bounds, and every
- * cell nobody has written yet, answers `k: "unloaded"`.
+ * cell nobody has written yet, answers `k: "unloaded"`. A water cell MAY carry `surface` (the
+ * water surface y): `g` is then the sea bed, which pier and deck planning needs.
  *
  * Storage: one Int16 ground height + one flag byte per grid cell (kind in the low 3 bits,
  * tree bit, "known" bit), so a 700 x 700 block field at step 1 costs ~1.5 MB. With `step > 1`
@@ -11,7 +12,7 @@
  */
 
 /** @typedef {"land" | "water" | "lava" | "blocked" | "unloaded"} FieldKind */
-/** @typedef {{ g: number, k: FieldKind, tree: boolean }} FieldCell */
+/** @typedef {{ g: number, k: FieldKind, tree: boolean, surface?: number }} FieldCell */
 /** @typedef {{ x0: number, z0: number, x1: number, z1: number }} Bounds */
 /** @typedef {{ bounds: Bounds, at: (x: number, z: number) => FieldCell }} HeightField */
 
@@ -33,22 +34,23 @@ export function kindCode(kind) {
 /**
  * @typedef {HeightField & {
  *   step: number, cols: number, rows: number,
- *   set: (x: number, z: number, cell: { g: number, k: FieldKind, tree?: boolean, rel?: number }) => void,
+ *   set: (x: number, z: number, cell: { g: number, k: FieldKind, tree?: boolean, rel?: number, surface?: number }) => void,
  *   has: (x: number, z: number) => boolean,
  *   columnsRead: number,
  *   reliefAt: (x: number, z: number) => number,
  *   memoryBytes: () => number,
  *   toJSON: () => SerialField,
  * }} GridField
- * @typedef {{ v: number, x0: number, z0: number, w: number, h: number, step: number, flags: number[], ground: number[], rel?: number[] }} SerialField
+ * @typedef {{ v: number, x0: number, z0: number, w: number, h: number, step: number, flags: number[], ground: number[], rel?: number[], s?: number[] }} SerialField
  */
 
 /** @type {Readonly<FieldCell>} */
 const UNLOADED = Object.freeze({ g: 0, k: /** @type {FieldKind} */ ("unloaded"), tree: false });
 
 /**
- * @param {{ x0: number, z0: number, w: number, h: number, step?: number, relief?: boolean }} spec
- *   w and h are block extents; the grid holds ceil(w / step) x ceil(h / step) cells.
+ * @param {{ x0: number, z0: number, w: number, h: number, step?: number, relief?: boolean, water?: boolean }} spec
+ *   w and h are block extents; the grid holds ceil(w / step) x ceil(h / step) cells. With `water`
+ *   a water column keeps its SURFACE height beside its bed height (`g`), which pier/deck planning needs.
  * @returns {GridField}
  */
 export function makeGridField(spec) {
@@ -62,6 +64,7 @@ export function makeGridField(spec) {
     const ground = new Int16Array(count);
     const flags = new Uint8Array(count);
     const rel = spec.relief === true ? new Uint8Array(count) : null;
+    const surface = spec.water === true ? new Int16Array(count) : null;
     const bounds = { x0, z0, x1: x0 + spec.w - 1, z1: z0 + spec.h - 1 };
     let known = 0;
 
@@ -84,7 +87,11 @@ export function makeGridField(spec) {
             if (index < 0) return UNLOADED;
             const flag = /** @type {number} */ (flags[index]);
             if ((flag & KNOWN_BIT) === 0) return UNLOADED;
-            return { g: /** @type {number} */ (ground[index]), k: /** @type {FieldKind} */ (KIND_NAMES[flag & KIND_MASK]), tree: (flag & TREE_BIT) !== 0 };
+            /** @type {{ g: number, k: FieldKind, tree: boolean, surface?: number }} */
+            const out = { g: /** @type {number} */ (ground[index]), k: /** @type {FieldKind} */ (KIND_NAMES[flag & KIND_MASK]), tree: (flag & TREE_BIT) !== 0 };
+            const top = surface === null ? 0 : /** @type {number} */ (surface[index]);
+            if (top !== 0) out.surface = top;
+            return out;
         },
         has(x, z) {
             const index = indexOf(x, z);
@@ -98,13 +105,14 @@ export function makeGridField(spec) {
             ground[index] = Math.round(cell.g);
             flags[index] = kindCode(cell.k) | (cell.tree === true ? TREE_BIT : 0) | KNOWN_BIT;
             if (rel !== null) rel[index] = Math.max(0, Math.min(255, Math.round(cell.rel ?? 0)));
+            if (surface !== null) surface[index] = Number.isFinite(cell.surface) ? Math.round(/** @type {number} */ (cell.surface)) : 0;
         },
         reliefAt(x, z) {
             const index = indexOf(x, z);
             return rel === null || index < 0 ? 0 : /** @type {number} */ (rel[index]);
         },
         memoryBytes() {
-            return ground.byteLength + flags.byteLength + (rel === null ? 0 : rel.byteLength);
+            return ground.byteLength + flags.byteLength + (rel === null ? 0 : rel.byteLength) + (surface === null ? 0 : surface.byteLength);
         },
         toJSON() {
             /** @type {SerialField} */
@@ -119,6 +127,7 @@ export function makeGridField(spec) {
                 ground: rleEncode(ground, true),
             };
             if (rel !== null) out.rel = rleEncode(rel, false);
+            if (surface !== null) out.s = rleEncode(surface, false);
             return out;
         },
     };
@@ -179,7 +188,7 @@ function rleDecode(pairs, delta, target) {
 export function fromJSON(json) {
     const data = /** @type {SerialField} */ (typeof json === "string" ? JSON.parse(json) : json);
     if (data === null || typeof data !== "object" || data.v !== SERIAL_VERSION) throw new Error("unsupported field version");
-    const field = makeGridField({ x0: data.x0, z0: data.z0, w: data.w, h: data.h, step: data.step, relief: data.rel !== undefined });
+    const field = makeGridField({ x0: data.x0, z0: data.z0, w: data.w, h: data.h, step: data.step, relief: data.rel !== undefined, water: data.s !== undefined });
     const count = field.cols * field.rows;
     const flags = new Uint8Array(count);
     const ground = new Int16Array(count);
@@ -187,16 +196,20 @@ export function fromJSON(json) {
     rleDecode(data.ground, true, ground);
     const rel = data.rel === undefined ? null : new Uint8Array(count);
     if (rel !== null && data.rel !== undefined) rleDecode(data.rel, false, rel);
+    const surface = data.s === undefined ? null : new Int16Array(count);
+    if (surface !== null && data.s !== undefined) rleDecode(data.s, false, surface);
     for (let index = 0; index < count; index += 1) {
         const flag = /** @type {number} */ (flags[index]);
         if ((flag & KNOWN_BIT) === 0) continue;
         const x = data.x0 + (index % field.cols) * field.step;
         const z = data.z0 + Math.floor(index / field.cols) * field.step;
+        const top = surface === null ? 0 : /** @type {number} */ (surface[index]);
         field.set(x, z, {
             g: /** @type {number} */ (ground[index]),
             k: /** @type {FieldKind} */ (KIND_NAMES[flag & KIND_MASK] ?? "unloaded"),
             tree: (flag & TREE_BIT) !== 0,
             rel: rel === null ? 0 : /** @type {number} */ (rel[index]),
+            ...(top === 0 ? {} : { surface: top }),
         });
     }
     return field;

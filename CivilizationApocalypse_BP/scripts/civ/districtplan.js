@@ -1,5 +1,5 @@
 import { CIV_LIMITS } from "./budget.js";
-import { IDS, planBridge, planPad, planRoadProfile, profileAt } from "./foundations.js";
+import { IDS, planBridge, planDeck, planPad, planRoadProfile, profileAt } from "./foundations.js";
 import { MinHeap, labelAt as planLabelAt, rasterizePath } from "./geom.js";
 import { fnv1a, utf8Length } from "./planstore.js";
 import { planWall, wallOpSegments, WALL } from "./walls.js";
@@ -15,7 +15,7 @@ import { normalizeOps, opSignature } from "./opnorm.js";
 import { MAX_RUN, clipField, exportSiteGround, fnvFeed, importSiteGroundSteps, pace, siteGroundRegion } from "./siteprofile.js";
 
 /** @typedef {import("./regions.js").Ops} Ops */
-/** @typedef {{ region: { x0: number, z0: number, x1: number, z1: number }, w: number, h: number, g: Int16Array, k: Uint8Array, t: Uint8Array, idx: (x: number, z: number) => number, ground: (x: number, z: number) => number | undefined, sampler: (x: number, z: number) => { g: number, water?: number, hollow?: boolean }, vegetated: (x: number, z: number) => boolean, unusable: (x: number, z: number) => boolean, isLand: (x: number, z: number) => boolean }} Snapshot */
+/** @typedef {{ region: { x0: number, z0: number, x1: number, z1: number }, w: number, h: number, g: Int16Array, k: Uint8Array, t: Uint8Array, idx: (x: number, z: number) => number, ground: (x: number, z: number) => number | undefined, sampler: (x: number, z: number) => { g: number, water?: number, hollow?: boolean }, vegetated: (x: number, z: number) => boolean, unusable: (x: number, z: number) => boolean, isLand: (x: number, z: number) => boolean, isWater: (x: number, z: number) => boolean, isBuildable: (x: number, z: number) => boolean }} Snapshot */
 
 /**
  * Enlarged irregular district construction planner - all five districts.
@@ -242,13 +242,16 @@ function pathCells(path, closed) {
  * @param {any} clipped a clipField() view
  * @param {{ x0: number, z0: number, x1: number, z1: number }} region
  * @param {Ops} ops
+ * @param {boolean} [allowWater] water columns may carry a deck/pier (the site policy bridges them)
  */
-function* snapshotGroundSteps(clipped, region, ops) {
+function* snapshotGroundSteps(clipped, region, ops, allowWater = false) {
     const w = region.x1 - region.x0 + 1;
     const h = region.z1 - region.z0 + 1;
     const g = new Int16Array(w * h);
     const k = new Uint8Array(w * h);
     const t = new Uint8Array(w * h);
+    /** Water surface y per column (0 = not recorded: the water is one block above its bed). */
+    const surf = new Int16Array(w * h);
     for (let z = 0; z < h; z += 1) {
         yield* pace(ops, w * 8);
         for (let x = 0; x < w; x += 1) {
@@ -258,6 +261,7 @@ function* snapshotGroundSteps(clipped, region, ops) {
             k[i] = code;
             g[i] = code === 0 ? 0 : cell.g;
             t[i] = cell.tree === true ? 1 : 0;
+            surf[i] = Number.isFinite(cell.surface) ? Math.round(/** @type {number} */ (cell.surface)) : 0;
         }
     }
     /** @param {number} x @param {number} z */
@@ -281,7 +285,7 @@ function* snapshotGroundSteps(clipped, region, ops) {
             if (i < 0 || k[i] === 0) return { g: 0, hollow: true };
             /** @type {{ g: number, water?: number, hollow?: boolean }} */
             const out = { g: /** @type {number} */ (g[i]), hollow: false };
-            if (k[i] === KC.water) out.water = out.g + 1;
+            if (k[i] === KC.water) out.water = surf[i] > 0 ? surf[i] : out.g + 1;
             return out;
         },
         /** @param {number} x @param {number} z */
@@ -298,6 +302,19 @@ function* snapshotGroundSteps(clipped, region, ops) {
         isLand(x, z) {
             const i = idx(x, z);
             return i >= 0 && k[i] === KC.land;
+        },
+        /** open water: a path or lot there needs a pier, never a fill @param {number} x @param {number} z */
+        isWater(x, z) {
+            const i = idx(x, z);
+            return i >= 0 && k[i] === KC.water;
+        },
+        /**
+         * Land, or water the site policy builds piers on. Lava, unloaded and blocked cells are never buildable.
+         * @param {number} x @param {number} z
+         */
+        isBuildable(x, z) {
+            const i = idx(x, z);
+            return i >= 0 && (k[i] === KC.land || (allowWater && k[i] === KC.water));
         },
     };
 }
@@ -367,12 +384,28 @@ function isRingPair(a, b) {
  * @param {any} options
  */
 function persistedOptions(options) {
-    return {
+    /** @type {Record<string, any>} */
+    const out = {
         seed: options.seed === undefined ? null : options.seed | 0,
         wallHeight: options.wallHeight ?? null,
         streetWidth: options.streetWidth ?? null,
         attempts: options.attempts ?? null,
         excludeFootprints: (/** @type {any[]} */ (options.excludeFootprints ?? [])).map((rect) => ({ x0: rect.x0, z0: rect.z0, x1: rect.x1, z1: rect.z1 })),
+    };
+    // Only a NON-DEFAULT policy is persisted. A land plan keeps exactly the old options object, so its
+    // checksum and stored bytes are unchanged and plans saved before the policy existed still rehydrate.
+    const policy = normalisePolicy(options.policy);
+    if (policy !== null && (policy.allowWater || policy.adaptive || policy.maxRelief !== 8)) out["policy"] = policy;
+    return out;
+}
+
+/** @param {any} policy */
+function normalisePolicy(policy) {
+    if (policy === null || typeof policy !== "object") return null;
+    return {
+        allowWater: policy.allowWater === true,
+        adaptive: policy.adaptive === true,
+        maxRelief: Number.isFinite(policy.maxRelief) ? Math.trunc(policy.maxRelief) : 8,
     };
 }
 
@@ -389,6 +422,7 @@ export function siteOptionsOf(record) {
     if (stored.streetWidth !== null && stored.streetWidth !== undefined) out["streetWidth"] = stored.streetWidth;
     if (stored.attempts !== null && stored.attempts !== undefined) out["attempts"] = stored.attempts;
     if (Array.isArray(stored.excludeFootprints) && stored.excludeFootprints.length > 0) out["excludeFootprints"] = stored.excludeFootprints;
+    if (stored.policy !== null && stored.policy !== undefined) out["policy"] = stored.policy;
     return out;
 }
 
@@ -413,7 +447,7 @@ export function exportSiteInputs(plan, index, field) {
  * @param {any} plan
  * @param {number} index
  * @param {import("./siteprofile.js").SiteGroundJSON | string} groundJSON
- * @param {{ seed?: number, wallHeight?: number, streetWidth?: number, attempts?: number, excludeFootprints?: any[], expectChecksum?: string, ops?: Ops }} [options]
+ * @param {{ seed?: number, wallHeight?: number, streetWidth?: number, attempts?: number, excludeFootprints?: any[], policy?: any, expectChecksum?: string, ops?: Ops }} [options]
  * @returns {Generator<void, { ok: boolean, record: any, problems: string[], notes: string[] }, void>}
  */
 export function* rehydrateSiteSteps(plan, index, groundJSON, options = {}) {
@@ -457,6 +491,16 @@ export function rehydrateSite(plan, index, groundJSON, options = {}) {
     return runSync(rehydrateSiteSteps(plan, index, groundJSON, options));
 }
 
+/** Terrain-adaptive foundations: a deck shelf is cut at most this deep into the uphill side, and its
+ * pillars reach the ground / sea bed at most this far below it. A flat site never uses them. The cut
+ * limit matches the deepest levelling tier the old planner tried, so a cliff lot gets the same shelf
+ * - but its downhill side is carried on pillars instead of being filled. */
+const DECK_MAX_CUT = 16;
+const DECK_MAX_DEPTH = 64;
+const DECK_PILLAR_EVERY = 3;
+/** Ground relief under one lot (blocks) above which the lot is a deck instead of a levelled pad. */
+const LOT_RELIEF_TRIGGER = 3;
+
 /** @param {any} record */
 export function isLiveSite(record) {
     return record !== null && typeof record === "object" && LAZY_OPS.has(record);
@@ -480,6 +524,7 @@ export function isLiveSite(record) {
  *   attempts?: number,
  *   wallHeight?: number,
  *   streetWidth?: number,
+ *   policy?: { allowWater?: boolean, adaptive?: boolean, maxRelief?: number } | null,
  *   expectChecksum?: string,
  *   ops?: Ops,
  *   validate?: (record: any) => string[],
@@ -510,7 +555,12 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
     const seed = (options.seed ?? plan.seed ?? 1) | 0;
     const region = siteGroundRegion(plan, index);
     const clipped = clipField(field, region);
-    const G = yield* snapshotGroundSteps(clipped, region, ops);
+    /** Terrain policy of the chosen window (absent on every plan made before it existed). */
+    const policy = normalisePolicy(options.policy);
+    const allowWater = policy?.allowWater === true;
+    /** Lots over a drop or water stand on a deck and pillars instead of being levelled. */
+    const adaptive = policy?.adaptive === true;
+    const G = yield* snapshotGroundSteps(clipped, region, ops, allowWater);
     const { ground, sampler, vegetated, unusable } = G;
     const district = /** @type {any[]} */ (plan.districts).find((entry) => entry?.index === index);
     const protectedRects = /** @type {any[]} */ (options.excludeFootprints ?? []);
@@ -1017,9 +1067,10 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
      * Road surface ops for a centreline, as a cooperative generator. Returns the raw ops and the
      * refusals. Deterministic; reads the ground snapshot only.
      * @param {[number, number][]} centre @param {number} width @param {Ops} o
+     * @param {boolean} [clip] keep every op inside this district's own land (its own roads only)
      * @returns {Generator<void, { ops: any[], refusals: string[] }, void>}
      */
-    function* roadOpsFor(centre, width, o) {
+    function* roadOpsFor(centre, width, o, clip = false) {
         /** @type {any[]} */
         const out = [];
         /** @type {string[]} */
@@ -1027,7 +1078,71 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
         /** @type {Map<string, number>} */
         const where = new Map();
         let cursor = 0;
-        const wet = (/** @type {number} */ i) => sampler(centre[i][0], centre[i][1]).water !== undefined || unusable(centre[i][0], centre[i][1]);
+        /**
+     * A pier over water: a deck at the highest water surface (or bank) of the span, carried by pillars
+     * down to the sea bed every few cells, with railings on the outer edges. Nothing is filled: the
+     * water below the deck and beside it stays water. Additive only (deck/pillar/rail blocks), which
+     * the write guard accepts in still water.
+     * @param {[number, number][]} span
+     * @returns {any[]}
+     */
+    const pierOpsFor = (span) => {
+        if (span.length === 0) return [];
+        let deckY = -Infinity;
+        for (const [x, z] of span) {
+            const s = sampler(x, z);
+            if (s.hollow) return [];
+            deckY = Math.max(deckY, s.water !== undefined ? s.water : s.g);
+        }
+        if (!Number.isFinite(deckY)) return [];
+        /** @type {any[]} */
+        const made = [];
+        for (let i = 0; i < span.length; i += 1) {
+            const [x, z] = span[i];
+            const prev = span[Math.max(0, i - 1)];
+            const next = span[Math.min(span.length - 1, i + 1)];
+            const laterals = lateralOffsets(next[0] - prev[0], next[1] - prev[1], Math.floor(width / 2));
+            const outer = laterals.length === 0 ? [[0, 0]] : [laterals[0], laterals[laterals.length - 1]];
+            for (const [ox, oz] of [[0, 0], ...laterals]) {
+                const sx = x + ox;
+                const sz = z + oz;
+                if (clip && !mineAt(sx, sz)) continue;
+                if (unusable(sx, sz)) continue;
+                const side = sampler(sx, sz);
+                if (side.hollow || side.g > deckY) continue;
+                made.push({ x: sx, y: deckY, z: sz, id: IDS.deck, kind: "deck" });
+            }
+            const atPier = i === 0 || i === span.length - 1 || i % 6 === 0;
+            if (atPier) {
+                for (const [ox, oz] of outer) {
+                    const sx = x + ox;
+                    const sz = z + oz;
+                    if (clip && !mineAt(sx, sz)) continue;
+                    if (unusable(sx, sz)) continue;
+                    const side = sampler(sx, sz);
+                    if (side.hollow || side.g >= deckY) continue;
+                    for (let y = side.g + 1; y < deckY; y += 1) made.push({ x: sx, y, z: sz, id: y === deckY - 1 ? IDS.footTop : IDS.footDeep, kind: "pillar" });
+                }
+            }
+            if (laterals.length === 0) continue;
+            for (const [ox, oz] of outer) {
+                const sx = x + ox;
+                const sz = z + oz;
+                if (clip && !mineAt(sx, sz)) continue;
+                if (unusable(sx, sz)) continue;
+                made.push({ x: sx, y: deckY + 1, z: sz, id: IDS.rail, kind: "rail" });
+            }
+        }
+        return made;
+    };
+    /** Add the pier's ops to `out`; false when the span cannot take one. @param {[number, number][]} span */
+    const pier = (span) => {
+        const made = pierOpsFor(span);
+        if (made.length === 0) return false;
+        out.push(...made);
+        return true;
+    };
+    const wet = (/** @type {number} */ i) => sampler(centre[i][0], centre[i][1]).water !== undefined || unusable(centre[i][0], centre[i][1]);
         while (cursor < centre.length) {
             const runStart = cursor;
             while (cursor < centre.length && !wet(cursor)) cursor += 1;
@@ -1038,7 +1153,7 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
                     return { x, z, g: sample.g, water: false };
                 });
                 yield* pace(o, Math.min(23000, run.length * 24 + 100));
-                const surfaced = planRoadProfile(samples, { smooth: 2, maxStep: 1, maxDev: 3 });
+                const surfaced = planRoadProfile(samples, { smooth: 2, maxStep: 1, maxDev: adaptive ? 6 : 3 });
                 if (surfaced.ok === true) {
                     run.forEach(([x, z], i) => where.set(`${String(x)},${String(z)}`, i));
                     let sinceCheck = 0;
@@ -1078,11 +1193,25 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
                 const axisAligned = span.length >= 3 && span.every(([x, z]) => x === span[0][0] || z === span[0][1]);
                 if (axisAligned) {
                     yield* pace(o, span.length * 40 + 200);
-                    const bridged = planBridge(span.map(([x, z]) => ({ x, z, g: sampler(x, z).g })), { width: Math.max(1, Math.min(7, width)) });
-                    if (bridged.ok === true) out.push(...bridged.ops);
-                    else for (const problem of bridged.problems) refusals.push(`no bridge: ${problem}`);
+                    const bridged = planBridge(span.map(([x, z]) => {
+                        const sample = sampler(x, z);
+                        return { x, z, g: sample.g, water: sample.water };
+                    }), { width: Math.max(1, Math.min(7, width)) });
+                    if (bridged.ok === true) {
+                        out.push(...bridged.ops);
+                    } else if (allowWater) {
+                        yield* pace(o, span.length * (width + 3) * 12 + 100);
+                        if (!pier(span)) for (const problem of bridged.problems) refusals.push(`no bridge: ${problem}`);
+                    } else {
+                        for (const problem of bridged.problems) refusals.push(`no bridge: ${problem}`);
+                    }
                 } else if (span.length >= 2) {
-                    refusals.push(`water crossing near cell ${String(wetStart)} is not axis-aligned: the route needs a reroute, not a bridge`);
+                    let caused = false;
+                    if (allowWater) {
+                        yield* pace(o, span.length * (width + 3) * 12 + 100);
+                        caused = pier(span);
+                    }
+                    if (!caused) refusals.push(`water crossing near cell ${String(wetStart)} is not axis-aligned: the route needs a reroute, not a bridge`);
                 }
             }
         }
@@ -1095,12 +1224,17 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
      */
     function* addRoad(road, width, idPrefix, rank) {
         const raster = pathCells(/** @type {number[][]} */ (road.path ?? []), false);
+        // A road that belongs to THIS district must stay on its own land (the containment contract). A link
+        // (kind "link", or a road owned by another district) is checked separately and is never clipped. On land
+        // this filters nothing (containment is already clean); it is what keeps a sea patrol lane from being
+        // carried across a neighbour's water.
+        const clip = String(road.kind ?? "") !== "link" && (road.district === undefined || Number(road.district) === index);
         yield* pace(ops, Math.min(23000, raster.length * 6 + 100));
         /** @type {[number, number][]} */
         const centre = [];
         let clippedAway = 0;
         for (const [x, z] of raster) {
-            if (G.idx(x, z) < 0) {
+            if (G.idx(x, z) < 0 || (clip && !mineAt(x, z))) {
                 clippedAway += 1;
                 continue;
             }
@@ -1108,15 +1242,15 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
             if (last === undefined || last[0] !== x || last[1] !== z) centre.push([x, z]);
         }
         if (clippedAway > 0) {
-            notes.push(`${idPrefix}: ${String(clippedAway)} path cells lie outside the persisted ground region and were not surfaced`);
+            notes.push(`${idPrefix}: ${String(clippedAway)} path cells lie outside the district's own land and were not surfaced`);
         }
         if (centre.length < 2) {
             notes.push(`${idPrefix}: road has no usable path`);
             return;
         }
         /** @type {() => any[]} */
-        const produce = () => runSync(roadOpsFor(centre, width, newOps())).ops;
-        const first = yield* roadOpsFor(centre, width, ops);
+        const produce = () => runSync(roadOpsFor(centre, width, newOps(), clip)).ops;
+        const first = yield* roadOpsFor(centre, width, ops, clip);
         if (first.ops.length === 0) {
             notes.push(`${idPrefix}: nothing could be surfaced (${String(first.refusals.length)} refusals)`);
             for (const refusal of first.refusals) notes.push(`${idPrefix}: ${refusal}`);
@@ -1728,7 +1862,8 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
         const overRoads = lot.kind === "hq_citadel" || lot.clippedRoadCells !== undefined;
         const area = bp.size[0] * bp.size[2];
         const large = area >= SITE_RULES.largeFootprint;
-        const tiers = MILITARY_KINDS.has(lot.kind) ? SITE_RULES.padTiersMilitary : large ? SITE_RULES.padTiersLarge : SITE_RULES.padTiersDefault;
+        // An adaptive lot tries ONE foundation (the deck); levelling tiers would just repeat the work.
+        const tiers = adaptive ? [DECK_MAX_CUT] : MILITARY_KINDS.has(lot.kind) ? SITE_RULES.padTiersMilitary : large ? SITE_RULES.padTiersLarge : SITE_RULES.padTiersDefault;
         const maxLane = lot.kind.startsWith("farm") || lot.kind === "orchard" ? 10 : HOUSE_KINDS.includes(lot.kind) ? 8 : 12;
 
         /** @param {number} x @param {number} z @param {number} rot */
@@ -1811,7 +1946,7 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
         const avoid = F_WALL | F_GATE | F_STAIR | (overRoads ? 0 : F_ROAD);
         for (let z = r.z0 - 1; z <= r.z1 + 1; z += 1) {
             for (let x = r.x0 - 1; x <= r.x1 + 1; x += 1) {
-                if (!G.isLand(x, z)) return { ok: false, reason: "water, lava or unloaded ground under the site" };
+                if (!G.isBuildable(x, z)) return { ok: false, reason: "lava, unloaded or unbuildable ground under the site" };
                 if (!mineAt(x, z)) return { ok: false, reason: "outside the district" };
                 if (isReserved(x, z, avoid)) return { ok: false, reason: "wall, gate, stair or road in the way" };
                 if (isReserved(x, z, F_LOT | F_APPR)) return { ok: false, reason: "occupied by another lot" };
@@ -1828,7 +1963,7 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
         let z = geo.exit.z + dz;
         for (let k = 0; k <= maxLane + 2; k += 1) {
             const i = G.idx(x, z);
-            if (i < 0 || !G.isLand(x, z) || !mineAt(x, z)) return { ok: false, reason: "no door lane to a street" };
+            if (i < 0 || !G.isBuildable(x, z) || !mineAt(x, z)) return { ok: false, reason: "no door lane to a street" };
             if (surfY[i] !== NOT_SURF) {
                 return { ok: true, lane: { frontage: [x, z], approach, fy: /** @type {number} */ (surfY[i]) } };
             }
@@ -1849,22 +1984,78 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
         const r = geo.rect;
         let lo = -Infinity;
         let hi = Infinity;
+        /** Water surface under the lot (adaptive sites may build a deck over it). */
+        let waterTop = -Infinity;
+        let high = -Infinity;
+        let low = Infinity;
+        let wet = false;
         yield* pace(ops, (geo.w * geo.d) * 5 + 40);
         for (let z = r.z0; z <= r.z1; z += 1) {
             for (let x = r.x0; x <= r.x1; x += 1) {
                 const g = ground(x, z);
                 if (g === undefined) return { ok: false, reason: "unloaded ground" };
+                const sample = sampler(x, z);
+                if (sample.water !== undefined) {
+                    wet = true;
+                    waterTop = Math.max(waterTop, sample.water);
+                }
+                high = Math.max(high, g);
+                low = Math.min(low, g);
                 lo = Math.max(lo, g - limit);
                 hi = Math.min(hi, g + limit);
             }
         }
-        if (lo > hi) return { ok: false, reason: `terrain is too uneven for the pad at cut/fill ${String(limit)}` };
         yield* pace(ops, (geo.w + 2) * (geo.d + 2) * 10);
         const profile = makeRectProfile(r.x0 - 1, r.z0 - 1, r.x1 + 1, r.z1 + 1, sampler);
-        /** @param {number | undefined} forced */
-        const attempt = (forced) => planPadSteps(profile, r, { maxCut: limit, maxFill: limit, maxWall: limit, ...(forced === undefined ? {} : { baseY: forced }) }, ops);
         const m = lane.approach.length + 1;
         const reachable = (/** @type {number} */ baseY) => Math.abs(baseY - lane.fy) <= m;
+
+        // Adaptive site: ADAPT the lot to the ground instead of levelling it. A deck at the level nearest
+        // the street is carried by pillars down to the ground (or the sea bed) wherever the terrain falls
+        // away; only the uphill side is cut, and only as deep as a house shelf. Water is never filled.
+        if (adaptive && (wet || high - low > LOT_RELIEF_TRIGGER)) {
+            let reason = "";
+            // nearest-to-street first, then alternate above/below it, within the approach's reach
+            /** @type {number[]} */
+            const levels = [];
+            const floor = Math.max(waterTop, high - DECK_MAX_CUT);
+            const ceiling = Math.max(high, Math.round(lane.fy));
+            for (let d = 0; d <= m && levels.length < 2 * m + 1; d += 1) {
+                const up = Math.round(lane.fy) + d;
+                const down = Math.round(lane.fy) - d;
+                if (d === 0) levels.push(Math.round(lane.fy));
+                else {
+                    if (up >= floor && up <= ceiling) levels.push(up);
+                    if (down >= floor && down <= ceiling) levels.push(down);
+                }
+            }
+            for (const baseY of levels) {
+                if (!reachable(baseY)) continue;
+                const deck = yield* planDeckSteps(profile, r, { baseY, maxCut: DECK_MAX_CUT, pillarEvery: DECK_PILLAR_EVERY, maxDepth: DECK_MAX_DEPTH }, ops);
+                if (deck.ok !== true) {
+                    if (reason === "") reason = deck.problems[0] ?? "no deck";
+                    continue;
+                }
+                // the walkway to the street follows the water surface over water (a pier, not a fill)
+                const pathGround = lane.approach.map(([x, z]) => {
+                    const sample = sampler(x, z);
+                    return sample.water !== undefined ? sample.water : (ground(x, z) ?? 0);
+                });
+                const ys = pathGround.length === 0 ? [] : pinnedProfile(pathGround, deck.baseY, lane.fy);
+                if (ys === null) {
+                    if (reason === "") reason = "no walkway from the deck to the street";
+                    continue;
+                }
+                return { ok: true, pad: deck, profile, baseY: deck.baseY, ys };
+            }
+            return { ok: false, reason: reason === "" ? `no deck level within ${String(m)} blocks of the street (ground y=${String(low)}..${String(high)})` : reason };
+        }
+
+        lo = Math.max(lo, waterTop);
+        if (lo > hi) return { ok: false, reason: `terrain is too uneven for the pad at cut/fill ${String(limit)}` };
+        yield* pace(ops, (geo.w + 2) * (geo.d + 2) * 10);
+        /** @param {number | undefined} forced */
+        const attempt = (forced) => planPadSteps(profile, r, { maxCut: limit, maxFill: limit, maxWall: limit, ...(forced === undefined ? {} : { baseY: forced }) }, ops);
         let pad = yield* attempt(undefined);
         if (pad.ok === true && !reachable(pad.baseY)) {
             // pull the pad toward street level, within what the terrain allows
@@ -1873,10 +2064,15 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
         }
         if (pad.ok !== true) return { ok: false, reason: pad.problems[0] ?? "no pad" };
         if (!reachable(pad.baseY)) return { ok: false, reason: `the door sits ${String(Math.abs(pad.baseY - lane.fy))} blocks from the street level over ${String(m)} cells` };
-        // approach profile pinned between the door floor and the street
+        // approach profile pinned between the door floor and the street (over water: the surface, so the
+        // walkway is a pier at water level instead of a trench down to the bed)
         const path = lane.approach;
         yield* pace(ops, path.length * 20 + 40);
-        const ys = path.length === 0 ? [] : pinnedProfile(path.map(([x, z]) => ground(x, z) ?? 0), pad.baseY, lane.fy);
+        const pathGround = path.map(([x, z]) => {
+            const sample = sampler(x, z);
+            return sample.water !== undefined ? sample.water : (ground(x, z) ?? 0);
+        });
+        const ys = path.length === 0 ? [] : pinnedProfile(pathGround, pad.baseY, lane.fy);
         if (ys === null) return { ok: false, reason: "no ramp from the door to the street" };
         return { ok: true, pad, profile, baseY: pad.baseY, ys };
     }
@@ -1927,6 +2123,8 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
             retain: pad.counts.retain,
             padStairs: pad.counts.stair,
             padTier: tierIndex,
+            // deck foundations only (absent on a levelled pad, so land records keep their metadata)
+            ...(pad.counts.pillar === undefined ? {} : { padDeck: pad.counts.deck, padPillars: pad.counts.pillar, padRail: pad.counts.rail }),
         }, RANK.pad, { rawSteps: padDual.rawSteps });
 
         const buildingDual = dual((o) => buildingOpsSteps(lot, bp, c.rot, c.x, c.z, baseY, geo, o));
@@ -1977,7 +2175,20 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
     if (!conflicts(hqRect, "HQ plaza")) {
         yield* pace(ops, 4000);
         const hqProfile = makeRectProfile(hqRect.x0 - 1, hqRect.z0 - 1, hqRect.x1 + 1, hqRect.z1 + 1, sampler);
-        const hqPad = yield* planPadSteps(hqProfile, hqRect, { maxCut: 6, maxFill: 6, maxWall: 6 }, ops);
+        // On an adaptive site the plaza is a deck on pillars too: its level is the highest ground it
+        // touches (water surface included), so nothing around it is filled or drained.
+        let hqFloor = -Infinity;
+        let hqWater = -Infinity;
+        for (let z = hqRect.z0; z <= hqRect.z1; z += 1) {
+            for (let x = hqRect.x0; x <= hqRect.x1; x += 1) {
+                const sample = sampler(x, z);
+                hqFloor = Math.max(hqFloor, sample.g);
+                if (sample.water !== undefined) hqWater = Math.max(hqWater, sample.water);
+            }
+        }
+        const hqPad = adaptive
+            ? yield* planDeckSteps(hqProfile, hqRect, { baseY: Math.max(hqFloor, hqWater), maxCut: DECK_MAX_CUT, pillarEvery: DECK_PILLAR_EVERY, maxDepth: DECK_MAX_DEPTH }, ops)
+            : yield* planPadSteps(hqProfile, hqRect, { maxCut: 6, maxFill: 6, maxWall: 6 }, ops);
         if (hqPad.ok === true) {
             yield* addElement("dressing", "hq-plaza", "hq-plaza", hqRect, () => hqPad.ops.map((op) => (op.kind === "top" ? { ...op, kind: "pad" } : op)), { at: zoneRegion.hq, baseY: hqPad.baseY }, RANK.dress);
         } else {
@@ -2295,6 +2506,23 @@ export function* planPadSteps(profile, rect, limits, ops) {
     return { ok: true, baseY, ops: padOps, counts: { cut: cuts.length, fill: fills.length, top: tops.length, retain: retains.length, stair: stairs.length }, problems: [], touched };
 }
 
+/**
+ * The deck-on-pillars counterpart of `planPadSteps` (it IS `planDeck`, charged to the operation meter
+ * before and after; the work per call is bounded by the lot footprint and the pillar depth).
+ *
+ * @param {import("./foundations.js").Profile} profile @param {{ x0: number, z0: number, x1: number, z1: number }} rect
+ * @param {{ baseY?: number, maxCut?: number, pillarEvery?: number, maxDepth?: number }} limits
+ * @param {Ops} ops
+ * @returns {Generator<void, ReturnType<typeof planDeck>, void>}
+ */
+export function* planDeckSteps(profile, rect, limits, ops) {
+    const cells = (rect.x1 - rect.x0 + 3) * (rect.z1 - rect.z0 + 3);
+    yield* pace(ops, Math.min(23000, cells * 16 + 400));
+    const made = planDeck(profile, rect, limits);
+    yield* pace(ops, Math.min(23000, made.counts.pillar * 2 + made.counts.deck + made.counts.rail));
+    return made;
+}
+
 // ---------------------------------------------------------------------------------------------
 // op generators shared by the planner
 
@@ -2316,6 +2544,13 @@ function surfaceOps(cells, ys, G, startY = undefined, startDir = undefined) {
         const prevY = i > 0 ? /** @type {number} */ (ys[i - 1]) : (startY ?? y);
         const nextY = i + 1 < cells.length ? /** @type {number} */ (ys[i + 1]) : y;
         const travel = prev === null && startDir !== undefined ? startDir : prev === null ? (i + 1 < cells.length ? dirName(/** @type {[number, number]} */ (cells[i + 1])[0] - x, /** @type {[number, number]} */ (cells[i + 1])[1] - z) : "east") : dirName(x - prev[0], z - prev[1]);
+        if (G.isWater(x, z)) {
+            // A walkway over water is a pier: a deck on a pillar down to the bed, never a fill.
+            for (let py = g + 1; py < y; py += 1) out.push({ x, y: py, z, id: py === y - 1 ? IDS.footTop : IDS.footDeep, kind: "pillar" });
+            if (y !== prevY) out.push({ x, y, z, id: IDS.stair, kind: "stair", dir: y > prevY ? travel : opposite(travel) });
+            else out.push({ x, y, z, id: IDS.deck, kind: "deck" });
+            continue;
+        }
         for (let cy = g; cy > y; cy -= 1) out.push({ x, y: cy, z, id: IDS.air, kind: "cut" });
         for (let fy = g + 1; fy < y; fy += 1) out.push({ x, y: fy, z, id: IDS.dirt, kind: "fill" });
         if (y !== prevY) out.push({ x, y, z, id: IDS.stair, kind: "stair", dir: y > prevY ? travel : opposite(travel) });

@@ -198,8 +198,8 @@ export function confirmBody(kind, name, radius) {
         ].join("\n\n");
     }
     return [
-        `The nearest suitable ground within ${String(radius)} blocks is surveyed, then ${name} is raised there - about 76,000 blocks.`,
-        "Natural-looking terrain (dirt, stone, sand, gravel, clay, snow, moss) will be replaced. Planks, bricks, glass, chests, ores and farmland are protected.",
+        `The nearest ground within ${String(radius)} blocks is surveyed - any terrain: flat land, hills, mountains or open sea. ${name} adapts to it: houses on hills stand on decks carried by pillars, stairs climb the slope, and sea lots and streets are piers on piles down to the sea bed. Nothing is flattened and the sea is not drained - about 76,000 blocks on flat ground, more on rough or flooded land.`,
+        "Natural-looking terrain (dirt, stone, sand, gravel, clay, snow, moss) and still water will be replaced. Planks, bricks, glass, chests, ores and farmland are protected.",
         "Use a dedicated test world. The build runs over several minutes and is saved as it goes.",
     ].join("\n\n");
 }

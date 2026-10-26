@@ -7,6 +7,7 @@ import {
     classifyTrees,
     isBenign,
     isLeaves,
+    isLiquid,
     isNaturalGround,
     isTreePart,
     planTerrain,
@@ -25,7 +26,7 @@ import {
 /**
  * @typedef {import("@minecraft/server").Dimension} Dimension
  * @typedef {{ kind: string, jobId: number | undefined, cancelled: boolean }} Job
- * @typedef {{ ground?: number, topId?: string, belowId?: string, above: { y: number, id: string }[], problem?: string }} ColumnInfo
+ * @typedef {{ ground?: number, topId?: string, belowId?: string, above: { y: number, id: string }[], problem?: string, surface?: number, bed?: number }} ColumnInfo
  */
 
 /** Deepest column walk before giving up (trees, mountains). */
@@ -61,9 +62,10 @@ function readCell(dimension, x, y, z) {
  * @param {Dimension} dimension
  * @param {number} x
  * @param {number} z
+ * @param {{ bed?: boolean }} [options] `bed`: keep walking under still water down to the sea bed
  * @returns {ColumnInfo | undefined} undefined if the column is not loaded
  */
-export function readColumn(dimension, x, z) {
+export function readColumn(dimension, x, z, options = {}) {
     let top;
     try {
         top = dimension.getTopmostBlock({ x, z });
@@ -76,19 +78,33 @@ export function readColumn(dimension, x, z) {
     const startY = top.location.y;
     /** @type {{ y: number, id: string }[]} */
     const cells = [];
+    /** @type {number | undefined} */
+    let surface;
     for (let y = startY; cells.length < MAX_WALK; y -= 1) {
         const cell = readCell(dimension, x, y, z);
         if (cell === undefined) {
             return undefined;
         }
         cells.push({ y, id: cell.id });
+        if (surface === undefined && options.bed === true && isLiquid(cell.id) && !cell.id.includes("lava")) {
+            surface = y;
+            continue; // still water: walk on to the bed so a pier has something to stand on
+        }
         const previous = cells.length >= 2 ? /** @type {{ id: string }} */ (cells[cells.length - 2]) : undefined;
         if (previous !== undefined && isNaturalGround(previous.id)) {
             break; // this cell is the block beneath the ground: enough to judge it
         }
-        if (!isBenign(cell.id)) {
+        if (!isBenign(cell.id) && !(surface !== undefined && isLiquid(cell.id))) {
             break; // an unknown or player-made block: classifyColumn will report it
         }
+    }
+    if (surface !== undefined) {
+        /** @type {number | undefined} */
+        let bed;
+        for (const cell of cells) {
+            if (cell.y < surface && isNaturalGround(cell.id)) bed = cell.y;
+        }
+        return { above: [], surface, ...(bed === undefined ? {} : { bed }), problem: `water at y=${String(surface)}` };
     }
     return classifyColumn(cells);
 }

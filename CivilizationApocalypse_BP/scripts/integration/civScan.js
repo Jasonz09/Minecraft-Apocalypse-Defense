@@ -333,8 +333,10 @@ export function releaseArea(owner = undefined, id = CIV_TICKING_ID) {
 
 /**
  * Convert a terrainScan column into a field cell. Unreadable (unloaded) columns return undefined.
+ * A water column reports its BED as `g` and the water surface as `surface` (when the walk found
+ * it), so pier/deck planning stands on the sea floor instead of on the surface.
  * @param {import("./terrainScan.js").ColumnInfo | undefined} info
- * @returns {{ g: number, k: "land" | "water" | "lava" | "blocked", tree: boolean } | undefined}
+ * @returns {{ g: number, k: "land" | "water" | "lava" | "blocked", tree: boolean, surface?: number } | undefined}
  */
 export function cellFromColumn(info) {
     if (info === undefined) {
@@ -346,7 +348,10 @@ export function cellFromColumn(info) {
     }
     const liquid = /^(water|lava) at y=(-?\d+)/.exec(info.problem ?? "");
     if (liquid !== null) {
-        return { g: Number(liquid[2]), k: liquid[1] === "lava" ? "lava" : "water", tree: false };
+        const y = Number(liquid[2]);
+        if (liquid[1] === "lava") return { g: y, k: "lava", tree: false };
+        const bed = info.bed === undefined ? y - 1 : Number(info.bed);
+        return { g: bed, k: "water", tree: false, surface: info.surface === undefined ? y : Number(info.surface) };
     }
     if (info.ground !== undefined) {
         // hollow ground (cave / void underneath): known, but not buildable
@@ -415,7 +420,7 @@ function* readColumns(token, dimension, points, field, stats, progress = undefin
                 return;
             }
         }
-        const info = readColumn(metered, point.x, point.z);
+        const info = readColumn(metered, point.x, point.z, { bed: true });
         const cell = cellFromColumn(info);
         columns += 1;
         stats.columns += 1;
@@ -531,10 +536,50 @@ async function surveyTile(token, dimension, rect, pointsOf, field, stats, progre
 }
 
 /**
+ * Largest half-extent (blocks, multiple of `step`) of a square centred on the anchor that is COMPLETELY
+ * covered by tiles that have been read. Tiles are world-aligned `tile`-sized rectangles, so this is exact:
+ * every lattice sample inside the square is known, and the answer never assumes a corner that has not loaded.
+ * A stalled tile is not counted (its columns were never read).
+ *
+ * @param {{ x: number, z: number }} anchor @param {Set<string>} known tile keys "tx,tz" that have been read
+ * @param {number} tile @param {number} limit max half-extent (blocks) @param {number} step
+ * @returns {number} half-extent in blocks
+ */
+export function knownHalfFromTiles(anchor, known, tile, limit, step) {
+    const ax = Math.round(anchor.x);
+    const az = Math.round(anchor.z);
+    /** @param {number} h */
+    const covered = (h) => {
+        const tx0 = Math.floor((ax - h) / tile);
+        const tx1 = Math.floor((ax + h) / tile);
+        const tz0 = Math.floor((az - h) / tile);
+        const tz1 = Math.floor((az + h) / tile);
+        for (let tx = tx0; tx <= tx1; tx += 1) {
+            for (let tz = tz0; tz <= tz1; tz += 1) {
+                if (!known.has(`${String(tx)},${String(tz)}`)) return false;
+            }
+        }
+        return true;
+    };
+    let lo = 0;
+    let hi = Math.floor(Math.max(0, limit) / step);
+    while (lo < hi) {
+        const mid = Math.ceil((lo + hi) / 2);
+        if (covered(mid * step)) lo = mid;
+        else hi = mid - 1;
+    }
+    return lo * step;
+}
+
+/** @param {Rect} r @param {number} tile */
+const tileKeyOf = (r, tile) => `${String(Math.floor(r.x0 / tile))},${String(Math.floor(r.z0 / tile))}`;
+
+/**
  * Progressive, nearest-first, read-only coarse survey on a lattice of `step` blocks around `anchor`.
- * The tiles are scanned ring by ring (square half-extents `rings`, the last one being the full radius);
- * after each ring `evaluate(field, ringRadius, isLast)` may declare the survey finished (a site was found whose planning reach
- * is fully scanned), in which case the remaining tiles are not read at all.
+ * The tiles are scanned ring by ring (square half-extents `rings`, the last one being the full radius).
+ * `evaluate(field, ringRadius, isLast, progressInfo)` is called after EVERY tile as well as after each ring,
+ * so a caller can stop the moment its own window is fully known (the `knownHalf` field says how far the
+ * read ground provably extends) and can report a site as soon as it appears instead of after a whole ring.
  *
  * @param {Job} token
  * @param {Dimension} dimension
@@ -542,7 +587,7 @@ async function surveyTile(token, dimension, rect, pointsOf, field, stats, progre
  * @param {number} radius full radius (square half-extent, blocks)
  * @param {number} step lattice spacing
  * @param {{
- *   rings?: number[], evaluate?: (field: GridField, ringRadius: number, last: boolean) => boolean,
+ *   rings?: number[], evaluate?: (field: GridField, ringRadius: number, last: boolean, info: { tilesDone: number, tilesTotal: number, knownHalf: number, atRingEnd: boolean }) => boolean,
  *   onTile?: (done: number, total: number) => void, tile?: number, progress?: Progress
  * }} [options]
  * @returns {Promise<{ field: GridField, stats: ScanStats, cancelled: boolean, scannedRadius: number, tilesTotal: number, early: boolean }>}
@@ -563,8 +608,11 @@ export async function scanProgressive(token, dimension, anchor, radius, step, op
         progress.chunksTotal = tiles.reduce((sum, t) => sum + chunksOfRect(t.rect), 0);
     }
     const done = new Set();
+    /** Tile keys whose whole rectangle has been read (stalled tiles are removed again). */
+    const known = new Set();
     let scannedRadius = 0;
     let early = false;
+    let stopped = false;
     /** Lattice points a rect owns, and how many there are (a skipped tile's unread ground). */
     const pointsIn = (/** @type {Rect} */ r) => scanPlan.points.filter((p) => p.x >= r.x0 && p.x <= r.x1 && p.z >= r.z0 && p.z <= r.z1);
     /** @param {Iterable<{ x: number, z: number }>} points @returns {number} */
@@ -589,6 +637,7 @@ export async function scanProgressive(token, dimension, anchor, radius, step, op
                     continue;
                 }
                 done.add(index);
+                known.add(tileKeyOf(r, tileSize));
                 const outcome = await surveyTile(token, dimension, r, (sub) => tile.points.filter((p) => p.x >= sub.x0 && p.x <= sub.x1 && p.z >= sub.z0 && p.z <= sub.z1), field, stats, progress);
                 if (outcome === "cancelled") {
                     return { field, stats, cancelled: true, scannedRadius, tilesTotal: tiles.length, early };
@@ -596,12 +645,23 @@ export async function scanProgressive(token, dimension, anchor, radius, step, op
                 if (outcome === "aborted") {
                     return { field, stats, cancelled: false, scannedRadius, tilesTotal: tiles.length, early };
                 }
+                // A stalled tile is NOT known: its columns were never read, so it must not enlarge `knownHalf`.
+                if (outcome !== "ok") known.delete(tileKeyOf(r, tileSize));
                 if (progress !== undefined) progress.tilesDone = done.size;
                 options.onTile?.(done.size, tiles.length);
+                if (options.evaluate !== undefined) {
+                    const knownHalf = knownHalfFromTiles(anchor, known, tileSize, radius, step);
+                    if (options.evaluate(field, ring, false, { tilesDone: done.size, tilesTotal: tiles.length, knownHalf, atRingEnd: false }) === true) {
+                        early = true;
+                        stopped = true;
+                        break;
+                    }
+                }
             }
+            if (stopped) break;
             scannedRadius = ring;
             stats.ringsDone = k + 1;
-            if (options.evaluate?.(field, ring, last) === true) {
+            if (options.evaluate?.(field, ring, last, { tilesDone: done.size, tilesTotal: tiles.length, knownHalf: knownHalfFromTiles(anchor, known, tileSize, radius, step), atRingEnd: true }) === true) {
                 early = !last;
                 break;
             }
@@ -659,7 +719,7 @@ export async function scanCoarse(token, dimension, anchor, radius, step, options
  */
 export async function scanFull(token, dimension, rect, options = {}) {
     const progress = options.progress;
-    const field = makeGridField({ x0: rect.x0, z0: rect.z0, w: rect.x1 - rect.x0 + 1, h: rect.z1 - rect.z0 + 1, step: 1 });
+    const field = makeGridField({ x0: rect.x0, z0: rect.z0, w: rect.x1 - rect.x0 + 1, h: rect.z1 - rect.z0 + 1, step: 1, water: true });
     const stats = newScanStats();
     const tile = options.tile ?? tileSizeNow();
     /** @type {Rect[]} */
