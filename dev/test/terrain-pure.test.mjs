@@ -14,7 +14,22 @@ const limits = { maxCut: 4, maxFill: 4 };
 
 test("every id in the terrain lists is a real block, so a typo cannot silently disable a rule", () => {
     const known = new Set(Object.values(vanilla.MinecraftBlockTypes));
-    for (const id of [...T.NATURAL_GROUND, ...T.PLANTS]) assert.ok(known.has(id), `${id} is not a block in this game version`);
+    for (const id of [...T.NATURAL_GROUND, ...T.PLANTS, ...T.TREE_COMPANIONS]) assert.ok(known.has(id), `${id} is not a block in this game version`);
+});
+
+test("what grows on a tree no longer vetoes the tree, and is still never removed by a clear", () => {
+    // Live refusal that left jungle trees standing inside finished lots:
+    // "tree not cleared: minecraft:melon_block touches a tree - may be a player build".
+    for (const id of T.TREE_COMPANIONS) {
+        assert.equal(T.isBenign(id), true, `${id} must not veto a natural tree`);
+        assert.equal(T.isPlant(id), false, `${id} is benign for the judgement only`);
+        assert.equal(T.isTreePart(id), false, `${id} is not cleared away as a tree part`);
+        assert.equal(T.classifyTerrainCell({ kind: "clear", existingId: id, targetId: "minecraft:air" }).ok, false, `${id} is never cleared`);
+    }
+    // the rule the companions must not swallow: a real player block still vetoes
+    assert.equal(T.isBenign("minecraft:oak_planks"), false);
+    assert.equal(T.isBenign("minecraft:chest"), false);
+    assert.equal(T.isBenign("minecraft:stone_bricks"), false);
 });
 
 test("column reading finds the real ground under grass, flowers and trees, never the player's height", () => {

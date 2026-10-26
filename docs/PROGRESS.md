@@ -422,11 +422,21 @@ template spec ok.
 
 Touring the first built district showed three things a screenshot and the offline suite had missed:
 
-- **Trees.** A giant-taiga spruce standing in a lot lost only its first 8 blocks: the clearer's reach was a
-  cube of 8 around the struck cell, so the trunk and crown above y+8 stayed - through the roofs. The reach is
-  now horizontal 8 / vertical 40 (a giant spruce stands ~30) and the component cap is 600 -> 4000 (one spruce
-  is ~800 cells, so a merged crown no longer refuses the whole tree). Regression test: a 26-block tree planted
-  at a lot's own clear column is gone to its top and crown after the build; it fails with the old vertical 8.
+- **Trees.** Two separate causes, the second one only visible in game.
+  1. The clearer's reach was a cube of 8 blocks around the struck cell, so a giant-taiga spruce lost only its
+     lower trunk and the crown above y+8 stayed - through the roofs. The reach is now horizontal 8 / vertical 40
+     (a giant spruce stands ~30) and the component cap is 600 -> 4000 (one spruce is ~800 cells, so a merged
+     crown no longer refuses the whole tree).
+  2. The district-2 run printed the refusals that actually left trees standing: `tree not cleared:
+     minecraft:melon_block touches a tree - may be a player build` and the same for `minecraft:cocoa`. Melons
+     grow on the jungle floor and cocoa grows *on* jungle trunks, so every such tree was judged a player build
+     and kept. `structures/terrain.js` gained `TREE_COMPANIONS` (melon, cocoa, bee nest, sea pickle, azalea,
+     flowering azalea, hanging roots) and the builder's inline neighbour test now calls the shared `isBenign`
+     instead of duplicating it. A companion is benign for the *judgement* only: it is not a plant and not a
+     tree part, so no clear op removes it.
+  Regression tests: a 26-block tree with a melon at its base and cocoa on its trunk is gone to its top and crown
+  after the build (it fails with the old vertical 8, and fails with the shared `isBenign` restored); a
+  `diamond_block` beside a tree still leaves the whole tree standing and the block untouched.
 - **Lots over water** stood on a deck *at* the water surface: every pillar was under water, so the house read
   as floating. The street's own level was also exempt from the new water floor, so the one-above level was
   never tried. Over-water lots now stand one block above the surface (the street level has to clear the water

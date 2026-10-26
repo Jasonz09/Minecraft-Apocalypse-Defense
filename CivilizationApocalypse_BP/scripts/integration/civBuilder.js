@@ -11,7 +11,7 @@ import { PLAN_PREFIX, PLAN_VERSION, createPlanStore, utf8Length } from "../civ/p
 import { clipField, exportSiteGroundSteps, siteGroundBytes, siteGroundRegion } from "../civ/siteprofile.js";
 import { SITE_DEFAULTS, TERRAIN_POLICY_DEFAULT, overlapsExclusion, rankSites, scanRadiusFor, siteTerrainPolicy } from "../civ/siteselect.js";
 import { validatePlanSteps } from "../civ/validatesteps.js";
-import { classifyTerrainCell, isLeaves, isLog, isNaturalGround, isPlant, isTreePart } from "../structures/terrain.js";
+import { classifyTerrainCell, isBenign, isLeaves, isLog, isNaturalGround, isPlant, isTreePart } from "../structures/terrain.js";
 import { activeToken, cancelActiveJob, finishJob } from "./districtBuilder.js";
 import { CIV_TICKING_ID, countTiles, holdArea, nextTick, releaseArea, runJobAsync, scanFull, scanProgressive, tileSizeNow } from "./civScan.js";
 import { finishProgress, getProgress, heartbeat, nowTick, resetProgressForTests, setPhase, touch } from "./civProgress.js";
@@ -1614,7 +1614,7 @@ function* clearTree(s, seed) {
                         reason = "a chunk next to the tree is not loaded";
                         break;
                     }
-                    const benign = plannedAt(s, nx, ny, nz).nonAir.includes(neighbour.id) || isAir(neighbour.id) || isPlant(neighbour.id) || isTreePart(neighbour.id) || isNaturalGround(neighbour.id) || isWater(neighbour.id) || neighbour.id === "minecraft:lava" || neighbour.id === "minecraft:flowing_lava";
+                    const benign = isBenign(neighbour.id) || plannedAt(s, nx, ny, nz).nonAir.includes(neighbour.id);
                     if (!benign) {
                         reason = `${neighbour.id} touches a tree - may be a player build`;
                         break;

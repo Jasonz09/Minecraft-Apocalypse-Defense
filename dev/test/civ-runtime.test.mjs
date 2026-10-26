@@ -605,6 +605,9 @@ test("a tall tree standing in a cleared lot is removed to its top, not only the 
             }
         }
     }
+    // the live refusal: a jungle tree's own melon and cocoa vetoed the whole tree, so it stayed in the lot
+    mc.placed.set(key(spot.x + 1, spot.g + 1, spot.z), "minecraft:melon_block");
+    mc.placed.set(key(spot.x, spot.g + 3, spot.z + 1), "minecraft:cocoa");
     const player = makePlayer();
     send(CIV_EVENT_IDS.resume, "", player);
     await pump();
@@ -614,6 +617,33 @@ test("a tall tree standing in a cleared lot is removed to its top, not only the 
     for (const [dx, dz] of [[2, 0], [-2, 0], [0, 2], [0, -2]]) {
         assert.equal(mc.placed.get(key(spot.x + dx, spot.g + 20, spot.z + dz)), "minecraft:air", `the crown at +${String(dx)},+${String(dz)} is gone`);
     }
+    assert.equal(typeAt(spot.x + 1, spot.g + 1, spot.z), "minecraft:melon_block", "a benign neighbour is judged, never removed");
+});
+
+test("a player block touching a natural tree still vetoes the clear", MIN_TIMEOUT, async () => {
+    // The companion list must not have opened the gate: a foreign block beside a tree leaves it standing.
+    const planned = await plannedOnly();
+    restoreProps(planned.props);
+    const { record } = rehydrateStored();
+    let spot;
+    for (let i = 0; i < record.clear.length && spot === undefined; i += 1) {
+        for (const op of siteplan.siteOpsFor(record, "clear", i)) {
+            const cell = groundCell(op.x, op.z);
+            if (cell?.tree === true) {
+                spot = { x: op.x, z: op.z, g: cell.g };
+                break;
+            }
+        }
+    }
+    assert.ok(spot !== undefined, "the plan clears at least one tree column");
+    mc.placed.set(key(spot.x + 1, spot.g + 1, spot.z), "minecraft:diamond_block");
+    const player = makePlayer();
+    send(CIV_EVENT_IDS.resume, "", player);
+    await pump();
+    assert.match(text(player), /is built/, text(player).slice(-1200));
+    assert.match(text(player), /tree not cleared: minecraft:diamond_block touches a tree/);
+    assert.equal(typeAt(spot.x, spot.g + 2, spot.z), "minecraft:oak_log", "the tree beside a player block is left standing");
+    assert.equal(typeAt(spot.x + 1, spot.g + 1, spot.z), "minecraft:diamond_block", "the player block is untouched");
 });
 
 // ---------------------------------------------------------------------------- pause / abort / resume / restart

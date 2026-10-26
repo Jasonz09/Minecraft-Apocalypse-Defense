@@ -72,6 +72,22 @@ export const PLANTS = [
     "minecraft:sweet_berry_bush",
 ];
 
+/**
+ * World generation that grows ON or immediately BESIDE a tree. Judging one of these as a player build refused
+ * whole jungle trees (a melon on the floor, cocoa on the trunk), which left them standing inside the finished
+ * lots. They are benign for the *judgement* only: a clear op still removes nothing but plants and tree parts,
+ * so a player's farm block is never taken by this list.
+ */
+export const TREE_COMPANIONS = [
+    "minecraft:melon_block",
+    "minecraft:cocoa",
+    "minecraft:bee_nest",
+    "minecraft:sea_pickle",
+    "minecraft:azalea",
+    "minecraft:flowering_azalea",
+    "minecraft:hanging_roots",
+];
+
 const LOG = /^minecraft:(?:oak|birch|spruce|jungle|acacia|dark_oak|mangrove|cherry|pale_oak|poplar)_log$/;
 const LEAVES = /^minecraft:[a-z_]+_leaves(?:_flowered)?$/;
 const LIQUID = ["minecraft:water", "minecraft:flowing_water", "minecraft:lava", "minecraft:flowing_lava"];
@@ -90,7 +106,7 @@ export const isTreePart = (id) => isLog(id) || isLeaves(id) || id === "minecraft
 export const isLiquid = (id) => LIQUID.includes(id);
 /** Blocks that may legitimately sit next to a tree without hinting at a player build. */
 /** @param {string} id */
-export const isBenign = (id) => id === "minecraft:air" || isPlant(id) || isTreePart(id) || isNaturalGround(id) || isLiquid(id);
+export const isBenign = (id) => id === "minecraft:air" || isPlant(id) || isTreePart(id) || isNaturalGround(id) || isLiquid(id) || TREE_COMPANIONS.includes(id);
 
 /**
  * Read one world column, given as cells from the top down to (and including) the block under
