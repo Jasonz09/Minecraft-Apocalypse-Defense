@@ -882,6 +882,19 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
         });
 
     // ---------------------------------------------------------------- 1. walls
+    // A wall crossing water is planned from the water SURFACE, not the sea bed: planned from the bed a deep
+    // bay put the whole wall under water, which read as the wall being broken off at the shoreline. The
+    // column's footing still reaches the bed (`baseFor`), so it stands on the sea floor.
+    /** @param {number} x @param {number} z */
+    const wallGround = (x, z) => {
+        const sample = sampler(x, z);
+        return sample.water !== undefined ? sample.water : ground(x, z);
+    };
+    /** @param {number} x @param {number} z */
+    const wallBase = (x, z) => {
+        const sample = sampler(x, z);
+        return sample.water !== undefined ? sample.g + 1 : undefined;
+    };
     /** @type {Map<string, any>} */
     const wallBuilt = new Map();
     for (const wall of districtWalls) {
@@ -893,10 +906,12 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
         }
         yield* pace(ops, Math.min(23000, approxCells * 60 + 2000));
         try {
-            built = planWall(wall.path, ground, {
+            built = planWall(wall.path, wallGround, {
                 closed: wall.closed === true,
                 height: wallHeight,
                 gates: gatesOnWall.map((gate) => ({ at: gate.at, axis: gate.axis })),
+                baseFor: wallBase,
+                maxFoundation: DECK_MAX_DEPTH,
             });
         } catch (error) {
             problems.push(`wall ${String(wall.id)} cannot be planned against this terrain: ${String(error)}`);
@@ -2018,13 +2033,18 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
             // nearest-to-street first, then alternate above/below it, within the approach's reach
             /** @type {number[]} */
             const levels = [];
-            const floor = Math.max(waterTop, high - DECK_MAX_CUT);
-            const ceiling = Math.max(high, Math.round(lane.fy));
+            // Over water the deck stands one block above the surface: its pillars break the surface and the
+            // platform reads as a pier extension instead of a building floating on the sea.
+            const waterFloor = wet ? waterTop + 1 : waterTop;
+            const floor = Math.max(waterFloor, high - DECK_MAX_CUT);
+            const ceiling = Math.max(high, Math.round(lane.fy), waterFloor);
             for (let d = 0; d <= m && levels.length < 2 * m + 1; d += 1) {
                 const up = Math.round(lane.fy) + d;
                 const down = Math.round(lane.fy) - d;
-                if (d === 0) levels.push(Math.round(lane.fy));
-                else {
+                if (d === 0) {
+                    // the street's own level still has to clear the water floor
+                    if (up >= floor && up <= ceiling) levels.push(up);
+                } else {
                     if (up >= floor && up <= ceiling) levels.push(up);
                     if (down >= floor && down <= ceiling) levels.push(down);
                 }
@@ -2186,8 +2206,9 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
                 if (sample.water !== undefined) hqWater = Math.max(hqWater, sample.water);
             }
         }
+        const hqBaseY = Math.max(hqFloor, hqWater > 0 ? hqWater + 1 : hqWater);
         const hqPad = adaptive
-            ? yield* planDeckSteps(hqProfile, hqRect, { baseY: Math.max(hqFloor, hqWater), maxCut: DECK_MAX_CUT, pillarEvery: DECK_PILLAR_EVERY, maxDepth: DECK_MAX_DEPTH }, ops)
+            ? yield* planDeckSteps(hqProfile, hqRect, { baseY: hqBaseY, maxCut: DECK_MAX_CUT, pillarEvery: DECK_PILLAR_EVERY, maxDepth: DECK_MAX_DEPTH }, ops)
             : yield* planPadSteps(hqProfile, hqRect, { maxCut: 6, maxFill: 6, maxWall: 6 }, ops);
         if (hqPad.ok === true) {
             yield* addElement("dressing", "hq-plaza", "hq-plaza", hqRect, () => hqPad.ops.map((op) => (op.kind === "top" ? { ...op, kind: "pad" } : op)), { at: zoneRegion.hq, baseY: hqPad.baseY }, RANK.dress);

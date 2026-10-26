@@ -145,10 +145,12 @@ function jobStoreFor(index, options = {}) {
     return jobs.createJobStore(world, { prefix: jobPrefixFor(index), ...options });
 }
 
-/** Largest tree-like component the clearer will examine (forests merge canopies; player-made stacks are caught by their own rules). */
-const CIV_TREE_CAP = 600;
-/** Chebyshev radius around the blocked cell within which a tree is examined and cleared (forests merge canopies; the remainder decays by itself). */
-const CIV_TREE_RADIUS = 8;
+/** Largest tree-like component the clearer will examine (a giant 2x2 spruce is ~800 cells; a few merged crowns fit). */
+const CIV_TREE_CAP = 4000;
+/** Horizontal Chebyshev reach around the blocked cell: covers a giant spruce's crown (radius <= 8). */
+const CIV_TREE_REACH_H = 8;
+/** Vertical reach above/below the seed: a giant spruce stands ~30 blocks tall, so the old 8 left its crown behind. */
+const CIV_TREE_REACH_V = 40;
 
 /**
  * Kinds that may stand in / replace still water. A pier site genuinely builds over the sea: decks stand
@@ -1617,7 +1619,7 @@ function* clearTree(s, seed) {
                         reason = `${neighbour.id} touches a tree - may be a player build`;
                         break;
                     }
-                    if (isTreePart(neighbour.id) && !visited.has(key(nx, ny, nz)) && Math.abs(nx - seed.x) <= CIV_TREE_RADIUS && Math.abs(ny - seed.y) <= CIV_TREE_RADIUS && Math.abs(nz - seed.z) <= CIV_TREE_RADIUS) {
+                    if (isTreePart(neighbour.id) && !visited.has(key(nx, ny, nz)) && Math.abs(nx - seed.x) <= CIV_TREE_REACH_H && Math.abs(ny - seed.y) <= CIV_TREE_REACH_V && Math.abs(nz - seed.z) <= CIV_TREE_REACH_H) {
                         visited.add(key(nx, ny, nz));
                         queue.push({ x: nx, y: ny, z: nz });
                     }

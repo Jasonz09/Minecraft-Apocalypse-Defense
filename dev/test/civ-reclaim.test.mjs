@@ -13,6 +13,7 @@ const loadDev = (...parts) => import(pathToFileURL(join(projectRoot, "dev", ...p
 
 const SITE = await load("civ", "siteselect.js");
 const F = await load("civ", "foundations.js");
+const W = await load("civ", "walls.js");
 const M = await load("civ", "masterplan.js");
 const D = await load("civ", "districtplan.js");
 const R = await load("civ", "regions.js");
@@ -188,7 +189,35 @@ test("a cliff is passable only under the higher relief policy", () => {
     assert.ok(count(wet) > 0);
 });
 
-// ------------------------------------------------------------------------------ district on the sea
+// ------------------------------------------------------------------------------ walls across water
+
+test("a wall crossing a wide bay is planned from the water surface, with a footing down to the bed", () => {
+    // The regression: planned from the sea bed, a wide bay sinks the middle of the wall below the surface
+    // (the top is bed + height), so the wall reads as broken off where it meets the water.
+    const BED = 50;
+    const SURFACE = 62;
+    const HEIGHT = 7;
+    const bay = (x) => x >= 15 && x <= 45;
+    const path = [];
+    for (let x = 0; x <= 60; x += 1) path.push([x, 0]);
+    const old = W.planWall(path, (x) => (bay(x) ? BED : 70), { height: HEIGHT });
+    const oldMiddle = old.columns.filter((column) => column.kind === "wall" && bay(column.x) && column.x >= 30 && column.x <= 32 && column.z === 0);
+    assert.ok(oldMiddle.length > 0);
+    assert.ok(Math.min(...oldMiddle.map((column) => column.top)) <= SURFACE, "control: from the bed the wall's middle is at or under the waterline");
+
+    const plan = W.planWall(path, (x) => (bay(x) ? SURFACE : 70), { height: HEIGHT, baseFor: (x) => (bay(x) ? BED + 1 : undefined), maxFoundation: 64 });
+    const middle = plan.columns.filter((column) => column.kind === "wall" && bay(column.x) && column.x >= 30 && column.x <= 32 && column.z === 0);
+    assert.ok(middle.length > 0);
+    for (const column of middle) {
+        assert.ok(column.top >= SURFACE + HEIGHT - 1, `the wall stands above the bay (top y=${String(column.top)})`);
+        const ys = new Set(plan.columnOps(column).map((op) => op.y));
+        assert.ok(ys.has(BED + 1), `the footing starts at the bed (y=${String(BED + 1)})`);
+        for (let y = BED + 1; y <= column.top; y += 1) assert.ok(ys.has(y), `no gap at y=${String(y)} in (${String(column.x)}, ${String(column.z)})`);
+    }
+    // A bay deeper than the foundation limit is refused, never left floating short of the bed.
+    assert.throws(() => W.planWall(path, (x) => (bay(x) ? SURFACE : 70), { height: HEIGHT, baseFor: (x) => (bay(x) ? BED + 1 : undefined), maxFoundation: 5 }), /needs a 11-block foundation/);
+});
+
 
 test("a district on the open sea stands on piers (deck + pillars) and rehydrates byte-identically", T, () => {
     const policy = { allowWater: true, adaptive: true, maxRelief: 8 };
@@ -222,6 +251,33 @@ test("a district on the open sea stands on piers (deck + pillars) and rehydrates
     assert.ok((kinds.get("bridge") ?? 0) > 0, "streets over water are decks (canonical kind bridge)");
     assert.equal(cappedAtSurface, 0, "nothing is filled at or above the water surface (no capping / draining)");
     assert.ok(deepestSupport <= 40, `a pier reaches the sea bed (lowest support y=${String(deepestSupport)})`);
+    // A deck at the water surface read as a building floating on the sea: decks now stand one above it,
+    // and their pillars break the surface, so the lot reads as a pier platform on visible posts.
+    assert.ok(pads.every((el) => Number(el.baseY) > 62), `every water lot's platform stands above the surface (lowest ${String(Math.min(...pads.map((el) => Number(el.baseY))))})`);
+    let deckAbove = 0;
+    let postsAtSurface = 0;
+    for (let i = 0; i < site.record.lots.length; i += 1) {
+        const el = site.record.lots[i];
+        if (!String(el.kind ?? "").startsWith("pad-")) continue;
+        for (const op of D.siteOpsFor(site.record, "lots", i)) {
+            if (op.kind === "bridge" && op.y === Number(el.baseY)) deckAbove += 1;
+            if (op.kind === "support" && op.y === 62) postsAtSurface += 1;
+        }
+    }
+    assert.ok(deckAbove > 0, "the lot platforms are laid one block above the water");
+    assert.ok(postsAtSurface > 0, "pillars break the water surface (a platform on visible posts)");
+    // The wall was planned from the sea bed (top = bed + height), so a bay cut it off below the surface;
+    // it is now planned from the water surface with a footing down to the bed.
+    let wallTop = -Infinity;
+    let wallBottom = Infinity;
+    for (let i = 0; i < site.record.walls.length; i += 1) {
+        for (const op of D.siteOpsFor(site.record, "walls", i)) {
+            wallTop = Math.max(wallTop, op.y);
+            wallBottom = Math.min(wallBottom, op.y);
+        }
+    }
+    assert.ok(wallTop > 62, `the wall stands above the bay (top y=${String(wallTop)})`);
+    assert.ok(wallBottom <= 31, `wall footings reach the sea bed (lowest y=${String(wallBottom)})`);
 
     const ground = D.exportSiteInputs(plan, 1, OCEAN);
     assert.equal(typeof ground.s, "string", "the stored ground keeps the water surface for the piers");

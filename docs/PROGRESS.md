@@ -383,7 +383,7 @@ through phases 5/6 and 6/6, and `civ:generate_status` afterwards reported:
     district-1 Hearthgate: complete, stage complete 52188 / 52188 ops, placed 47827, skipped 4903,
     centre -187, -621, plan 214bbd16
     Stored queue: 100 (52188 / 52188 ops), state complete
-    Storage: civ:plan 22503 B, civ:plansite:d1 32454 B, civ:jobs 1982 B; total 56939 B (every family inside its
+    Storage: civ:plan 22503 B, the district site slot 32454 B, civ:jobs 1982 B; total 56939 B (every family inside its
     budget)
     No job running.
 
@@ -417,3 +417,29 @@ Offline proof (`dev/test/civ-runtime.test.mjs`): the predicate (fresh / ticked /
 refused with zero writes, no job and no district record, the refusal naming both routes, and the confirmed call
 starting the identical run and aborting cleanly. All five verify gates green, 1236 offline tests, e2e 52/52,
 template spec ok.
+
+## In-game feedback (2026-10-26): trees through the roofs, and water without a platform
+
+Touring the first built district showed three things a screenshot and the offline suite had missed:
+
+- **Trees.** A giant-taiga spruce standing in a lot lost only its first 8 blocks: the clearer's reach was a
+  cube of 8 around the struck cell, so the trunk and crown above y+8 stayed - through the roofs. The reach is
+  now horizontal 8 / vertical 40 (a giant spruce stands ~30) and the component cap is 600 -> 4000 (one spruce
+  is ~800 cells, so a merged crown no longer refuses the whole tree). Regression test: a 26-block tree planted
+  at a lot's own clear column is gone to its top and crown after the build; it fails with the old vertical 8.
+- **Lots over water** stood on a deck *at* the water surface: every pillar was under water, so the house read
+  as floating. The street's own level was also exempt from the new water floor, so the one-above level was
+  never tried. Over-water lots now stand one block above the surface (the street level has to clear the water
+  floor too) and their pillars break the surface; the apron rails remain. The open-sea test now asserts every
+  pad's baseY is above the surface, deck blocks above it, and support posts at the surface level.
+- **Walls** were planned from the sea bed (top = bed + height): across a wide bay the middle of the wall fell
+  below the water surface and read as cut off at the shoreline. `planWall` gained `baseFor`/`maxFoundation`:
+  walls are planned from the water surface with a continuous footing down to the bed, refusing a bay deeper than
+  64 instead of stopping short. Unit test: a 30-wide bay with a 12-deep bed; the bed-profile control tops out at
+  the waterline, the new plan stays above it and fills bed+1..top with no gaps. The sea-district test also checks
+  the wall's own ops: top above the surface, bottom at the sea bed.
+
+Existing blocks are not retrofitted: the fixes change what the next district's build does, not the already built
+district 1. Deeper water everywhere else is unchanged; land plans and their stored checksums are untouched.
+
+All five verify gates green; 1238 offline tests.

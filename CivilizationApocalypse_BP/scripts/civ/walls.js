@@ -29,7 +29,8 @@
  * @typedef {{ at: { x: number, z: number }, axis: "x" | "z" }} GateFootprintInput
  * @typedef {{
  *   closed?: boolean, towerSpacing?: number, cornerAngle?: number, buttressSpacing?: number,
- *   gates?: GateFootprintInput[], maxOpsPerSegment?: number, height?: number
+ *   gates?: GateFootprintInput[], maxOpsPerSegment?: number, height?: number,
+ *   baseFor?: (x: number, z: number) => number | undefined, maxFoundation?: number
  * }} WallOptions
  */
 
@@ -282,7 +283,8 @@ export function gateFootprintBox(gate) {
 /**
  * @typedef {{
  *   x: number, z: number, first: number, top: number, ground: number, exact: boolean,
- *   centre: boolean, kind: "wall" | "tower" | "buttress", ring: boolean, tunnel: number | undefined, hollowTop: number | undefined
+ *   centre: boolean, kind: "wall" | "tower" | "buttress", ring: boolean, tunnel: number | undefined, hollowTop: number | undefined,
+ *   base?: number
  * }} Column
  */
 
@@ -563,6 +565,27 @@ export function planWall(path, profile, options = {}) {
         }
     }
 
+    // Over water the column's `ground` is deliberately the water surface (the top is planned from it), and
+    // `baseFor` names the bed-side base the footing must reach. Deeper than maxFoundation is refused rather
+    // than building a column that stops short of the sea floor.
+    if (typeof options.baseFor === "function") {
+        const maxFoundation = options.maxFoundation ?? 64;
+        for (const column of columns.values()) {
+            const base = options.baseFor(column.x, column.z);
+            if (base === undefined || !Number.isFinite(base)) {
+                continue;
+            }
+            const rounded = Math.round(/** @type {number} */ (base));
+            if (rounded >= column.ground) {
+                continue;
+            }
+            if (column.ground - rounded > maxFoundation) {
+                throw new Error(`wall column at (${String(column.x)}, ${String(column.z)}) needs a ${String(column.ground - rounded)}-block foundation (max ${String(maxFoundation)})`);
+            }
+            column.base = rounded;
+        }
+    }
+
     // Column order: along the path, then x, then z (a stable, resumable emission order).
     const ordered = [...columns.values()].sort((a, b) => a.first - b.first || a.x - b.x || a.z - b.z);
 
@@ -590,7 +613,7 @@ export function planWall(path, profile, options = {}) {
         /** @type {WallOp[]} */
         const ops = [];
         const { x, z } = column;
-        const base = baseOf(column);
+        const base = column.base ?? baseOf(column);
         for (let y = base; y <= column.top; y += 1) {
             if (column.tunnel !== undefined && y > column.tunnel && y <= column.tunnel + 2) {
                 continue; // the 2-high tunnel through a tower along the walkway

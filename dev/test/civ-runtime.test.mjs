@@ -577,6 +577,45 @@ test("a player-made tree (persistent leaves) and a log-only pillar are left alon
     assert.match(text(player), /Natural trees cleared [1-9]/);
 });
 
+test("a tall tree standing in a cleared lot is removed to its top, not only the first 8 blocks", MIN_TIMEOUT, async () => {
+    // Giant taiga spruces stand 20-30 blocks tall. The clearer used a cube of 8 around the blocked cell, so
+    // the lower trunk went but the crown above y+8 stayed - through the roofs. A planted 26-block tree at a
+    // lot's own clear column must be gone to the top (reach is horizontal 8, vertical 40).
+    const planned = await plannedOnly();
+    restoreProps(planned.props);
+    const { record } = rehydrateStored();
+    let spot;
+    for (let i = 0; i < record.clear.length && spot === undefined; i += 1) {
+        for (const op of siteplan.siteOpsFor(record, "clear", i)) {
+            const cell = groundCell(op.x, op.z);
+            if (cell?.tree === true) {
+                spot = { x: op.x, z: op.z, g: cell.g };
+                break;
+            }
+        }
+    }
+    assert.ok(spot !== undefined, "the plan clears at least one tree column");
+    const top = spot.g + 24;
+    for (let y = spot.g + 1; y <= top; y += 1) mc.placed.set(key(spot.x, y, spot.z), "minecraft:spruce_log");
+    for (let y = spot.g + 14; y <= top; y += 1) {
+        const r = y < top - 3 ? 2 : 1;
+        for (let dx = -r; dx <= r; dx += 1) {
+            for (let dz = -r; dz <= r; dz += 1) {
+                if (dx !== 0 || dz !== 0) mc.placed.set(key(spot.x + dx, y, spot.z + dz), "minecraft:spruce_leaves");
+            }
+        }
+    }
+    const player = makePlayer();
+    send(CIV_EVENT_IDS.resume, "", player);
+    await pump();
+    assert.match(text(player), /is built/, text(player).slice(-1200));
+    assert.match(text(player), /Natural trees cleared [1-9]/);
+    assert.equal(mc.placed.get(key(spot.x, top, spot.z)), "minecraft:air", "the tree top is gone, not left floating above the roofline");
+    for (const [dx, dz] of [[2, 0], [-2, 0], [0, 2], [0, -2]]) {
+        assert.equal(mc.placed.get(key(spot.x + dx, spot.g + 20, spot.z + dz)), "minecraft:air", `the crown at +${String(dx)},+${String(dz)} is gone`);
+    }
+});
+
 // ---------------------------------------------------------------------------- pause / abort / resume / restart
 
 test("a clean resume from the stored plan builds the identical world", MIN_TIMEOUT, async () => {
