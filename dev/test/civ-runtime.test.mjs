@@ -60,6 +60,14 @@ test("argument parsing: radius bounds, seed, district, site, unknown arguments",
     assert.equal(civCommands.districtIndexOf(4), 4);
 });
 
+test("populatedKingdom: a fresh kingdom is not populated; a tick or a construction project makes it so", () => {
+    const district = (extra) => ({ civilians: 4, soldiers: 1, projects: [], ...extra });
+    assert.equal(civCommands.populatedKingdom({ step: 0, districts: [district({})] }), undefined);
+    assert.equal(civCommands.populatedKingdom({ step: 0, districts: [district({ projects: [{ kind: "homes", stage: 0, builders: 1 }] })] }).projects, 1, "a project alone is enough");
+    assert.deepEqual(civCommands.populatedKingdom({ step: 3, districts: [district({}), district({ civilians: 6, soldiers: 2 })] }), { step: 3, districts: 2, civilians: 10, soldiers: 3, projects: 0 });
+    assert.equal(civCommands.populatedKingdom({ districts: [] }), undefined, "a kingdom with no step is a fresh one");
+});
+
 test("district.civ record validation", () => {
     const good = { status: "building", seed: 3, anchor: { x: 1, z: 2 }, centre: { x: 3, z: 4 }, checksum: "abc", stage: "clear", startedStep: 0 };
     assert.deepEqual(civCommands.civRecordProblems(good), []);
@@ -774,6 +782,45 @@ test("a second command while a job runs is refused; a second generate after comp
     await generate(third);
     assert.match(text(third), /already running/);
     districtBuilder.finishJob(token);
+});
+
+test("a populated world is not silently surveyed: generate refuses, and a confirmation starts it", MIN_TIMEOUT, async () => {
+    // A running kingdom has no physical district yet: searching for a new site would be a big, surprising write
+    // in a world that is already being played. The refusal must write nothing and must name both ways forward;
+    // the horn's form passes the same acknowledgement, so it has to start the identical run.
+    resetWorld(1);
+    const kingdom = store.load().kingdom;
+    kingdom.step = 42;
+    districtById(kingdom, "district-1").projects.push({ kind: "homes", stage: 1, builders: 2 });
+    store.save(kingdom);
+    const writes = mc.writes;
+
+    const refused = makePlayer();
+    send(CIV_EVENT_IDS.generate, GEN, refused);
+    await flush();
+    const refusal = text(refused);
+    assert.match(refusal, /=== Generate refused ===/, refusal);
+    assert.match(refusal, /this world already holds a running kingdom: 5 districts, \d+ civilians, \d+ soldiers, 1 construction projects at simulation step 42/);
+    assert.match(refusal, /Horn of Hearthgate/);
+    assert.match(refusal, new RegExp(`${CIV_EVENT_IDS.generate} site=here`));
+    assert.equal(refusal.includes("=== Generating"), false, "the refusal never starts the run");
+    assert.equal(mc.writes, writes, "the refusal writes nothing");
+    assert.equal(districtBuilder.isBusy(), false);
+    assert.equal(civRecord(), undefined);
+
+    // the Horn of Hearthgate's confirmation is the same acknowledgement (its fifth argument)
+    const confirmed = makePlayer();
+    void civCommands.runGenerate(store, confirmed, civCommands.parseCivArgs([GEN]), false, true);
+    await flush();
+    const started = text(confirmed);
+    assert.match(started, /=== Generating Hearthgate \(district-1\) ===/, started);
+    assert.match(started, /This world is already being played \(5 districts, \d+ civilians, \d+ soldiers, 1 construction projects at step 42\)/);
+    assert.equal(districtBuilder.isBusy(), true, "the confirmation starts the run");
+    // an aborted run's promise is deliberately not awaited: the abort removes the job instead of finishing it
+    send(CIV_EVENT_IDS.abort, "", confirmed);
+    await pump();
+    assert.equal(districtBuilder.isBusy(), false, "the aborted run released its job");
+    assert.equal(civRecord(), undefined, "an aborted survey stored no record");
 });
 
 test("district selection: district= is accepted, an out-of-range index is refused, and the dev gate still refuses nonsense", MIN_TIMEOUT, async () => {

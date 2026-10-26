@@ -131,7 +131,8 @@ function askToBuild(kingdomStore, player, intent) {
                 if (kind === "resume") {
                     void runResume(kingdomStore, player, parseCivArgs([]));
                 } else {
-                    void runGenerate(kingdomStore, player, parseCivArgs([]), false);
+                    // The form above is the deliberate answer a populated world needs; it is not a typed site=here.
+                    void runGenerate(kingdomStore, player, parseCivArgs([]), false, true);
                 }
             },
             () => {

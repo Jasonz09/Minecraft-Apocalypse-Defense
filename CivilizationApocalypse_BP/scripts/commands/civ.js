@@ -7,7 +7,7 @@ import { registerBuiltGates } from "../integration/civGates.js";
 import { describeProgress, describeRunning, finishProgress, formatTicks, getLastRun, getProgress, nowTick, setPhase, startMonitor, startProgress } from "../integration/civProgress.js";
 import { CIV_TICKING_ID, releaseArea, runJobAsync, tileSizeNow } from "../integration/civScan.js";
 import { activeKind, activeToken, finishJob, isBusy, releaseChunks, reserveJob } from "../integration/districtBuilder.js";
-import { districtById, findValidationProblems } from "../kingdom/state.js";
+import { computeTotals, districtById, findValidationProblems } from "../kingdom/state.js";
 import { formatErrorLines } from "../ui/report.js";
 import { parseArgs } from "./args.js";
 import { reply } from "./reply.js";
@@ -243,6 +243,25 @@ export function protectedRects(kingdom, pad, plan = undefined, grow = pad, excep
 }
 
 /**
+ * What a world that is already being played holds, or undefined for one the simulation has never ticked.
+ * A fresh site search in a running kingdom is a deliberate choice, not a default: runGenerate refuses it
+ * unless the player made that choice (`site=here`, or the Horn of Hearthgate's confirmation).
+ *
+ * @param {any} kingdom
+ * @returns {{ step: number, districts: number, civilians: number, soldiers: number, projects: number } | undefined}
+ */
+export function populatedKingdom(kingdom) {
+    const districts = /** @type {any[]} */ (kingdom?.districts ?? []);
+    const step = Number.isInteger(kingdom?.step) ? /** @type {number} */ (kingdom.step) : 0;
+    const projects = districts.reduce((sum, district) => sum + (Array.isArray(district?.projects) ? district.projects.length : 0), 0);
+    if (step <= 0 && projects === 0) {
+        return undefined;
+    }
+    const totals = computeTotals({ districts });
+    return { step, districts: totals.districts, civilians: totals.civilians, soldiers: totals.soldiers, projects };
+}
+
+/**
  * Which district may be worked on right now, and why not.
  * @param {any} kingdom
  * @param {number} index
@@ -455,8 +474,10 @@ async function handleGenerate(kingdomStore, args, event, planOnly) {
  * @param {Player} player
  * @param {ReturnType<typeof parseCivArgs>} options
  * @param {boolean} planOnly
+ * @param {boolean} [confirmed] true when the player already answered a build confirmation (the Horn of
+ *   Hearthgate's form). It only lets a populated world's fresh site search through; it never changes what is built.
  */
-export async function runGenerate(kingdomStore, player, options, planOnly) {
+export async function runGenerate(kingdomStore, player, options, planOnly, confirmed = false) {
     const title = planOnly ? "Plan refused" : "Generate refused";
     if (options.error !== undefined) {
         say(player, formatErrorLines(title, [options.error, `Usage: /scriptevent ${planOnly ? CIV_EVENT_IDS.plan : CIV_EVENT_IDS.generate} [district=1-${String(DISTRICT_INDEXES.length)}${planOnly ? "|all" : ""}] [site=here] [radius=24-${String(CIV.maxSearchRadius)}] [seed=N]`]));
@@ -505,9 +526,18 @@ export async function runGenerate(kingdomStore, player, options, planOnly) {
         return;
     }
     const master = loadMasterPlan();
+    const populated = planOnly ? undefined : populatedKingdom(kingdom);
     if (master.plan === undefined || master.plan === null) {
         if (index > 1) {
             say(player, formatErrorLines(title, [`nothing to build ${districtId} from: this world holds no five-district master plan (civ:plan reads '${String(master.status)}').`, `Build district 1 first (it makes the master plan): /scriptevent ${CIV_EVENT_IDS.generate} district=1${options.site === "here" ? " site=here" : ""} seed=${String(options.seed ?? 1)}`]));
+            return;
+        }
+        if (populated !== undefined && options.site !== "here" && !confirmed) {
+            say(player, formatErrorLines(title, [
+                `this world already holds a running kingdom: ${String(populated.districts)} districts, ${String(populated.civilians)} civilians, ${String(populated.soldiers)} soldiers, ${String(populated.projects)} construction projects at simulation step ${String(populated.step)} - and no physical district is planned in it.`,
+                `A build would survey a NEW site around you and add the physical ${districtTitle(index)} there; the kingdom's population, projects and territory are left as they are.`,
+                `That is a deliberate choice in a populated world: use the Horn of Hearthgate (it asks first), or run /scriptevent ${CIV_EVENT_IDS.generate} site=here to build exactly where you stand. Nothing was changed.`,
+            ]));
             return;
         }
     } else if (options.site === "here") {
@@ -541,6 +571,7 @@ export async function runGenerate(kingdomStore, player, options, planOnly) {
             ? `Master plan stored here since anchor ${String(master.anchor?.x)}, ${String(master.anchor?.z)} (seed ${String(seed)}); only ${districtId}'s own ground is surveyed; ${String(exclusions.length)} protected footprint(s).`
             : `Centre ${String(anchor.x)}, ${String(anchor.z)}; ${options.site === "here" ? "site: exactly where you stand (no search)" : `search radius ${String(options.radius)}`}; seed ${String(seed)}; ${String(exclusions.length)} protected footprint(s).`,
         ...CIV_SAFETY_WARNING,
+        ...(populated !== undefined ? [`This world is already being played (${String(populated.districts)} districts, ${String(populated.civilians)} civilians, ${String(populated.soldiers)} soldiers, ${String(populated.projects)} construction projects at step ${String(populated.step)}): the physical district is added and those records are kept.`] : []),
         planOnly ? "Nothing will be written." : "This one command authorises this district's whole build; progress is reported as it goes. Use civ:generate_abort to stop.",
     ]);
 

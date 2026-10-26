@@ -372,3 +372,48 @@ In-game caveats: a sea district is a deck city on piles, not a drained seabed; p
 column deeper than 64 blocks is refused, never guessed). The read walk is bounded by `MAX_WALK` (96 cells from the
 topmost block), so an abyss deeper than that is planned without pillars. Lava, unread ground and protected blocks
 still refuse, as before.
+
+## In-game proof (2026-10-26): one command built a whole district in ~15 minutes
+
+Ran the Horn of Hearthgate in "CivTest Hearthgate" (the prebuilt starter save: simulation step 746, seed 20261017,
+5 districts, 1590 civilians, 227 soldiers, 14 construction projects) at 16:48 local time, anchored at
+(-192, -448). The survey stopped early at its certified site instead of reading all 81 tiles, the run passed
+through phases 5/6 and 6/6, and `civ:generate_status` afterwards reported:
+
+    district-1 Hearthgate: complete, stage complete 52188 / 52188 ops, placed 47827, skipped 4903,
+    centre -187, -621, plan 214bbd16
+    Stored queue: 100 (52188 / 52188 ops), state complete
+    Storage: civ:plan 22503 B, civ:plansite:d1 32454 B, civ:jobs 1982 B; total 56939 B (every family inside its
+    budget)
+    No job running.
+
+The run's own estimate before building was "~52188 block operations ... estimated minutes 14.9"; the wall clock
+from the horn confirmation to `complete` was ~14.8 minutes (survey + planning + build), so the estimate now holds
+in game. The 3-minute false-stall cancel from the first attempt did not recur: the stall clock is measured per
+hold attempt (commit 5ea1fbe), and each hold that was generating chunks unblocked when the player was teleported
+onto the tile's centre (a 128-block tile is 64 chunks; a ticking area alone did not finish them inside 60 s even
+with the game's 640-block (40-chunk) render distance). Building skipped 4903 of 52188 ops (9.4%: occupied cells
+and trees) with `failed 0`; no op was cancelled.
+
+Live evidence: `scratch/district-complete-status-2026-10-26.png` (the status lines above) and
+`scratch/district-built-2026-10-26.png` (the crenellated wall, towers, piers and streets around the bay at
+-187, -621). The build is a coastal city on decks and piers, not a flattened site.
+
+## Populated worlds: a new site search is now a deliberate choice
+
+The same run demonstrated the world-state problem recorded above: the starter world held a running kingdom but
+no physical district plan, so `civ:generate` started a 10-30 minute site search in a world that was already being
+played. `runGenerate` now refuses that default when the kingdom is populated (`populatedKingdom`: simulation
+step > 0, or any district holding construction projects) and no master plan is stored, before reserving a job or
+touching a block. The refusal reports the kingdom (districts, civilians, soldiers, active projects, step), says
+that the build would add a NEW physical site and leave the kingdom's population, projects and territory as they
+are, and names the two deliberate routes: the Horn of Hearthgate (its confirmation form is the acknowledgement)
+or `site=here` (build exactly where the player stands). The horn passes `confirmed = true` to `runGenerate`, so
+its form keeps the search behaviour it describes; a confirmed or `site=here` run prints the same kingdom summary
+as a note in its start message. Worlds at step 0 (dedicated test worlds), builds from a stored master plan
+(extend) and `civ:generate_resume` (resume) are unchanged.
+
+Offline proof (`dev/test/civ-runtime.test.mjs`): the predicate (fresh / ticked / project-only), a populated world
+refused with zero writes, no job and no district record, the refusal naming both routes, and the confirmed call
+starting the identical run and aborting cleanly. All five verify gates green, 1236 offline tests, e2e 52/52,
+template spec ok.
