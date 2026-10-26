@@ -13,6 +13,7 @@ import { CIV } from "../config.js";
  *   id: number, kind: "plan" | "build" | "resume", token: { kind: string, cancelled: boolean } | undefined,
  *   phaseIndex: number, phaseName: string, phases: number,
  *   tilesDone: number, tilesTotal: number, tilesPlanned: number, tile: Rect | undefined, chunksPending: number, chunksScanned: number, chunksTotal: number,
+ *   holdStartedTick: number | undefined,
  *   columnsScanned: number, startedTick: number, lastHeartbeatTick: number, lastProgressTick: number, endedTick: number | undefined,
  *   stalls: number, skippedTiles: number, notes: string[], lastError: string | undefined, state: ProgressState,
  *   percent: number | undefined, say: (lines: string[]) => void, monitor: number | undefined,
@@ -46,7 +47,7 @@ export function startProgress(kind, token, say) {
     /** @type {Progress} */
     const p = {
         id: nextId++, kind, token, phaseIndex: 0, phaseName: "starting", phases: 6,
-        tilesDone: 0, tilesTotal: 0, tilesPlanned: 0, tile: undefined, chunksPending: 0, chunksScanned: 0, chunksTotal: 0, columnsScanned: 0,
+        tilesDone: 0, tilesTotal: 0, tilesPlanned: 0, tile: undefined, chunksPending: 0, chunksScanned: 0, chunksTotal: 0, holdStartedTick: undefined, columnsScanned: 0,
         startedTick: now, lastHeartbeatTick: now, lastProgressTick: now, endedTick: undefined,
         stalls: 0, skippedTiles: 0, notes: [], lastError: undefined, state: "running", percent: undefined, say, monitor: undefined,
     };
@@ -76,6 +77,19 @@ export function touch(p) {
         p.lastProgressTick = nowTick();
         if (p.state === "stalled") p.state = "running";
     }
+}
+
+/**
+ * How long this session has been neither reading nor holding. A hold is its own interval, measured from the
+ * attempt that is currently waiting: two timed-out attempts (holdTimeoutTicks each) must never accumulate into a
+ * false stall, while one attempt that outlives stallTicks is still a wedged engine.
+ * @param {Progress} p @param {number} [now]
+ */
+export function quietTicks(p, now = nowTick()) {
+    if (p.chunksPending > 0 && p.holdStartedTick !== undefined) {
+        return now - p.holdStartedTick;
+    }
+    return now - p.lastProgressTick;
 }
 
 /** @param {Progress | undefined} p @param {string} text */
@@ -162,7 +176,7 @@ export function describeRunning(p = current) {
 export function describeProgress(p) {
     const now = nowTick();
     const end = p.endedTick ?? now;
-    const quiet = now - p.lastProgressTick;
+    const quiet = quietTicks(p, now);
     /** @type {string[]} */
     const lines = [];
     lines.push(`Session ${String(p.id)} (${p.kind}): ${p.state}, phase ${String(p.phaseIndex)}/${String(p.phases)} ${p.phaseName}, elapsed ${formatTicks(end - p.startedTick)}${progressPercent(p) !== undefined ? `, ${String(progressPercent(p))}%${p.kind !== "build" && p.phaseIndex === 1 ? " of the current ring plan (grows if the survey widens)" : ""}` : ""}.`);
@@ -198,6 +212,10 @@ export function heartbeat(p, force = false) {
  * `onTrouble` is told "stalled" or "deadline". For planning it must cancel the run; for a build it only reports (the
  * build may recover, so it is never auto-cancelled). A stalled session returns to "running" the moment it moves again.
  *
+ * The stall clock is `quietTicks`: an active hold is measured from its own attempt, never accumulated with the
+ * previous one. A survey whose tiles each need both hold attempts (2 x holdTimeoutTicks) is working, not wedged;
+ * one attempt that outlives stallTicks still cancels, and planning keeps its own deadline as the outer bound.
+ *
  * @param {Progress} p
  * @param {(reason: "stalled" | "deadline", p: Progress) => void} onTrouble
  */
@@ -210,7 +228,7 @@ export function startMonitor(p, onTrouble) {
         if (p.kind !== "build" && !deadlineFired && now - p.startedTick >= CIV.planDeadlineTicks) {
             deadlineFired = true;
             onTrouble("deadline", p);
-        } else if (p.state !== "stalled" && now - p.lastProgressTick >= CIV.stallTicks) {
+        } else if (p.state !== "stalled" && quietTicks(p, now) >= CIV.stallTicks) {
             p.state = "stalled";
             onTrouble("stalled", p);
         }

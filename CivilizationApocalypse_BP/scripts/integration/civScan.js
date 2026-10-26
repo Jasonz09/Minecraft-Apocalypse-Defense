@@ -204,9 +204,15 @@ export async function holdArea(dimension, rect, owner = undefined, id = CIV_TICK
         holdOwner = owner;
         holdGeneration += 1;
         const generation = holdGeneration;
-        if (progress !== undefined) progress.chunksPending = chunks;
+        if (progress !== undefined) {
+            progress.chunksPending = chunks;
+            progress.holdStartedTick = nowTick();
+        }
         const outcome = await raceCreate(manager, id, options, owner, generation, progress, chunks);
-        if (progress !== undefined) progress.chunksPending = 0;
+        if (progress !== undefined) {
+            progress.chunksPending = 0;
+            progress.holdStartedTick = undefined;
+        }
         if (outcome === "loaded") {
             touch(progress);
             return { held: true, note: undefined, status: "held" };

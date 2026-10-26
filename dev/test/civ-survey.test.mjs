@@ -47,7 +47,7 @@ async function planOnly(player, message = GEN) {
 
 // ---------------------------------------------------------------------------- the reproduced hang
 
-test("REPRODUCTION: a ticking area that never resolves no longer hangs - timeouts, retries, then a clear abort", T, async () => {
+test("REPRODUCTION: a ticking area that never resolves does not hang - heartbeats, both hold attempts, then the tile abort", T, async () => {
     setup();
     mc.createMode = () => "never";
     const player = makePlayer();
@@ -65,18 +65,19 @@ test("REPRODUCTION: a ticking area that never resolves no longer hangs - timeout
     assert.match(status, /last progress \d+ s ago - STALLED\?/);
     const beats = text(player).match(/^ {2}\.\.\. survey \(phase 1\/6\)/gm) ?? [];
     assert.ok(beats.length >= 3 && beats.length <= 4, `heartbeats in 700 ticks: ${beats.length}`);
-    // nothing ever moves: the stall monitor (CIV.stallTicks, hold timeouts do NOT reset it) cancels the run
+    // A hold is the engine's work, so each attempt resets the stall clock; it must NOT be cancelled at stallTicks
+    // in the middle of two legal 60 s attempts. Three tiles that never load abort through the tile path instead.
     await pump();
-    assert.ok(mc.tick >= CIV.stallTicks && mc.tick < CIV.stallTicks + 100, `cancelled at tick ${mc.tick}`);
+    assert.ok(mc.tick >= 3 * 2 * CIV.holdTimeoutTicks && mc.tick < 3 * 2 * CIV.holdTimeoutTicks + 400, `aborted at tick ${mc.tick}`);
     const out = text(player);
-    assert.match(out, /Planning stalled - cancelled, nothing was changed/);
-    assert.match(out, /No progress for 3 min 0 s \(phase 1\/6 survey/);
-    assert.match(out, /Move to an area whose chunks are already generated or try a smaller radius=/);
+    assert.match(out, /Stopped at stalled - nothing was changed/);
+    assert.match(out, /did not finish loading \(3 of 3 survey tiles stalled; each waited 60 s, 2 times\)/);
+    assert.doesNotMatch(out, /Planning stalled - cancelled/);
     assertClean("never-resolving create");
     const after = asked(player, CIV_EVENT_IDS.status);
     assert.match(after, /Last run:/);
-    assert.match(after, /\(plan\): stalled/);
-    assert.match(after, /error: No progress for/);
+    assert.match(after, /\(plan\): failed/);
+    assert.match(after, /error: stalled: The chunks around/);
     assert.match(after, /tile stalls [1-9]/);
     assert.match(after, /No job running/);
     assert.doesNotMatch(after, /Not generated/);
