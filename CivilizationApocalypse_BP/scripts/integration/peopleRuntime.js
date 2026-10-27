@@ -76,8 +76,14 @@ export function createPeopleRuntime(kingdomStore) {
     }
 
     /**
-     * One accepted simulation hour. Called by the loop's `onStep`, so it runs at most once per in-game
-     * hour and never on a rejected one.
+     * One hour of the loop's clock. Called by the loop's `onStep`, so at most once per in-game hour.
+     *
+     * A REJECTED hour reaches this door too. `simulationLoop.js` reports the refusal and returns without
+     * saving, so the kingdom handed to the drivers is the one from the last accepted hour, unchanged. That is
+     * deliberate: a driver reconciles against state, an unchanged kingdom is therefore a no-op pass, and
+     * refusing the hour would also refuse the teardown pass that makes an off gate true. The rule it puts on a
+     * driver is that it may write nothing it cannot re-derive from the saved kingdom, because this hour shows
+     * it a state the simulation just refused to adopt.
      *
      * The gate does NOT stop the call. "Off" has to mean "no people entities in this world", and 2.7.0
      * gives no removal event to clean up after (entityRemove reports an id, not a handle), so the only way

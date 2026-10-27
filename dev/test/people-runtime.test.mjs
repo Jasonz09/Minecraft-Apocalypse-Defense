@@ -152,3 +152,20 @@ test("civ:people on|off is the switch, and it answers with what the drivers have
     assert.equal(seen.calls.length, 2, "the hour after switching off is spent tearing down, not ignored");
     assert.equal(seen.calls[1].gateOn, false);
 });
+
+test("a rejected hour still reaches the drivers, and it hands them the kingdom the loop refused to change", () => {
+    const live = inhabited();
+    const seen = recorder("walker");
+    live.register(seen.driver);
+    const savedKingdom = mc.props.get("civ:kingdom");
+    assert.notEqual(savedKingdom, undefined, "a stored kingdom, so the comparison below is not two undefineds");
+    mc.propWrites = 0;
+    live.onStep({ ran: 0, skipped: 1, problem: "territory land-1.status 'bogus' is not one of wild/raided/military/kingdom" });
+    // simulationLoop reports a refusal and returns WITHOUT saving, so this door is not a refused door: the
+    // drivers still get the hour, and what they get is the last accepted kingdom, byte for byte.
+    assert.equal(seen.calls.length, 1, "the drivers still run, because a refused hour must not also refuse the teardown pass");
+    assert.equal(seen.calls[0].report.skipped, 1, "the driver can see that nothing advanced");
+    // mc.writes counts BLOCK writes; a persisting runtime is a PROPERTY write.
+    assert.equal(mc.propWrites, 0, "the runtime writes no dynamic property, so a rejected step stays rejected");
+    assert.equal(mc.props.get("civ:kingdom"), savedKingdom, "the saved kingdom is unchanged after a refused hour");
+});

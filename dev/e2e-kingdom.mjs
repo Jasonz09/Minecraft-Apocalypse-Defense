@@ -425,7 +425,9 @@ for (const dir of ["integration", "commands", "events"]) {
     }
 }
 console.log(`  Bedrock runtime boundary, NOT verifiable offline: ${runtimeFiles.join(", ")}`);
-console.log("  Minecraft is not installed on this machine, so no in-game behaviour is claimed.");
+console.log("  In-game behaviour is not claimed by this run. Minecraft is installed on this machine and two");
+console.log("  districts have been built in a real world, but that is verified by hand in the world and recorded");
+console.log("  in docs/PROGRESS.md - nothing here observes it.");
 
 console.log(`\nheadless kingdom run: ${String(results.length - failures.length)}/${String(results.length)} stages passed`);
 if (failures.length > 0) {
