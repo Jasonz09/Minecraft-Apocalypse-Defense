@@ -13,6 +13,7 @@ import { createPeopleRuntime } from "./integration/peopleRuntime.js";
 import { registerPeopleCommand } from "./commands/people.js";
 import { createPeopleStreets } from "./integration/peopleStreets.js";
 import { createSiegeDriver } from "./integration/siegeMobs.js";
+import { createOrdersDriver } from "./integration/peopleOrders.js";
 import { startSimulationLoop } from "./integration/simulationLoop.js";
 import { ledgerGateOn } from "./ledger/devgate.js";
 import { createKingdomStore } from "./kingdom/store.js";
@@ -42,6 +43,10 @@ const peopleRuntime = createPeopleRuntime(kingdomStore);
 registerPeopleCommand(peopleRuntime);
 peopleRuntime.register(createPeopleStreets());
 peopleRuntime.register(createSiegeDriver(kingdomStore));
+// Registered last on purpose: the streets driver signs every levy "<district> levy" and the orders driver titles
+// some of them officers, so running orders after streets makes the rank the name a player sees at the end of the
+// hour. The cost is one re-write per officer per hour, which is cheaper than making the two drivers share a rule.
+peopleRuntime.register(createOrdersDriver());
 startSimulationLoop(kingdomStore, { onStep: (report) => peopleRuntime.onStep(report) });
 
 // The Commander's Ledger is off unless the development gate is on. The switch always listens, because it is the
