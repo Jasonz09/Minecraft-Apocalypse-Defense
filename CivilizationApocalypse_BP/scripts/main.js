@@ -12,6 +12,7 @@ import { registerLedger, registerLedgerDevGate } from "./integration/ledgerBindi
 import { createPeopleRuntime } from "./integration/peopleRuntime.js";
 import { registerPeopleCommand } from "./commands/people.js";
 import { createPeopleStreets } from "./integration/peopleStreets.js";
+import { createSiegeDriver } from "./integration/siegeMobs.js";
 import { startSimulationLoop } from "./integration/simulationLoop.js";
 import { ledgerGateOn } from "./ledger/devgate.js";
 import { createKingdomStore } from "./kingdom/store.js";
@@ -40,6 +41,7 @@ registerSeedBeacon(kingdomStore);
 const peopleRuntime = createPeopleRuntime(kingdomStore);
 registerPeopleCommand(peopleRuntime);
 peopleRuntime.register(createPeopleStreets());
+peopleRuntime.register(createSiegeDriver(kingdomStore));
 startSimulationLoop(kingdomStore, { onStep: (report) => peopleRuntime.onStep(report) });
 
 // The Commander's Ledger is off unless the development gate is on. The switch always listens, because it is the

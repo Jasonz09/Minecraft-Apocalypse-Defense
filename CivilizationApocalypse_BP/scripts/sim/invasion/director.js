@@ -135,6 +135,89 @@ export function isInvasionEnabled(state) {
     return isPlainObject(state) && state.enabled === true;
 }
 
+/**
+ * The war states that mean a hostile force is actually in the field. `secure` is peace; `alert` or worse,
+ * with a non-zero assault behind it, is the threat the director exists to stage. `lost` counts while raiders
+ * are still pressing the ruins - the band has not gone anywhere yet.
+ */
+export const INVASION_THREAT_SECURITY = Object.freeze(["alert", "contested", "breached", "isolated", "lost"]);
+
+/**
+ * Pure read of the war state the simulation already maintains: is a real threat up anywhere? This is the one
+ * definition of "a threat exists" - the invasion director is armed from it (see `armInvasionDirector`) and the
+ * physical siege layer reads it from the same place, so the numbers and the entities can never disagree about
+ * whether a district is under attack.
+ *
+ * @param {Kingdom} kingdom
+ * @returns {{ threatened: boolean, assault: number, districtIds: string[] }}
+ */
+export function invasionThreatOf(kingdom) {
+    /** @type {string[]} */
+    const districtIds = [];
+    let assault = 0;
+    for (const district of sortedDistricts(kingdom)) {
+        const pressed = toInt(district.assault);
+        if (pressed <= 0 || !INVASION_THREAT_SECURITY.includes(String(district.security ?? "secure"))) {
+            continue;
+        }
+        districtIds.push(String(district.id));
+        assault = Math.max(assault, pressed);
+    }
+    return { threatened: districtIds.length > 0, assault, districtIds };
+}
+
+/**
+ * The autonomous gate: the simulation arms its own invasion director from its own war state, so the director
+ * is reachable with no player command at all.
+ *
+ * It is the only caller-side route to `enableInvasion` in the shipped pack, and it is deliberately narrow:
+ *  - no real threat (`invasionThreatOf`) and no record: nothing is created. A peaceful kingdom stays exactly as
+ *    it was and the director stays the no-op the tick has always seen;
+ *  - a real threat: `enableInvasion` - create or switch on, never reset, so a wave in progress survives;
+ *  - the threat is gone and no band is in the field (the record is in `quiet`): the director stands itself down
+ *    again, which is what tells the physical siege layer to send its attackers away.
+ *
+ * A wave in progress is never interrupted by a lull: standing down mid-wave would leave the plan half-delivered
+ * and the entities of a district materialised from nothing.
+ *
+ * Writes: `kingdom.invasion` (through `enableInvasion`, or its `enabled` flag) and one event line, and only when
+ * the state actually changes. Nothing else on the kingdom moves, so an unarmed realm stays byte-identical.
+ *
+ * @param {Kingdom} kingdom
+ * @param {{ threatened: boolean, assault: number, districtIds: string[] }} [threat] the hour's threat reading
+ * @returns {{ armed: boolean, changed: boolean, reason: string, threat: { threatened: boolean, assault: number, districtIds: string[] }}}
+ */
+export function armInvasionDirector(kingdom, threat = undefined) {
+    if (!isPlainObject(kingdom)) {
+        return { armed: false, changed: false, reason: "there is no kingdom to arm", threat: { threatened: false, assault: 0, districtIds: [] } };
+    }
+    const read = threat ?? invasionThreatOf(kingdom);
+    const current = kingdom.invasion;
+    const wasArmed = isInvasionEnabled(current);
+
+    if (read.threatened === true) {
+        if (current !== undefined && current !== null && !isPlainObject(current)) {
+            return { armed: false, changed: false, reason: "the saved invasion record is not an object; the planner refuses it", threat: read };
+        }
+        const record = enableInvasion(kingdom);
+        if (!wasArmed) {
+            logEvents(kingdom, [`The watch on the borders is raised: ${String(read.districtIds.length)} district(s) are under attack (strongest assault ${String(read.assault)}).`]);
+            return { armed: true, changed: true, reason: read.districtIds.length > 0 ? `armed for ${String(read.districtIds.join(", "))}` : "armed", threat: read };
+        }
+        return { armed: record.enabled === true, changed: false, reason: "already armed", threat: read };
+    }
+
+    if (!wasArmed) {
+        return { armed: false, changed: false, reason: "no threat: the director stays off", threat: read };
+    }
+    if (current.wave !== null && current.wave !== undefined && current.phase !== "quiet") {
+        return { armed: true, changed: false, reason: "a band is still in the field; the watch stands down when it is spent", threat: read };
+    }
+    kingdom.invasion = { ...current, enabled: false };
+    logEvents(kingdom, ["No hostile force presses any district: the invasion watch stands down."]);
+    return { armed: false, changed: true, reason: "stood down", threat: read };
+}
+
 /** @returns {Record<string, number>} */
 function zeroCounts() {
     return { raider: 0, archer: 0, brute: 0 };
