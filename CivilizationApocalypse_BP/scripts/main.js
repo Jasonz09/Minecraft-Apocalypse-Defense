@@ -9,6 +9,7 @@ import { registerStarterCommands } from "./commands/starter.js";
 import { registerWelcomeOnJoin } from "./events/welcome.js";
 import { registerSeedBeacon } from "./integration/beaconBindings.js";
 import { registerLedger, registerLedgerDevGate } from "./integration/ledgerBindings.js";
+import { createPeopleRuntime, registerPeopleSwitch } from "./integration/peopleRuntime.js";
 import { startSimulationLoop } from "./integration/simulationLoop.js";
 import { ledgerGateOn } from "./ledger/devgate.js";
 import { createKingdomStore } from "./kingdom/store.js";
@@ -30,7 +31,13 @@ registerGateCommands(kingdomStore);
 registerCivCommands(kingdomStore);
 registerStarterCommands(kingdomStore);
 registerSeedBeacon(kingdomStore);
-startSimulationLoop(kingdomStore);
+// The people runtime is the only thing that turns the hourly kingdom state into entities. It stays off
+// until `civ:people on`, and it runs once per accepted simulation hour - never on the 20-tick path.
+// Drivers are registered here, one line each, in run order, and only once they have been shown to behave
+// in a real game: an unwired module is how this pack shipped through its first two districts.
+const peopleRuntime = createPeopleRuntime(kingdomStore);
+registerPeopleSwitch(peopleRuntime);
+startSimulationLoop(kingdomStore, { onStep: (report) => peopleRuntime.onStep(report) });
 
 // The Commander's Ledger is off unless the development gate is on. The switch always listens, because it is the
 // only way to turn the gate on. The Ledger's own handlers register only when the gate is on at load, and early

@@ -63,6 +63,17 @@ export const CIV_EVENT_IDS = {
     resume: "civ:generate_resume",
     devgate: "civ:generate_devgate",
     diag: "civ:generate_diag",
+    /** The people gate: do the kingdom's civilians, garrison and attackers exist as entities at all. */
+    people: "civ:people",
+};
+
+/**
+ * The people runtime (integration/peopleRuntime.js) and its gate. The entity budgets are NOT here: they
+ * live with the reducer that enforces them, in population/settings.js `POP_SYNC_DEFAULTS`.
+ */
+export const PEOPLE = {
+    /** World dynamic property that turns people entities on. Absent or false = the pack's shipped default. */
+    gateKey: "civ_people",
 };
 
 export const CIV = {
