@@ -167,8 +167,10 @@ Three throwaway diagnostics also landed in `dev/` and are **safe for you to dele
    `CIVILIZATION_PLAN_DESIGN.md`, which is your stated shared contract.
 5. Hoist `orderRing` + patrol surfacing out of `districtplan.js` if you want it for districts 2-5.
 6. Only then: register a layout id per district, lift the `prototypeDistrict` guard in
-   `commands/physical.js`, and do the in-game verification pass — nothing in this milestone has ever
-   run inside Minecraft.
+   `commands/physical.js`, and do the in-game verification pass — at the time of writing nothing in this
+   milestone had run inside Minecraft. (Superseded 2026-10-26: all five layouts are registered and
+   districts 1-2 were built and verified in a development save, `docs/PROGRESS.md`; the 49x49 prototype
+   this handoff covers has still not run in the game.)
 
 ## 7. Scope compliance
 
@@ -176,4 +178,6 @@ No deployment. No world or `com.mojang` change. The 49x49 Hearthgate was not reg
 erased (asserted in tests). No simulation rewrite, no NPC armies, no other district started, no
 automatic-generation workflow, no architectural changes outside Phase C, no destructive Git
 operations, and nothing was left in a state I described as complete that is not verified —
-in-game behaviour specifically remains **unverified**, as it was before I started.
+in-game behaviour specifically remained **unverified** at the time of writing, as it was before I started
+(the enlarged districts 1-2 have run in game since, 2026-10-26, `docs/PROGRESS.md`; this handoff's 49x49
+prototype has not).

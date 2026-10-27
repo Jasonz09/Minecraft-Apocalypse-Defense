@@ -1,6 +1,9 @@
 # Enlarged Hearthgate - status and test instructions
 
-**Nothing here has run inside Minecraft.** Everything below is verified offline against a fake Bedrock world only.
+**The build path has run inside Minecraft.** On 2026-10-26 (Bedrock 1.26.5203) districts 1 and 2 were built
+end to end and verified in a development save - `docs/PROGRESS.md` carries both status lines and the defects
+those runs found. Everything not covered by those two runs is still verified offline against a fake Bedrock world
+only: districts 3-5, the 49x49 prototype, entity population and gate behaviour against real mobs.
 
 ## What it is
 One explicit command plans a whole five-district civilization (irregular districts of about 35-40k block-columns each,
@@ -49,14 +52,23 @@ activation or on player join.
 - Plan: about 65-78k block operations for Hearthgate (before the follow-up fixes seed-21 was 96k with oversized gatehouses),
   222-250 job elements, queue 6.5-7.3 KB, persisted plan+ground about 40-48 KB of the 120 KB budget.
 - Survey: about 18k coarse columns (100 slices) and 87k full-resolution columns (232 slices); build about 490 slices of
-  <= 400 ops. About 2,000 slices in total; at one slice per tick that is roughly 100 s - an ESTIMATE until measured in game.
+  <= 400 ops. About 2,000 slices in total; at one slice per tick that is roughly 100 s - an ESTIMATE, and the slice rate
+  itself has still not been measured in game. What the game did measure is the whole run: the first district took about
+  15 minutes wall clock from confirmation to `complete`, survey + planning + build together, which is not comparable to
+  the build-only figure above.
 - Planning is split into yielding steps (<= ~25k elementary operations between yields; validated with an op meter).
 
 ## Known gaps / not verified in game
-Chunk loading and ticking-area timing; the Bedrock interpreter speed vs the script watchdog; block states (stairs, doors,
-ladders, lever) and `persistent_bit`; real terrain behaviour (rivers, caves, villages, biomes); gate closing against real
-mobs; actual throughput; lots the layout could not site on some seeds (orchard, command hall, extra guard posts); stairs and
-roof eaves are architecture, not extra supports. Districts 2-5, entity population, invasions: see ROADMAP.md.
+Chunk loading and ticking-area timing are partly known now, and worse than this section assumed: a ticking-area hold does
+not settle by itself - the player has to be near the tile that is loading. Actual throughput is known only as a whole-run
+wall clock (about 15 minutes for the first district), not per slice. Standing trees are the limitation the fake world could
+not show: a tree whose neighbour was melon, cocoa or bamboo was judged a player build and left standing on the built lots.
+The neighbour judgement has been widened since, and an already built district is not retrofitted.
+Still unverified in game: the Bedrock interpreter speed vs the script watchdog; block states (stairs, doors,
+ladders, lever) and `persistent_bit`; real terrain behaviour (rivers, caves, villages, biomes - the two built districts
+cross a bay and a jungle, nothing else); gate closing against real
+mobs; lots the layout could not site on some seeds (orchard, command hall, extra guard posts); stairs and
+roof eaves are architecture, not extra supports. Districts 3-5, entity population, invasions: see ROADMAP.md.
 
 ## Planner hang investigation (2026-10-18) - survey progress, timeouts, diagnostics
 Symptom (real game, new normal world): `civ:generate_plan` printed its first survey line, then nothing for a long time;

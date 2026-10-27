@@ -1,8 +1,11 @@
 # Testing
 
-Minecraft Bedrock 1.26.5203 is now installed, but **no in-game run has been performed yet**.
-The gates run headless and claim no in-game behaviour. Use the manual script at the bottom and
-`docs/MINECRAFT_INTEGRATION.md` for the first real test.
+Minecraft Bedrock 1.26.5203 is installed and **the pack has run in it** (2026-10-26): it loads on
+`@minecraft/server` 2.7.0 with `@minecraft/server-ui` 2.1.0, `/reload` applies a redeploy, and districts
+1 and 2 were built end to end and verified **in a development save** - the recorded status lines and the
+defects that run found are in `docs/PROGRESS.md`. Nothing has been built in the packaged starter
+template, and no `.mctemplate` has been imported. The gates below still run headless and claim no in-game
+behaviour. Use the manual script at the bottom for the checks not yet exercised in game.
 
 ## Goal-pass test additions
 

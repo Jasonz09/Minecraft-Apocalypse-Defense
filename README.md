@@ -122,7 +122,7 @@ powershell -NoProfile -Command "Get-ChildItem -Path $env:LOCALAPPDATA\Packages -
 
 ---
 
-## The Horn of Hearthgate (new, unverified in game)
+## The Horn of Hearthgate (new; the horn and its confirmation form work in game)
 
 Every player is given a **Horn of Hearthgate** on their first spawn (`minecraft:goat_horn`, named, marked with
 `ca:beacon`, locked to the inventory and kept on death). Use it:
@@ -147,7 +147,7 @@ the chat prints `suitable terrain N blocks away; confirming the rest of its wind
 certified when every lattice sample of its 480-block window lies in tiles that actually loaded, so the faster stop
 never guesses. Heartbeats name the tile being read and the columns read so far.
 
-## Five-district construction (new, unverified in game)
+## Five-district construction (new; districts 1-2 built and verified in a development save)
 
 `civ:generate_plan` (read-only) plans a five-district irregular civilization; `civ:generate [district=N]` builds one
 district at a time, each with its own stored plan slot and resumable queue, in order 1 Hearthgate → 2 Ironquarry →
@@ -167,10 +167,12 @@ Two lanes, deliberately: staging a **development preview** always works, while `
 five districts marked built in `starter/template.json`, required by the in-game arming list, and covered
 by a signed build receipt.
 
-**No template exists yet** - district 1 has never been built inside Minecraft, districts 2-5 have no
-registered layout, and `npm run template:release-check` currently exits nonzero (0/5 districts, no
-receipt). That refusal is the expected state, not a failure to work around. Contract, tooling and
-offline checks are done; the world is not. See [docs/STARTER_WORLD.md](docs/STARTER_WORLD.md).
+**No template exists yet** - all five enlarged layouts are registered, and districts 1 and 2 have been
+built and verified inside Minecraft, but only in a development save: none of the five is marked `built`
+in `starter/template.json`, no starter world has been armed or exported, and
+`npm run template:release-check` still exits nonzero (0/5 districts, no receipt). That refusal is the
+expected state, not a failure to work around. Contract, tooling and offline checks are done; the packaged
+world is not. See [docs/STARTER_WORLD.md](docs/STARTER_WORLD.md).
 
 ### Route C — install a built template (once one exists)
 
@@ -328,16 +330,21 @@ Seams left for the next milestone:
   `customCommandRegistry.registerCommand(...)` is available in 2.1.0+ if you'd rather not
   depend on `/scriptevent`.
 
-## Goal pass status (offline only - nothing below has run in Minecraft)
+## Goal pass status (offline only - neither item below has been playtested in Minecraft)
 
 - **Siege balance:** merged (7679415). It changes existing test expectations, approved by the user (see docs/PROGRESS.md). Difficulty still needs playtesting in Minecraft; falls are rare by design of the current numbers.
 
-- **Commander's Ledger:** wired behind the development gate `civ_ledger_dev` (default off; commit 50590e3). The manifest depends on @minecraft/server-ui 2.1.0 (7f35c71), which is UNVERIFIED in game: if it does not resolve, the whole pack will fail to load. Test on a throwaway world first (docs/LEDGER_PLAN.md).
+- **Commander's Ledger:** wired behind the development gate `civ_ledger_dev` (default off; commit 50590e3). The manifest depends on @minecraft/server-ui 2.1.0 (7f35c71). The pack-load risk recorded here is closed: on 2026-10-26 the pack loaded in Bedrock 1.26.5203 with that module resolved. What stays UNVERIFIED in game is the Ledger itself - its item, menus and confirmations have never been opened with the gate on, so test on a throwaway world first (docs/LEDGER_PLAN.md).
 
 ## Verification status
 
 Four offline gates green on a clean export of HEAD: 903 manifest/packaging checks, strict typecheck against the real
 2.7.0 declarations, 1029 unit tests, and a 52-stage headless end-to-end kingdom run.
-**Nothing has been run inside Minecraft** — it is not installed on the machine that built
-this. `docs/TESTING.md` carries the in-game script for when it is, and `docs/PROGRESS.md`
-lists the defects found and fixed during this milestone along with the remaining risks.
+**The pack has run inside Minecraft** (Bedrock 1.26.5203): it loads on `@minecraft/server` 2.7.0 with
+`@minecraft/server-ui` 2.1.0, `/reload` applies a redeploy, the horn and its confirmation form work, and
+districts 1 and 2 were built end to end and verified **in a development save** (`docs/PROGRESS.md`).
+**The packaged starter template is still unbuilt** — no district is marked built in
+`starter/template.json` and `starter/build-receipt.json` does not exist, so
+`npm run template:release-check` exits 1 on purpose. `docs/TESTING.md` carries the in-game script for the
+checks not yet run, and `docs/PROGRESS.md` lists the defects found and fixed during this milestone along
+with the remaining risks.

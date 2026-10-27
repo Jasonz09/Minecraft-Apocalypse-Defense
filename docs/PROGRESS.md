@@ -86,8 +86,10 @@ files**), headless end-to-end kingdom run (**52/52 stages**).
 
 ## Known limitations and open risks
 
-- **Nothing has been run inside Minecraft.** No client on this machine; every result here is
-  headless. See `docs/TESTING.md` for the in-game script.
+- **Nothing had been run inside Minecraft when this line was written.** There was no client on this
+  machine, and every result above is headless. That changed on 2026-10-26: Bedrock 1.26.5203 loaded the
+  pack and districts 1 and 2 were built and verified in a development save - see the in-game sections at
+  the end of this file, and `docs/TESTING.md` for the in-game script.
 - **`buildAdapter.js` is unexercised.** Its API use typechecks against 2.7.0, but block
   placement, unloaded-chunk refusal and "never overwrite non-air" have only been read, not
   run. It stays behind `civ:debug_build enable` + an explicit anchor.
@@ -113,11 +115,11 @@ and a UI. Explicitly out of this milestone per the brief.
 
 
 ## Physical district prototype
-First physical district (district-1) implemented and tested offline; see MINECRAFT_INTEGRATION.md. Next: in-game verification, then district 2-5 layouts, NPC/entity bridge.
+First physical district (district-1) implemented and tested offline; see MINECRAFT_INTEGRATION.md. Next: in-game verification (this 49x49 prototype has still never run in the game; the enlarged districts 1-2 have, below), then district 2-5 layouts (all five registered since), NPC/entity bridge.
 
 
 ## Civilization layer
-Master planner, validator, terrain/site selection, layout, gates + walls, persistence/jobs, enlarged Hearthgate construction planner and runtime (`civ:generate`) are implemented and tested offline (637 tests at last full run; manifest 600 checks). Nothing in this layer has run in Minecraft. See ENLARGED_HEARTHGATE.md, CIVILIZATION_PLAN_DESIGN.md, ROADMAP.md, LEDGER_PLAN.md.
+Master planner, validator, terrain/site selection, layout, gates + walls, persistence/jobs, enlarged Hearthgate construction planner and runtime (`civ:generate`) are implemented and tested offline (637 tests at last full run; manifest 600 checks). Nothing in this layer had run in Minecraft when this was written; on 2026-10-26 districts 1 and 2 were built end to end and verified in a development save - see the in-game sections below. See ENLARGED_HEARTHGATE.md, CIVILIZATION_PLAN_DESIGN.md, ROADMAP.md, LEDGER_PLAN.md.
 
 
 ## Starter world template (current)
@@ -146,9 +148,10 @@ invented `state`/`forced` fields instead of the registry's real `{v, gates:[{id,
 so a paused half-district armed and then lost its only resume handle; `--out` was checked with a string prefix
 (`distX` passed, and the builder deletes its staging directory); a previous, larger export's `db` files could
 survive in `dist/work/source`; two packaging assertions could not fail (a missing template `manifest.json` was
-"reported" by checking `level.dat`, and a no-arg condition), and one test compared a list's length to itself. **No `.mctemplate` has been produced and nothing
-has run inside Minecraft**: district 1 has never been physically built, and `ENLARGED_LAYOUTS` registers only district 1,
-so districts 2-5 are contract-ready and build-blocked. See STARTER_WORLD.md.
+"reported" by checking `level.dat`, and a no-arg condition), and one test compared a list's length to itself. **No `.mctemplate` has been
+produced.** What has changed since that sentence was written: districts 1 and 2 have been physically built and verified
+in a development save (2026-10-26, below), and `ENLARGED_LAYOUTS` registers all five districts, so districts 3-5 are
+blocked on build time only - while the packaged starter template is still 0/5 built. See STARTER_WORLD.md.
 
 A second handoff (ChatGPT, 2026-10-18) then added the **release gate** on top of that commit, merged the same
 day with no loss of the repairs above (its builder and test diffs were additions only): `dev/lib/release-readiness.mjs`
@@ -195,21 +198,24 @@ the siting registry, spacing/density, per-district budgets, determinism) plus 7 
 equivalence, per-district persistence and independent wipes, refusal while a neighbour builds, legacy single-slot
 worlds still resume). Suite on commit `e8b5622`: 1202 unit tests, 0 failures, 934 manifest/packaging checks, five
 verify gates green. District 1's checksum is pinned unchanged
-(`53c81775`), so existing Hearthgate saves are untouched. NOT DONE: nothing has been built in Minecraft; the wall
-stage's own reported column count exceeds the columns its operations cover by 194 at seed 21 (282 on flat ground) -
-sound, but to be closed in `civ/walls.js`, which moves district 1's checksum, so it is scheduled rather than slipped;
+(`53c81775`), so existing Hearthgate saves are untouched. NOT DONE: no district of the packaged starter template
+has been built (districts 1 and 2 have been built and verified in a development save since, 2026-10-26, below);
+the wall stage's own reported column count exceeds the columns its operations cover by 194 at seed 21 (282 on
+flat ground) - sound, but to be closed in `civ/walls.js`, which moves district 1's checksum, so it is scheduled
+rather than slipped;
 the 14 registry kinds (`orchard`, `customs_yard`, `command_hall`, `stable`, `drill_ground`, `mill`, `market_square`,
 `pen`, `shop`, `garden`, `warehouse`, `barracks`, `farm_veg`, `farm_kitchen`) cannot always be sited, which is capacity,
 not honesty; and the shared band's duplicate ownership is the root cause the wall-versus-clearance rule works around
-(dev task 27). `template:release-check` exits 1 and `--zip` stays refused until all five are built and verified in
-game. See FIVE_DISTRICT_BUILD.md, CIVILIZATION_PLAN_DESIGN.md, STARTER_WORLD.md.
+(dev task 27). `template:release-check` exits 1 and `--zip` stays refused until all five are built and verified in the
+world being packaged, marked `built` and receipted - which, with districts 1-2 standing only in a development save, is
+still 0/5. See FIVE_DISTRICT_BUILD.md, CIVILIZATION_PLAN_DESIGN.md, STARTER_WORLD.md.
 
 ## Goal pass (offline)
 - Siege balance: merged to master (7679415) after the user approved the changed test expectations. Difficulty needs in-game playtesting.
 - Districts 2-5 on the Hearthgate path, behind civ_devgate; golden keeps Hearthgate unchanged (FIVE_DISTRICT_BUILD.md).
 - Invasion director: built, disabled, tick no-op (INVASION_DIRECTOR.md).
 - Population LOD: built, spawning disabled, unwired (POPULATION_LOD.md).
-- Commander's Ledger: presenters, runtime and dev-gated wiring on master (50590e3); manifest dependency on server-ui 2.1.0 (7f35c71), UNVERIFIED in game.
+- Commander's Ledger: presenters, runtime and dev-gated wiring on master (50590e3); manifest dependency on server-ui 2.1.0 (7f35c71) **does resolve in the real game** - the pack loaded with it on 2026-10-26. The Ledger's own item and menus are still UNVERIFIED in game (dev gate off by default).
 - Approved expectation changes (user option A): war.test.mjs wall-crew values (standing crew 2); evacuation.test.mjs repair expectations (integrity 100, materials 135) and the 'wall rebuilt first' check now asserts integrity above breachIntegrity; reliability-runtime.test.mjs subscriber count 7 to 8 (the Ledger development switch) and harness stubs; siege-longhorizon.test.mjs first-breach bound 1000 to 1500 (its own new file). Verified on a clean export of 89f442c: exit 0, 903/903 manifest, 1029/1029 unit, e2e 52/52.
 
 ## The Horn of Hearthgate (player-facing entry point)
@@ -235,7 +241,10 @@ compass wrap, guide line suffixes, chat readout, confirmation copy). The Ledger'
 `itemUse: 1` (the horn) as the baseline and `2` once the Ledger registers; `reliability-runtime.test.mjs`
 expects two `playerSpawn` subscribers and three intervals (gate poll 40, horn guide 20, simulation hour),
 and the server-ui rule now names both integration binding files. Verified offline: 954 manifest checks,
-1213/1213 unit tests, e2e 52/52, five gates green. NOT DONE: none of this has run in Minecraft yet.
+1213/1213 unit tests, e2e 52/52, five gates green. NOT DONE then: none of this had run in Minecraft. Since
+2026-10-26 the horn is granted on first spawn, its confirmation form opens and the confirmed run builds for
+real (districts 1 and 2, below). Whether the guide readout and the action-bar ticker were checked in game is
+not recorded here.
 
 ## First in-game run (2026-10-26, Minecraft 1.26.5203)
 The pack was deployed with `node dev/deploy.mjs` (114 files, sha256-verified) and loaded in the existing

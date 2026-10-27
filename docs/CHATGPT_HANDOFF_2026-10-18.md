@@ -10,6 +10,8 @@
   conversions. They were left untouched in this handoff. Check your local `git status` before merging.
 - The actual five-district world does **not** exist. The repository marks only Hearthgate as built
   for the template; layouts for districts 2–5 still need physical implementation and testing.
+  *(Superseded 2026-10-26: all five enlarged layouts are registered, and districts 1 and 2 have been built
+  and verified in a development save. The starter template still marks none of the five as built.)*
 
 ## Added in this handoff
 
@@ -65,9 +67,11 @@ from the existing packager.
 Two claims in the note above are wrong and were corrected rather than carried:
 
 - "The older, smaller Hearthgate prototype was previously built in-game." It was not. `docs/TESTING.md`
-  line 3, `docs/PROGRESS.md`, `docs/QWEN_HANDOFF.md` and `docs/ENLARGED_HEARTHGATE.md` all record that
-  **nothing has ever run inside Minecraft** - the 49x49 prototype was verified against a fake world only.
-  `docs/STARTER_WORLD.md` now states that plainly.
+  line 3, `docs/PROGRESS.md`, `docs/QWEN_HANDOFF.md` and `docs/ENLARGED_HEARTHGATE.md` all recorded that
+  **nothing had ever run inside Minecraft** - the 49x49 prototype was verified against a fake world only.
+  `docs/STARTER_WORLD.md` stated that plainly. (Superseded on 2026-10-26, when districts 1 and 2 were built
+  and verified in a development save - `docs/PROGRESS.md`. The 49x49 prototype still has not been built in
+  game, and no district has been built in the packaged starter template.)
 - "npm run verify … exceeded the current execution time limit … not evidence of failure". Correct, and
   it has since been run here: all five gates pass.
 

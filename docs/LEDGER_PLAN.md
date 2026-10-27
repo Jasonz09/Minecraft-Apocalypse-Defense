@@ -46,15 +46,20 @@ The existing script-event commands stay as developer/debug tools.
 4. Independent safety/code review; update docs.
 
 ## Remaining dependencies
-Enlarged Hearthgate in-game pass; functional gate controls verified in-game; civ generation status/abort/resume commands stable;
+Enlarged Hearthgate in-game pass (districts 1 and 2 have one, in a development save on 2026-10-26 - `docs/PROGRESS.md`);
+functional gate controls verified in-game (not done); civ generation status/abort/resume commands stable
+(`civ:generate_status` ran in game, and district 2 was resumed from its stored queue; an abort has not been run in game);
 decision on first-join grant (default: off, grant only by `civ:ledger`).
 
 ## Wiring status (built, not deployed)
 - Manifest: `@minecraft/server-ui` 2.1.0 is in `CivilizationApocalypse_BP/manifest.json` dependencies and in
-  `package.json` devDependencies (typings installed). **UNVERIFIED IN GAME**: the manifest entry has not been tried in
-  Minecraft. `scripts/main.js` imports `integration/ledgerBindings.js` statically, which imports `@minecraft/server-ui`,
-  so if the game cannot resolve that module the whole pack fails to load, not only the Ledger. Check it in a throwaway
-  world with the gate off before any release.
+  `package.json` devDependencies (typings installed). **Tried in Minecraft on 2026-10-26**: the pack loaded on
+  Bedrock 1.26.5203 with both `@minecraft/server` 2.7.0 and `@minecraft/server-ui` 2.1.0 resolved, so the
+  pack-start risk recorded here is closed. `scripts/main.js` still imports `integration/ledgerBindings.js` statically,
+  which imports `@minecraft/server-ui`, so the pin stays a load-path dependency rather than a feature flag, and a game
+  that cannot resolve it still fails the whole pack. What is **UNVERIFIED IN GAME** is the Ledger itself: with
+  `civ_ledger_dev` off by default its item, forms and confirmations have never been opened. Check those on a throwaway
+  world, with the gate switched on only for the check, before any release.
 - Development gate: world dynamic property `civ_ledger_dev` (`LEDGER_DEV_GATE_KEY`, absent = off). Switched by the
   development command `civ:ledger_devgate on|off` (write it as a scriptevent). The switch is the one Ledger listener
   that runs while the gate is off, because it is the only way to turn the gate on. With the gate on at load, the Ledger

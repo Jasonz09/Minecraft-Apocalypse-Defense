@@ -1,8 +1,12 @@
 # Building the five-district civilization once, in a dedicated world
 
-Status: everything below is implemented and verified **offline against a fake Bedrock world**. Nothing
-has been run inside Minecraft, and no `.mctemplate` exists. `npm run template:release-check` exits
-nonzero until all five districts are physically built and verified in game, and the packager refuses
+Status: everything below is implemented and verified **offline against a fake Bedrock world**, and the
+sequence has since been walked in the real game: districts 1 (Hearthgate) and 2 (Ironquarry) are built end
+to end and verified inside Minecraft (Bedrock 1.26.5203, 2026-10-26, in a development save -
+`docs/PROGRESS.md`). Districts 3-5 have not been run in the game, and no `.mctemplate` exists.
+`npm run template:release-check` exits nonzero until all five districts are physically built and verified
+in game, marked `built` in `starter/template.json` and covered by a signed receipt - which none of them is,
+because the packaged starter world has never been built - and the packager refuses
 `--zip` while it does. That refusal is the design, not a failure to work around.
 
 ## 1. What changed in the model
@@ -22,6 +26,9 @@ plan slot and a single job queue. Now:
   refuses nonsense, and `districts=` (plural) is refused with a reason.
 
 ## 2. Command grammar
+
+Every id is a **script event**: type it after `/scriptevent`, e.g. `/scriptevent civ:generate district=2`.
+The pack registers no slash commands of its own, so the short form answers "unknown command".
 
 | command | arguments | effect |
 | --- | --- | --- |
@@ -90,8 +97,11 @@ world below rather than tabulated here, because it depends on the terrain the ru
 The slices column is `describePlan`'s own basis - `ceil(ops x 3 / 400)` for the write phase (stage ends,
 chunk holds and tree clearing make real windows about three times the ideal), one slice per tick assumed.
 `civ:generate_status` adds the survey and planning slices on top when it has measured them. At 20 ticks/s
-that is roughly two minutes of write work per district **if** the engine grants a slice every tick - the
-first in-game run must measure the real number and replace this paragraph.
+that is roughly two minutes of write work per district **if** the engine grants a slice every tick. The
+first in-game districts measured only the whole run: district 1 went from the horn confirmation to
+`complete` in about 15 minutes of wall clock (survey + planning + build together, 52188 ops with 4902
+skipped), and district 2 ended at 46042 ops with 1716 skipped; the per-district write-slice rate has not
+been separated out in game, and no `civ:generate_diag` output from either run is recorded.
 
 Storage as measured in the fake world (its own seed, `civ:generate_plan site=here` then one build): master
 plan 20,764 B in 2 property keys, one district's site payload 27,537 B in 2 keys, that district's queue
@@ -119,6 +129,10 @@ district - against a fake engine. It proves nothing about real chunk latency, th
 accepts these block states.
 
 ## 5. What to capture from the in-game run
+
+Partly captured for districts 1-2 on 2026-10-26: both `civ:generate_status` lines are recorded in
+`docs/PROGRESS.md`, along with site screenshots of the builds. Nothing else below is recorded as captured,
+and districts 3-5 have not been run in the game.
 
 * `civ:generate_status` text, once per district and once at the end.
 * `civ:generate_diag` after the first district, so the survey/slice timing becomes measured rather
@@ -157,10 +171,12 @@ that output, export the world, and follow `docs/STARTER_WORLD.md`.
   `chapel`, `school`, wells) is required to be physically present in every district on every terrain.
 * Physical entities: none reach the world. War, evacuation and siege are simulation values (built and tested
   offline); the Commander's Ledger is wired behind `civ_ledger_dev`, default off, and its
-  `@minecraft/server-ui` 2.1.0 dependency has never been resolved by a real game - `main.js` imports the
-  bindings unconditionally, so that pin is a pack-start risk, not a feature flag; `manifest validation` now
+  `@minecraft/server-ui` 2.1.0 dependency **did resolve in the real game** on 2026-10-26 - `main.js` imports the
+  bindings unconditionally, so the pack loads or fails on that pin as a whole, and it loaded. The Ledger's own
+  item, menus and confirmations have still never been opened in game; `manifest validation` now
   checks every `@minecraft/*` pin against the installed typings. The population-LOD and people modules are
-  offline-tested but unwired, with spawning disabled by default. A built world therefore contains buildings,
+  offline-tested but unwired, with spawning disabled by default, so neither built district could put an
+  inhabitant in the world. A built world therefore contains buildings,
   roads and gates - not inhabitants.
 
 ## WP2 audit (districts 2-5 through the district-1 code path)

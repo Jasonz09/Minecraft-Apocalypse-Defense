@@ -1,7 +1,9 @@
 # Minecraft integration status
 
 In-game verified by the user (previous milestone): the pack loads, `civ:status` and save persistence work.
-The physical district below is **built and tested offline only**; nothing in it has run in the game yet.
+The physical district below (the 49x49 prototype) is **built and tested offline only**; nothing in it has run in the game.
+The enlarged civilization path is no longer in that state: districts 1 and 2 were built end to end and verified inside
+Minecraft on 2026-10-26, in a development save (`docs/PROGRESS.md`).
 
 ## Verified (executed, offline)
 Run `npm run verify` — all four gates green; `npm test` = 253 tests (incl. 66 reliability/regression
@@ -12,8 +14,9 @@ tests added during integration). **None of this proves in-game behaviour.**
 - Dev behavior packs: `%APPDATA%\Minecraft Bedrock\Users\Shared\games\com.mojang\development_behavior_packs`
   (was empty; no worlds existed at inspection time). Two per-user folders exist under `Users\`;
   one has `minecraftWorlds` — not touched.
-- Content logs: `%APPDATA%\Minecraft Bedrock\logs` was empty (game never run). In-game, enable
-  Settings → Creator → "Enable Content Log GUI" and/or read the log folder after the first run.
+- Content logs: `%APPDATA%\Minecraft Bedrock\logs` was empty at inspection time, before the game had ever been run
+  (it has been run since - `docs/PROGRESS.md`). In-game, enable
+  Settings → Creator → "Enable Content Log GUI" and/or read the log folder after a run.
 
 ## Compatibility assumptions (documented, not game-verified)
 - `@minecraft/server` 2.7.0 is a stable module (published 2026-05-05; shipped with game 1.26.20),
@@ -32,10 +35,12 @@ every file. It refuses to replace a folder with a different manifest UUID and ne
 or other packs. Deployed as of commit `e8b5622`: **112 files**, each re-checked with
 `git hash-object --path <pack path> <deployed file>` against the blob id stored in that commit - 0
 mismatches, 0 missing, 0 extra; header UUID `fd04cb50-dddc-4ebe-83fc-5b5375819bcb`, the same as the
-source manifest, and the manifest now declares `@minecraft/server-ui` 2.1.0 for the Ledger (never resolved
-by a real game). Re-run `node dev/deploy.mjs` after any change and confirm the same file count with 0/0/0.
-Deploying is not running: Minecraft has still never loaded this pack, so nothing here validates the
-engine. See docs/TESTING.md for the in-game checklist.
+source manifest, and the manifest now declares `@minecraft/server-ui` 2.1.0 for the Ledger (the real game
+resolved that module on 2026-10-26, when the pack loaded). Re-run `node dev/deploy.mjs` after any change and
+confirm the same file count with 0/0/0.
+Deploying is not running: the file check above is offline work. The pack has since loaded in Minecraft, and
+`/reload` applied a redeploy (`docs/PROGRESS.md`) - which validates the load path only, not the engine
+behaviour the in-game checklist in docs/TESTING.md still covers.
 
 ## Bugs fixed during integration
 1. A system exception inside a step left the in-memory kingdom half-mutated → now rolled back and reported.
@@ -133,10 +138,10 @@ armor stands) are not checked. A stuck build can always be re-surveyed with `res
 
 Independent adversarial run (about 80 scenarios on a fake world): no block that was not natural ground, a plant or a natural tree changed inside the footprint, and nothing changed outside it. It cannot prove real-engine behaviour (block ids/states, liquid flow, gravity blocks, ticking areas).
 
-## Status after the goal pass (offline only; nothing below has run in Minecraft)
+## Status after the goal pass (offline when written; what has run in Minecraft since is marked per line)
 
 - Siege balance: merged to master (7679415); difficulty needs playtesting.
-- Districts 2-5: build through the Hearthgate path behind the development gate (ad23eef); shared-wall deviation documented in FIVE_DISTRICT_BUILD.md.
+- Districts 2-5: build through the Hearthgate path behind the development gate (ad23eef); shared-wall deviation documented in FIVE_DISTRICT_BUILD.md. District 2 has since been built and verified in a development save (2026-10-26); 3-5 have not.
 - Invasion director: built and disabled by default; the tick calls it as a no-op (aa8977d, 86f14eb).
 - Population LOD: built, spawning disabled, not wired into main.js (9d5e50b).
-- Commander's Ledger: presenters, runtime and dev-gated wiring on master (50590e3, 7f35c71); unverified in game (server-ui dependency).
+- Commander's Ledger: presenters, runtime and dev-gated wiring on master (50590e3, 7f35c71); the `@minecraft/server-ui` pin does resolve in the real game (the pack loaded with it on 2026-10-26), so the load risk is closed. The Ledger itself is still unverified in game: dev gate off by default, its item and menus never opened.

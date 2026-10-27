@@ -1,12 +1,13 @@
 # Starter world - prebuilt kingdom as a Bedrock world template
 
 Status: **tooling and contract are implemented and verified offline. No `.mctemplate` exists yet,
-because the city it must contain has not been physically built in Minecraft.** District 1 is
-planner-ready; districts 2-5 are planned on the master map but have no registered build layout.
-Nothing in this workflow has been executed inside Minecraft. Bedrock is installed on this machine, but
-`docs/TESTING.md` records that **no in-game run has ever been performed** - not the enlarged Hearthgate
-build, not the 49x49 prototype (offline-only per `docs/PHYSICAL_DISTRICT_DESIGN.md` and
-`docs/PROGRESS.md`), and not an imported template.
+because the city the packaged template must contain has not been built in a starter world.** All five
+districts have registered enlarged layouts and all five are marked `planner-ready` in
+`starter/template.json`. Districts 1 (Hearthgate) and 2 (Ironquarry) **have been built end to end and
+verified inside Minecraft** (Bedrock 1.26.5203, 2026-10-26) - in a development save, recorded in
+`docs/PROGRESS.md`; that is not the starter world this document ships, and no district has been marked
+`built`, armed, exported or imported. Not built in game either: the 49x49 prototype (offline-only per
+`docs/PHYSICAL_DISTRICT_DESIGN.md`) and districts 3-5.
 
 ## 1. What "prebuilt" means here
 
@@ -138,8 +139,10 @@ fails if they ever drift.
 
 ## 5. One-time repeatable workflow
 
-Steps 1-5 happen inside Minecraft in a dedicated build world and have **not** been performed; steps 6-7
-are offline and implemented, and step 8 needs the game again.
+Steps 1-5 happen inside Minecraft in a dedicated build world. As a run they have **not** been performed:
+districts 1 and 2 were built (step 2) in a development save on 2026-10-26, not in a fresh build world, and
+that save has not been returned to a shippable state, armed or exported. Steps 6-7 are offline and
+implemented, and step 8 needs the game again.
 
 1. **Create a dedicated build world** (e.g. `CIVBUILD-hearthgate`), normal/infinite generator, cheats
    on for `/scriptevent`. Never an existing world: the tooling never edits a live save.
@@ -187,8 +190,9 @@ languages, `keepRandomSeed: false`, keep/wipe prefixes not overlapping, `civ:pla
 with unique ids/names/roles and unique `<name>-enlarged` layout ids, and `starterWorld: true` only for
 a district whose layout is registered in `districtplan.ENLARGED_LAYOUTS` and whose status is not
 `planned`. The last rule is the one that stops an incomplete template being called finished: today it
-passes because only district 1 is marked, and the run prints *"4 district(s) are prepared but not
-started"* rather than hiding it.
+passes because all five registered layouts are present, and the run prints *"5 starter district(s) are
+planner-ready but not physically built ... template:release-check must refuse packaging until each one is
+built and verified in Minecraft"* rather than hiding it.
 
 Package gate: required files present (`level.dat`, `levelname.txt`, `db/CURRENT`), no forbidden residue
 (`db/*.tmp`, `db/DIM*/`, `level.dat_new`, `world_behavior_packs.json.bak`), `level.dat` parses as
@@ -198,8 +202,9 @@ and the size stays under `maxWorldBytes` (256 MB).
 
 ## 7. Full-release gate: a staged preview is not a release
 
-**Development staging is not the finished product.** The existing starter spec currently marks
-only Hearthgate (`district-1`) as a starter-world district; physical districts 2–5 are not built.
+**Development staging is not the finished product.** The existing starter spec marks all five districts as
+starter-world districts and none of them `built`; no district of the packaged template has been built -
+districts 1 and 2 stand only in a development save (`docs/PROGRESS.md`).
 The earlier packager could create a `.mctemplate` when just Hearthgate was marked complete.
 That was suitable for an experiment but misleading as a five-district release.
 
@@ -250,16 +255,18 @@ extraction directory; this prevents destructive cleanup caused by a bad `--out` 
 
 ## 8. Getting to five districts
 
-`starter/template.json` already lists all five with their intended `-enlarged` layout ids, so the gap
-is code and build time, not contract:
+`starter/template.json` already lists all five with their `-enlarged` layout ids, so the gap
+is build time, not contract or code:
 
-1. `ENLARGED_LAYOUTS` in `scripts/civ/districtplan.js` maps **only index 1** today. Each of 2-5 needs
-   its layout registered (the composer already does walls, gatehouses, road profiles, pads, stairs and
-   bridges from the master plan, so this is per-district composition + tuning, not new machinery).
-2. Flip the spec entry to `starterWorld: true` and a buildable status - the validator will refuse until
-   step 1 is real.
-3. Build them in the same world, in ring order (1-2-3-4-5), one `civ:generate` job per district, and
-   re-run `civ:starter_verify` afterwards: it must show 5 complete districts and 0 pending jobs.
+1. Done: `ENLARGED_LAYOUTS` in `scripts/civ/districtplan.js` maps **all five** indices
+   (`hearthgate/ironquarry/whitethorn/saltmere/ashfall-enlarged`); the composer builds each district's
+   walls, gatehouses, road profiles, pads, stairs and bridges from the master plan.
+2. Done: every entry already carries `starterWorld: true`, with `status: "planner-ready"`. Each one moves
+   to `built` only after that district has been built and inspected in the world being packaged.
+3. Partly done: districts 1 and 2 are built, in ring order, one `civ:generate` job each - but in a
+   development save that has never been armed or exported (`docs/PROGRESS.md`). Districts 3-5 still have
+   to be built, and `civ:starter_verify` re-run afterwards: it must show 5 complete districts and 0
+   pending jobs.
 4. Inter-district wall/gate links come from the master plan's shared chains; the gate registry keeps
    them closable, so the template still ships with `auto` gates.
 
@@ -277,12 +284,15 @@ is code and build time, not contract:
 
 ## 10. Known limitations
 
-- **No template has been built or imported.** Steps 1-4 of section 5 need Minecraft.
+- **No template has been built or imported.** Steps 3-5 of section 5 still need Minecraft; step 2 has been
+  walked in game, but only for districts 1-2 and only in a development save.
 - Offline tooling cannot read simulation state out of `db/`; the receipt is a signed human step, not a
   cryptographic guarantee.
-- District 1's enlarged layout has been generated and validated as *data* only; it has never been
-  placed in a world, so build-time terrain surprises (rivers, cliffs, unloaded chunks at the survey
-  edge) are still open risks.
+- Districts 1 and 2 have now been placed in a world, and the build-time surprises they did hit are
+  recorded in `docs/PROGRESS.md`: a ticking-area chunk hold needs the player standing near the tile that
+  is loading, and trees whose neighbours included melon, cocoa or bamboo were left standing on built lots.
+  Districts 3-5 have still never been placed, so rivers, cliffs and unloaded chunks at the survey edge
+  stay open risks there.
 - `world_resource_packs.json` is copied if present, but this pack ships no resource pack, so that path
   is untested.
 - The wipe list is one-colon prefixes on purpose, so the plan store's quarantine copy (the bounded
