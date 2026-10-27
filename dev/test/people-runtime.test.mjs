@@ -153,6 +153,22 @@ test("civ:people on|off is the switch, and it answers with what the drivers have
     assert.equal(seen.calls[1].gateOn, false);
 });
 
+test("a driver's own reason for doing nothing is printed, not just the count", () => {
+    const live = inhabited();
+    live.register({
+        id: "quiet",
+        onHour: () => 0,
+        status: () => ({ hours: 4, refused: "the master plan could not be read", notes: ["no wall to post", "no ground"], empty: [], nothing: null }),
+    });
+    live.onStep({ ran: 1 });
+    const shown = live.statusLines().join("\n");
+    assert.match(shown, /quiet: 1 hour\(s\), 0 entity change\(s\)/, "the counter line is still there");
+    assert.match(shown, /refused=the master plan could not be read/, "the reason a driver knows is the reason a player sees");
+    assert.match(shown, /notes: no wall to post; no ground/, "a list is rendered, not swallowed");
+    assert.doesNotMatch(shown, /empty=/, "an empty list adds no line");
+    assert.doesNotMatch(shown, /nothing=/, "a null field adds no line");
+});
+
 test("a rejected hour still reaches the drivers, and it hands them the kingdom the loop refused to change", () => {
     const live = inhabited();
     const seen = recorder("walker");

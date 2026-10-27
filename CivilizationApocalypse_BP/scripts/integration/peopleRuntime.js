@@ -29,9 +29,50 @@ import { isBusy } from "./districtBuilder.js";
  * @property {string} id names the driver in `civ:people status`
  * @property {(ctx: PeopleContext) => (number | void)} onHour its bounded work for one hour, returning how
  *   many entities it created or removed (nothing or 0 when the hour changed none)
+ * @property {(() => unknown)} [status] an optional account of the last hour, printed by `civ:people`
  *
  * @typedef {{ hours: number, changed: number, errors: number, lastError: string | undefined }} DriverStats
  */
+
+/**
+ * A driver's own account of its last hour, flattened into a few chat lines.
+ *
+ * Without this, a driver that refused for a reason it knows prints exactly like one that had nothing to do:
+ * `0 entity change(s)`. The cap keeps a five-district war from turning `civ:people` into a scroll.
+ *
+ * @param {PeopleDriver & { status?: () => unknown }} driver
+ * @returns {string[]}
+ */
+function describeDriver(driver) {
+    if (typeof driver.status !== "function") {
+        return [];
+    }
+    /** @type {any} */
+    let view;
+    try {
+        view = driver.status();
+    } catch (error) {
+        return [`status could not be read: ${String(error)}`];
+    }
+    if (view === null || typeof view !== "object") {
+        return [];
+    }
+    /** @type {string[]} */
+    const out = [];
+    for (const [key, value] of Object.entries(view)) {
+        if (Array.isArray(value)) {
+            if (value.length === 0) {
+                continue;
+            }
+            out.push(`${key}: ${value.slice(0, 3).join("; ")}${value.length > 3 ? ` (+${String(value.length - 3)} more)` : ""}`);
+        } else if (value === null || value === undefined || typeof value === "object") {
+            continue;
+        } else {
+            out.push(`${key}=${String(value)}`);
+        }
+    }
+    return out.slice(0, 6);
+}
 
 /**
  * @param {ReturnType<typeof import("../kingdom/store.js").createKingdomStore>} kingdomStore
@@ -148,6 +189,11 @@ export function createPeopleRuntime(kingdomStore) {
         for (const driver of drivers) {
             const entry = statsOf(driver.id);
             lines.push(`  ${driver.id}: ${String(entry.hours)} hour(s), ${String(entry.changed)} entity change(s)${entry.lastError === undefined ? "" : `, last error ${entry.lastError}`}`);
+            // A driver that decided to do nothing is indistinguishable, in chat, from one that failed to run.
+            // Every driver here can refuse for a reason it knows, so the reason is printed rather than guessed at.
+            for (const detail of describeDriver(driver)) {
+                lines.push(`    ${detail}`);
+            }
         }
         if (stats.lastError !== undefined) {
             lines.push(`Last error: ${stats.lastError}`);
