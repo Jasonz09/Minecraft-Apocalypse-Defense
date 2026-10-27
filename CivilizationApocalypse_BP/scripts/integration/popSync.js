@@ -46,7 +46,8 @@ export function createPopSync(deps = {}) {
     const enabled = deps.enabled === true;
     const readKingdom = deps.readKingdom ?? (() => createKingdomStore(world).load().kingdom);
     const anchorsOf = deps.anchors ?? (() => playersIn(world, dimension));
-    const homesOf = deps.homes ?? homesFromPhysical;
+    const surfaceAt = surfaceAtOf(dimension);
+    const homesOf = deps.homes ?? ((/** @type {any} */ kingdom) => homesFromRecords(kingdom, surfaceAt));
 
     /** @param {{ x: number, y: number, z: number }} point */
     const chunkLoadedAt = (point) => {
@@ -427,18 +428,86 @@ function playersIn(world, dimension) {
 }
 
 /**
- * The physical origin of each district, when the district has a physical footprint.
+ * The standing height of a plan column, as one dimension sees it. A civilization build record stores only X/Z
+ * (the builder never records a height), so the Y has to come from the world rather than be invented.
+ * `getTopmostBlock` is one read, and it throws for an unloaded chunk - which is the answer we want: no home
+ * this hour, rather than a villager placed inside a hill or dropped into a void.
+ *
+ * Exported because the streets driver's teardown census looks for the same districts and must not keep its own
+ * copy of this rule; two readers of one record is how they were allowed to disagree.
+ *
+ * @param {any} dimension
+ * @returns {(x: number, z: number) => (number | undefined)}
+ */
+export function surfaceAtOf(dimension) {
+    return (x, z) => {
+        // A missing method is not an unloaded chunk. Swallowing that difference turns a caller that handed in
+        // the wrong object, or a world model that forgot to forward it, into a silently empty street.
+        if (typeof dimension?.getTopmostBlock !== "function") {
+            throw new TypeError("the dimension given to popSync has no getTopmostBlock, so no plan column can be measured");
+        }
+        try {
+            const top = dimension.getTopmostBlock({ x, z });
+            const y = top?.location?.y ?? top?.y;
+            return Number.isFinite(y) ? /** @type {number} */ (y) + 1 : undefined;
+        } catch (_error) {
+            return undefined;
+        }
+    };
+}
+
+/**
+ * Where each district's people live, from the records the pack actually keeps.
+ *
+ * A district can carry its footprint two ways, and the second is the one that exists in a real world:
+ *  - `physical.origin` is the prototype-layout record, and it already has a height, so it is used as-is;
+ *  - `civ` is the civilization build record written by `civ:generate`, and it stores `hq`, `centre` and
+ *    `anchor` as plan X/Z with **no Y at all**. Reading only the first shape makes every built district
+ *    look homeless, which is how the streets driver came to run for hours, report no error, and spawn
+ *    nothing.
+ *
+ * A district with neither, or whose plan column has no known surface, gets no entry: the reducer then
+ * refuses its groups as unhoused instead of the adapter inventing a place to stand.
+ *
  * @param {any} kingdom
+ * @param {(x: number, z: number) => (number | undefined)} [surfaceAt] the standing Y of a plan column
  * @returns {Record<string, { x: number, y: number, z: number }>}
  */
-function homesFromPhysical(kingdom) {
+export function homesFromRecords(kingdom, surfaceAt = undefined) {
     /** @type {Record<string, { x: number, y: number, z: number }>} */
     const homes = {};
-    for (const district of kingdom.districts) {
-        const origin = district.physical?.origin;
-        if (origin !== undefined && origin !== null && Number.isInteger(origin.x) && Number.isInteger(origin.y) && Number.isInteger(origin.z)) {
-            homes[district.id] = { x: origin.x, y: origin.y, z: origin.z };
+    const districts = Array.isArray(kingdom?.districts) ? kingdom.districts : [];
+    for (const district of districts) {
+        const id = String(district?.id ?? "");
+        if (id.length === 0) {
+            continue;
         }
+        const origin = district?.physical?.origin;
+        if (isPlanar(origin, true)) {
+            homes[id] = { x: origin.x, y: origin.y, z: origin.z };
+            continue;
+        }
+        const plan = [district?.civ?.hq, district?.civ?.centre, district?.civ?.anchor].find((spot) => isPlanar(spot, false));
+        if (plan === undefined || typeof surfaceAt !== "function") {
+            continue;
+        }
+        const y = surfaceAt(plan.x, plan.z);
+        if (!Number.isFinite(y)) {
+            continue;
+        }
+        homes[id] = { x: plan.x, y: /** @type {number} */ (y), z: plan.z };
     }
     return homes;
+}
+
+/**
+ * @param {any} point
+ * @param {boolean} needsY true when the caller cannot supply a height of its own
+ * @returns {boolean}
+ */
+function isPlanar(point, needsY) {
+    if (point === undefined || point === null || !Number.isInteger(point.x) || !Number.isInteger(point.z)) {
+        return false;
+    }
+    return needsY ? Number.isInteger(point.y) : true;
 }

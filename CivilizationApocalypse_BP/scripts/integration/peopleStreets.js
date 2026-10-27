@@ -5,7 +5,7 @@ import { parseGroupId } from "../population/groups.js";
 import { classifyTags, tagFor } from "../population/identity.js";
 import { POP_CURSOR_KEY, POP_DISTRICT_OBSERVE_RADIUS } from "../population/settings.js";
 import { resolveConfig } from "../population/reconcile.js";
-import { createPopSync } from "./popSync.js";
+import { createPopSync, homesFromRecords, surfaceAtOf } from "./popSync.js";
 
 // The streets driver: the kingdom's civilians and garrison, standing in the world as entities.
 //
@@ -61,7 +61,15 @@ const STREET_LABELS = Object.freeze({ civ: "folk", sol: "levy" });
 export function createPeopleStreets(deps = {}) {
     const config = resolveConfig(deps.config ?? {});
     const gateOn = deps.isGateOn ?? peopleGateOn;
-    const homesOf = deps.homes ?? homesFromPhysical;
+    /**
+     * Where a district's people live. `popSync.homesFromRecords` owns that rule - it is the same record the
+     * adapter spawns against - so the driver reads through it instead of keeping a second copy that can drift
+     * out of step with what a real build writes.
+     * @param {any} kingdom
+     * @param {any} dimension
+     * @returns {Record<string, { x: number, y: number, z: number }>}
+     */
+    const homesAt = (kingdom, dimension) => (deps.homes === undefined ? homesFromRecords(kingdom, surfaceAtOf(dimension)) : deps.homes(kingdom));
     /**
      * What the last hour did, for `civ:people status`. A driver that is silently refused (a kingdom that will not
      * validate, a cursor written by a newer pack) would otherwise report 0 changes forever with no reason anywhere.
@@ -95,7 +103,7 @@ export function createPeopleStreets(deps = {}) {
             world,
             dimension,
             readKingdom: () => ctx.kingdom,
-            homes: homesOf,
+            homes: deps.homes,
             anchors: deps.anchors,
             enabled: true,
             config: deps.config ?? {},
@@ -204,7 +212,7 @@ export function createPeopleStreets(deps = {}) {
                 admit(handle);
             }
         }
-        for (const home of Object.values(safeHomes(ctx.kingdom))) {
+        for (const home of Object.values(safeHomes(ctx))) {
             for (const handle of read(dimension(ctx), { location: home, maxDistance: POP_DISTRICT_OBSERVE_RADIUS })) {
                 admit(handle);
             }
@@ -215,12 +223,12 @@ export function createPeopleStreets(deps = {}) {
     /**
      * The districts the census may look inside. An injected `homes` that throws is not allowed to take the teardown
      * down with it: no windows simply means the cursor's own tag queries do the work.
-     * @param {any} kingdom
+     * @param {any} ctx the hour's context, whose kingdom supplies the districts and whose dimension reads the ground
      * @returns {Array<{ x: number, y: number, z: number }>}
      */
-    function safeHomes(kingdom) {
+    function safeHomes(ctx) {
         try {
-            return Object.values(homesOf(kingdom ?? {}));
+            return Object.values(homesAt(ctx?.kingdom ?? {}, dimension(ctx)));
         } catch (_error) {
             return [];
         }
@@ -312,28 +320,6 @@ function physicalGroups(world) {
     } catch (_error) {
         return [];
     }
-}
-
-/**
- * The physical origin of each district, which is where its people live. A district that has never been built has no
- * origin and therefore no citizens on the street - the pack does not populate empty ground.
- * @param {any} kingdom
- * @returns {Record<string, { x: number, y: number, z: number }>}
- */
-function homesFromPhysical(kingdom) {
-    /** @type {Record<string, { x: number, y: number, z: number }>} */
-    const homes = {};
-    const districts = kingdom?.districts;
-    if (!Array.isArray(districts)) {
-        return homes;
-    }
-    for (const district of districts) {
-        const origin = district?.physical?.origin;
-        if (origin !== undefined && origin !== null && Number.isInteger(origin.x) && Number.isInteger(origin.y) && Number.isInteger(origin.z)) {
-            homes[String(district.id)] = { x: origin.x, y: origin.y, z: origin.z };
-        }
-    }
-    return homes;
 }
 
 /**

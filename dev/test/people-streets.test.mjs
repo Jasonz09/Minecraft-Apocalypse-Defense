@@ -372,3 +372,71 @@ test("a district that has never been built gets no people: no physical origin me
     assert.deepEqual(world.census(), []);
     assert.deepEqual(world.journal.blockWrites, [], "and no ground was made to stand on");
 });
+
+/**
+ * The record a real build leaves behind, taken from a live save on 2026-10-26 (world `6gCdkCTx6zk=`,
+ * `db/001330.log`): a completed `civ:generate` district stores `civ.anchor/centre/hq` as plan X/Z with no Y at
+ * all, and never writes `physical`. The home reader looked only at `physical.origin`, so every built district
+ * looked homeless - the driver ran hour after hour, reported no error, and put nobody in the street, while the
+ * cursor recorded `{"n":10,"p":[]}`: ten groups seen, none admitted. The starter fixture authored
+ * `physical.origin`, which is the shape the code expected rather than the shape the pack writes, and that is how
+ * the whole suite stayed green over it.
+ * @param {any} kingdom
+ */
+function asBuiltByCivGenerate(kingdom) {
+    for (const district of kingdom.districts) {
+        const home = HOMES[district.id];
+        delete district.physical;
+        district.civ = {
+            district: Number(String(district.id).replace("district-", "")),
+            status: "complete",
+            seed: 20261017,
+            anchor: { x: home.x - 5, z: home.z - 6 },
+            centre: { x: home.x, z: home.z },
+            checksum: "214bbd16",
+            stage: "complete",
+            startedStep: 738,
+            dimension: "minecraft:overworld",
+            hq: { x: home.x + 1, z: home.z + 1 },
+            ops: 52188,
+            opsTotal: 52188,
+            placed: 47027,
+            skipped: 4902,
+            layout: "hearthgate-enlarged",
+            gates: true,
+        };
+    }
+    return kingdom;
+}
+
+test("a district built by civ:generate is housed: the build record has no Y, so the world supplies it", () => {
+    const kingdom = asBuiltByCivGenerate(starterKingdom());
+    assert.equal(kingdom.districts[0].physical, undefined, "no `physical` record, exactly as the live save reads");
+    const world = scenario(kingdom);
+    const driver = createPeopleStreets();
+
+    const changed = driver.onHour(world.context(kingdom, HOUR));
+    assert.ok(changed > 0, "the kingdom's people are in the world with only a civ record to find them");
+    assert.equal(driver.status().refused, null, "the hour was not refused");
+
+    const rows = world.census();
+    assert.ok(rows.length > 0, "the street is not empty");
+    for (const row of rows) {
+        const record = world.pop.state.entities.get(row.id);
+        assert.equal(record.y, HOMES["district-1"].y, "the missing Y came off the ground (surface + 1), not out of a guess");
+        assert.ok(row.groups[0].startsWith("district-1:"), `${row.groups[0]} stands in the district the player is in`);
+    }
+    assert.deepEqual(world.journal.blockWrites, [], "finding the height read the column, it did not build one");
+});
+
+test("an unloaded build column yields no home, so nobody is placed in ground the pack cannot see", () => {
+    const kingdom = asBuiltByCivGenerate(starterKingdom());
+    const world = scenario(kingdom);
+    for (const home of Object.values(HOMES)) {
+        world.pop.unloadArea(home.x - 32, home.z - 32, home.x + 64, home.z + 64);
+    }
+    const driver = createPeopleStreets();
+    const changed = driver.onHour(world.context(kingdom, HOUR));
+    assert.equal(changed, 0, "no surface, no home, no spawn - a guessed Y would put a villager inside a hill");
+    assert.deepEqual(world.census(), []);
+});

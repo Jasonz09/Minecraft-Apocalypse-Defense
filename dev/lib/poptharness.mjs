@@ -22,6 +22,9 @@ export class Crash extends Error {
 
 export const CHUNK = 16;
 
+/** The surface height of this flat fake overworld: `getTopmostBlock` reports it, and homes sit one above. */
+export const GROUND_Y = 69;
+
 /**
  * @param {number} x
  * @param {number} z
@@ -203,6 +206,18 @@ export function createPopWorld(options = {}) {
         getBlock(location) {
             alive();
             return isLoadedAt(location) ? { typeId: "minecraft:grass_block", isValid: true } : undefined;
+        },
+        /**
+         * `Dimension.getTopmostBlock(locationXZ, minHeight?)` as 2.7.0 declares it. This world is a flat
+         * overworld, so the column's surface is always GROUND_Y - and an unloaded chunk has no surface to
+         * report, which is what makes "we cannot see the ground there" distinguishable from "nobody lives here".
+         * @param {{ x: number, z: number }} locationXZ
+         */
+        getTopmostBlock(locationXZ) {
+            alive();
+            return isLoadedAt(locationXZ)
+                ? { typeId: "minecraft:grass_block", isValid: true, location: { x: locationXZ.x, y: GROUND_Y, z: locationXZ.z } }
+                : undefined;
         },
     };
 

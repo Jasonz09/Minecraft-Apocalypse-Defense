@@ -146,6 +146,10 @@ export function createStreetWorld(options = {}) {
         getBlock(location) {
             return pop.dimension.getBlock(location);
         },
+        /** @param {{ x: number, z: number }} locationXZ */
+        getTopmostBlock(locationXZ) {
+            return pop.dimension.getTopmostBlock(locationXZ);
+        },
         // World-writing surfaces, present only so that touching one is loud instead of silently impossible.
         setBlock: trap("setBlock"),
         setBlockTypes: trap("setBlockTypes"),
