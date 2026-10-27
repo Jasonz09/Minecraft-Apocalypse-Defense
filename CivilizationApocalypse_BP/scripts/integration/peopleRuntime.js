@@ -1,8 +1,6 @@
-import { CIV_EVENT_IDS, SCRIPT_EVENT_NAMESPACE, PEOPLE } from "../config.js";
 import { system, world } from "@minecraft/server";
-import { parsePeopleCommand, peopleGateOn, peopleStatusLines } from "../people/gate.js";
+import { peopleGateOn, peopleStatusLines } from "../people/gate.js";
 import { isBusy } from "./districtBuilder.js";
-import { reply } from "../commands/reply.js";
 
 /**
  * The one door between the hourly kingdom simulation and the living world: it owns the people gate and
@@ -146,42 +144,3 @@ export function createPeopleRuntime(kingdomStore) {
 
     return { register, onStep, statusLines, stats };
 }
-
-/**
- * Subscribe the `civ:people` switch. The switch listens whether the gate is on or off, because it is the
- * only way to turn it on.
- * @param {ReturnType<typeof createPeopleRuntime>} runtime
- * @returns {boolean} true the first time
- */
-export function registerPeopleSwitch(runtime) {
-    if (subscribed) {
-        return false;
-    }
-    subscribed = true;
-    system.afterEvents.scriptEventReceive.subscribe(
-        (event) => {
-            if (event.id !== CIV_EVENT_IDS.people) {
-                return;
-            }
-            try {
-                const want = parsePeopleCommand(event.message);
-                if (want === "on" || want === "off") {
-                    try {
-                        world.setDynamicProperty(PEOPLE.gateKey, want === "on");
-                    } catch (error) {
-                        reply([`The people gate could not be changed: ${String(error)}`], event);
-                        return;
-                    }
-                }
-                reply(runtime.statusLines(), event);
-            } catch (_error) {
-                // a failed switch must never break the event loop
-            }
-        },
-        { namespaces: [SCRIPT_EVENT_NAMESPACE] },
-    );
-    return true;
-}
-
-/** @type {boolean} */
-let subscribed = false;

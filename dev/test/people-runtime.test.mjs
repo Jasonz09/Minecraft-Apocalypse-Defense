@@ -6,11 +6,12 @@ import { CIV_EVENT_IDS, districtBuilder, load, makePlayer, mc, resetWorld, send,
 
 const gate = await load("people", "gate.js");
 const runtime = await load("integration", "peopleRuntime.js");
+const peopleCommand = await load("commands", "people.js");
 
 // The switch subscribes once per process, so the command tests share this runtime instance.
 const switched = runtime.createPeopleRuntime(store);
-assert.equal(runtime.registerPeopleSwitch(switched), true, "the first registration subscribes");
-assert.equal(runtime.registerPeopleSwitch(switched), false, "registering twice does not double-subscribe");
+assert.equal(peopleCommand.registerPeopleCommand(switched), true, "the first registration subscribes");
+assert.equal(peopleCommand.registerPeopleCommand(switched), false, "registering twice does not double-subscribe");
 
 /** @param {(ctx: any) => (number | void)} [work] */
 function recorder(id, work) {

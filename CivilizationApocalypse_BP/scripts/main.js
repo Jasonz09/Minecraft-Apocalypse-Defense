@@ -9,7 +9,8 @@ import { registerStarterCommands } from "./commands/starter.js";
 import { registerWelcomeOnJoin } from "./events/welcome.js";
 import { registerSeedBeacon } from "./integration/beaconBindings.js";
 import { registerLedger, registerLedgerDevGate } from "./integration/ledgerBindings.js";
-import { createPeopleRuntime, registerPeopleSwitch } from "./integration/peopleRuntime.js";
+import { createPeopleRuntime } from "./integration/peopleRuntime.js";
+import { registerPeopleCommand } from "./commands/people.js";
 import { startSimulationLoop } from "./integration/simulationLoop.js";
 import { ledgerGateOn } from "./ledger/devgate.js";
 import { createKingdomStore } from "./kingdom/store.js";
@@ -36,7 +37,7 @@ registerSeedBeacon(kingdomStore);
 // Drivers are registered here, one line each, in run order, and only once they have been shown to behave
 // in a real game: an unwired module is how this pack shipped through its first two districts.
 const peopleRuntime = createPeopleRuntime(kingdomStore);
-registerPeopleSwitch(peopleRuntime);
+registerPeopleCommand(peopleRuntime);
 startSimulationLoop(kingdomStore, { onStep: (report) => peopleRuntime.onStep(report) });
 
 // The Commander's Ledger is off unless the development gate is on. The switch always listens, because it is the
