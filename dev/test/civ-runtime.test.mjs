@@ -120,6 +120,23 @@ test("classifyCivOp: live-block rules per op class", () => {
     assert.equal(c(op("wall"), "minecraft:oak_leaves").action, "tree");
 });
 
+test("what vetoes a tree: foreign blocks do, the jungle's own understorey and our own wall do not", () => {
+    const t = builder.treeNeighbourBenign;
+    // the two live refusals that left 451 trees standing in Ironquarry
+    assert.equal(t("minecraft:bamboo"), true, "bamboo is understorey, not a build");
+    assert.equal(t("minecraft:moss_carpet"), true, "moss carpet is a companion: it may not veto a tree, and no clear removes it");
+    assert.equal(t("minecraft:melon_block"), true);
+    assert.equal(t("minecraft:cocoa"), true);
+    // masonry in the wild still reads as a player build; inside a finished district it is the kingdom's own work
+    assert.equal(t("minecraft:stone_bricks"), false);
+    assert.equal(t("minecraft:stone_bricks", { insideFinishedDistrict: true }), true);
+    assert.equal(t("minecraft:oak_planks", { plannedNonAir: ["minecraft:oak_planks"] }), true, "a block this plan places here is ours");
+    // and the blocks that must keep vetoing
+    assert.equal(t("minecraft:diamond_block"), false);
+    assert.equal(t("minecraft:chest"), false);
+    assert.equal(t("minecraft:glass"), false);
+});
+
 // ---------------------------------------------------------------------------- pipeline helpers
 
 const WORLD_SEED = 1;
@@ -608,6 +625,9 @@ test("a tall tree standing in a cleared lot is removed to its top, not only the 
     // the live refusal: a jungle tree's own melon and cocoa vetoed the whole tree, so it stayed in the lot
     mc.placed.set(key(spot.x + 1, spot.g + 1, spot.z), "minecraft:melon_block");
     mc.placed.set(key(spot.x, spot.g + 3, spot.z + 1), "minecraft:cocoa");
+    // ... and so did the jungle understorey: bamboo and moss carpet are vegetation, not a build
+    mc.placed.set(key(spot.x, spot.g + 1, spot.z + 1), "minecraft:bamboo");
+    mc.placed.set(key(spot.x - 1, spot.g + 1, spot.z), "minecraft:moss_carpet");
     const player = makePlayer();
     send(CIV_EVENT_IDS.resume, "", player);
     await pump();

@@ -1556,6 +1556,21 @@ function readLive(s, x, y, z) {
 }
 
 /**
+ * Whether a block touching a tree may be a player build.
+ *
+ * Anything outside the natural lists vetoes, because a plank or a chest beside a trunk is how a player-made
+ * "tree" looks. The one exception is a cell inside a finished district's own claimed land: that masonry is the
+ * kingdom's work, the tree beside it is still a tree, and clearing a tree only ever removes logs, leaves and
+ * vines - the wall itself is never touched (the clear loop skips protected cells).
+ *
+ * @param {string} id
+ * @param {{ insideFinishedDistrict?: boolean, plannedNonAir?: readonly string[] }} [context]
+ */
+export function treeNeighbourBenign(id, context = {}) {
+    return context.insideFinishedDistrict === true || isBenign(id) || (context.plannedNonAir ?? []).includes(id);
+}
+
+/**
  * Prove that the canopy/trunk component containing (seed) is a natural tree (same rules as
  * structures/terrain.js classifyTrees) in budgeted steps, then clear the cells inside the claimed region.
  *
@@ -1614,7 +1629,10 @@ function* clearTree(s, seed) {
                         reason = "a chunk next to the tree is not loaded";
                         break;
                     }
-                    const benign = isBenign(neighbour.id) || plannedAt(s, nx, ny, nz).nonAir.includes(neighbour.id);
+                    const benign = treeNeighbourBenign(neighbour.id, {
+                        insideFinishedDistrict: inProtectedArea(s.opts.protectedRects, nx, nz),
+                        plannedNonAir: plannedAt(s, nx, ny, nz).nonAir,
+                    });
                     if (!benign) {
                         reason = `${neighbour.id} touches a tree - may be a player build`;
                         break;

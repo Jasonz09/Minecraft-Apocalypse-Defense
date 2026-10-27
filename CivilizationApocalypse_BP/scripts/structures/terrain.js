@@ -70,6 +70,8 @@ export const PLANTS = [
     "minecraft:brown_mushroom",
     "minecraft:red_mushroom",
     "minecraft:sweet_berry_bush",
+    "minecraft:bamboo",
+    "minecraft:bamboo_sapling",
 ];
 
 /**
@@ -86,6 +88,7 @@ export const TREE_COMPANIONS = [
     "minecraft:azalea",
     "minecraft:flowering_azalea",
     "minecraft:hanging_roots",
+    "minecraft:moss_carpet",
 ];
 
 const LOG = /^minecraft:(?:oak|birch|spruce|jungle|acacia|dark_oak|mangrove|cherry|pale_oak|poplar)_log$/;

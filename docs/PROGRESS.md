@@ -380,7 +380,7 @@ Ran the Horn of Hearthgate in "CivTest Hearthgate" (the prebuilt starter save: s
 (-192, -448). The survey stopped early at its certified site instead of reading all 81 tiles, the run passed
 through phases 5/6 and 6/6, and `civ:generate_status` afterwards reported:
 
-    district-1 Hearthgate: complete, stage complete 52188 / 52188 ops, placed 47827, skipped 4903,
+    district-1 Hearthgate: complete, stage complete 52188 / 52188 ops, placed 47027, skipped 4902,
     centre -187, -621, plan 214bbd16
     Stored queue: 100 (52188 / 52188 ops), state complete
     Storage: civ:plan 22503 B, the district site slot 32454 B, civ:jobs 1982 B; total 56939 B (every family inside its
@@ -392,7 +392,7 @@ from the horn confirmation to `complete` was ~14.8 minutes (survey + planning + 
 in game. The 3-minute false-stall cancel from the first attempt did not recur: the stall clock is measured per
 hold attempt (commit 5ea1fbe), and each hold that was generating chunks unblocked when the player was teleported
 onto the tile's centre (a 128-block tile is 64 chunks; a ticking area alone did not finish them inside 60 s even
-with the game's 640-block (40-chunk) render distance). Building skipped 4903 of 52188 ops (9.4%: occupied cells
+with the game's 640-block (40-chunk) render distance). Building skipped 4902 of 52188 ops (9.4%: occupied cells
 and trees) with `failed 0`; no op was cancelled.
 
 Live evidence: `scratch/district-complete-status-2026-10-26.png` (the status lines above) and
@@ -453,3 +453,39 @@ Existing blocks are not retrofitted: the fixes change what the next district's b
 district 1. Deeper water everywhere else is unchanged; land plans and their stored checksums are untouched.
 
 All five verify gates green; 1238 offline tests.
+
+## District 2 built in game (2026-10-26): the tree veto was the real cause, and it has two more terms
+
+Resumed Ironquarry (district 2) on the fixed pack, from the saved queue (30 / 46042 ops). It completed:
+
+    district-2 Ironquarry: complete, stage complete 46042 / 46042 ops, placed 43449, skipped 1716,
+    centre -334, -504, plan e22c2d9e.  Stored queue: 100 (46042 / 46042 ops), state complete
+
+The build summary reported 43,449 blocks placed, 847 already present, 1,716 skipped, 0 failed, 1,004 slices, and
+"Natural trees cleared 141 (129576 blocks); 451 tree(s) left alone." The skip census is the part that matters:
+
+    1053x inside a protected footprint
+     223x tree not cleared: tree already judged not natural
+     103x tree not cleared: minecraft:stone_bricks touches a tree - may be a player build
+      96x occupied by minecraft:stone_bricks
+      72x tree not cleared: minecraft:bamboo touches a tree - may be a player build
+
+So the melon/cocoa fix did land (141 whole trees removed, 129,576 blocks, and district 1's 4,902 skips became
+1,716), but a screenshot taken on the site still shows a giant jungle tree standing on a built house: two more
+natural things were vetoing trees. **Bamboo** is jungle understorey, and **stone bricks** here are the kingdom's
+own finished wall, which the new district's trees grow against.
+
+Fixes: `minecraft:bamboo` and `minecraft:bamboo_sapling` joined `PLANTS` (understorey vegetation, so a clear op
+may remove them), `minecraft:moss_carpet` and `minecraft:azalea` joined `TREE_COMPANIONS` (moss carpet is on the
+"player-used families are never natural" list, so it may not veto a tree but must not be auto-cleared), and the
+neighbour judgement moved into an exported `treeNeighbourBenign(id, { insideFinishedDistrict, plannedNonAir })`
+that exempts a cell inside a finished district's claimed land. Clearing a tree only ever removes logs, leaves and
+vines, and the clear loop still skips protected cells, so the exemption cannot touch the wall itself. Masonry in
+the wild still vetoes, as do planks, chests and glass. Two cross-module contracts caught the first attempt:
+`environments-surface` requires every `PLANTS` id to be `COVER_IDS`, and its "player-used families are never
+natural" case rejected `moss_carpet` as cover - which is why it is a companion rather than a plant.
+
+Also corrected here: the district-1 figures recorded above were mis-transcribed from the in-game status line
+(placed 47027 and skipped 4902, not 47827 / 4903). And one reporting nit found while reading them: the build's
+completion line prints `Centre:` from `result.spot`, which is a safe standable spot for touring, not the plan
+centre the record stores (district 2 printed -314,-518 against a stored centre of -334,-504).

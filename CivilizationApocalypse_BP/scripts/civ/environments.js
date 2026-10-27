@@ -157,6 +157,8 @@ export const COVER_IDS = Object.freeze([
     "minecraft:snow_layer",
     "minecraft:reeds",
     "minecraft:bamboo",
+    "minecraft:bamboo_sapling",
+    "minecraft:azalea",
     "minecraft:flowering_azalea",
     "minecraft:pale_moss_carpet",
     "minecraft:waterlily",
