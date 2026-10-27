@@ -17,8 +17,13 @@ import { distanceSquared, LOD_LIMITS } from "./lod.js";
  *   - idempotent: applying the actions and reconciling again with the same plan returns no actions.
  */
 
-/** Entity type used for every person. Both kinds are villagers; the record decides which one. */
-export const DEFAULT_TYPE_IDS = Object.freeze({ civilian: "minecraft:villager_v2", soldier: "minecraft:villager_v2" });
+/**
+ * Entity types per record kind. Kept identical to POP_ENTITY_TYPES in the settings module beside the reducer, which
+ * is the mapping the wired adapter actually spawns with: civilians are villagers, the garrison is an iron golem, so
+ * vanilla AI fights the raiders and never turns on a villager. The record - not the type - says who an entity stands
+ * for.
+ */
+export const DEFAULT_TYPE_IDS = Object.freeze({ civilian: "minecraft:villager_v2", soldier: "minecraft:iron_golem" });
 
 /**
  * @typedef {{ x: number, y: number, z: number }} Point

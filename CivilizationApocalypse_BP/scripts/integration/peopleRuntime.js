@@ -9,8 +9,8 @@ import { isBusy } from "./districtBuilder.js";
  * them, so the pack spawned no entity of any kind.
  *
  * Contract:
- *  - Off by default. With the gate off this module subscribes exactly one script event (the switch) and
- *    touches neither the world nor the kingdom.
+ *  - Off by default, and off means empty streets: with the gate off the drivers are still called once an
+ *    hour so they can remove what they own, because 2.7.0 has no removal event to clean up after.
  *  - A driver runs only while the gate is on AND no civilization build holds the world. The build owns the
  *    ticking areas and the per-tick slice budget, and a street being rebuilt under a walker is not a
  *    condition this pack will chase.
@@ -23,6 +23,7 @@ import { isBusy } from "./districtBuilder.js";
  * @property {any} dimension the overworld `Dimension`
  * @property {any} world
  * @property {number} tick `system.currentTick`
+ * @property {boolean} gateOn the people gate as the runtime read it; false means "tear down", never "spawn"
  *
  * @typedef {Object} PeopleDriver
  * @property {string} id names the driver in `civ:people status`
@@ -41,10 +42,10 @@ export function createPeopleRuntime(kingdomStore) {
     /** @type {Map<string, DriverStats>} */
     const seen = new Map();
     /**
-     * @typedef {{ hours: number, refusedGate: number, refusedBusy: number, errors: number, lastError: string | undefined }} RuntimeStats
+     * @typedef {{ hours: number, teardownHours: number, refusedBusy: number, errors: number, lastError: string | undefined }} RuntimeStats
      * @type {RuntimeStats}
      */
-    const stats = { hours: 0, refusedGate: 0, refusedBusy: 0, errors: 0, lastError: undefined };
+    const stats = { hours: 0, teardownHours: 0, refusedBusy: 0, errors: 0, lastError: undefined };
 
     /** @param {string} id @returns {DriverStats} */
     const statsOf = (id) => {
@@ -77,19 +78,25 @@ export function createPeopleRuntime(kingdomStore) {
     /**
      * One accepted simulation hour. Called by the loop's `onStep`, so it runs at most once per in-game
      * hour and never on a rejected one.
+     *
+     * The gate does NOT stop the call. "Off" has to mean "no people entities in this world", and 2.7.0
+     * gives no removal event to clean up after (entityRemove reports an id, not a handle), so the only way
+     * an off gate can be true is for each driver to get the hour and do its own teardown pass. A driver
+     * that ignores its `ctx.gateOn` check and spawns anyway is a bug in that driver, not a licence here.
      * @param {any} report
      */
     function onStep(report) {
-        if (!peopleGateOn(world)) {
-            stats.refusedGate += 1;
-            return;
-        }
         if (drivers.length === 0) {
+            // Nothing is wired yet: an unmodified pack does no world work at all, gate or no gate.
             return;
         }
         if (isBusy()) {
             stats.refusedBusy += 1;
             return;
+        }
+        const gateOn = peopleGateOn(world);
+        if (!gateOn) {
+            stats.teardownHours += 1;
         }
         const loaded = kingdomStore.load();
         if (loaded.kingdom === undefined) {
@@ -106,7 +113,7 @@ export function createPeopleRuntime(kingdomStore) {
         if (dimension === undefined || dimension === null) {
             return;
         }
-        const ctx = { kingdom: loaded.kingdom, report, dimension, world, tick: system.currentTick };
+        const ctx = { kingdom: loaded.kingdom, report, dimension, world, tick: system.currentTick, gateOn };
         stats.hours += 1;
         for (const driver of drivers) {
             const entry = statsOf(driver.id);
@@ -128,7 +135,7 @@ export function createPeopleRuntime(kingdomStore) {
     /** What `civ:people` answers with: the gate, and what the drivers have actually done. */
     function statusLines() {
         const lines = peopleStatusLines(world, isBusy());
-        lines.push(`Hours run: ${String(stats.hours)} - skipped ${String(stats.refusedGate)} with the gate off, ${String(stats.refusedBusy)} during a district build, ${String(stats.errors)} error(s).`);
+        lines.push(`Hours run: ${String(stats.hours)} (${String(stats.teardownHours)} with the gate off, cleaning up), ${String(stats.refusedBusy)} skipped during a district build, ${String(stats.errors)} error(s).`);
         if (drivers.length === 0) {
             lines.push("No driver is registered, so an on gate still spawns nothing.");
         }

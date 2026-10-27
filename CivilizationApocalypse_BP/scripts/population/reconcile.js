@@ -70,6 +70,14 @@ export function resolveConfig(overrides = {}) {
             throw new RangeError(`population config ${key} must be a whole number of at least 1, got ${String(value)}`);
         }
     }
+    if (!Number.isInteger(config.physicalFloorPerKind) || config.physicalFloorPerKind < 0) {
+        throw new RangeError(`population config physicalFloorPerKind must be a whole number of at least 0, got ${String(config.physicalFloorPerKind)}`);
+    }
+    if (config.physicalFloorPerKind > config.maxPhysicalPerDistrict) {
+        throw new RangeError(
+            `population config physicalFloorPerKind ${String(config.physicalFloorPerKind)} cannot exceed maxPhysicalPerDistrict ${String(config.maxPhysicalPerDistrict)}`,
+        );
+    }
     for (const kind of /** @type {const} */ (["civ", "sol"])) {
         const value = config.groupSize[kind];
         if (!Number.isInteger(value) || value < 1) {

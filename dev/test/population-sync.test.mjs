@@ -122,7 +122,10 @@ test("default: the pack's configuration is off, reconcileOnce refuses and writes
     assert.equal(pop.liveCount({ ours: true }), 0);
 });
 
-test("default: nothing in the pack imports or starts the population sync", () => {
+/** A real import of the sync or the population modules, not a comment that names them. */
+const IMPORTS_SYNC = /import[^;]*from\s+"[^"]*(?:popSync|population\/)[^"]*"/;
+
+test("default: only the gated people driver may reach the population sync", () => {
     const runtimeFiles = [];
     const walk = (dir) => {
         for (const entry of readdirSync(dir)) {
@@ -142,11 +145,20 @@ test("default: nothing in the pack imports or starts the population sync", () =>
             continue;
         }
         const source = readFileSync(file, "utf8");
-        if (/popSync|population\//.test(source)) {
+        // An import, not a mention: config.js and the runtime both *describe* the sync in a comment, and a
+        // guarantee that turns on prose breaks the first time anyone documents it.
+        if (IMPORTS_SYNC.test(source)) {
             offenders.push(rel);
         }
     }
-    assert.deepEqual(offenders, [], "only the population modules and the adapter itself may name the population sync");
+    // The old guarantee was "nothing imports it, so nothing runs". The sync is reachable now, so the guarantee has
+    // to come from elsewhere: exactly one door, and that door checks the people gate, which is off in a world that
+    // never ran `civ:people on`. A second door, or one that forgot to ask, fails here.
+    assert.deepEqual(offenders, ["integration/peopleStreets.js"], "the gated people driver is the only way in");
+    for (const rel of offenders) {
+        const source = readFileSync(join(scriptsRoot, ...rel.split("/")), "utf8");
+        assert.match(source, /peopleGateOn/, `${rel} reaches the population sync without checking the people gate`);
+    }
 
     const adapter = readFileSync(join(scriptsRoot, "integration", "popSync.js"), "utf8");
     assert.ok(!/runInterval|runJob|afterEvents|subscribe\(/.test(adapter), "the adapter never schedules or subscribes by itself");

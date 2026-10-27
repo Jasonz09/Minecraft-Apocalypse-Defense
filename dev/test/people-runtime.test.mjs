@@ -1,8 +1,10 @@
 // The one door between the hourly kingdom simulation and entities: the gate's default, the isolation from a
 // running district build, and fault isolation between drivers. Offline only (dev/lib/civharness.mjs fake world).
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import test from "node:test";
-import { CIV_EVENT_IDS, districtBuilder, load, makePlayer, mc, resetWorld, send, store, text } from "../lib/civharness.mjs";
+import { CIV_EVENT_IDS, districtBuilder, load, makePlayer, mc, resetWorld, scriptsRoot, send, store, text } from "../lib/civharness.mjs";
 
 const gate = await load("people", "gate.js");
 const runtime = await load("integration", "peopleRuntime.js");
@@ -36,16 +38,35 @@ function inhabited() {
     return runtime.createPeopleRuntime(store);
 }
 
-test("people are off by default: an unreadable or unwritten world spawns nothing and runs no driver", () => {
+test("the gate is off by default, and an off hour is a teardown hour, not a skipped one", () => {
     assert.equal(gate.peopleGateOn(undefined), false, "no world at all is off");
     assert.equal(gate.peopleGateOn({ getDynamicProperty() { throw new Error("world not ready"); } }), false, "an unreadable world is off, not a crash");
+    resetWorld(1);
+    assert.notEqual(store.load().kingdom, undefined, "a stored kingdom, so a refusal below is a refusal and not an early exit");
     const off = runtime.createPeopleRuntime(store);
     const seen = recorder("walker");
     off.register(seen.driver);
     off.onStep({ ran: 1 });
-    assert.equal(seen.calls.length, 0, "a driver must not run while the gate is off");
-    assert.ok(off.stats.refusedGate > 0, "the refusal is counted, so a silent empty world is diagnosable");
-    assert.equal(off.stats.hours, 0);
+    // "Off" has to mean "nobody is standing in the street". 2.7.0 gives no removal event to clean up after,
+    // so the driver must be reached with the gate off or its own citizens would linger forever.
+    assert.equal(seen.calls.length, 1, "the driver still runs, to remove what it owns");
+    assert.equal(seen.calls[0].gateOn, false, "and it is told which way the gate is");
+    assert.equal(off.stats.teardownHours, 1);
+    assert.equal(off.stats.hours, 1);
+});
+
+test("a world with no driver wired does no world work at all, gate or no gate", () => {
+    resetWorld(1);
+    const bare = runtime.createPeopleRuntime(store);
+    bare.onStep({ ran: 1 });
+    assert.equal(bare.stats.hours, 0, "nothing registered, nothing ran");
+    mc.props.set("civ_people", true);
+    try {
+        bare.onStep({ ran: 1 });
+        assert.equal(bare.stats.hours, 0, "an on gate with no driver is still inert");
+    } finally {
+        mc.props.delete("civ_people");
+    }
 });
 
 test("with the gate on, a driver runs once per hour and its entity changes are reported", () => {
@@ -92,6 +113,12 @@ test("no people walk the streets while a district build holds the world", () => 
     assert.equal(seen.calls.length, 1, "the hour after the build finishes runs again");
 });
 
+test("main.js wires the streets driver, so the pack's one door has something behind it", () => {
+    const source = readFileSync(join(scriptsRoot, "main.js"), "utf8");
+    assert.match(source, /peopleRuntime\.register\(createPeopleStreets\(\)\)/, "the streets driver is registered in main.js");
+    assert.match(source, /startSimulationLoop\(kingdomStore, \{ onStep:/, "and the loop reports each hour to the runtime");
+});
+
 test("a driver must be a real driver, and two drivers cannot share an id", () => {
     const live = inhabited();
     assert.throws(() => live.register({ id: "nope" }), TypeError);
@@ -121,7 +148,7 @@ test("civ:people on|off is the switch, and it answers with what the drivers have
     shown = text(player) + mc.messages.join("\n");
     assert.match(shown, /People entities are off/);
     assert.match(shown, /walker: 1 hour\(s\)/, "the counters survive switching the gate off");
-    assert.equal(seen.calls.length, 1, "an off gate runs nothing more");
     switched.onStep({ ran: 1 });
-    assert.equal(seen.calls.length, 1);
+    assert.equal(seen.calls.length, 2, "the hour after switching off is spent tearing down, not ignored");
+    assert.equal(seen.calls[1].gateOn, false);
 });

@@ -1,4 +1,4 @@
-import { compareText } from "./groups.js";
+import { compareText, parseGroupId } from "./groups.js";
 
 // Levels of detail. Every group is exactly one of:
 //   physical   an entity stands for it (bounded by the per-district and kingdom caps);
@@ -25,7 +25,7 @@ import { compareText } from "./groups.js";
 
 /**
  * @param {LodInput[]} inputs
- * @param {{ physicalRadius: number, holdRadius: number, coarseRadius: number, maxPhysicalPerDistrict: number, maxPhysicalTotal: number }} config
+ * @param {{ physicalRadius: number, holdRadius: number, coarseRadius: number, maxPhysicalPerDistrict: number, physicalFloorPerKind?: number, maxPhysicalTotal: number }} config
  * @param {{ ops: number }} meter work counter, incremented for every group evaluated and every comparison
  * @returns {{ decisions: Map<string, LodDecision>, counts: { physical: number, coarse: number, simulated: number, capped: number, chunkBlocked: number } }}
  */
@@ -33,7 +33,7 @@ export function planLevels(inputs, config, meter) {
     /** @type {Map<string, LodDecision>} */
     const decisions = new Map();
     /** @type {LodInput[]} */
-    const candidates = [];
+    let candidates = [];
     let capped = 0;
     let chunkBlocked = 0;
 
@@ -73,6 +73,33 @@ export function planLevels(inputs, config, meter) {
         }
         return compareText(left.id, right.id);
     });
+
+    // Each kind present in a district keeps its first `physicalFloorPerKind` slots before the rest of the
+    // district budget is contested, so a crowd of civilian groups cannot hide the whole garrison. The floor
+    // takes each kind's best-ranked candidates, so it costs nothing a nearer group would have won anyway.
+    const floor = config.physicalFloorPerKind ?? 0;
+    if (floor > 0 && candidates.length > 0) {
+        /** @type {Map<string, number>} */
+        const held = new Map();
+        /** @type {Set<string>} */
+        const taken = new Set();
+        for (const candidate of candidates) {
+            const parsed = parseGroupId(candidate.id);
+            if (parsed === null) {
+                continue;
+            }
+            const key = `${candidate.district} ${String(parsed.kind)}`;
+            const used = held.get(key) ?? 0;
+            if (used >= floor) {
+                continue;
+            }
+            held.set(key, used + 1);
+            taken.add(candidate.id);
+        }
+        if (taken.size > 0 && taken.size < candidates.length) {
+            candidates = [...candidates.filter((candidate) => taken.has(candidate.id)), ...candidates.filter((candidate) => !taken.has(candidate.id))];
+        }
+    }
 
     const perDistrict = new Map();
     let total = 0;

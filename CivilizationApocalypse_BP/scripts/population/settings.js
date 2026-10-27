@@ -20,8 +20,13 @@ export const POP_TAG_PREFIX = `${POP_TAG_NAMESPACE}:v${String(POP_TAG_VERSION)}:
 /** Group kinds, in the stable order used by the group table. */
 export const POP_KINDS = Object.freeze(/** @type {const} */ (["civ", "sol"]));
 
-/** Entity type spawned for each kind. Soldiers are told apart from civilians by their group tag. */
-export const POP_ENTITY_TYPES = Object.freeze({ civ: "minecraft:villager_v2", sol: "minecraft:villager_v2" });
+/**
+ * Entity type spawned for each kind. Civilians are villagers; the garrison is an iron golem, because that is the
+ * one vanilla entity that fights the pack's raiders (illagers, zombies) and will not turn on a villager. Mapping
+ * both kinds to villager_v2 made the garrison harmless: nothing in a district could ever defend it. Kinds are still
+ * told apart by the group tag, never by the type.
+ */
+export const POP_ENTITY_TYPES = Object.freeze({ civ: "minecraft:villager_v2", sol: "minecraft:iron_golem" });
 
 /** Security levels that count as an active fight: nothing spawns or despawns there. */
 export const POP_FIGHT_SECURITY = Object.freeze(["contested", "breached"]);
@@ -55,6 +60,7 @@ export const POP_SPOTS = Object.freeze({
  *   holdRadius: number,
  *   coarseRadius: number,
  *   maxPhysicalPerDistrict: number,
+ *   physicalFloorPerKind: number,
  *   maxPhysicalTotal: number,
  *   maxSpawnsPerTick: number,
  *   maxOpsPerTick: number,
@@ -80,6 +86,12 @@ export const POP_SYNC_DEFAULTS = Object.freeze({
     coarseRadius: 128,
     /** Physical representatives allowed per district. */
     maxPhysicalPerDistrict: 8,
+    /**
+     * Slots held for each kind present in a district before the rest of the district budget is contested. Rank
+     * order alone lets one kind eat the district whole: the starter kingdom's eight civilian groups leave the levy
+     * no slot at all, so a town shows no soldiers. 0 restores the pure contest.
+     */
+    physicalFloorPerKind: 2,
     /** Physical representatives allowed across the whole kingdom. */
     maxPhysicalTotal: 24,
     /** New representatives spawned per tick. */
