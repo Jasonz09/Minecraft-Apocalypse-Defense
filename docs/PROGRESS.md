@@ -42,9 +42,10 @@ land, drafting to a share of population, and development scheduling.
 `integration/{simulationLoop,buildAdapter}.js`, `events/welcome.js`, `main.js`.
 
 ## Verification
-`npm run verify` runs four gates: manifest/packaging (**903 checks**), strict `checkJs`
-typecheck against `@minecraft/server` 2.7.0 (**0 errors**), unit tests (**1029 across the tracked test files; was 148 across 10
-files**), headless end-to-end kingdom run (**52/52 stages**).
+`npm run verify` runs five gates: manifest/packaging (**1056 checks**), strict `checkJs`
+typecheck against `@minecraft/server` 2.7.0 (**0 errors**), unit tests (**1305 across the tracked test files; was 148
+across 10 files when this section was first written**), headless end-to-end kingdom run (**52/52 stages**), and the
+starter-world template spec. Last full run: all five green (2026-10-29).
 
 ## Defects found while integrating this milestone, and fixed
 
