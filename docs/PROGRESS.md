@@ -498,3 +498,56 @@ Also corrected here: the district-1 figures recorded above were mis-transcribed 
 (placed 47027 and skipped 4902, not 47827 / 4903). And one reporting nit found while reading them: the build's
 completion line prints `Centre:` from `result.spot`, which is a safe standable spot for touring, not the plan
 centre the record stores (district 2 printed -314,-518 against a stored centre of -334,-504).
+
+## The people layer, in the player's world (2026-10-29)
+
+Three drivers hang off the hourly loop: `peopleStreets` (villagers and golems for the population LOD, through the
+one gated door into `population/`), `siegeMobs` (physical raiders outside a district's own protected footprint) and
+`peopleOrders` (the existing levy, posted on the district's wall, rotated between sectors, titled, pulled toward an
+assault's bearing). They do nothing until `/scriptevent civ:people on`.
+
+What the live world taught this layer, all measured rather than guessed:
+
+- **A built district's record has no Y.** `civ:generate` saves `centre`, `hq` and `anchor` as plan X/Z, so anything
+  that needs a height has to ask the world (`getTopmostBlock`) instead of reading the record. Both the streets
+  driver's homes and the orders driver's levy census now do; the fallback lives in `people/columns.js` so the two
+  readers cannot disagree, and a dimension that does not forward the API throws instead of reporting an empty street.
+- **`EntityQueryOptions.type` found nothing.** A type-only query returned no golem while the save held one tagged
+  `civpop:v1:district-1:sol:0`. The census now reads a 3-dimensional window and picks the garrison out by type in
+  script; the type is still checked, just not delegated to the engine.
+- **The wall line is the plan's, not a constant.** District 1's own outline is 80-137 blocks from its centre, and
+  district-2's is similar, so the old `maxWallHalf: 64` (a leftover of the 49x49 prototype) refused every built
+  district as a "merged rect". The ceiling now comes from the plan's grid, and a post is projected onto the
+  district's outline rather than the square drawn round it, because a square's corner is 1.41 times its half.
+- **`/reload` is not how this client reloads scripts.** It leaves the Script API VM dead while script events still
+  echo from the engine - which reads exactly like a broken pack. Save & Quit and re-enter the world.
+
+Live status at 01:19 on 2026-10-29 (8 accepted hours): `streets: 0 changes, civ=6 sol=2` (adopted, not re-created),
+`siege: 6 entity changes, armed=true`, and after the orders fix `orders: 3 hour(s), 2 entity change(s), moved=1
+titled=1` with district-1 posted on its 119-block wall. District-2 still reports "no levy of this district stands
+within view" because no entity of its garrison exists yet (see the open defect below).
+
+## The chronicle (2026-10-29)
+
+`integration/chronicle.js` reads the lines the simulation writes into `kingdom.log` and says up to three of them,
+worst first, as one chat line per hour: a district that fell, then a wall, then a build, a shortage, a blocked
+evacuation, work that could not start. The first hour after a load only takes its mark (joining a played world is
+not a day of history), an hour with no new lines says nothing, and an hour that reaches the door twice cannot be
+told twice. A line with no short form is repeated as the simulation wrote it, so the narrator never drops what it
+cannot paraphrase; nothing here writes the kingdom, an entity or a block.
+
+In game (hours 2224 and 2225 of the same session):
+
+    Hour 2224 - Saltmere: wall 88 to 84, 4 raider(s) lost; Whitethorn: wall 84 to 80, 1 raider(s) lost;
+    Ironquarry: wall 98 to 96, 1 raider(s) lost.
+    Hour 2225 - Saltmere: wall 84 to 80, 3 raider(s) lost; Whitethorn: wall 80 to 76, 1 raider(s) lost;
+    Ironquarry: wall 96 to 94, 1 raider(s) lost.
+
+## Open defect (2026-10-29): the streets census and the world disagree
+
+The save holds twelve distinct `civpop:v1:district-1` entities - ten villagers (`civ:0`..`civ:7`, `civ:63`,
+`civ:66`) and **two golems both wearing `sol:0`** - while `civ_pop.p` lists eight groups including `sol:1`, which has
+never existed. So leftover groups from earlier hours are never retired, one identity is duplicated, and district 2
+has no physical levy at all. `peopleStreets` reports `created=0 removed=0` on those hours, so its reconcile believes
+the cursor rather than the world. The cursor is documented as advisory, which makes this a defect in the reconcile
+path, not in the cursor. Not fixed yet.
