@@ -15,8 +15,9 @@ import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import {
-    GROUND_Y, HOMES, WALL_HALF, context, dimension, entityIds, entityList, journal, kingdomFixture, paintColumn,
-    press, putCivilians, putLevy, putStrangers, resetOrdersWorld, unloadChunk, withGroupTag, world,
+    GROUND_Y, HOMES, STAND_Y, WALL_HALF, context, dimension, entityIds, entityList, journal, kingdomFixture, paintColumn,
+    distrustTypeFilter, press, putCivilians, putLevy, putStrangers, resetOrdersWorld, unloadChunk, withGroupTag,
+    world,
 } from "../lib/ordersfixture.mjs";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -369,7 +370,7 @@ test("the hour's caps bind: moves per hour, moves per district, and ground probe
 
 test("a civilian, an untagged golem, a malformed claim and a levy of another district are never moved", () => {
     const kingdom = resetOrdersWorld();
-    putLevy(kingdom, "district-1", 6);
+    const levyIds = new Set(putLevy(kingdom, "district-1", 6).map((entity) => entity.id));
     putCivilians(kingdom, "district-1", 4);
     putStrangers();
     const before = new Map(entityList().map((entity) => [entity.id, `${String(entity.x)},${String(entity.y)},${String(entity.z)}`]));
@@ -559,4 +560,121 @@ test("the orders driver is a people driver: registered in the runtime, an hour r
         assert.deepEqual({ x: entity.x, y: entity.y, z: entity.z }, posted.get(entity.id), `${entity.id} is exactly where the last accepted hour left it`);
     }
     assert.equal(journal.removals.length, 0, "and nobody was removed, because that is peopleStreets' work");
+});
+
+/* ------------------------------------------------------------------ *
+ * The two defects the live world found: no Y in a civ:generate record, and a 119-block wall
+ * ------------------------------------------------------------------ */
+
+test("a district built by civ:generate is posted: its record has no height, so the world's own ground decides", () => {
+    const kingdom = resetOrdersWorld();
+    putLevy(kingdom, "district-1", 6);
+    const district = kingdom.districts[0];
+    // Exactly the shape `civ:generate` saves: `physical` is null and the plan beside the centre carries x and z only.
+    district.physical = null;
+    district.civ = {
+        district: 1,
+        status: "complete",
+        seed: 20261017,
+        anchor: { x: 0, z: 0 },
+        centre: { x: 0, z: 0 },
+        checksum: "2f4c1a90",
+        stage: "complete",
+        startedStep: 0,
+        dimension: "minecraft:overworld",
+        hq: { x: 0, z: 0 },
+        ops: 1000,
+        opsTotal: 1000,
+        placed: 1000,
+        skipped: 0,
+        layout: "hearthgate",
+        gates: [],
+    };
+    assert.equal(district.physical, null, "nothing in the record says what height these people stand at");
+
+    const run = driver();
+    assert.ok(run.onHour(context(kingdom, 0)) > 0, "the hour posted the levy it could reach from the world's ground");
+    const posted = levyRows(run.status(), "district-1").rows;
+    assert.equal(posted.length, 4, "the whole front levy was posted, not left in the street");
+    assert.ok(journal.reads.topmost > 0, "the height came from the world's own topmost block, not from a guessed Y");
+    assert.ok(journal.queries.every((query) => query.location !== undefined && typeof query.maxDistance === "number"), "so every census was a real 3-dimensional window, never a window centred on a missing height");
+});
+
+test("the census does not rest on the engine's type filter: the live world returned no golem for one", () => {
+    const kingdom = resetOrdersWorld();
+    const levyIds = new Set(putLevy(kingdom, "district-1", 6).map((entity) => entity.id));
+    putCivilians(kingdom, "district-1", 4);
+    putStrangers();
+    // A villager wearing a sol tag: the shape of claim the type check exists for. The population layer only ever
+    // tags a golem `:sol:`, but a player can rename and re-tag anything, and a villager is not a garrison.
+    dimension.spawnEntity("minecraft:villager_v2", { x: 5, y: STAND_Y, z: -5 }, { tags: ["civpop:v1:district-1:sol:9"] });
+    distrustTypeFilter();
+    const before = new Map(entityList().map((entity) => [entity.id, { x: entity.x, y: entity.y, z: entity.z }]));
+
+    const run = driver();
+    assert.ok(run.onHour(context(kingdom, 0)) > 0, "the hour still found its levy with a type filter the engine ignores");
+    const posted = levyRows(run.status(), "district-1").rows;
+    assert.equal(posted.length, 4, "and still posts only the district's own levy");
+    for (const entity of entityList()) {
+        if (levyIds.has(entity.id)) continue;
+        assert.deepEqual({ x: entity.x, y: entity.y, z: entity.z }, before.get(entity.id), `${entity.id} was not posted: the census counts garrison, not tags`);
+    }
+    assert.ok(journal.queries.every((query) => query.type === undefined), "and no census ever asked the engine to filter by type");
+    assert.equal(LEVY_TYPE, "minecraft:iron_golem", "the type is checked in script, against the same id the population layer spawns");
+});
+
+test("a built district's wall is as wide as the plan that drew it, and a merged rect is still refused", () => {
+    // The live plan's own grid: 132 x 145 cells of 4 blocks. district-1's outline sits 119 blocks from its centre.
+    const grid = { cell: 4, grid: { x0: -456, z0: -756, w: 132, h: 145 } };
+    const ring = (half) => [[-half, -half], [half, -half], [half, half], [-half, half]];
+    const built = (half) => driver({}, { readPlan: () => ({ ...grid, districts: [{ index: 1, name: "Hearthgate", outline: ring(half) }] }) });
+
+    const kingdom = resetOrdersWorld();
+    putLevy(kingdom, "district-1", 6);
+    kingdom.districts[0].civ = { status: "complete", centre: { x: 0, z: 0 }, anchor: { x: 0, z: 0 }, seed: 1 };
+    kingdom.districts[0].physical = null;
+
+    const wall = orders.wallCapOf(grid);
+    assert.equal(wall, 290, "half the plan's longer side is the widest one district could be");
+    assert.ok(wall > 119, "which clears the 119-block wall the live district really has");
+
+    const wide = built(119);
+    assert.ok(wide.onHour(context(kingdom, 0)) > 0, "the 119-block wall line is posted, not refused as a merge");
+    const rows = levyRows(wide.status(), "district-1").rows;
+    assert.ok(rows.every((row) => Math.max(Math.abs(row.x), Math.abs(row.z)) === 117), "on the district's own wall, inset by the pack's two blocks");
+
+    // A rect wider than any single district of this city could be is still a refusal.
+    const merged = resetOrdersWorld();
+    putLevy(merged, "district-1", 6);
+    merged.districts[0].civ = { status: "complete", centre: { x: 0, z: 0 }, anchor: { x: 0, z: 0 }, seed: 1 };
+    merged.districts[0].physical = null;
+    const wild = built(400);
+    assert.equal(wild.onHour(context(merged, 0)), 0, "a 400-block rect is not one district's wall");
+    assert.match(levyRows(wild.status(), "district-1").reason, /no wall line could be read/, "and the district's own row says why nobody was posted");
+});
+
+test("on an irregular wall the posts follow the outline, not a square drawn round it", () => {
+    const kingdom = resetOrdersWorld();
+    putLevy(kingdom, "district-1", 6);
+    // A diamond: every corner of the square circuit that stands in for this district is outside its wall.
+    const diamond = [[-100, 0], [0, -100], [100, 0], [0, 100]];
+    kingdom.districts[0].civ = { status: "complete", centre: { x: 0, z: 0 }, anchor: { x: 0, z: 0 }, seed: 1 };
+    kingdom.districts[0].physical = null;
+    const run = driver({}, { readPlan: () => ({ cell: 4, grid: { x0: -200, z0: -200, w: 100, h: 100 }, districts: [{ index: 1, name: "Hearthgate", outline: diamond }] }) });
+
+    assert.ok(run.onHour(context(kingdom, 0)) > 0, "the hour posted the levy");
+    const rows = levyRows(run.status(), "district-1").rows;
+    assert.ok(rows.length > 0, "and reported where they stand");
+    for (const row of rows) {
+        assert.ok(Math.abs(row.x) + Math.abs(row.z) <= 100, `${row.id} at ${String(row.x)}, ${String(row.z)} is inside the diamond's wall`);
+        assert.ok(Math.abs(row.x) + Math.abs(row.z) >= 90, `${row.id} at ${String(row.x)}, ${String(row.z)} is on the wall, not in the middle of the district`);
+    }
+    // The counterfactual, so this is not a test of arithmetic that would pass either way: the square-ring point
+    // the same section names on the same wall is outside the wall it is supposed to stand on.
+    const sections = ORDERS_DEFAULTS.sectionsPerDistrict;
+    const outsides = rows.filter((row) => {
+        const square = wallPostAt({ x: 0, z: 0 }, 100, row.section, sections, { inset: ORDERS_DEFAULTS.postInset });
+        return Math.abs(square.x) + Math.abs(square.z) > 100;
+    });
+    assert.ok(outsides.length === rows.length, "every section's square-ring point is past the wall, so the outline is what kept them in");
 });

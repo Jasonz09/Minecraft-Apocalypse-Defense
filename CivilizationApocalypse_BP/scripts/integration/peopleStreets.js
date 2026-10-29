@@ -5,7 +5,8 @@ import { parseGroupId } from "../population/groups.js";
 import { classifyTags, tagFor } from "../population/identity.js";
 import { POP_CURSOR_KEY, POP_DISTRICT_OBSERVE_RADIUS } from "../population/settings.js";
 import { resolveConfig } from "../population/reconcile.js";
-import { createPopSync, homesFromRecords, surfaceAtOf } from "./popSync.js";
+import { createPopSync, homesFromRecords } from "./popSync.js";
+import { surfaceAtOf } from "../people/columns.js";
 
 // The streets driver: the kingdom's civilians and garrison, standing in the world as entities.
 //

@@ -7,6 +7,7 @@ import { peopleGateOn } from "../people/gate.js";
 import { assignCommanders, commandProblems, commandersFor } from "../people/command.js";
 import { PATROL_RULES, planPatrols } from "../people/patrols.js";
 import { loadMasterPlan } from "./civBuilder.js";
+import { surfaceAtOf } from "../people/columns.js";
 import { BEARING_VECTORS, SIEGE_DEFAULTS, bearingOf, columnAt, physicalCentreOf } from "./siegeMobs.js";
 
 /**
@@ -122,7 +123,11 @@ export const ORDERS_DEFAULTS = Object.freeze({
     maxPostTries: 4,
     /** A footprint this thin is not a walled district: no posts (see `minWallHalf`). */
     minWallHalf: 6,
-    /** And a footprint this wide is a merged or mis-recorded rect, not one district's wall. */
+    /**
+     * And a footprint this wide is a merged or mis-recorded rect, not one district's wall - but only when the plan
+     * cannot bound it: with a plan in hand the ceiling is `wallCapOf`'s own grid figure, because the city's districts
+     * are 115-120 blocks from their centres to their walls and a re-typed cap kept refusing them.
+     */
     maxWallHalf: 64,
     /**
      * How far from a district's centre its levy is looked for: `POP_DISTRICT_OBSERVE_RADIUS`, the radius
@@ -447,16 +452,22 @@ export function officersFor(district, posted) {
  * `commands/civ.js` `protectedRects` over the stored master plan answers the rects a district's own land makes -
  * the prototype origin it was recorded at, and the outline its wall was actually laid along. The OUTERMOST one
  * containing the centre is the wall a levy stands on, because a district that has been built has outgrown its
- * prototype record rather than replaced it. `maxWallHalf` refuses a rect too large to be one district's wall, so
- * an unexpected merge is a refusal, never a post dropped in a neighbour's streets.
+ * prototype record rather than replaced it. `capHalf` refuses a rect too large to be one district's wall, so an
+ * unexpected merge is a refusal, never a post dropped in a neighbour's streets.
+ *
+ * The polygon comes back with the half, because a built district's wall is a ring of 80-137 blocks round its centre:
+ * the half is only the largest square that fits inside it, and `pullToWall` needs the ring itself.
  *
  * @param {any[]} areas
  * @param {string} districtId
  * @param {Point} centre
  * @param {any} config
- * @returns {number | null} half-width in blocks, or null when there is no honest wall to post along
+ * @param {number | null} [capHalf] the widest a wall line may be, from the plan that drew the rect
+ * @returns {{ half: number, polygon: [number, number][] | null } | null} or null when there is no honest wall
  */
-function footprintHalf(areas, districtId, centre, config) {
+function wallOf(areas, districtId, centre, config, capHalf = null) {
+    /** @type {[number, number][] | null} */
+    let bestPolygon = null;
     /** @type {number | null} */
     let best = null;
     for (const area of Array.isArray(areas) ? areas : []) {
@@ -470,16 +481,88 @@ function footprintHalf(areas, districtId, centre, config) {
         const half = Math.min(centre.x - toInt(area.x0), toInt(area.x1) - centre.x, centre.z - toInt(area.z0), toInt(area.z1) - centre.z);
         if (best === null || half > best) {
             best = half;
+            bestPolygon = Array.isArray(area.polygon) ? area.polygon : null;
         }
     }
     if (best === null) {
         return null;
     }
     const wall = Math.floor(best);
-    if (wall < toInt(config.minWallHalf) || wall > toInt(config.maxWallHalf)) {
+    const limit = capHalf === null || capHalf === undefined ? toInt(config.maxWallHalf) : capHalf;
+    if (wall < toInt(config.minWallHalf) || wall > limit) {
         return null;
     }
-    return wall;
+    return { half: wall, polygon: bestPolygon };
+}
+
+/**
+ * A post on the district's real wall rather than on the square that stands in for it: `wallPostAt` draws the
+ * circuit as a square ring at the district's inscribed half, and a square's corner is 1.41 times that half from
+ * the centre - past an irregular district's wall. This walks the candidate back along its own bearing to the
+ * outline itself, then the pack's inset inward from there, so a levy stands on its wall instead of in the field
+ * beyond it. A district whose footprint has no outline (a prototype square) is returned untouched.
+ *
+ * @param {Point} centre
+ * @param {{ x: number, z: number, section: number }} point
+ * @param {[number, number][] | null} polygon
+ * @param {number} inset
+ * @returns {{ x: number, z: number, section: number }}
+ */
+function pullToWall(centre, point, polygon, inset) {
+    const dx = point.x - centre.x;
+    const dz = point.z - centre.z;
+    const reach = Math.hypot(dx, dz);
+    if (!Array.isArray(polygon) || polygon.length < 3 || reach === 0) {
+        return point;
+    }
+    const ux = dx / reach;
+    const uz = dz / reach;
+    // Where the ray from the centre meets the outline: centre + t*u = a + s*e, so t and s solve a 2x2 system.
+    let hit = Infinity;
+    for (let i = 0; i < polygon.length; i += 1) {
+        const [x1, z1] = polygon[i];
+        const [x2, z2] = polygon[(i + 1) % polygon.length];
+        const ex = x2 - x1;
+        const ez = z2 - z1;
+        const den = ux * ez - uz * ex;
+        if (Math.abs(den) < 1e-9) {
+            continue;
+        }
+        const wx = x1 - centre.x;
+        const wz = z1 - centre.z;
+        const t = (wx * ez - wz * ex) / den;
+        const s = (wx * uz - wz * ux) / den;
+        if (t > 0 && s >= -1e-9 && s <= 1 + 1e-9) {
+            hit = Math.min(hit, t);
+        }
+    }
+    if (!Number.isFinite(hit)) {
+        return point;
+    }
+    const distance = Math.max(1, Math.round(hit) - Math.max(0, toInt(inset)));
+    return { x: Math.round(centre.x + ux * distance), z: Math.round(centre.z + uz * distance), section: point.section };
+}
+
+/**
+ * The widest a single district's wall can honestly be, from the plan that drew the rects rather than a re-typed
+ * figure: every district is a part of the civilization's own cell grid, so no district can reach further than half
+ * that grid's longer side. A rect past this is a merge or a stale record, and posting along it would put a district's
+ * levy in a neighbour's streets.
+ *
+ * Null when the plan cannot say: `protectedRects` then only knows the 49 x 49 prototype and the recorded centre, and
+ * `ORDERS_DEFAULTS.maxWallHalf` bounds those instead.
+ *
+ * @param {any} plan
+ * @returns {number | null}
+ */
+export function wallCapOf(plan) {
+    const cell = Number(plan?.cell);
+    const w = Number(plan?.grid?.w);
+    const h = Number(plan?.grid?.h);
+    if (!Number.isFinite(cell) || cell <= 0 || !Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) {
+        return null;
+    }
+    return Math.ceil((Math.max(w, h) * cell) / 2);
 }
 
 /**
@@ -502,28 +585,46 @@ function assaultBearing(district, wave) {
  * ------------------------------------------------------------------ */
 
 /**
- * The height a district's people stand at, from its own physical record.
+ * The height a district's people stand at: its own physical record first, and when a `civ:generate` build has
+ * recorded only a plan beside the centre (no Y anywhere), the world's own ground column under that centre - the
+ * same answer `homesFromRecords` gives the streets driver for the same district.
+ *
  * @param {any} district
+ * @param {Point} centre
+ * @param {((x: number, z: number) => number | undefined) | null} surfaceAt
  * @returns {number | null}
  */
-function standingY(district) {
-    const candidates = [district?.physical?.origin?.y, district?.civ?.centre?.y];
+function standingY(district, centre, surfaceAt) {
+    const candidates = [district?.physical?.origin?.y, district?.civ?.centre?.y, district?.civ?.hq?.y];
     for (const candidate of candidates) {
         const value = Number(candidate);
         if (Number.isFinite(value)) {
             return Math.floor(value);
         }
     }
-    return null;
+    if (typeof surfaceAt !== "function") {
+        return null;
+    }
+    try {
+        const value = Number(surfaceAt(centre.x, centre.z));
+        return Number.isFinite(value) ? Math.floor(value) : null;
+    } catch (_error) {
+        return null;
+    }
 }
 
 /**
- * The garrison entities of one district, in a stable order: asked for by TYPE, so a civilian is never returned,
+ * The garrison entities of one district, in a stable order: asked for by WINDOW and picked out by type in script,
  * and within the radius `peopleStreets.js` observes its own people at (`ORDERS_DEFAULTS.observeRadius`, or as far
- * round as the district's own wall line plus a slack, whichever is further), so a levy that has wandered out of
- * the district's neighbourhood is left alone rather than dragged back - and one standing on its post is never lost
+ * round as the district's own wall line plus a slack, whichever is further), so a levy that has wandered out of the
+ * district's neighbourhood is left alone rather than dragged back - and one standing on its post is never lost
  * to the window. An entity is claimed by the district on its OWN tag, never by the window it was found in, so two
  * districts' queries cannot both post one golem.
+ *
+ * The type is checked here rather than handed to the engine as `EntityQueryOptions.type`: in the live world that
+ * filter returned no golem at all while the save held one tagged `civpop:v1:district-1:sol:0`, and the window shape
+ * used here is the one `peopleStreets.js` and `siegeMobs.js` already read entities with. A civilian inside the
+ * window is skipped by its type, exactly as a type-only query would have skipped it.
  *
  * @param {DimensionLike} dimension
  * @param {any} district
@@ -531,9 +632,10 @@ function standingY(district) {
  * @param {number | null} reach the district's wall line, once it is known: the window never excludes a post
  * @param {any} config
  * @param {string[]} notes
+ * @param {((x: number, z: number) => number | undefined) | null} surfaceAt
  * @returns {LevyRow[]}
  */
-function levyOf(dimension, district, centre, reach, config, notes) {
+function levyOf(dimension, district, centre, reach, config, notes, surfaceAt) {
     const districtId = String(district?.id);
     /** @type {LevyRow[]} */
     const rows = [];
@@ -541,16 +643,16 @@ function levyOf(dimension, district, centre, reach, config, notes) {
     const seen = new Set();
     /** @type {any[]} */
     let found = [];
-    // The window is 3-dimensional in 2.7.0, so it is only used when the district's own record says what height
-    // its people stand at. With no honest y the query stays type-only: a wider read, never a wrong move,
-    // because every handle is still claimed by the district on its own tag.
-    /** @type {any} */
-    const query = { type: LEVY_TYPE };
-    const level = standingY(district);
-    if (level !== null) {
-        query.location = { x: centre.x, y: level, z: centre.z };
-        query.maxDistance = Math.max(toInt(config.observeRadius), Math.ceil((toInt(reach) * 3) / 2) + 8);
+    const radius = Math.max(toInt(config.observeRadius), Math.ceil((toInt(reach) * 3) / 2) + 8);
+    // The window is 3-dimensional in 2.7.0, so it needs an honest y. With none the hour posts nobody rather than
+    // querying from a guessed height: a window centred on the wrong y silently loses the levy it was meant to find.
+    const level = standingY(district, centre, surfaceAt);
+    if (level === null) {
+        notes.push(`${districtId}: the ground under its centre could not be read, so its levy could not be looked for`);
+        return rows;
     }
+    /** @type {any} */
+    const query = { location: { x: centre.x, y: level, z: centre.z }, maxDistance: radius };
     try {
         found = /** @type {any[]} */ (dimension.getEntities(query));
     } catch (error) {
@@ -560,6 +662,9 @@ function levyOf(dimension, district, centre, reach, config, notes) {
     for (const handle of Array.isArray(found) ? found : []) {
         try {
             if (handle === null || handle === undefined || handle.isValid === false) {
+                continue;
+            }
+            if (String(handle.typeId) !== LEVY_TYPE) {
                 continue;
             }
             const identity = levyIdentityOf(handle.getTags());
@@ -592,12 +697,15 @@ function levyOf(dimension, district, centre, reach, config, notes) {
  *   isGateOn  (world) => boolean; defaults to `people/gate.js` `peopleGateOn`, used only when ctx says nothing
  *   readPlan  () => the stored master plan the wall line is taken from; defaults to civBuilder.loadMasterPlan
  *   probe     (dimension, x, z, config) => Column | null; defaults to `siegeMobs.js` `columnAt`
+ *   surfaceAt (x, z) => number | undefined; the ground height under a column, for a district built by
+ *             `civ:generate` whose record has no Y; defaults to `people/columns.js` `surfaceAtOf(ctx.dimension)`
  *
  * @param {{
  *   config?: Partial<typeof ORDERS_DEFAULTS> & Record<string, unknown>,
  *   isGateOn?: (world: any) => boolean,
  *   readPlan?: () => any,
  *   probe?: (dimension: any, x: number, z: number, config: any) => any,
+ *   surfaceAt?: (x: number, z: number) => number | undefined,
  * }} [deps]
  * @returns {{ id: "orders", onHour: (ctx: any) => number, status: () => Record<string, any>, config: any }}
  */
@@ -628,7 +736,7 @@ export function createOrdersDriver(deps = {}) {
      *
      * @param {any} kingdom
      * @param {string[]} notes
-     * @returns {any[] | null}
+     * @returns {{ areas: any[], cap: number | null } | null}
      */
     function footprints(kingdom, notes) {
         /** @type {any} */
@@ -640,7 +748,8 @@ export function createOrdersDriver(deps = {}) {
         }
         try {
             // pad 0, grow 0, exceptIndex -1: the footprint exactly as the wall was laid, for every district.
-            return protectedRects(kingdom, 0, plan === undefined || plan === null ? undefined : plan, 0, -1);
+            const areas = protectedRects(kingdom, 0, plan === undefined || plan === null ? undefined : plan, 0, -1);
+            return { areas, cap: wallCapOf(plan) };
         } catch (error) {
             notes.push(`the protected footprints could not be read, so nobody was posted this hour: ${String(error)}`);
             return null;
@@ -652,7 +761,8 @@ export function createOrdersDriver(deps = {}) {
      *
      * @param {any} district
      * @param {LevyRow[]} rows
-     * @param {number | null} wall the district's wall line in blocks from its centre, from `footprintHalf`
+     * @param {{ half: number, polygon: [number, number][] | null } | null} wall the district's wall line from
+     *        `wallOf`: the half in blocks from the centre, and the outline its wall was laid on
      * @param {number} hour
      * @param {boolean} assaulted
      * @param {any} wave
@@ -678,6 +788,8 @@ export function createOrdersDriver(deps = {}) {
             result.reason = "no wall line could be read from the district's footprint: nobody was posted";
             return result;
         }
+        const half = wall.half;
+        const polygon = wall.polygon;
 
         /** @type {any} */
         let plan = null;
@@ -720,7 +832,7 @@ export function createOrdersDriver(deps = {}) {
             let column = null;
             for (let attempt = 0; attempt < Math.max(1, toInt(config.maxPostTries)) && result.probes < toInt(config.probesPerDistrict); attempt += 1) {
                 const offset = attempt === 0 ? 0 : (attempt % 2 === 1 ? 1 : -1) * Math.ceil(attempt / 2) * toInt(config.postSpacing);
-                const candidate = wallPostAt(centre, wall, section, sections, { inset: toInt(config.postInset), slide: offset });
+                const candidate = pullToWall(centre, wallPostAt(centre, half, section, sections, { inset: toInt(config.postInset), slide: offset }), polygon, toInt(config.postInset));
                 const key = `${String(candidate.x)},${String(candidate.z)}`;
                 if (used.has(key)) {
                     continue;
@@ -848,7 +960,14 @@ export function createOrdersDriver(deps = {}) {
         done.refused = null;
 
         const hour = rotationHour(ctx);
-        const areas = footprints(kingdom, notes);
+        const footprint = footprints(kingdom, notes);
+        /** @type {((x: number, z: number) => number | undefined) | null} */
+        let surfaceAt = null;
+        try {
+            surfaceAt = typeof deps.surfaceAt === "function" ? deps.surfaceAt : surfaceAtOf(dimension);
+        } catch (error) {
+            notes.push(`the world's ground columns could not be read, so no levy was posted: ${String(error)}`);
+        }
         /** @type {any} */
         let threat = { threatened: false, districtIds: [] };
         try {
@@ -869,7 +988,7 @@ export function createOrdersDriver(deps = {}) {
         /** @type {Set<string>} */
         const claimed = new Set();
 
-        if (areas === null) {
+        if (footprint === null) {
             // No footprint list is no right to move anybody: a wall that cannot be read is a wall nobody can be
             // posted on. The reason is already in the notes, from the read that failed.
             done.districts = [];
@@ -894,8 +1013,8 @@ export function createOrdersDriver(deps = {}) {
             }
             // The wall line first, because it sizes the window the levy are looked for in: a district whose circuit
             // reaches further than the streets driver's observation radius must still see its own posted troops.
-            const wall = footprintHalf(areas, districtId, centre, config);
-            const found = levyOf(dimension, district, centre, wall, config, notes).filter((/** @type {LevyRow} */ row) => {
+            const wall = wallOf(footprint.areas, districtId, centre, config, footprint.cap);
+            const found = levyOf(dimension, district, centre, wall === null ? null : wall.half, config, notes, surfaceAt).filter((/** @type {LevyRow} */ row) => {
                 if (claimed.has(row.id)) {
                     return false;
                 }
@@ -905,7 +1024,7 @@ export function createOrdersDriver(deps = {}) {
             if (found.length === 0) {
                 // Silent before: an empty street and a district with no garrison both printed nothing, so
                 // `civ:people` could not be read. This is the one refusal a player needs to see.
-                notes.push(`${districtId}: no levy of this district stands within view (wall line ${wall === null ? "unreadable" : `${String(wall)} blocks`}), so nobody was posted`);
+                notes.push(`${districtId}: no levy of this district stands within view (wall line ${wall === null ? "unreadable" : `${String(wall.half)} blocks`}), so nobody was posted`);
                 continue;
             }
             const result = postDistrict(district, found, wall, hour, assaulted.has(districtId), wave, budget, notes, dimension);

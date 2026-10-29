@@ -9,7 +9,10 @@
 //   - entities with tags, a `teleport(location, options)` that throws in unloaded ground (as the engine does) and
 //     journals where the entity was and where it was sent, plus a `nameTag` backed by a journal;
 //   - a query surface that behaves like 2.7.0's: `getEntities({ type, tags, location, maxDistance })` with AND
-//     semantics on tags and a 3-dimensional distance, and an entity in an unloaded chunk invisible to it;
+//     semantics on tags and a 3-dimensional distance, and an entity in an unloaded chunk invisible to it.
+//     `distrustTypeFilter()` makes it IGNORE `type`, which is the live engine's measured behaviour: a type-only
+//     query returned no golem while the save held one tagged `civpop:v1:district-1:sol:0`. A driver that is
+//     tested only against a working type filter is tested against a filter that does not exist;
 //   - a journal for EVERY world write: blocks and commands are traps that record and then refuse, so "wrote no
 //     block" is a measurement rather than an assumption.
 // It does not model movement, pathfinding or combat, because Script API v2.7.0 has no API for any of them and a
@@ -44,6 +47,8 @@ const AIR = "minecraft:air";
 const surfaces = new Map();
 /** @type {Set<string>} chunk keys the engine has released */
 const unloaded = new Set();
+/** Whether the engine honours `EntityQueryOptions.type`. False models the live engine, which did not. */
+let typeFilterHonoured = true;
 /** @type {Map<string, any>} */
 const records = new Map();
 
@@ -62,6 +67,8 @@ const journal = {
     blockWrites: [],
     /** @type {Array<{ command: string }>} */
     commandRuns: [],
+    /** @type {any[]} */
+    queries: [],
     reads: { getEntities: 0, getBlock: 0, topmost: 0 },
 };
 
@@ -130,6 +137,7 @@ const dimension = {
         if (!query || typeof query !== "object") {
             return [];
         }
+        journal.queries.push({ ...query });
         /** @type {any[]} */
         const out = [];
         for (const record of records.values()) {
@@ -142,7 +150,7 @@ const dimension = {
             if (Array.isArray(query.excludeTags) && query.excludeTags.some((tag) => record.tags.has(tag))) {
                 continue;
             }
-            if (typeof query.type === "string" && record.typeId !== query.type) {
+            if (typeFilterHonoured && typeof query.type === "string" && record.typeId !== query.type) {
                 continue;
             }
             if (Array.isArray(query.excludeTypes) && query.excludeTypes.includes(record.typeId)) {
@@ -381,6 +389,8 @@ export function resetOrdersWorld(options = {}) {
     journal.reads.getEntities = 0;
     journal.reads.getBlock = 0;
     journal.reads.topmost = 0;
+    journal.queries.length = 0;
+    typeFilterHonoured = true;
     properties.set("civ_people", options.gate !== false);
     return kingdomFixture();
 }
@@ -487,6 +497,11 @@ export function paintColumn(x, z, typeId, y = GROUND_Y) {
 }
 
 /** Release a chunk, as the engine does to ground nobody has loaded. */
+/** Make the engine ignore `EntityQueryOptions.type`, the way the live world measurably did. */
+export function distrustTypeFilter() {
+    typeFilterHonoured = false;
+}
+
 export function unloadChunk(cx, cz) {
     unloaded.add(`${String(cx)},${String(cz)}`);
 }

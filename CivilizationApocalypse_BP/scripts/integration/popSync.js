@@ -5,6 +5,7 @@ import { classifyTags, tagFor } from "../population/identity.js";
 import { cursorBytes, decodeCursor, encodeCursor } from "../population/cursor.js";
 import { reconcile, resolveConfig } from "../population/reconcile.js";
 import { CHUNK_SIZE, POP_CURSOR_KEY, POP_CURSOR_MAX_BYTES, POP_DISTRICT_OBSERVE_RADIUS, POP_TAG_NAMESPACE } from "../population/settings.js";
+import { surfaceAtOf } from "../people/columns.js";
 
 /**
  * Runtime boundary for the population representation layer (population/reconcile.js is the pure part).
@@ -425,35 +426,6 @@ function playersIn(world, dimension) {
         .getAllPlayers()
         .filter((/** @type {any} */ player) => player.dimension?.id === dimension.id)
         .map((/** @type {any} */ player) => ({ x: player.location.x, y: player.location.y, z: player.location.z }));
-}
-
-/**
- * The standing height of a plan column, as one dimension sees it. A civilization build record stores only X/Z
- * (the builder never records a height), so the Y has to come from the world rather than be invented.
- * `getTopmostBlock` is one read, and it throws for an unloaded chunk - which is the answer we want: no home
- * this hour, rather than a villager placed inside a hill or dropped into a void.
- *
- * Exported because the streets driver's teardown census looks for the same districts and must not keep its own
- * copy of this rule; two readers of one record is how they were allowed to disagree.
- *
- * @param {any} dimension
- * @returns {(x: number, z: number) => (number | undefined)}
- */
-export function surfaceAtOf(dimension) {
-    return (x, z) => {
-        // A missing method is not an unloaded chunk. Swallowing that difference turns a caller that handed in
-        // the wrong object, or a world model that forgot to forward it, into a silently empty street.
-        if (typeof dimension?.getTopmostBlock !== "function") {
-            throw new TypeError("the dimension given to popSync has no getTopmostBlock, so no plan column can be measured");
-        }
-        try {
-            const top = dimension.getTopmostBlock({ x, z });
-            const y = top?.location?.y ?? top?.y;
-            return Number.isFinite(y) ? /** @type {number} */ (y) + 1 : undefined;
-        } catch (_error) {
-            return undefined;
-        }
-    };
 }
 
 /**
