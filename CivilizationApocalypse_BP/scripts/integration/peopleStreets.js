@@ -74,7 +74,7 @@ export function createPeopleStreets(deps = {}) {
      * What the last hour did, for `civ:people status`. A driver that is silently refused (a kingdom that will not
      * validate, a cursor written by a newer pack) would otherwise report 0 changes forever with no reason anywhere.
      */
-    const done = { hours: 0, created: 0, removed: 0, named: 0, refused: /** @type {string | null} */ (null), cleared: 0 };
+    const done = { hours: 0, created: 0, removed: 0, named: 0, civ: 0, sol: 0, refused: /** @type {string | null} */ (null), cleared: 0 };
 
     /**
      * One accepted simulation hour.
@@ -128,7 +128,18 @@ export function createPeopleStreets(deps = {}) {
         done.removed += removed;
         // Naming is neither a creation nor a removal, so it is not counted as an entity change. It runs over the
         // groups the saved cursor now names, which is how an entity adopted from an earlier session gets its sign too.
-        done.named += nameStreets(ctx, physicalGroups(ctx.world));
+        const onStreet = physicalGroups(ctx.world);
+        // A per-kind tally, because "8 entity change(s)" cannot tell a player whether their garrison exists yet:
+        // civilians queue ahead of soldiers, and the orders driver only has work once a `sol` group is standing.
+        done.civ = 0;
+        done.sol = 0;
+        for (const groupId of onStreet) {
+            const parsed = parseGroupId(groupId);
+            if (parsed !== null && (parsed.kind === "civ" || parsed.kind === "sol")) {
+                done[parsed.kind] += 1;
+            }
+        }
+        done.named += nameStreets(ctx, onStreet);
         return created + removed;
     }
 

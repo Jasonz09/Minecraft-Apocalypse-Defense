@@ -903,6 +903,9 @@ export function createOrdersDriver(deps = {}) {
                 return true;
             });
             if (found.length === 0) {
+                // Silent before: an empty street and a district with no garrison both printed nothing, so
+                // `civ:people` could not be read. This is the one refusal a player needs to see.
+                notes.push(`${districtId}: no levy of this district stands within view (wall line ${wall === null ? "unreadable" : `${String(wall)} blocks`}), so nobody was posted`);
                 continue;
             }
             const result = postDistrict(district, found, wall, hour, assaulted.has(districtId), wave, budget, notes, dimension);
