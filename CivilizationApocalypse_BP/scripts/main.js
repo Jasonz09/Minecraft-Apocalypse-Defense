@@ -14,6 +14,7 @@ import { registerPeopleCommand } from "./commands/people.js";
 import { createPeopleStreets } from "./integration/peopleStreets.js";
 import { createSiegeDriver } from "./integration/siegeMobs.js";
 import { createOrdersDriver } from "./integration/peopleOrders.js";
+import { createChronicle } from "./integration/chronicle.js";
 import { startSimulationLoop } from "./integration/simulationLoop.js";
 import { ledgerGateOn } from "./ledger/devgate.js";
 import { createKingdomStore } from "./kingdom/store.js";
@@ -47,7 +48,20 @@ peopleRuntime.register(createSiegeDriver(kingdomStore));
 // some of them officers, so running orders after streets makes the rank the name a player sees at the end of the
 // hour. The cost is one re-write per officer per hour, which is cheaper than making the two drivers share a rule.
 peopleRuntime.register(createOrdersDriver());
-startSimulationLoop(kingdomStore, { onStep: (report) => peopleRuntime.onStep(report) });
+// The chronicle reads the hour the simulation just wrote and says the important lines in chat. It is not a people
+// driver: it writes nothing, and it must speak on hours the people layer skips (a district build holds the runtime,
+// but the kingdom still fought, built and starved), so it hangs off the loop beside the runtime.
+const chronicle = createChronicle({ readKingdom: () => kingdomStore.load().kingdom });
+startSimulationLoop(kingdomStore, {
+    onStep: (report) => {
+        peopleRuntime.onStep(report);
+        try {
+            chronicle.onHour(report);
+        } catch (error) {
+            world.sendMessage(`The chronicle fell silent this hour: ${String(error)}`);
+        }
+    },
+});
 
 // The Commander's Ledger is off unless the development gate is on. The switch always listens, because it is the
 // only way to turn the gate on. The Ledger's own handlers register only when the gate is on at load, and early

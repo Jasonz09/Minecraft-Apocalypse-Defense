@@ -116,7 +116,10 @@ test("no people walk the streets while a district build holds the world", () => 
 test("main.js wires the streets driver, so the pack's one door has something behind it", () => {
     const source = readFileSync(join(scriptsRoot, "main.js"), "utf8");
     assert.match(source, /peopleRuntime\.register\(createPeopleStreets\(\)\)/, "the streets driver is registered in main.js");
-    assert.match(source, /startSimulationLoop\(kingdomStore, \{ onStep:/, "and the loop reports each hour to the runtime");
+    assert.match(source, /startSimulationLoop\(kingdomStore, \{\s*onStep:/, "and the loop reports each hour to the runtime");
+    assert.match(source, /peopleRuntime\.onStep\(report\)/, "the report reaches the people runtime");
+    assert.match(source, /createChronicle\(\{ readKingdom:/, "and the chronicle is given the kingdom it tells the story of");
+    assert.match(source, /chronicle\.onHour\(report\)/, "and hears every hour beside the runtime, including the hours a build makes the runtime skip");
 });
 
 test("a driver must be a real driver, and two drivers cannot share an id", () => {
