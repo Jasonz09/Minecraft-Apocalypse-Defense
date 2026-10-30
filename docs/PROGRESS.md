@@ -544,11 +544,27 @@ In game (hours 2224 and 2225 of the same session):
     Hour 2225 - Saltmere: wall 84 to 80, 3 raider(s) lost; Whitethorn: wall 80 to 76, 1 raider(s) lost;
     Ironquarry: wall 96 to 94, 1 raider(s) lost.
 
-## Open defect (2026-10-29): the streets census and the world disagree
+## Chased and closed (2026-10-29): the streets census and the save disagree
 
-The save holds twelve distinct `civpop:v1:district-1` entities - ten villagers (`civ:0`..`civ:7`, `civ:63`,
-`civ:66`) and **two golems both wearing `sol:0`** - while `civ_pop.p` lists eight groups including `sol:1`, which has
-never existed. So leftover groups from earlier hours are never retired, one identity is duplicated, and district 2
-has no physical levy at all. `peopleStreets` reports `created=0 removed=0` on those hours, so its reconcile believes
-the cursor rather than the world. The cursor is documented as advisory, which makes this a defect in the reconcile
-path, not in the cursor. Not fixed yet.
+The save seemed to hold more `civpop:v1:district-1` actors than the population cursor listed, including two golems
+both wearing `sol:0`, while the cursor listed a `sol:1` with no actor anywhere. Each part has an explanation, and
+the first two were checked against the reducer rather than argued about:
+
+- **Groups the records no longer hold are already retired.** `population/lod.js` gives every zero-headcount group a
+  `simulated`, `reason "empty"` decision, and `reconcile.js` demotes its representatives in the same hour they are
+  observed (loaded chunk, not in a fight). Removing that decision turns
+  `population-sync.test.mjs`'s "a shrinking district has its representatives removed" red, so the path is live and
+  covered. A branch added for the same purpose during this pass turned out to be dead code and was removed.
+- **Duplicates are already removed.** Two loaded entities on one tag produce `despawn <group> duplicate` in the same
+  hour; reproduced offline through the adapter with a surplus civilian and with two `sol:0` golems.
+- **`sol:1` in the cursor is a deferred spawn, not a lost one.** The cursor lists what the sync intends to keep
+  physical; a spawn whose spot chunk is not loaded and ticking is deferred (`chunk-unloaded`) and the group stays in
+  that list until it lands.
+- **A leveldb snapshot is not a census.** Actor records outlive the entities they describe (a dead actor's NBT can
+  survive until its chunk is next written), which is why the file showed tags - `civ:39`, `civ:43`, `civ:47` - that
+  no hour ever reported. Counting the world means counting in game, not in the save.
+
+No code changed for this; the lasting result is that the behaviour above is known to be pinned by tests rather than
+assumed.
+
+
