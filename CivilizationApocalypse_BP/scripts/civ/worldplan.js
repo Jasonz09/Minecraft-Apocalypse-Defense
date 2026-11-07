@@ -18,7 +18,7 @@ import { validatePlanSteps } from "./validatesteps.js";
  * @typedef {{
  *   plan?: import("./masterplan.js").PlanOptions,
  *   district?: number,
- *   site?: { seed?: number, excludeFootprints?: any[], attempts?: number, wallHeight?: number, streetWidth?: number },
+ *   site?: { seed?: number, excludeFootprints?: any[], attempts?: number, wallHeight?: number, streetWidth?: number, lighting?: string, gateHeight?: string, gatePassage?: string, gateRoof?: string },
  *   siteField?: any | ((plan: any, region: { x0: number, z0: number, x1: number, z1: number }) => any),
  *   seed?: number,
  *   validate?: boolean,
@@ -101,7 +101,7 @@ export function* planWorldSteps(field, options = {}) {
     const label = /** @type {any[]} */ (plan.districts ?? []).find((entry) => entry.index === district)?.id ?? `district ${String(district)}`;
     const region = siteGroundRegion(plan, district);
     const groundField = typeof options.siteField === "function" ? options.siteField(plan, region) : (options.siteField ?? field);
-    const siteOptions = { ...(options.site ?? {}), seed: options.site?.seed ?? plan.seed, ops };
+    const siteOptions = { lighting: "natural", gateHeight: "surface", gatePassage: "clear", gateRoof: "guarded", roofSupport: "joists", interiorLights: "anchored-v1", lotTerrain: "survey-balanced", farmLighting: "frontage-v1", waterPiles: "spaced-v1", ...(options.site ?? {}), seed: options.site?.seed ?? plan.seed, ops };
     const site = yield* planDistrictSiteSteps(plan, district, groundField, siteOptions);
     for (const note of site.notes) notes.push(note);
     if (!site.ok || site.record === null) {

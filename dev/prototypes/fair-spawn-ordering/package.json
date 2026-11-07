@@ -1,0 +1,6 @@
+{
+  "name": "civ-isolated-fair-spawn-ordering",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test fair-spawn-ordering.test.mjs" }
+}

@@ -1,11 +1,22 @@
 import { world as runtimeWorld } from "@minecraft/server";
 import { createKingdomStore } from "../kingdom/store.js";
-import { buildGroupTable, chunkKeyOf, nearestDistance, spotFor } from "../population/groups.js";
+import { buildGroupTable, chunkKeyOf, nearestDistance, nearestPostDistance, parseGroupId, postOf, spotFor } from "../population/groups.js";
 import { classifyTags, tagFor } from "../population/identity.js";
 import { cursorBytes, decodeCursor, encodeCursor } from "../population/cursor.js";
 import { reconcile, resolveConfig } from "../population/reconcile.js";
-import { CHUNK_SIZE, POP_CURSOR_KEY, POP_CURSOR_MAX_BYTES, POP_DISTRICT_OBSERVE_RADIUS, POP_TAG_NAMESPACE } from "../population/settings.js";
-import { surfaceAtOf } from "../people/columns.js";
+import { CHUNK_SIZE, POP_CURSOR_KEY, POP_CURSOR_MAX_BYTES, POP_DISTRICT_OBSERVE_RADIUS, POP_POSTS, POP_TAG_NAMESPACE, POP_ENTITY_TYPES } from "../population/settings.js";
+import { standableNear, surfaceAtOf } from "../people/columns.js";
+import { militarySelectionPolicy } from "../population/militarySelection.js";
+import { isCanonicalFor } from "../population/identity.js";
+import { militaryActorSnapshot } from "./militaryLifecycleDiagnostics.js";
+
+/**
+ * Blocks searched around a planned spawn spot for the ground it should stand on. Small on purpose: the spot is
+ * the group's post (an offset from its home), so the fix is for the Y to be read where the unit will stand, not
+ * for the unit to be moved somewhere better.
+ */
+const SPAWN_SETTLE_RADIUS = 4;
+class MilitaryOwnerRefusal extends Error {}
 
 /**
  * Runtime boundary for the population representation layer (population/reconcile.js is the pure part).
@@ -31,6 +42,9 @@ import { surfaceAtOf } from "../people/columns.js";
  *   readKingdom      () => kingdom records, read only; defaults to kingdom/store.js load()
  *   anchors          () => [{ x, y, z }]; defaults to the players in this dimension
  *   homes            (kingdom) => { [districtId]: { x, y, z } }; defaults to each district's physical origin
+ *   posts            (kingdom) => { [districtId]: [{ x, y, z }, ...] }; defaults to the plaza plus the quarter
+ *                    posts `postsFromRecords` can probe. Injecting `homes` instead gives every district one post
+ *   standable        (x, z, radius?) => { x, y, z } | undefined, open ground near a point; used for quarter posts
  *   isChunkLoaded    ({ x, y, z }) => boolean; defaults to a block probe
  *   enabled          false by default; reconcileOnce refuses unless this is true
  *   config           overrides for population/settings.js POP_SYNC_DEFAULTS
@@ -45,10 +59,33 @@ export function createPopSync(deps = {}) {
     }
     const config = resolveConfig(deps.config ?? {});
     const enabled = deps.enabled === true;
+    /** Last owner plan only: diagnostic reads never reconcile or advance its cursor. @type {any} */
+    let lastPlan;
+    /** Diagnostic failures cannot change owner guards/actions/cursor decisions. @param {string} method @param {any[]} args */
+    const diagnose=(method,...args)=>{try{deps.militaryDiagnostics?.[method]?.(...args);}catch(_error){}};
     const readKingdom = deps.readKingdom ?? (() => createKingdomStore(world).load().kingdom);
+    let militaryWork=0;
+    /** @param {number} count */
+    const chargeMilitaryWork=count=>{militaryWork+=count;if(militaryWork>config.workBudget)throw new Error("military owner runtime work budget exhausted");};
+    /** @param {any} kingdom */
+    const militaryPolicy = kingdom => {
+        if(typeof deps.readMilitarySelection!=="function")return null;
+        const read=deps.readMilitarySelection();
+        if(read?.status==="absent")return militarySelectionPolicy(read,[],String(dimension.id));
+        const groups=buildGroupTable(kingdom,config).groups;
+        chargeMilitaryWork(groups.length+1);
+        return militarySelectionPolicy(read,groups,String(dimension.id));
+    };
     const anchorsOf = deps.anchors ?? (() => playersIn(world, dimension));
     const surfaceAt = surfaceAtOf(dimension);
-    const homesOf = deps.homes ?? ((/** @type {any} */ kingdom) => homesFromRecords(kingdom, surfaceAt));
+    /**
+     * Every district's posts, plaza first. An injected `homes` map is read as one post per district, which is what
+     * every caller before posts had and is still what a caller with its own geometry means.
+     * @type {(kingdom: any) => Record<string, Array<{ x: number, y: number, z: number }>>}
+     */
+    const postsOf = deps.posts ?? (deps.homes === undefined
+        ? (/** @type {any} */ kingdom) => postsFromRecords(kingdom, surfaceAt, deps.standable)
+        : (/** @type {any} */ kingdom) => singlePosts(deps.homes(kingdom)));
 
     /** @param {{ x: number, y: number, z: number }} point */
     const chunkLoadedAt = (point) => {
@@ -62,11 +99,15 @@ export function createPopSync(deps = {}) {
         }
     };
 
-    /** @param {string} tag */
-    const findTagged = (tag) => {
+    /** @param {string} tag @param {boolean} [strict] */
+    const findTagged = (tag,strict=false) => {
         try {
-            return /** @type {any[]} */ (dimension.getEntities({ tags: [tag] })).filter((handle) => handle.isValid !== false);
+            const found=dimension.getEntities({ tags: [tag] });
+            if(strict&&!Array.isArray(found))throw new Error("military tag query returned unreadable results");
+            if(strict)chargeMilitaryWork(found.length+1);
+            return /** @type {any[]} */ (found).filter((handle) => handle.isValid !== false);
         } catch (_error) {
+            if(strict)throw new Error("military tag census is unreadable");
             return [];
         }
     };
@@ -104,9 +145,9 @@ export function createPopSync(deps = {}) {
      * that far.
      * @param {any} kingdom
      * @param {Array<{ x: number, y: number, z: number }>} anchors
-     * @param {Record<string, { x: number, y: number, z: number }>} homes
+     * @param {Record<string, Array<{ x: number, y: number, z: number }>>} posts
      */
-    const observe = (kingdom, anchors, homes) => {
+    const observe = (kingdom, anchors, posts, strict=false) => {
         /** @type {Map<string, any>} */
         const handles = new Map();
         /** @type {any[]} */
@@ -117,20 +158,25 @@ export function createPopSync(deps = {}) {
                 return;
             }
             const entity = describe(handle);
+            if(strict&&entity===null)throw new Error("military observation became unreadable");
+            if(strict&&entity!==null)chargeMilitaryWork(1+entity.tags.length);
             if (entity !== null) {
                 handles.set(entity.id, handle);
                 entities.push(entity);
             }
         };
         const windows = [
-            ...Object.values(homes).map((home) => ({ centre: home, radius: POP_DISTRICT_OBSERVE_RADIUS })),
+            ...Object.values(posts).flat().map((post) => ({ centre: post, radius: POP_DISTRICT_OBSERVE_RADIUS })),
             ...anchors.map((anchor) => ({ centre: anchor, radius: config.coarseRadius + CHUNK_SIZE })),
         ];
         for (const window of windows) {
             let found = [];
             try {
                 found = dimension.getEntities({ location: window.centre, maxDistance: window.radius });
+                if(strict&&!Array.isArray(found))throw new Error("military observation returned unreadable results");
+                if(strict)chargeMilitaryWork(found.length+1);
             } catch (_error) {
+                if(strict)throw new Error("military observation query failed");
                 found = [];
             }
             for (const handle of found) {
@@ -143,12 +189,17 @@ export function createPopSync(deps = {}) {
         /** @type {Set<string>} */
         const probed = new Set();
         for (const group of buildGroupTable(kingdom, config).groups) {
-            const home = homes[group.district];
-            if (home === undefined) {
+            const list = posts[group.district];
+            const post = postOf(list, group.index);
+            if (post === null) {
                 continue;
             }
-            const spot = spotFor(home, group.kind, group.index);
-            if (nearestDistance(spot, anchors) > config.physicalRadius) {
+            const spot = spotFor(post, group.kind, group.index);
+            // The same reach the reducer uses: a post is worth probing when its district is near, not only when
+            // the post itself is. The soldier band sits further out than the civilian grid, so a spot-only test
+            // left every levy post unprobed - and an unprobed spot can never be marked loaded.
+            const reach = Math.min(nearestDistance(spot, anchors), nearestPostDistance(list, anchors));
+            if (reach > config.physicalRadius) {
                 continue;
             }
             const key = chunkKeyOf(spot.x, spot.z);
@@ -163,7 +214,7 @@ export function createPopSync(deps = {}) {
         for (const entity of entities) {
             loadedChunks.add(chunkKeyOf(entity.x, entity.z));
         }
-        return { observation: { kingdom, entities, anchors, homes, loadedChunks }, handles, admit };
+        return { observation: { kingdom, entities, anchors, homes: plazasOf(posts), posts, loadedChunks }, handles, admit };
     };
 
     /**
@@ -175,16 +226,20 @@ export function createPopSync(deps = {}) {
      */
     const plan = (prior, kingdom, tick) => {
         const anchors = normaliseAnchors(anchorsOf());
-        const homes = homesOf(kingdom);
-        const session = observe(kingdom, anchors, homes);
-        let result = reconcile(prior, session.observation, tick, config);
+        const posts = postsOf(kingdom);
+        const snapshot=militaryPolicy(kingdom);
+        const policy=snapshot?.selection?snapshot:null;
+        const session = observe(kingdom, anchors, posts,policy!==null);
+        if(policy?.selection){const found=findTagged(tagFor(policy.selection.groupId),true);diagnose("observe",policy.selection.groupId,found);for(const handle of found)session.admit(handle);}
+        let result = reconcile(prior, session.observation, tick, config,policy?.typeForGroup);
+        if(policy!==null)chargeMilitaryWork(result.report.work??0);
         for (let pass = 0; pass < 2; pass += 1) {
             let discovered = 0;
             for (const action of result.actions) {
                 if (action.op !== "spawn") {
                     continue;
                 }
-                for (const handle of findTagged(tagFor(action.groupId))) {
+                for (const handle of findTagged(tagFor(action.groupId),policy!==null)) {
                     if (!session.handles.has(handle.id)) {
                         const before = session.observation.entities.length;
                         session.admit(handle);
@@ -195,9 +250,14 @@ export function createPopSync(deps = {}) {
             if (discovered === 0) {
                 break;
             }
-            result = reconcile(prior, session.observation, tick, config);
+            result = reconcile(prior, session.observation, tick, config,policy?.typeForGroup);
+            if(policy!==null)chargeMilitaryWork(result.report.work??0);
         }
-        return { result, handles: session.handles };
+        lastPlan={tick,posts:Object.fromEntries(Object.entries(posts).map(([id,list])=>[id,{count:list.length,points:list.slice(0,9).map((/** @type {any} */p)=>({...p}))}])),
+            counts:new Map(kingdom.districts.map((/** @type {any} */d)=>[d.id,{civ:d.civilians,sol:d.soldiers}])),policy:snapshot,
+            admitted:[...result.state.physical],actions:result.actions,refused:result.report.refused??null,deferred:result.report.deferred??[],outcomes:[],
+            bound:new Set(session.observation.entities.flatMap((/** @type {any} */e)=>classifyTags(e.tags).claims))};
+        return { result, handles: session.handles,policy:snapshot };
     };
 
     /**
@@ -205,6 +265,7 @@ export function createPopSync(deps = {}) {
      * @returns {{ refused: string | null, plan: any, cursor: string }}
      */
     const planFromStore = (tick) => {
+        militaryWork=0;
         const loaded = decodeCursor(world.getDynamicProperty(POP_CURSOR_KEY));
         if (loaded.status === "newer") {
             return { refused: `cursor refused: ${String(loaded.reason)}`, plan: null, cursor: loaded.status };
@@ -213,8 +274,13 @@ export function createPopSync(deps = {}) {
         if (kingdom === undefined || kingdom === null) {
             return { refused: "no kingdom records are stored yet", plan: null, cursor: loaded.status };
         }
-        const planned = plan(loaded.state, kingdom, tick);
-        return { refused: planned.result.report.refused ?? null, plan: planned, cursor: loaded.status };
+        try {
+            const planned = plan(loaded.state, kingdom, tick);
+            return { refused: planned.result.report.refused ?? null, plan: planned, cursor: loaded.status };
+        } catch(error) {
+            if(typeof deps.readMilitarySelection!=="function")throw error;
+            return {refused:String(error),plan:null,cursor:loaded.status};
+        }
     };
 
     /**
@@ -248,10 +314,10 @@ export function createPopSync(deps = {}) {
         if (planned.plan === null || planned.refused !== null) {
             return { refused: planned.refused, actions: [], report: planned.plan?.result.report ?? null, applied: [], skipped: [], failed: [], saved: false };
         }
-        const outcome = applyActions(planned.plan.result.actions, planned.plan.handles);
-        const saved = saveCursor(planned.plan.result.state);
+        const outcome = applyActions(planned.plan.result.actions, planned.plan.handles,planned.plan.policy);
+        const saved = outcome.militaryRefused===null?saveCursor(planned.plan.result.state):{saved:false,reason:outcome.militaryRefused};
         return {
-            refused: null,
+            refused: outcome.militaryRefused,
             actions: planned.plan.result.actions,
             report: planned.plan.result.report,
             applied: outcome.applied,
@@ -265,24 +331,66 @@ export function createPopSync(deps = {}) {
     /**
      * @param {any[]} actions
      * @param {Map<string, any>} handles
+     * @param {ReturnType<typeof militarySelectionPolicy>|null} policy
      */
-    function applyActions(actions, handles) {
+    function applyActions(actions, handles,policy) {
         /** @type {any[]} */
         const applied = [];
         /** @type {any[]} */
         const skipped = [];
         /** @type {any[]} */
         const failed = [];
+        /** @type {string|null} */
+        let militaryRefused=null;
         for (const action of actions) {
             try {
-                /** @type {{ ok: boolean, reason: string | null, entityId?: string }} */
-                const outcome = action.op === "spawn" ? spawnOne(action) : action.op === "despawn" ? removeOne(action, handles) : retagOne(action, handles);
+                if(policy!==null) {
+                    guardMilitaryAction(action,policy);
+                }
+                const beforeWrite=policy===null?undefined:()=>guardMilitaryAction(action,policy);
+                /** @type {{ ok: boolean, reason: string | null, entityId?: string,settled?:{x:number,y:number,z:number} }} */
+                const outcome = action.op === "spawn" ? spawnOne(action,beforeWrite) : action.op === "despawn" ? removeOne(action, handles,beforeWrite) : retagOne(action, handles,beforeWrite);
+                if(policy?.selection?.groupId===action.groupId)diagnose("ownerOutcome",action,outcome);
+                if(action.op==="spawn"&&lastPlan)lastPlan.outcomes.push({groupId:action.groupId,status:outcome.ok?"applied":"skipped",reason:outcome.reason,settled:outcome.settled??null,entityId:outcome.entityId??null});
                 (outcome.ok ? applied : skipped).push({ action, reason: outcome.reason ?? null, entityId: outcome.entityId ?? action.entityId ?? null });
             } catch (error) {
+                if(policy?.selection?.groupId===action.groupId)diagnose("ownerOutcome",action,{ok:false,reason:String(error).slice(0,180)});
                 failed.push({ action, error: String(error) });
+                if(action.op==="spawn"&&lastPlan)lastPlan.outcomes.push({groupId:action.groupId,status:"failed",reason:String(error).slice(0,180),settled:null,entityId:null});
+                if(policy?.selection||error instanceof MilitaryOwnerRefusal){militaryRefused=String(error);break;}
             }
         }
-        return { applied, skipped, failed };
+        if(policy!==null&&militaryRefused===null) {
+            try {if(militaryPolicy(readKingdom())?.stamp!==policy.stamp)throw new Error("military selection changed before cursor save");}
+            catch(error){militaryRefused=String(error);}
+        }
+        return { applied, skipped, failed,militaryRefused };
+    }
+
+    /** @param {any} action @param {ReturnType<typeof militarySelectionPolicy>} policy */
+    function guardMilitaryAction(action,policy) {
+        try {
+        const fresh=militaryPolicy(readKingdom());
+        if(fresh===null||fresh.stamp!==policy.stamp)throw new Error("military selection changed before apply");
+        if(policy.selection===null)return;
+        const parsed=parseGroupId(action.groupId);
+        if(parsed===null)throw new Error("military action identity is invalid");
+        const expected=fresh.typeForGroup({id:action.groupId,...parsed,headcount:0});
+        if(action.op==="spawn"&&action.typeId!==expected)throw new Error("military spawn type changed");
+        const groups=policy.selection&&policy.selection.groupId!==action.groupId?[action.groupId,policy.selection.groupId]:[action.groupId];
+        for(const groupId of groups) {
+            const wanted=groupId===action.groupId?expected:policy.selection?.typeId;
+            const live=findTagged(tagFor(groupId),true);
+            if(live.length>1)throw new Error("military duplicate appeared before apply; all preserved");
+            if(groupId===action.groupId&&action.op==="spawn"&&live.length>0)throw new Error("military representative appeared before spawn; preserved");
+            for(const handle of live) {
+                const tags=handle.getTags();chargeMilitaryWork(tags.length+1);
+                const read=classifyTags(tags);
+                if(!isCanonicalFor(read.ownTags,groupId)||String(handle.typeId)!==wanted)throw new Error("military identity/type changed before apply");
+            }
+            if(groupId===action.groupId&&action.op!=="spawn"&&!live.some(handle=>String(handle.id)===action.entityId))throw new Error("military action target is no longer verified");
+        }
+        }catch(error){throw new MilitaryOwnerRefusal(String(error));}
     }
 
     /**
@@ -299,8 +407,9 @@ export function createPopSync(deps = {}) {
     /**
      * @param {any} action
      * @param {Map<string, any>} handles
+     * @param {()=>void} [beforeWrite]
      */
-    function removeOne(action, handles) {
+    function removeOne(action, handles,beforeWrite) {
         const handle = handles.get(action.entityId);
         if (handle === undefined || !isLive(handle)) {
             return { ok: false, reason: "gone" };
@@ -311,6 +420,7 @@ export function createPopSync(deps = {}) {
         if (!chunkLoadedAt(handle.location)) {
             return { ok: false, reason: "chunk-unloaded" };
         }
+        beforeWrite?.();
         handle.remove();
         return { ok: true, reason: null };
     }
@@ -318,8 +428,9 @@ export function createPopSync(deps = {}) {
     /**
      * @param {any} action
      * @param {Map<string, any>} handles
+     * @param {()=>void} [beforeWrite]
      */
-    function retagOne(action, handles) {
+    function retagOne(action, handles,beforeWrite) {
         const handle = handles.get(action.entityId);
         if (handle === undefined || !isLive(handle)) {
             return { ok: false, reason: "gone" };
@@ -330,6 +441,7 @@ export function createPopSync(deps = {}) {
             return { ok: false, reason: "identity-changed" };
         }
         const canonical = tagFor(action.groupId);
+        beforeWrite?.();
         for (const tag of read.ownTags) {
             if (tag !== canonical) {
                 handle.removeTag(tag);
@@ -342,18 +454,44 @@ export function createPopSync(deps = {}) {
     }
 
     /**
-     * @param {any} action
-     * @returns {{ ok: boolean, reason: string | null, entityId?: string }}
+     * Where a group actually stands. The reducer's spot is an offset from a home (the soldier band sits twenty
+     * blocks along z), and it carries the post's Y with it, so the spawn lands at a height that belongs to a
+     * different column - inside a wall downhill, floating over a drop uphill. The standing height is read again
+     * at the column about to be used, within four blocks, so the unit cannot be moved off its post.
+     *
+     * A probe that cannot measure safe headroom defers the spawn. The stale planned height is not evidence
+     * of dry, empty space; the next reconciliation can retry without changing the population record.
+     *
+     * @param {{ x: number, y: number, z: number }} point
+     * @returns {{ x: number, y: number, z: number } | undefined}
      */
-    function spawnOne(action) {
+    function settleSpot(point) {
+        try {
+            return standableNear(dimension, point.x, point.z, { radius: SPAWN_SETTLE_RADIUS });
+        } catch (_error) {
+            return undefined;
+        }
+    }
+
+    /**
+     * @param {any} action
+     * @param {()=>void} [beforeWrite]
+     * @returns {{ ok: boolean, reason: string | null, entityId?: string,settled?:{x:number,y:number,z:number} }}
+     */
+    function spawnOne(action,beforeWrite) {
         const tag = tagFor(action.groupId);
         if (findTagged(tag).length > 0) {
             return { ok: false, reason: "representative-exists" };
         }
-        if (!chunkLoadedAt(action.at)) {
-            return { ok: false, reason: "chunk-unloaded" };
+        const at = settleSpot(action.at);
+        if (at === undefined) {
+            return { ok: false, reason: "no-safe-standing-spot" };
         }
-        const entity = dimension.spawnEntity(action.typeId, action.at);
+        if (!chunkLoadedAt(at)) {
+            return { ok: false, reason: "chunk-unloaded",settled:at };
+        }
+        beforeWrite?.();
+        const entity = dimension.spawnEntity(action.typeId, at);
         let tagged = false;
         try {
             tagged = entity.addTag(tag) === true;
@@ -369,7 +507,8 @@ export function createPopSync(deps = {}) {
                 return { ok: false, reason: "tag-failed-stray-untagged" };
             }
         }
-        return { ok: true, reason: null, entityId: String(entity.id) };
+        diagnose("observe",action.groupId,[entity]);
+        return { ok: true, reason: null, entityId: String(entity.id),settled:at };
     }
 
     /**
@@ -402,7 +541,140 @@ export function createPopSync(deps = {}) {
         };
     }
 
-    return { dryRun, reconcileOnce, status, config, enabled };
+    /** A single-group read-only probe of the cached last owner plan, never a new planning/spawn path.
+     * @param {string} groupId @param {number} tick */
+    function inspectGroup(groupId,tick){
+        const parsed=parseGroupId(groupId);
+        if(!parsed)return{state:/** @type {const} */("unavailable"),reason:"inspect requires one canonical population group ID"};
+        if(!lastPlan)return{state:/** @type {const} */("unavailable"),reason:"no owner plan has run in this session; wait for its normal hour"};
+        const people=lastPlan.counts.get(parsed.district)?.[parsed.kind],headcount=Math.min(config.groupSize[parsed.kind],Number(people)-parsed.index*config.groupSize[parsed.kind]);
+        if(!Number.isInteger(headcount)||headcount<=0)return{state:/** @type {const} */("unavailable"),reason:"group does not exist in the cached owner population"};
+        const list=lastPlan.posts[parsed.district],postIndex=list?.count?parsed.index%list.count:null,post=postIndex===null?null:list?.points[postIndex]??null;
+        const requested=post?spotFor(post,parsed.kind,parsed.index):null;
+        const group={id:groupId,district:parsed.district,kind:parsed.kind,index:parsed.index,headcount};
+        const expectedType=lastPlan.policy?.typeForGroup(group)??POP_ENTITY_TYPES[parsed.kind];
+        let reads=0,limited=false,unreadable=0;
+        /** @param {string} method @param {any} point */
+        const probe=(method,point)=>{
+            if(reads>=240){limited=true;throw new Error("inspection block-read budget exhausted");}
+            reads++;
+            try{const value=dimension[method](point);if(value===undefined||value===null)unreadable++;return value;}catch(error){unreadable++;throw error;}
+        };
+        let settled=null,settleReason=requested?"no-safe-standing-spot":"no cached post";
+        if(requested){try{settled=standableNear({getTopmostBlock:(/** @type {any} */p)=>probe("getTopmostBlock",p),getBlock:(/** @type {any} */p)=>probe("getBlock",p)},requested.x,requested.z,{radius:SPAWN_SETTLE_RADIUS})??null;}
+            catch(error){settleReason=String(error).slice(0,180);}
+            if(settled)settleReason="safe loaded column measured";else if(limited)settleReason="block-read budget exhausted";else if(unreadable>0)settleReason="no safe column measured; some samples unreadable/unloaded";
+        }
+        /** @type {any} */let live={queryMatches:null,canonicalLoaded:null,expectedTypeLoaded:null,entities:[],reason:null};
+        try {
+            const found=dimension.getEntities({tags:[tagFor(groupId)]});
+            if(!Array.isArray(found))throw new Error("tag census did not return an array");
+            live.queryMatches=found.length;
+            if(found.length>2)live.reason="more than two loaded tag matches; identity census held within its bound";
+            else {
+                let canonical=0,expected=0;
+                for(const handle of found){const tags=handle.getTags();if(!Array.isArray(tags)||tags.length>64)throw new Error("entity tag identity exceeds inspection bound");const identity=classifyTags(tags),matches=isCanonicalFor(identity.ownTags,groupId),typeId=String(handle.typeId);if(matches)canonical++;if(matches&&typeId===expectedType)expected++;live.entities.push({id:String(handle.id),typeId,canonical:matches,...militaryActorSnapshot(handle)});}
+                live.canonicalLoaded=canonical;live.expectedTypeLoaded=expected;
+                diagnose("observe",groupId,found);
+            }
+        }catch(error){live.reason=String(error).slice(0,180);}
+        const action=lastPlan.actions.find((/** @type {any} */a)=>a.groupId===groupId&&a.op==="spawn"),outcome=lastPlan.outcomes.find((/** @type {any} */o)=>o.groupId===groupId);
+        const deferred=lastPlan.deferred.find((/** @type {any} */d)=>d.groupId===groupId)?.reason;
+        const lastAttempt=outcome??{status:action?"queued but not executed":lastPlan.bound.has(groupId)?"already observed":deferred??(lastPlan.admitted.includes(groupId)?"not queued within last attempt budget":"not admitted"),reason:lastPlan.refused,settled:null,entityId:null};
+        return{state:/** @type {const} */("ok"),groupId,ownerTick:lastPlan.tick,currentTick:tick,ageTicks:Number.isSafeInteger(tick)&&tick>=lastPlan.tick?tick-lastPlan.tick:null,
+            ownerRefused:lastPlan.refused,admitted:lastPlan.admitted.includes(groupId),expectedType,postIndex,postCount:list?.count??0,post,requested,lastAttempt,
+            settle:{point:settled,reason:settleReason,nativeBlockReads:reads,maxBlockReads:240,limited,unreadable},live};
+    }
+    return { dryRun, reconcileOnce, status, config, enabled,inspectGroup };
+}
+
+/**
+ * Where a district's people may stand: the plaza `homesFromRecords` finds, then the quarter posts of a lattice
+ * around it.
+ *
+ * One post per district is why a 238-block district read as empty a few dozen blocks from its square: every group
+ * of both kinds was pinned to the same spot, so the population only ever existed where the player arrived. The
+ * groups are dealt round these posts instead.
+ *
+ * Every ring post is probed for open ground with `standable` - a point 40 blocks out is as likely to be a roof, a
+ * wall top or a tree crown as a street - and a post whose ground cannot be read is left out rather than invented.
+ * The plaza is never dropped: a district with a home always keeps at least the one post it had before.
+ *
+ * @param {any} kingdom
+ * @param {(x: number, z: number) => (number | undefined)} [surfaceAt]
+ * @param {(x: number, z: number, radius?: number) => ({ x: number, y: number, z: number } | undefined)} [standable]
+ * @returns {Record<string, Array<{ x: number, y: number, z: number }>>}
+ */
+export function postsFromRecords(kingdom, surfaceAt = undefined, standable = undefined) {
+    const homes = homesFromRecords(kingdom, surfaceAt, standable);
+    /** @type {Record<string, Array<{ x: number, y: number, z: number }>>} */
+    const posts = {};
+    for (const [districtId, home] of Object.entries(homes)) {
+        /** @type {Array<{ x: number, y: number, z: number }>} */
+        const list = [{ x: home.x, y: home.y, z: home.z }];
+        for (const dx of [-POP_POSTS.spacing, 0, POP_POSTS.spacing]) {
+            for (const dz of [-POP_POSTS.spacing, 0, POP_POSTS.spacing]) {
+                if (dx === 0 && dz === 0) {
+                    continue;
+                }
+                const x = home.x + dx;
+                const z = home.z + dz;
+                // Open ground first, then the same topmost-column answer the plaza falls back to. A post is only
+                // dropped when neither can be read, which is an unloaded chunk - never a guess.
+                let spot;
+                try {
+                    spot = typeof standable === "function" ? standable(x, z, POP_POSTS.probeRadius) : undefined;
+                } catch (_error) {
+                    spot = undefined;
+                }
+                if (spot === undefined || spot === null || !Number.isFinite(spot.y)) {
+                    let y;
+                    try {
+                        y = typeof surfaceAt === "function" ? surfaceAt(x, z) : undefined;
+                    } catch (_error) {
+                        y = undefined;
+                    }
+                    spot = Number.isFinite(y) ? { x, y: /** @type {number} */ (y), z } : undefined;
+                }
+                if (spot !== undefined && spot !== null && Number.isFinite(spot.y)) {
+                    list.push({ x: spot.x, y: /** @type {number} */ (spot.y), z: spot.z });
+                }
+            }
+        }
+        posts[districtId] = list;
+    }
+    return posts;
+}
+
+/**
+ * One post per district, for a caller whose world model knows only a home.
+ * @param {Record<string, { x: number, y: number, z: number }>} homes
+ * @returns {Record<string, Array<{ x: number, y: number, z: number }>>}
+ */
+function singlePosts(homes) {
+    /** @type {Record<string, Array<{ x: number, y: number, z: number }>>} */
+    const posts = {};
+    for (const [districtId, home] of Object.entries(homes ?? {})) {
+        posts[districtId] = [{ x: home.x, y: home.y, z: home.z }];
+    }
+    return posts;
+}
+
+/**
+ * The plaza of each district, read back out of its posts. The reducer wants both: posts decide where groups stand,
+ * homes are what a caller that knows nothing of posts still understands.
+ * @param {Record<string, Array<{ x: number, y: number, z: number }>>} posts
+ * @returns {Record<string, { x: number, y: number, z: number }>}
+ */
+function plazasOf(posts) {
+    /** @type {Record<string, { x: number, y: number, z: number }>} */
+    const homes = {};
+    for (const [districtId, list] of Object.entries(posts ?? {})) {
+        if (Array.isArray(list) && list.length > 0) {
+            homes[districtId] = list[0];
+        }
+    }
+    return homes;
 }
 
 /**
@@ -436,16 +708,19 @@ function playersIn(world, dimension) {
  *  - `civ` is the civilization build record written by `civ:generate`, and it stores `hq`, `centre` and
  *    `anchor` as plan X/Z with **no Y at all**. Reading only the first shape makes every built district
  *    look homeless, which is how the streets driver came to run for hours, report no error, and spawn
- *    nothing.
+ *    nothing. Of those three, `centre` is read first: `hq` is a building footprint, and the topmost block
+ *    over a building is its roof.
  *
  * A district with neither, or whose plan column has no known surface, gets no entry: the reducer then
  * refuses its groups as unhoused instead of the adapter inventing a place to stand.
  *
  * @param {any} kingdom
  * @param {(x: number, z: number) => (number | undefined)} [surfaceAt] the standing Y of a plan column
+ * @param {(x: number, z: number) => ({ x: number, y: number, z: number } | undefined)} [standable] open ground near
+ *   a plan point; when supplied it decides the whole spot (x, y and z), not only the height
  * @returns {Record<string, { x: number, y: number, z: number }>}
  */
-export function homesFromRecords(kingdom, surfaceAt = undefined) {
+export function homesFromRecords(kingdom, surfaceAt = undefined, standable = undefined) {
     /** @type {Record<string, { x: number, y: number, z: number }>} */
     const homes = {};
     const districts = Array.isArray(kingdom?.districts) ? kingdom.districts : [];
@@ -459,8 +734,25 @@ export function homesFromRecords(kingdom, surfaceAt = undefined) {
             homes[id] = { x: origin.x, y: origin.y, z: origin.z };
             continue;
         }
-        const plan = [district?.civ?.hq, district?.civ?.centre, district?.civ?.anchor].find((spot) => isPlanar(spot, false));
-        if (plan === undefined || typeof surfaceAt !== "function") {
+        // The plaza, not the headquarters: `hq` is a building footprint, so its "topmost block" is a roof and
+        // its neighbours are walls. `centre` is the plan's centroid - the open ground a player joins at.
+        const plan = [district?.civ?.centre, district?.civ?.hq, district?.civ?.anchor].find((spot) => isPlanar(spot, false));
+        if (plan === undefined) {
+            continue;
+        }
+        if (typeof standable === "function") {
+            let spot;
+            try {
+                spot = standable(plan.x, plan.z);
+            } catch (_error) {
+                spot = undefined;
+            }
+            if (spot !== undefined && spot !== null && Number.isFinite(spot.y)) {
+                homes[id] = { x: spot.x, y: /** @type {number} */ (spot.y), z: spot.z };
+                continue;
+            }
+        }
+        if (typeof surfaceAt !== "function") {
             continue;
         }
         const y = surfaceAt(plan.x, plan.z);

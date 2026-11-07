@@ -1,7 +1,8 @@
 import { BlockPermutation, system, world } from "@minecraft/server";
 import { GATE, blockersInClearance, classifyExisting, entityClearanceBox, normalizeSpec, transition } from "../civ/gates.js";
-import { latticeState, mergeRegistry, unitsOfGate, unmanagedWanted } from "../civ/gatelink.js";
+import { latticeState, mergeRegistry, proofCells, unitsOfGate, unmanagedWanted } from "../civ/gatelink.js";
 import { findGate, listGates, recordPhysicalBlocked, recordPhysicalResult } from "../sim/gatecontrol.js";
+import { createChunkLoader } from "./chunkLeases.js";
 
 /**
  * Bedrock boundary for physical gates: turns "this gate should be closed/open" into a bounded, resumable,
@@ -159,8 +160,13 @@ function opposite(state) {
  * @param {{ specFor?: (gateId: string, gate: any) => RuntimeGateSpec | undefined, dimensionFor?: (spec: RuntimeGateSpec) => Dimension }} [options]
  */
 export function createGateAdapter(kingdomStore, options = {}) {
-    /** @type {Map<string, { jobId: number | undefined, to: "open" | "closed", cancelled: boolean }>} */
+    /** @type {Map<string, { jobId: number | undefined, to: "open" | "closed", cancelled: boolean, releaseChunks?: () => void }>} */
     const running = new Map();
+    const chunkLoader = createChunkLoader(() => world.tickingAreaManager, () => system.currentTick);
+    let recoveredChunks = false;
+    function recoverChunks() {
+        if (!recoveredChunks) { chunkLoader.recover(); recoveredChunks = true; }
+    }
     /** @type {Map<string, string>} last human-readable outcome per gate */
     const lastOutcome = new Map();
     /** @type {Set<string>} gates under a self test: the pump leaves them alone */
@@ -394,7 +400,7 @@ export function createGateAdapter(kingdomStore, options = {}) {
             return { ok: true, status: "unchanged", reason: null };
         }
 
-        const token = { jobId: /** @type {number | undefined} */ (undefined), to, cancelled: false };
+        const token = { jobId: /** @type {number | undefined} */ (undefined), to, cancelled: false, releaseChunks: /** @type {(() => void) | undefined} */ (undefined) };
         running.set(gateId, token);
         const multi = prepared.length > 1;
         const label = (/** @type {number} */ index) => (multi ? `${/** @type {any} */ (prepared[index]).unit.id}: ` : "");
@@ -426,6 +432,16 @@ export function createGateAdapter(kingdomStore, options = {}) {
 
         function* job() {
             try {
+                recoverChunks();
+                const lease = chunkLoader.acquire(prepared.map((_entry, index) => ({ dimension: /** @type {Dimension} */ (dimensions[index]), cells: /** @type {ReturnType<typeof transition>} */ (plans[index]).ops })));
+                token.releaseChunks = lease.release;
+                let loading = lease.status();
+                while (loading.state === "loading") {
+                    if (token.cancelled) return;
+                    yield;
+                    loading = lease.status();
+                }
+                if (loading.state === "failed") { pause(loading.reason ?? "gate chunks could not be loaded", false); return; }
                 // 0. Closing a multi-unit gate: nobody may stand in ANY of the gateways before the first one moves.
                 if (to === "closed" && multi) {
                     for (let index = 0; index < prepared.length; index += 1) {
@@ -545,9 +561,7 @@ export function createGateAdapter(kingdomStore, options = {}) {
                         record.to = to;
                         writeGateRecord(record);
                         const wake = system.currentTick + GATE_RUNTIME.rowDelayTicks;
-                        let guard = 0;
-                        while (system.currentTick < wake && guard < 400) {
-                            guard += 1;
+                        while (system.currentTick < wake) {
                             yield;
                         }
                     }
@@ -583,6 +597,8 @@ export function createGateAdapter(kingdomStore, options = {}) {
                 running.delete(gateId);
             } catch (error) {
                 pause(`unexpected error: ${String(error)}`, false);
+            } finally {
+                token.releaseChunks?.();
             }
         }
 
@@ -600,6 +616,7 @@ export function createGateAdapter(kingdomStore, options = {}) {
             return false;
         }
         current.cancelled = true;
+        current.releaseChunks?.();
         if (current.jobId !== undefined) {
             try {
                 system.clearJob(current.jobId);
@@ -618,6 +635,7 @@ export function createGateAdapter(kingdomStore, options = {}) {
      * @returns {{ started: string[], waiting: string[] }}
      */
     function pump() {
+        recoverChunks();
         /** @type {string[]} */
         const started = [];
         /** @type {string[]} */
@@ -795,7 +813,17 @@ export function createGateAdapter(kingdomStore, options = {}) {
         return { ok: true, error: undefined, managed: resolved.managed, kingdomState: resolved.kingdomState, units };
     }
 
-    return { request, pump, start, abort, retryNow, describe, hold, release, inspect, isRunning: (/** @type {string} */ id) => running.has(id) };
+    /** Keep the complete read-only crossing proof loaded during a diagnostic. @param {string} gateId */
+    function loadForInspection(gateId) {
+        if (!world.tickingAreaManager) return undefined;
+        const resolved = resolveGate(gateId);
+        if (resolved.error) return undefined;
+        recoverChunks();
+        return chunkLoader.acquire(resolved.units.map((unit) => ({ dimension: dimensionOf(unit.spec), cells: proofCells(unit.spec) })));
+    }
+
+    return { request, pump, start, abort, retryNow, describe, hold, release, inspect, loadForInspection,
+        isHeld: (/** @type {string} */ id) => held.has(id), isRunning: (/** @type {string} */ id) => running.has(id) };
 }
 
 /** @typedef {ReturnType<typeof createGateAdapter>} GateAdapter */

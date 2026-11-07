@@ -1,0 +1,26 @@
+# Read-only tree inspection: bounded, streamed source verification
+
+Reviewable staging proposal only. Nothing has been installed or tested in the current Minecraft world by this stage.
+
+The existing inspector hydrates all five saved districts before compiling contact protection. This proposal uses the existing saved-record loader and shared-tree compiler, retaining the selected verified record plus one verified neighbor at a time. It projects exact historical-tree and final-contact protection onto the existing traversal's complete read envelope: horizontal 17 and vertical 41 blocks from the immutable seed. The extra block includes every neighbor and root-base probe used by the unchanged H16/V40 traversal. A native read outside that envelope refuses rather than treating an unprojected claim as absent.
+
+All current district sources, master plans, complete queues, saved-record checksums and dimensions are verified. Existing raw-source, player, developer permission, active-job and cancellation barriers surround yields, reads, getters and publication. The actual dimension object continues to own the existing temporary hold, released in the existing finally path. There is no new writer, timer, lease owner or removal authority. The old writer-facing shared-tree helper remains unchanged. A private runtime brand explicitly rejects forwarding the bounded inspection projection to construction or repair.
+
+The compact sets/maps refuse at 16,384 entries rather than truncate claims. Own-record indexing also streams existing element operations and indexes only this envelope, without the normal construction operation cache. Source compilation still charges every operation and preserves the existing shared-boundary and historical-tree rules. Unsupported edge seeds refuse explicitly. These limits are conservative design choices, not a claim that every possible tree must be accepted.
+
+## Validation
+
+- `focused-final.log`: 19/19 pass, 342.279 ms. Includes synthetic five-source full-versus-bounded projection parity, caps, incomplete or altered sources, cancellation, seed mutation, native AIR-base refusal and natural-ground acceptance, exact native read/getter sequence parity, six getter-race refusal cases, hold release and explicit writer rejection. No block/property writes.
+- `typecheck-final.log`: unchanged strict TypeScript configuration, exit 0. Runtime overlay contains all four final proposed production files byte-for-byte.
+- `actual-five-source.json`: one offline run against the existing closed source capture (sequence 383540, input SHA256 `779D961FE66BC90223F3494A539B0E72C16A2F4C1001B3473A02111072C0E994`). Actual saved-source loader verifies all five sources in order 5,1,2,3,4. The bounded result equals the union of full-region per-neighbor compilations projected to the same envelope. Peak retained completed verified heavy records is two. All 36 input properties remain unchanged. Elapsed 24,525 ms is an offline observation, not a performance benchmark.
+- That capture's selected envelope has zero historical tree/final contact claims and four boundary outlines; synthetic tests cover positive tree/contact claims. The selected actual D5 record is additionally exercised with an explicit six-cell offline tree fixture: same AIR-base refusal at (-214,68,-539), same 73 native read points, zero writes. This is not the actual 627-cell in-game tree.
+
+The actual five-source run preceded the final private read-only brand and writer-rejection hardening. `ACTUAL-TESTED-HASHES.json` preserves the exact production hashes exercised by that run. That delta does not change source loading, projection data or traversal, and the final 19-case suite and strict typecheck cover it. No second expensive hydration was run while the parent integration suite was active.
+
+Reference-retention instrumentation counts completed verified source records owned by this orchestration. It does not measure heap usage, garbage collection, transient decoder allocations or native memory. The earlier game's high-memory warnings motivated this mitigation; they do not prove this was their sole cause. Live Minecraft stability, actual 627-cell native topology and live cancellation remain unverified.
+
+## Promotion
+
+`PROMOTION-HASHES.json` pins four production files, two new tests and the before-builder fixture. `BEFORE.json` preserves the exact three modified production baselines, also used to build `proposed.patch`. All three still matched active source when packaged. Integrate only after independent review; retain the reviewed room-reader helper already used by the command adapter. No generated runtime overlay or closed input capture belongs in the game pack.
+
+Original test history is retained: `focused-initial.log` contains one test-only CRLF string comparison failure, corrected by normalizing both before/after strings. `focused-second.log` records 18 passes before the additional writer-rejection case. Earlier typecheck logs are retained alongside the final check.

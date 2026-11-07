@@ -1,0 +1,35 @@
+{
+  "utc": "2026-11-06T16:55:35.776853+00:00",
+  "scope": "STAGED only; one existing driver hardened, no new owner/timer/property/block/cohort. Base driver still unchanged.",
+  "focused": {
+    "pass": 39,
+    "oldUnchangedBaselineChecks": 17,
+    "newHardeningChecks": 22,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 496.3904,
+    "log": "dev\\staging\\civilian-travel-identity\\focused-final.log"
+  },
+  "strictIsolatedTsc": "PASS against latest root route/controller-diagnostic sources",
+  "files": [
+    {
+      "source": "dev\\staging\\civilian-travel-identity\\proposed-civilianTravel.js",
+      "target": "CivilizationApocalypse_BP\\scripts\\integration\\civilianTravel.js",
+      "beforeSha256": "7AF92C70B75EC7EC55CF190E47381818FAB8CEEC4DCB6E98D33846B8CFA6F5C5",
+      "proposedSha256": "A5B25830ADDF632A41FE772E852B15E847B7A9CC293B7DB5B2328759AAC6CACC"
+    },
+    {
+      "source": "dev\\staging\\civilian-travel-identity\\proposed-dev\\test\\civilian-travel-identity.test.mjs",
+      "target": "dev\\test\\civilian-travel-identity.test.mjs",
+      "beforeSha256": null,
+      "proposedSha256": "FD2B8488B9D93AFC1AB9F85F8014AD534094825926C5F07E5B766338308A5A85"
+    },
+    {
+      "source": "dev\\staging\\civilian-travel-identity\\proposed-dev\\lib\\civilian-travel-identity-fixture.mjs",
+      "target": "dev\\lib\\civilian-travel-identity-fixture.mjs",
+      "beforeSha256": null,
+      "proposedSha256": "B226D6E6A9C85CE5666723900734CA0B05264F448AB1FD9A99CDA4FE6E90CBDE"
+    }
+  ]
+}

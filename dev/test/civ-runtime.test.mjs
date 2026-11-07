@@ -127,6 +127,8 @@ test("what vetoes a tree: foreign blocks do, the jungle's own understorey and ou
     assert.equal(t("minecraft:moss_carpet"), true, "moss carpet is a companion: it may not veto a tree, and no clear removes it");
     assert.equal(t("minecraft:melon_block"), true);
     assert.equal(t("minecraft:cocoa"), true);
+    assert.equal(t("minecraft:coal_ore"), true, "exposed cliff ore may touch a natural tree");
+    assert.equal(builder.classifyCivOp({x:0,y:70,z:0,id:"minecraft:air",kind:"clear"},"minecraft:coal_ore").action,"skip","tree companionship never permits mining ore");
     // masonry in the wild still reads as a player build; inside a finished district it is the kingdom's own work
     assert.equal(t("minecraft:stone_bricks"), false);
     assert.equal(t("minecraft:stone_bricks", { insideFinishedDistrict: true }), true);
@@ -401,7 +403,7 @@ test("one command: scan, plan, validate, store, then build - everything within b
     assert.ok(base.stats.writes <= CIV_LIMITS.maxBlocksPerSlice, `writes per slice ${base.stats.writes}`);
     assert.match(out, new RegExp(`max ${CIV_LIMITS.maxBlocksPerSlice} ops, \\d+ reads per slice`));
     // chunk holding: one area at a time, never above the cap, none left
-    assert.ok(base.stats.areaMaxChunks <= 100, `ticking area ${base.stats.areaMaxChunks} chunks`);
+    assert.ok(base.stats.areaMaxChunks <= 64, `ticking area ${base.stats.areaMaxChunks} chunks`);
     assert.equal(base.stats.areaViolations, 0);
     assert.equal(base.stats.areasLeft, 0);
     // record
@@ -563,6 +565,161 @@ test("player blocks and existing walls are never overwritten and are counted as 
     assert.equal(civRecord().status, "complete");
 });
 
+test("construction cannot exhaust its unloaded-cell deadline in same-tick work slices", MIN_TIMEOUT, async () => {
+    const planned = await plannedOnly();
+    restoreProps(planned.props);
+    let unread = 0;
+    mc.unloaded = () => { unread += 1; return true; };
+    const player = makePlayer();
+    send(CIV_EVENT_IDS.resume, "", player);
+    await pump({ until: () => unread > 0 });
+    const job = mc.jobs[0];
+    assert.ok(job);
+    const tick = mc.tick;
+    for (let i = 0; i < 1000; i += 1) assert.equal(job.generator.next().done, false);
+    assert.equal(mc.tick, tick);
+    assert.equal(builder.hasSession(), true);
+    assert.equal(mc.writes, 0);
+    mc.unloaded = () => false;
+    advanceTick(1);
+    await pump();
+    assert.equal(civRecord().status, "complete", text(player).slice(-1500));
+});
+
+test("construction recovers from accepted large holds that never load by shrinking work windows", MIN_TIMEOUT, async () => {
+    const expected = await baseline();
+    const planned = await plannedOnly();
+    restoreProps(planned.props);
+    mc.createMode = (chunks) => chunks > 16 ? "never" : "instant";
+    const player = makePlayer();
+    send(CIV_EVENT_IDS.resume, "", player);
+    await pump();
+    assert.equal(civRecord().status, "complete", text(player).slice(-1500));
+    assert.match(text(player), /smaller 64-block windows/);
+    assertSameWorld(worldFingerprint(), expected.fp, "smaller windows retain the identical completed city");
+    assert.equal(mc.areas.size, 0);
+});
+
+test("construction stops after bounded shrinking when even one chunk never loads", MIN_TIMEOUT, async () => {
+    const planned = await plannedOnly();
+    restoreProps(planned.props);
+    mc.createMode = () => "never";
+    const before = mc.createCalls;
+    const player = makePlayer();
+    send(CIV_EVENT_IDS.resume, "", player);
+    await pump();
+    assert.equal(civRecord().status, "paused");
+    assert.equal(mc.writes, 0, "unloaded blocks must never be guessed or written");
+    assert.ok(mc.createCalls - before <= 50, "two large-area attempts and at most three groups of sixteen individual chunks");
+    assert.match(text(player), /smaller 16-block windows/);
+    assert.equal(mc.areas.size, 0);
+    assert.equal(builder.hasSession(), false);
+});
+
+test("construction fallback keeps tree clearance readable across chunk boundaries", MIN_TIMEOUT, async () => {
+    const planned = await plannedOnly();
+    restoreProps(planned.props);
+    mc.createMode = (chunks) => chunks > 1 ? "never" : "instant";
+    mc.unloaded = ({ x, z }) => ![...mc.areas.values()].some((area) => area.loaded && x >= area.from.x && x <= area.to.x && z >= area.from.z && z <= area.to.z);
+    const player = makePlayer();
+    send(CIV_EVENT_IDS.resume, "", player);
+    await pump();
+    assert.equal(civRecord().status, "complete", text(player).slice(-1800));
+    assert.equal(mc.areas.size, 0);
+});
+
+test("aborting fragmented chunk loading releases every hold and preserves the saved cursor", MIN_TIMEOUT, async () => {
+    const planned = await plannedOnly();
+    restoreProps(planned.props);
+    mc.createMode = () => "never";
+    const player = makePlayer();
+    send(CIV_EVENT_IDS.resume, "", player);
+    await pump({ until: () => [...mc.areas.keys()].some((id) => id.startsWith("civ-build-load-")) });
+    assert.ok(mc.areas.size > 1, "the fallback group is waiting for chunks");
+    send(CIV_EVENT_IDS.abort, "", player);
+    await pump();
+    assert.equal(mc.areas.size, 0);
+    assert.equal(mc.writes, 0);
+    assert.equal(civRecord().status, "paused");
+    assert.equal(builder.hasSession(), false);
+    mc.createMode = () => "instant";
+    send(CIV_EVENT_IDS.resume, "", player);
+    await pump();
+    assert.equal(civRecord().status, "complete", text(player).slice(-1500));
+});
+
+test("fragmented construction fallback reuses its bounded chunk group across operations", MIN_TIMEOUT, async () => {
+    const expected = await baseline();
+    const planned = await plannedOnly();
+    restoreProps(planned.props);
+    let maxGroup = 0;
+    mc.createMode = (chunks) => {
+        if (chunks === 1) maxGroup = Math.max(maxGroup, mc.areas.size + 1);
+        return chunks > 1 ? "never" : "instant";
+    };
+    const before = mc.createCalls;
+    const player = makePlayer();
+    send(CIV_EVENT_IDS.resume, "", player);
+    await pump();
+    assert.equal(civRecord().status, "complete", text(player).slice(-1500));
+    assert.match(text(player), /smaller 64-block windows/);
+    assertSameWorld(worldFingerprint(), expected.fp, "fragmented loading preserves the finished city");
+    assert.ok(maxGroup > 1 && maxGroup <= 16, "hold at most sixteen individual chunks for the complete tree apron");
+    assert.ok(mc.createCalls - before < civRecord().opsTotal / 8, `reuse the held chunk instead of reloading it for each block (${mc.createCalls-before} chunk creates for ${civRecord().opsTotal} ops; maximum group ${maxGroup})`);
+    assert.equal(mc.areas.size, 0);
+});
+
+test("LIVE REPRODUCTION: new gate openings clear natural ground, preserve foreign blocks and remain open after later stages", MIN_TIMEOUT, async () => {
+    const planned = await plannedOnly();
+    restoreProps(planned.props);
+    const { record } = rehydrateStored();
+    const gates = await load("civ", "gates.js");
+    const links = await load("civ", "gatelink.js");
+    const specs = record.gates.map((gate) => ({ ...gate, y: gate.walkingLevel, wallTop: gate.wallTopHeight }));
+    const cells = specs.flatMap((spec) => gates.cellsToToggle(spec).filter((cell) => cell.role !== "lever"));
+    assert.ok(cells.length > 0);
+    for (const cell of cells) mc.placed.set(key(cell.x, cell.y, cell.z), "minecraft:grass_block");
+    const obstruction = cells[0], obstructionKey = key(obstruction.x, obstruction.y, obstruction.z);
+    mc.placed.set(obstructionKey, "minecraft:bookshelf");
+    const player = makePlayer();
+    send(CIV_EVENT_IDS.resume, "", player);
+    await pump();
+    assert.equal(civRecord().status, "paused");
+    assert.equal(mc.placed.get(obstructionKey), "minecraft:bookshelf");
+    assert.match(text(player), /gate construction is obstructed/);
+    mc.placed.set(obstructionKey, "minecraft:grass_block");
+    send(CIV_EVENT_IDS.resume, "", player);
+    await pump();
+    assert.equal(civRecord().status, "complete", text(player).slice(-1200));
+    for (const spec of specs) assert.equal(links.latticeState(spec, typeAt).state, "open", spec.id);
+    assert.equal(mc.areas.size, 0);
+});
+
+for (const plant of ["minecraft:seagrass", "minecraft:kelp"]) test(`an obstructed gate preserves foreign blocks and resumes through ${plant}`, MIN_TIMEOUT, async () => {
+    const planned = await plannedOnly();
+    restoreProps(planned.props);
+    const { record } = rehydrateStored();
+    const [op] = pickCells(record, "gates", 1);
+    assert.ok(op, "the fixture has a gatehouse operation");
+    const cell = key(op.x, op.y, op.z);
+    mc.placed.set(cell, "minecraft:bookshelf");
+    const player = makePlayer();
+    send(CIV_EVENT_IDS.resume, "", player);
+    await pump();
+    assert.equal(civRecord().status, "paused");
+    assert.match(text(player), /gate construction is obstructed/);
+    assert.match(text(player), /minecraft:bookshelf/);
+    assert.equal(mc.placed.get(cell), "minecraft:bookshelf", "the player block is preserved");
+    assert.notEqual(jobsModule.createJobStore(mc.world).loadQueue({ recoverRunning: false }).queue.state, "complete");
+    // Live Ironquarry and Whitethorn builds exposed these missing plant entries.
+    // Both must resume at the saved gate cursor without loosening the foreign-block guard.
+    mc.placed.set(cell, plant);
+    const resumed = makePlayer();
+    send(CIV_EVENT_IDS.resume, "", resumed);
+    await pump();
+    assert.equal(civRecord().status, "complete", text(resumed).slice(-1500));
+});
+
 test("a player-made tree (persistent leaves) and a log-only pillar are left alone; natural trees are cleared", MIN_TIMEOUT, async () => {
     const planned = await plannedOnly();
     restoreProps(planned.props);
@@ -628,6 +785,8 @@ test("a tall tree standing in a cleared lot is removed to its top, not only the 
     // ... and so did the jungle understorey: bamboo and moss carpet are vegetation, not a build
     mc.placed.set(key(spot.x, spot.g + 1, spot.z + 1), "minecraft:bamboo");
     mc.placed.set(key(spot.x - 1, spot.g + 1, spot.z), "minecraft:moss_carpet");
+    const oreKey = key(spot.x + 1, spot.g + 2, spot.z);
+    mc.placed.set(oreKey, "minecraft:coal_ore");
     const player = makePlayer();
     send(CIV_EVENT_IDS.resume, "", player);
     await pump();
@@ -638,6 +797,438 @@ test("a tall tree standing in a cleared lot is removed to its top, not only the 
         assert.equal(mc.placed.get(key(spot.x + dx, spot.g + 20, spot.z + dz)), "minecraft:air", `the crown at +${String(dx)},+${String(dz)} is gone`);
     }
     assert.equal(typeAt(spot.x + 1, spot.g + 1, spot.z), "minecraft:melon_block", "a benign neighbour is judged, never removed");
+    assert.equal(typeAt(spot.x + 1, spot.g + 2, spot.z),"minecraft:coal_ore");
+    assert.equal(mc.written.has(oreKey),false,"tree clearance and later construction both preserve the exposed ore");
+});
+
+test("leaf-linked neighboring trees are cleared as whole rooted trees without refusing or severing their branches",MIN_TIMEOUT,async()=>{
+    const planned=await plannedOnly();restoreProps(planned.props);
+    const {record}=rehydrateStored();let spot;
+    for(let i=0;i<record.clear.length&&!spot;i++)for(const op of siteplan.siteOpsFor(record,'clear',i)) {
+        const c=groundCell(op.x,op.z);if(c?.tree){spot={x:op.x,z:op.z,g:c.g};break;}
+    }
+    assert.ok(spot);const top=spot.g+20,secondX=spot.x+12,secondGround=groundCell(secondX,spot.z).g;
+    const first=[],second=[];
+    const log=(list,x,y,z)=>{mc.placed.set(key(x,y,z),'minecraft:spruce_log');list.push({x,y,z});};
+    for(let y=spot.g+1;y<=top;y++)log(first,spot.x,y,spot.z);
+    for(let dx=1;dx<=6;dx++)log(first,spot.x+dx,top,spot.z);
+    for(let y=secondGround+1;y<=top;y++)log(second,secondX,y,spot.z);
+    for(let dx=1;dx<=12;dx++)log(second,secondX+dx,top,spot.z);
+    for(let dx=-2;dx<=26;dx++)for(const dz of [-1,1])mc.placed.set(key(spot.x+dx,top,spot.z+dz),'minecraft:spruce_leaves');
+    for(let dx=7;dx<12;dx++)mc.placed.set(key(spot.x+dx,top,spot.z),'minecraft:spruce_leaves');
+    const player=makePlayer();send(CIV_EVENT_IDS.resume,'',player);await pump();
+    assert.equal(civRecord().status,'complete',text(player).slice(-1800));
+    for(const c of first.filter(c=>c.y===top))assert.notEqual(typeAt(c.x,c.y,c.z),'minecraft:spruce_log','the first rooted tree must not be refused because leaves link it to a distant tree');
+    const remaining=second.filter(c=>typeAt(c.x,c.y,c.z)==='minecraft:spruce_log');
+    assert.ok(remaining.length===0||remaining.length===second.length,'the other rooted tree is either preserved whole or cleared whole');
+});
+
+test("tree inspection uses the production proof but preserves blocks, properties and the saved queue on every result", MIN_TIMEOUT, async () => {
+    const planned = await plannedOnly();
+    restoreProps(planned.props);
+    const { plan, record } = rehydrateStored();
+    const { siteGroundRegion } = await load("civ", "siteprofile.js");
+    let spot;
+    for (let i = 0; i < record.clear.length && !spot; i++) for (const op of siteplan.siteOpsFor(record, "clear", i)) {
+        const cell = groundCell(op.x, op.z);
+        if (cell?.tree) { spot = { x:op.x, y:cell.g + 1, z:op.z }; break; }
+    }
+    assert.ok(spot);
+    const savedProps = propsSnapshot(), writes = mc.writes, propertyWrites = mc.propWrites;
+    async function inspect(cancelWhen) {
+        const blocks = worldFingerprint();
+        const token = districtBuilder.reserveJob("civ-tree-inspection");
+        const pending = builder.inspectNaturalTree({ token, dimension, plan, record, district:1,
+            region:siteGroundRegion(plan, 1), protectedRects:[] }, spot)
+            .finally(() => districtBuilder.finishJob(token));
+        await pump({ until:cancelWhen });
+        if (cancelWhen) { districtBuilder.cancelActiveJob(); await pump(); }
+        const result = await pending;
+        assertSameWorld(worldFingerprint(), blocks, "read-only tree survey");
+        assert.deepEqual(propsSnapshot(), savedProps, "the stored plan and paused queue remain byte-identical");
+        assert.equal(mc.writes, writes);
+        assert.equal(mc.propWrites, propertyWrites);
+        assert.equal(mc.areas.size, 0);
+        assert.equal(districtBuilder.isBusy(), false);
+        assert.equal(builder.hasSession(), false);
+        return result;
+    }
+    const natural = await inspect();
+    assert.equal(natural.ok, true, natural.reason);
+    assert.ok(natural.logs > 0 && natural.leaves > 0 && natural.cells >= natural.logs + natural.leaves);
+    mc.placed.set(key(spot.x + 1, spot.y, spot.z), "minecraft:diamond_block");
+    assert.match((await inspect()).reason, /diamond_block touches a tree/);
+    mc.placed.delete(key(spot.x + 1, spot.y, spot.z));
+    mc.persistent = () => true;
+    assert.match((await inspect()).reason, /persistent leaves/);
+    mc.persistent = () => false;
+    mc.unloaded = p => p.x === spot.x && p.y === spot.y && p.z === spot.z;
+    assert.match((await inspect()).reason, /unreadable/);
+    mc.unloaded = () => false;
+    assert.match((await inspect(() => mc.areas.size > 0 && mc.jobs.length > 0)).reason, /cancelled/);
+});
+
+test("saved-tree diagnostic checks the completed district and developer gate without changing the city", MIN_TIMEOUT, async () => {
+    const run = await fullRun();
+    assert.equal(civRecord().status, "complete");
+    const { record } = rehydrateStored();
+    const op = pickCells(record, "clear", 1)[0];
+    const seed = { x:op.x, y:groundCell(op.x, op.z).g + 24, z:op.z };
+    mc.placed.set(key(seed.x, seed.y, seed.z), "minecraft:oak_leaves");
+    const before = propsSnapshot(), blocks = worldFingerprint(), writes = mc.writes, propWrites = mc.propWrites;
+    send(CIV_EVENT_IDS.diag, `tree district=1 x=${seed.x} y=${seed.y} z=${seed.z}`, run.player);
+    await pump();
+    assert.match(text(run.player), /Tree inspection at .*Surveyed [\s\S]*Read-only:/s);
+    assertSameWorld(worldFingerprint(), blocks, "tree diagnostic command");
+    assert.deepEqual(propsSnapshot(), before);
+    assert.equal(mc.writes, writes);
+    assert.equal(mc.propWrites, propWrites);
+    assert.equal(mc.areas.size, 0);
+    assert.equal(districtBuilder.isBusy(), false);
+    send(CIV_EVENT_IDS.devgate, "off", run.player);
+    const disabled = makePlayer();
+    send(CIV_EVENT_IDS.diag, `tree district=1 x=${seed.x} y=${seed.y} z=${seed.z}`, disabled);
+    await pump();
+    assert.match(text(disabled), /development gate is off|developer gate enabled/);
+    assert.equal(mc.writes, writes);
+});
+
+test("native persistent city plantings do not veto a neighboring natural tree, while foreign persistent leaves still do", MIN_TIMEOUT, async () => {
+    const planned = await plannedOnly(); restoreProps(planned.props);
+    const { plan, record } = rehydrateStored();
+    const { siteGroundRegion } = await load("civ", "siteprofile.js");
+    let leaf;
+    const final = new Map();
+    for (const stage of ["clear","walls","gates","roads","lots","dressing"]) {
+        for (let i=0;i<record[stage].length;i++) for (const op of siteplan.siteOpsFor(record,stage,i)) {
+            final.set(key(op.x,op.y,op.z),op);
+        }
+    }
+    for (const op of final.values()) if (op.id.endsWith("_leaves") && op.states?.persistent_bit === true) {
+        if (!final.get(key(op.x+2,op.y,op.z+1))?.id.endsWith("_leaves")) { leaf=op; break; }
+    }
+    assert.ok(leaf, "the real plan contains a persistent decorative planting");
+    for (let x=leaf.x-2;x<=leaf.x+4;x++) for(let y=leaf.y-3;y<=leaf.y+3;y++) for(let z=leaf.z-3;z<=leaf.z+3;z++) {
+        mc.placed.set(key(x,y,z),"minecraft:air");
+    }
+    dimension.getBlock(leaf).setPermutation({ id:leaf.id, states:leaf.states });
+    assert.equal(dimension.getBlock(leaf).permutation.getState("persistent_bit"),true,"the harness retains the palette's native leaf state");
+    const seed = { x:leaf.x+1, y:leaf.y, z:leaf.z };
+    mc.placed.set(key(seed.x,seed.y-3,seed.z),"minecraft:dirt");
+    for (let y=seed.y-2;y<seed.y;y++) mc.placed.set(key(seed.x,y,seed.z),"minecraft:jungle_log");
+    mc.placed.set(key(seed.x,seed.y,seed.z),"minecraft:jungle_leaves");
+    async function inspect() {
+        const token = districtBuilder.reserveJob("civ-tree-inspection");
+        const task = builder.inspectNaturalTree({ token,dimension,plan,record,district:1,
+            region:siteGroundRegion(plan,1),protectedRects:[] },seed).finally(()=>districtBuilder.finishJob(token));
+        await pump(); return await task;
+    }
+    const before=worldFingerprint(), props=propsSnapshot();
+    const natural=await inspect();
+    assert.equal(natural.ok,true,natural.reason);
+    assert.equal(natural.logs,2);
+    assert.equal(natural.leaves,1,"the city's own leaf is excluded from the clearance proof");
+    assertSameWorld(worldFingerprint(),before,"owned planting inspection");
+    assert.deepEqual(propsSnapshot(),props);
+    const foreign={x:leaf.x+2,y:leaf.y,z:leaf.z+1};
+    mc.placed.set(key(foreign.x,foreign.y,foreign.z),"minecraft:oak_leaves");
+    mc.persistent=(x,y,z)=>x===foreign.x&&y===foreign.y&&z===foreign.z;
+    assert.match((await inspect()).reason,/persistent leaves/);
+    assert.equal(typeAt(leaf.x,leaf.y,leaf.z),leaf.id);
+    assert.equal(mc.areas.size,0);
+});
+
+async function completedRepairFixture() {
+    const run=await fullRun();
+    assert.equal(civRecord().status,"complete",text(run.player).slice(-1000));
+    const {plan,record}=rehydrateStored(), final=new Map(), wallOps=[];
+    for (const stage of ["clear","walls","gates","roads","lots","dressing"]) {
+        for(let i=0;i<record[stage].length;i++) for(const op of siteplan.siteOpsFor(record,stage,i)) {
+            final.set(key(op.x,op.y,op.z),{...op,stage});
+            if(stage==="walls")wallOps.push(op);
+        }
+    }
+    const seen=new Set();
+    const walls=wallOps.filter(op=>{
+        const k=key(op.x,op.y,op.z);
+        if(seen.has(k)||op.kind!=="wall"||!op.id.endsWith("stone_bricks")||final.get(k)?.id!==op.id||typeAt(op.x,op.y,op.z)!==op.id)return false;
+        seen.add(k);return true;
+    });
+    const door=[...final.values()].find(op=>op.stage==="lots"&&op.id.endsWith("_door")&&op.states?.upper_block_bit===false&&typeAt(op.x,op.y,op.z)===op.id);
+    assert.ok(walls.length>=3&&door);
+    const prefix=builder.cityRepairPrefixFor(1);
+    const originalProps=()=>new Map([...propsSnapshot()].filter(([k])=>!k.startsWith(`${prefix}:`)));
+    return {run,plan,record,final,walls,door,prefix,originalProps};
+}
+
+test("final-wall audit reports exact missing, tree and foreign cells without changing any world or save bytes", MIN_TIMEOUT, async()=>{
+    const f=await completedRepairFixture(), [hole,tree,foreign]=f.walls;
+    mc.placed.set(key(hole.x,hole.y,hole.z),"minecraft:air");
+    mc.placed.set(key(tree.x,tree.y,tree.z),"minecraft:jungle_leaves");
+    mc.placed.set(key(foreign.x,foreign.y,foreign.z),"minecraft:chest");
+    const before=propsSnapshot(), blocks=worldFingerprint(), writes=mc.writes, propWrites=mc.propWrites;
+    mc.areaMaxChunks=0;
+    const player=makePlayer();
+    send(CIV_EVENT_IDS.diag,"walls district=1",player);await pump();
+    const output=text(player);
+    assert.match(output,/wall audit: complete/);
+    for(const [category,op] of [["missing",hole],["tree",tree],["other",foreign]])
+        assert.ok(output.includes(`${category}: ${op.x},${op.y},${op.z}:`),`${category} includes its exact coordinate`);
+    assert.match(output,/Block states, walking clearance and foundation support require separate checks/);
+    assertSameWorld(worldFingerprint(),blocks,"read-only wall audit");
+    assert.deepEqual(propsSnapshot(),before);assert.equal(mc.writes,writes);assert.equal(mc.propWrites,propWrites);
+    assert.equal(mc.areas.size,0);assert.ok(mc.areaMaxChunks<=1,"at most one chunk is held by the audit");
+    assert.equal(builder.hasSession(),false);assert.equal(districtBuilder.isBusy(),false);
+    send(CIV_EVENT_IDS.devgate,"off",player);
+    const disabled=makePlayer();send(CIV_EVENT_IDS.diag,"walls district=1",disabled);await pump();
+    assert.match(text(disabled),/development gate is off/);assert.equal(mc.writes,writes);
+});
+
+test("final-wall audit refuses unreadable coverage and cancellation releases its one-chunk lease", MIN_TIMEOUT, async()=>{
+    const f=await completedRepairFixture(), spot=f.walls[0];
+    const before=propsSnapshot(), blocks=worldFingerprint(), writes=mc.writes, propWrites=mc.propWrites;
+    const {siteGroundRegion}=await import("../../CivilizationApocalypse_BP/scripts/civ/siteprofile.js");
+    async function audit(cancel=false,protectedRects=[]) {
+        const token=districtBuilder.reserveJob("civ-wall-audit");
+        const pending=builder.auditCityWalls({token,dimension,plan:f.plan,record:f.record,district:1,
+            region:siteGroundRegion(f.plan,1),protectedRects}).finally(()=>districtBuilder.finishJob(token));
+        await pump(cancel ? {until:()=>mc.areas.size>0&&mc.jobs.length>0} : {});
+        if(cancel) { districtBuilder.cancelActiveJob();await pump(); }
+        const result=await pending;
+        assertSameWorld(worldFingerprint(),blocks,"incomplete audit");assert.deepEqual(propsSnapshot(),before);
+        assert.equal(mc.writes,writes);assert.equal(mc.propWrites,propWrites);assert.equal(mc.areas.size,0);
+        assert.equal(districtBuilder.isBusy(),false);return result;
+    }
+    mc.unloaded=p=>p.x===spot.x&&p.y===spot.y&&p.z===spot.z;
+    const unread=await audit();
+    assert.equal(unread.complete,false);assert.equal(unread.counts.unloaded,1);
+    assert.equal(unread.total,unread.surveyed+unread.counts.protected+unread.counts.unloaded);
+    let protectedReads=0;
+    mc.unloaded=p=>{if(p.x===spot.x&&p.z===spot.z)protectedReads++;return false;};
+    const protectedAudit=await audit(false,[{x0:spot.x,z0:spot.z,x1:spot.x,z1:spot.z}]);
+    assert.equal(protectedAudit.complete,true);assert.ok(protectedAudit.counts.protected>0);
+    assert.equal(protectedReads,0,"protected targets are skipped before any live block read");
+    mc.unloaded=()=>false;
+    assert.equal((await audit(true)).complete,false);
+});
+
+test("final-wall audit recovers only abandoned construction leases and retries later chunks after a load failure", MIN_TIMEOUT, async()=>{
+    const f=await completedRepairFixture(), before=propsSnapshot(), blocks=worldFingerprint();
+    const {siteGroundRegion}=await import("../../CivilizationApocalypse_BP/scripts/civ/siteprofile.js");
+    async function audit() {
+        const token=districtBuilder.reserveJob("civ-wall-audit");
+        const pending=builder.auditCityWalls({token,dimension,plan:f.plan,record:f.record,district:1,
+            region:siteGroundRegion(f.plan,1),protectedRects:[]}).finally(()=>districtBuilder.finishJob(token));
+        await pump();const result=await pending;
+        assert.deepEqual(propsSnapshot(),before);assertSameWorld(worldFingerprint(),blocks,"audit recovery");
+        return result;
+    }
+    const stale={dimension,from:{x:0,y:64,z:0},to:{x:15,y:64,z:15},chunks:1,loaded:true};
+    mc.areas.set("civ-build-load-998-1",stale);
+    mc.areas.set("civ-gate-load-998-1",{...stale});
+    mc.maxChunkCount=2;
+    assert.equal((await audit()).complete,true,"an abandoned audit hold cannot consume the capacity needed to retry");
+    assert.deepEqual([...mc.areas.keys()],["civ-gate-load-998-1"],"other owners' leases are preserved");
+    mc.areas.clear();
+    let acquisitions=0;
+    mc.createMode=()=>++acquisitions===1 ? {reject:"OverChunkLimit"} : "instant";
+    const result=await audit();
+    assert.equal(result.complete,false);assert.ok(result.counts.unloaded>0);
+    assert.ok(result.counts.present>0,"later chunks get fresh leases and are actually read");
+    assert.ok(acquisitions>1);assert.match(result.samples.unloaded.join(" "),/OverChunkLimit|create.*chunk|loading/i);
+    assert.equal(result.total,result.surveyed+result.counts.protected+result.counts.unloaded);
+    assert.equal(mc.areas.size,0);
+});
+
+test("completed city maintenance is read-only by default, repairs walls and paired doors, preserves foreign work and repeats without writes", MIN_TIMEOUT, async()=>{
+    const f=await completedRepairFixture(), [hole,foreign]=f.walls;
+    mc.placed.set(key(hole.x,hole.y,hole.z),"minecraft:air");
+    mc.placed.set(key(foreign.x,foreign.y,foreign.z),"minecraft:chest");
+    mc.placed.set(key(f.door.x,f.door.y,f.door.z),"minecraft:air");
+    mc.placed.set(key(f.door.x,f.door.y+1,f.door.z),"minecraft:air");
+    const original=f.originalProps(), writes=mc.writes, propWrites=mc.propWrites;
+    const intact=[...f.final.values()].filter(op=>op.id!=="minecraft:air"&&typeAt(op.x,op.y,op.z)===op.id);
+    send(CIV_EVENT_IDS.diag,"repair district=1",f.run.player);await pump();
+    assert.equal(mc.writes,writes);assert.equal(mc.propWrites,propWrites);
+    assert.match(text(f.run.player),/Live obstructions have not been surveyed/);
+    send(CIV_EVENT_IDS.diag,"repair district=1 confirm",f.run.player);await pump();
+    assert.match(text(f.run.player),/wall and doorway maintenance: complete/);
+    assert.equal(typeAt(hole.x,hole.y,hole.z),hole.id);
+    assert.equal(typeAt(foreign.x,foreign.y,foreign.z),"minecraft:chest");
+    assert.equal(typeAt(f.door.x,f.door.y,f.door.z),f.door.id);
+    assert.equal(typeAt(f.door.x,f.door.y+1,f.door.z),f.door.id);
+    for(const op of intact)assert.equal(typeAt(op.x,op.y,op.z),op.id,`kept final ${op.stage} block at ${op.x},${op.y},${op.z}`);
+    assert.deepEqual(f.originalProps(),original,"all original kingdom, plan, gate and completion queue bytes survive maintenance");
+    assert.equal(mc.areas.size,0);assert.equal(districtBuilder.isBusy(),false);
+    const after=mc.writes;
+    send(CIV_EVENT_IDS.diag,"repair district=1 confirm",f.run.player);await pump();
+    assert.equal(mc.writes,after,"repeat only inspects final wall and door targets; it never replays historical paints or air cuts");
+    assert.deepEqual(f.originalProps(),original);
+});
+
+test("city maintenance keeps its own exact tree proof across a crash and preserves changes before resuming", MIN_TIMEOUT, async()=>{
+    const f=await completedRepairFixture();
+    const spot=f.walls.find(op=>op.y===groundCell(op.x,op.z).g+1);
+    assert.ok(spot,"fixture has a wall directly above a completed footing");
+    for(let y=spot.y;y<spot.y+3;y++)mc.placed.set(key(spot.x,y,spot.z),"minecraft:jungle_log");
+    for(const [dx,dz] of [[0,0],[1,0],[-1,0]])mc.placed.set(key(spot.x+dx,spot.y+3,spot.z+dz),"minecraft:jungle_leaves");
+    const original=f.originalProps();
+    mc.dieAtWrites=mc.writes+1;
+    send(CIV_EVENT_IDS.diag,"repair district=1 confirm",f.run.player);await pump({stopOnDead:true});
+    assert.equal(mc.dead,true);
+    const repairStore=jobsModule.createJobStore(mc.world,{prefix:f.prefix});
+    const queue=repairStore.loadQueue({recoverRunning:false}).queue;
+    const {decodeTreeClearance}=await import("../../CivilizationApocalypse_BP/scripts/civ/treeclear.js");
+    const cells=queue?.treeClearance&&decodeTreeClearance(queue.treeClearance);
+    const changed=cells?.find(c=>typeAt(c.x,c.y,c.z)===c.id);
+    assert.ok(changed,"the maintenance journal retains a write-ahead tree proof");
+    await restart();
+    mc.placed.set(key(changed.x,changed.y,changed.z),"minecraft:diamond_block");
+    const writes=mc.writes, revived=makePlayer();
+    send(CIV_EVENT_IDS.diag,"repair district=1 confirm",revived);await pump();
+    assert.match(text(revived),/Pending tree clearance changed|Pending tree clearance is now beside/);
+    assert.equal(mc.writes,writes,"every proof cell is rechecked before another erase");
+    assert.equal(typeAt(changed.x,changed.y,changed.z),"minecraft:diamond_block");
+    assert.deepEqual(f.originalProps(),original);
+    mc.placed.set(key(changed.x,changed.y,changed.z),changed.id);
+    send(CIV_EVENT_IDS.diag,"repair district=1 confirm",revived);await pump();
+    assert.match(text(revived),/wall and doorway maintenance: complete/);
+    assert.equal(typeAt(spot.x,spot.y,spot.z),spot.id);
+    assert.deepEqual(f.originalProps(),original);
+    assert.equal(mc.areas.size,0);
+});
+
+test("city maintenance refuses an unsavable journal before any writes and reports its own resume command after abort", MIN_TIMEOUT, async()=>{
+    const f=await completedRepairFixture(), hole=f.walls[0];
+    mc.placed.set(key(hole.x,hole.y,hole.z),"minecraft:air");
+    const original=f.originalProps(), before=propsSnapshot(), writes=mc.writes;
+    builder.seams.maxJobBytes=1;
+    send(CIV_EVENT_IDS.diag,"repair district=1 confirm",f.run.player);await pump();
+    assert.match(text(f.run.player),/Could not save city repair before starting/);
+    assert.equal(mc.writes,writes);assert.deepEqual(propsSnapshot(),before);
+    builder.seams.maxJobBytes=undefined;
+    send(CIV_EVENT_IDS.diag,"repair district=1 confirm",f.run.player);await pump({until:()=>builder.hasSession()});
+    send(CIV_EVENT_IDS.abort,"district=1",f.run.player);await pump();
+    assert.match(text(f.run.player),/Continue with \/scriptevent civ:generate_diag repair district=1 confirm/);
+    assert.deepEqual(f.originalProps(),original);
+    assert.equal(mc.areas.size,0);assert.equal(districtBuilder.isBusy(),false);
+    send(CIV_EVENT_IDS.diag,"repair district=1 confirm",f.run.player);await pump();
+    assert.equal(typeAt(hole.x,hole.y,hole.z),hole.id);
+    assert.deepEqual(f.originalProps(),original);
+});
+
+test("session protection cache matches exact grown polygons and rectangles, caches both answers, and bounds memory",()=>{
+    const polygon=[[-18,-18],[18,-18],[18,-3],[0,-3],[0,18],[-18,18]];
+    const areas=[{x0:-22,z0:-22,x1:22,z1:22,grow:3,polygon},{x0:10,z0:10,x1:15,z1:15}];
+    const lookup=builder.createProtectedColumnLookup(areas,{x0:-24,z0:-24,x1:24,z1:24});
+    for(let repeat=0;repeat<3;repeat++)for(let x=-42;x<=42;x++)for(let z=-42;z<=42;z++) {
+        assert.equal(lookup(x,z),builder.inProtectedArea(areas,x,z),`boundary decision ${x},${z}`);
+    }
+    for(const [x,z] of [[-100,100],[24.5,0],[NaN,1]])assert.equal(lookup(x,z),builder.inProtectedArea(areas,x,z));
+    let geometryReads=0;
+    const counted=[{...areas[0],polygon:new Proxy(polygon,{get(target,prop,receiver){if(prop==='length')geometryReads++;return Reflect.get(target,prop,receiver);}})}];
+    const cached=builder.createProtectedColumnLookup(counted,{x0:-24,z0:-24,x1:24,z1:24});
+    assert.equal(cached(20,0),true);assert.equal(cached(-22,22),false);
+    const once=geometryReads;assert.ok(once>0);
+    for(let i=0;i<100;i++){assert.equal(cached(20,0),true);assert.equal(cached(-22,22),false);}
+    assert.equal(geometryReads,once,'both protected and unprotected results avoid repeating geometry');
+    const uncached=builder.createProtectedColumnLookup(counted,{x0:-1000000,z0:0,x1:1000000,z1:0});
+    assert.equal(uncached(20,0),true);const before=geometryReads;
+    assert.equal(uncached(20,0),true);assert.ok(geometryReads>before,'oversize regions fall back without allocating a huge grid');
+});
+
+test("an unreadable tree cell reports its exact coordinate and held bounds without clearing an unproven tree", MIN_TIMEOUT, async()=>{
+    const planned=await plannedOnly(); restoreProps(planned.props);
+    const {record}=rehydrateStored();
+    let spot;
+    for(let i=0;i<record.clear.length&&!spot;i++) for(const op of siteplan.siteOpsFor(record,'clear',i)) {
+        const c=groundCell(op.x,op.z);
+        if(c?.tree) {spot={x:op.x,y:c.g+3,z:op.z};break;}
+    }
+    assert.ok(spot,'fixture has a natural tree in a clearance column');
+    const treeKey=key(spot.x,spot.y,spot.z);
+    mc.unloaded=p=>key(p.x,p.y,p.z)===treeKey;
+    const player=makePlayer();send(CIV_EVENT_IDS.resume,'',player);await pump();
+    assert.equal(civRecord().status,'paused',text(player).slice(-1500));
+    assert.ok(text(player).includes(`tree read at (${spot.x}, ${spot.y}, ${spot.z}): no block returned`),text(player).slice(-1500));
+    assert.match(text(player),/held X\/Z -?\d+,-?\d+ to -?\d+,-?\d+/);
+    assert.equal(mc.placed.has(treeKey),false,'no proven clearance means the trunk is not changed');
+    assert.equal(mc.areas.size,0,'paused work releases its holds');
+    mc.unloaded=()=>false;
+    send(CIV_EVENT_IDS.resume,'',player);await pump();
+    assert.equal(civRecord().status,'complete',text(player).slice(-1500));
+});
+
+test("direct operation read failures expose phase and capacity fallback without allowing a block write", MIN_TIMEOUT, async()=>{
+    const planned=await plannedOnly(),original=dimension.getBlock;
+    for(const mode of ["undefined","throw","invalid","missing-type"]) {
+        resetWorld(WORLD_SEED);restoreProps(planned.props);mc.noCapacity=true;
+        dimension.getBlock=()=>{
+            if(mode==="throw")throw new Error("native op read unavailable");
+            return mode==="undefined"?undefined:mode==="invalid"?{isValid:false}:{isValid:true,typeId:undefined};
+        };
+        const player=makePlayer();
+        try {
+            send(CIV_EVENT_IDS.resume,"",player);await pump();
+            const output=text(player);
+            assert.equal(civRecord().status,"paused",output.slice(-1800));
+            assert.match(output,mode==="missing-type"?/operation target type at \(-?\d+, -?\d+, -?\d+\): no type id returned/:mode==="throw"?/operation target read at .*native op read unavailable/:mode==="invalid"?/operation target read at .*invalid block/:/operation target read at .*no block returned/);
+            assert.match(output,/last hold nocapacity, held=false/);
+            assert.match(output,/manager chunks 0\/\d+/);
+            assert.match(output,/relying on already-loaded chunks/);
+            assert.equal(mc.writes,0,"an unreadable op never grants permission to write");
+            assert.equal(mc.areas.size,0);
+        } finally {dimension.getBlock=original;}
+    }
+});
+
+test("a failed post-tree operation re-read reports its separate phase and permits no later write", MIN_TIMEOUT, async()=>{
+    const planned=await plannedOnly();restoreProps(planned.props);
+    const original=dimension.getBlock;
+    let current,armed=false,failedAt,writeCount;
+    dimension.getBlock=p=>{
+        const s=builder.getSession();
+        if(s?.lastStage==="clear"&&s.cur) {
+            const id=`${s.cur.element}:${s.cur.cursor}`;
+            if(current!==id){current=id;armed=false;}
+            const stage=s.queue.stages.find(info=>info.name==="clear");
+            const op=siteplan.siteOpsFor(s.record,"clear",s.cur.element-stage.start)[s.cur.cursor];
+            if(op&&op.x===p.x&&op.y===p.y&&op.z===p.z) {
+                const k=key(p.x,p.y,p.z);
+                if(armed&&mc.placed.get(k)==="minecraft:air") {
+                    failedAt??={...p};writeCount??=mc.writes;
+                    throw new Error("post-clear target unavailable");
+                }
+                const block=original(p);
+                if(/(?:_log|_wood|_leaves)$/.test(block?.typeId??""))armed=true;
+                return block;
+            }
+        }
+        return original(p);
+    };
+    const player=makePlayer();
+    try {
+        send(CIV_EVENT_IDS.resume,"",player);await pump();
+        assert.ok(failedAt,"fixture reaches a proven tree clearance followed by the op re-read");
+        assert.equal(civRecord().status,"paused",text(player).slice(-1800));
+        assert.ok(text(player).includes(`operation re-read after tree at (${failedAt.x}, ${failedAt.y}, ${failedAt.z}): Error: post-clear target unavailable`),text(player).slice(-1800));
+        assert.match(text(player),/last hold held, held=true/);
+        assert.equal(mc.writes,writeCount,"all retries preserve the cursor without writing after the failed read");
+        assert.equal(mc.areas.size,0,"pause releases all owned holds");
+    } finally {dimension.getBlock=original;}
+});
+
+test("tree traversal bounds cached neighbor work between yields as well as actual block reads", MIN_TIMEOUT, async()=>{
+    const planned=await plannedOnly();restoreProps(planned.props);
+    const player=makePlayer();send(CIV_EVENT_IDS.resume,'',player);
+    await pump({until:()=>builder.hasSession()});
+    const stats=builder.getSession().slice;
+    await pump();
+    assert.equal(civRecord().status,'complete',text(player).slice(-1200));
+    assert.ok(stats.maxTreeVisits>0,'natural trees exercise the CPU-work meter');
+    assert.ok(stats.maxTreeVisits<=32,`at most 32 tree cells / 832 neighbor checks between yields, saw ${stats.maxTreeVisits}`);
+    assert.ok(stats.maxReads<=CIV_LIMITS.maxReadsPerSlice);
+    assert.ok(stats.maxWrites<=CIV_LIMITS.maxBlocksPerSlice);
 });
 
 test("a player block touching a natural tree still vetoes the clear", MIN_TIMEOUT, async () => {
@@ -754,7 +1345,9 @@ test("a chunk that stays unloaded pauses the build with a saved cursor; resuming
     assert.equal(civRecord().status, "paused");
     const stored = jobsModule.createJobStore(mc.world).loadQueue({ recoverRunning: false });
     const overall = jobsModule.progress(stored.queue);
-    assert.ok(overall.pct > 20 && overall.pct < 100, `cursor saved (${overall.pct}%)`);
+    // mid-build is the claim: a cursor that is neither at the start nor at the end. The exact percentage depends
+    // on how many ops the plan holds (lighting and stairs made the plan longer), so it is not pinned.
+    assert.ok(overall.pct > 5 && overall.pct < 100, `cursor saved (${overall.pct}%)`);
     blackout = false;
     send(CIV_EVENT_IDS.resume, "", player);
     await pump();
@@ -928,12 +1521,14 @@ test("district selection: district= is accepted, an out-of-range index is refuse
     assert.ok(/Usage: \/scriptevent civ:generate \[district=1-5\] \[site=here\] \[radius=24-400\] \[seed=N\]/.test(refused), refused);
     assert.equal(mc.writes, 0);
     assert.equal(mc.reads, 0, "a bad argument is refused before the world is read");
-    // the gate is off: the generation commands are not registered, so nothing answers and nothing is built
+    // the gate is off: the command is heard (never silence) and refused by name, and nothing is built
     send(CIV_EVENT_IDS.devgate, "off", makePlayer());
-    const silent = makePlayer();
-    send(CIV_EVENT_IDS.generate, "district=2 seed=1", silent);
+    const gated = makePlayer();
+    send(CIV_EVENT_IDS.generate, "district=2 seed=1", gated);
     await pump();
-    assert.equal(text(silent), "", "with the gate off the generation command is not answered at all");
+    assert.match(text(gated), /development gate is off .* civ:generate does nothing/, "with the gate off the generation command is refused loudly, not left unanswered");
+    assert.match(text(gated), /civ:generate_devgate on/, "the refusal says how to turn the gate on");
+    assert.equal(mc.writes, 0, "a gate-off refusal writes nothing");
     // with the gate ON a valid district= is accepted: it gets past the parser and past the gate and is stopped only
     // by the real reason - this world has no five-district master plan yet
     send(CIV_EVENT_IDS.devgate, "on", player);
@@ -1081,6 +1676,39 @@ test("process crashes at eight more points (dense sweep) - the world still ends 
     await pump();
     assert.match(text(player), /is built/, text(player).slice(-1200));
     assertSameWorld(worldFingerprint(), base.fp, "dense crash sweep");
+});
+
+test("a player change to a pending tree clearance is preserved and stops recovery before any new block write", MIN_TIMEOUT, async () => {
+    const { decodeTreeClearance } = await import("../../CivilizationApocalypse_BP/scripts/civ/treeclear.js");
+    resetWorld(1);
+    const player=makePlayer();
+    send(CIV_EVENT_IDS.generate,GEN,player);
+    for(const at of [300,1700,9100,13300,30500,38800,52500,61000]) {
+        mc.dieAtWrites=at;
+        await pump({stopOnDead:true});
+        assert.equal(mc.dead,true);
+        const queue=jobStoreFor().loadQueue({recoverRunning:false}).queue;
+        const pending=queue?.treeClearance && decodeTreeClearance(queue.treeClearance);
+        const cell=pending?.find(c=>typeAt(c.x,c.y,c.z)===c.id);
+        if(cell) {
+            mc.placed.set(key(cell.x,cell.y,cell.z),"minecraft:diamond_block");
+            await restart();
+            mc.dieAtWrites=null;
+            const writes=mc.writes;
+            const revived=makePlayer();
+            send(CIV_EVENT_IDS.resume,"",revived);
+            await pump();
+            assert.match(text(revived),/Pending tree clearance changed|Pending tree clearance is now beside/);
+            assert.equal(typeAt(cell.x,cell.y,cell.z),"minecraft:diamond_block");
+            assert.equal(mc.writes,writes,"all pending cells are rechecked before any clearance resumes");
+            assert.equal(districtBuilder.isBusy(),false);
+            assert.equal(mc.areas.size,0);
+            return;
+        }
+        await restart();
+        send(CIV_EVENT_IDS.resume,"",makePlayer());
+    }
+    assert.fail("the crash sweep must interrupt at least one natural-tree clearance");
 });
 
 test("abort during the survey and during planning stops cleanly with zero writes", MIN_TIMEOUT, async () => {
@@ -1347,6 +1975,14 @@ test("worldplan.planWorldSteps and the runtime pipeline give the same plan and r
     });
     assert.ok(result.ok, result.problems.join(" | "));
     assert.equal(JSON.stringify(result.plan), JSON.stringify(outcome.plan), "same master plan");
+    assert.equal(outcome.payload.siteOptions.gateHeight, "surface", "production persists the corrected coastal gate geometry");
+    assert.equal(outcome.payload.siteOptions.gatePassage, "clear", "production persists the explicit opening clearance");
+    assert.equal(outcome.payload.siteOptions.gateRoof, "guarded", "production persists the roof bypass barrier");
+    assert.equal(outcome.payload.siteOptions.lotTerrain, "survey-balanced", "new lots reserve initial services on fine ground without prioritizing every house over gardens");
+    assert.equal(outcome.payload.siteOptions.roofSupport, "joists", "new roofs stay supported without filling rooms with pillars");
+    assert.equal(outcome.payload.siteOptions.interiorLights, "anchored-v1", "new interior lanterns have explicit, durable vertical anchors");
+    assert.equal(outcome.payload.siteOptions.farmLighting, "frontage-v1", "new farms use sparse supported entrance lighting");
+    assert.equal(outcome.payload.siteOptions.waterPiles, "spaced-v1", "new crop-farm water decks use spaced perimeter piles");
     assert.equal(result.record.checksum, outcome.record.checksum, "same site record checksum");
     assert.equal(JSON.stringify(result.ground), JSON.stringify(outcome.ground), "same stored ground");
 });
@@ -1390,6 +2026,123 @@ async function forkCity() {
 
 const D2 = "district=2 seed=1";
 
+test("complete door placement survives independent-half loss; saved-plan repair is safe, read-only by default and idempotent", MIN_TIMEOUT, async () => {
+    const run=await fullRun(1,{},()=>{mc.requireAtomicDoors=true;});
+    assert.match(text(run.player),/is built/);
+    const record=run.outcome.record;
+    const doors=record.lots.flatMap((_,i)=>siteplan.siteOpsFor(record,"lots",i)).filter(op=>op.id.endsWith("_door") && op.states?.upper_block_bit===false);
+    assert.ok(doors.length>3);
+    for (const door of doors) for (const y of [door.y,door.y+1]) assert.equal(typeAt(door.x,y,door.z),door.id,"a complete engine-created pair remains");
+    const [missing,blocked]=doors;
+    for (const door of [missing,blocked]) for (const y of [door.y,door.y+1]) mc.placed.set(key(door.x,y,door.z),"minecraft:air");
+    mc.placed.set(key(blocked.x,blocked.y+1,blocked.z),"minecraft:diamond_block");
+    const before=propsSnapshot(), fingerprint=worldFingerprint(), writes=mc.writes, propWrites=mc.propWrites;
+    const audit=makePlayer(); send(CIV_EVENT_IDS.doors,"district=1",audit); await pump();
+    assert.match(text(audit),/missing 1/); assert.match(text(audit),/blocked 1/);
+    assert.equal(mc.writes,writes); assert.deepEqual(worldFingerprint(),fingerprint);
+    const repair=makePlayer();send(CIV_EVENT_IDS.doors,"district=1 confirm",repair);await pump();
+    assert.match(text(repair),/placed 1/);assert.match(text(repair),/blocked 1/);
+    assert.equal(typeAt(missing.x,missing.y,missing.z),missing.id);
+    assert.equal(typeAt(missing.x,missing.y+1,missing.z),missing.id);
+    assert.equal(typeAt(blocked.x,blocked.y+1,blocked.z),"minecraft:diamond_block");
+    assert.equal(mc.writes,writes+2);assert.deepEqual(propsSnapshot(),before);assert.equal(mc.propWrites,propWrites);
+    const again=makePlayer();send(CIV_EVENT_IDS.doors,"district=1 confirm",again);await pump();
+    assert.match(text(again),/placed 0/);assert.equal(mc.writes,writes+2);
+    assert.equal(districtBuilder.isBusy(),false);assert.equal(mc.areas.size,0);
+    for (const y of [missing.y,missing.y+1]) mc.placed.set(key(missing.x,y,missing.z),"minecraft:air");
+    mc.areaMaxChunks=0;
+    const sameChunk=({x,z})=>Math.floor(x/16)===Math.floor(missing.x/16) && Math.floor(z/16)===Math.floor(missing.z/16);
+    mc.unloaded=(pos)=>sameChunk(pos) && ![...mc.areas.values()].some(area=>area.loaded && pos.x>=area.from.x && pos.x<=area.to.x && pos.z>=area.from.z && pos.z<=area.to.z);
+    const remote=makePlayer();send(CIV_EVENT_IDS.doors,"district=1 confirm",remote);await pump();
+    assert.match(text(remote),/placed 1/);assert.equal(mc.writes,writes+4);
+    assert.equal(mc.areaMaxChunks,1,"repair leases at most one chunk");assert.equal(mc.areas.size,0);
+    assert.deepEqual(propsSnapshot(),before);
+    for (const y of [missing.y,missing.y+1]) mc.placed.set(key(missing.x,y,missing.z),"minecraft:air");
+    mc.noCapacity=true;
+    const refused=makePlayer();send(CIV_EVENT_IDS.doors,"district=1 confirm",refused);await pump();
+    assert.match(text(refused),/unloaded [1-9]/);assert.equal(mc.writes,writes+4,"capacity refusal never invents loaded blocks");
+    assert.equal(mc.areas.size,0);assert.equal(districtBuilder.isBusy(),false);
+    mc.unloaded=()=>false;mc.noCapacity=false;
+});
+
+test("a foreign lower doorway block prevents the builder writing an orphan upper half", MIN_TIMEOUT, async () => {
+    const planned=await plannedOnly();
+    const record=planned.outcome.record;
+    const door=record.lots.flatMap((_,i)=>siteplan.siteOpsFor(record,"lots",i)).find(op=>op.id.endsWith("_door") && op.states?.upper_block_bit===false);
+    assert.ok(door);
+    const bottom=key(door.x,door.y,door.z), top=key(door.x,door.y+1,door.z);
+    mc.placed.set(bottom,"minecraft:diamond_block");mc.placed.set(top,"minecraft:air");
+    const player=makePlayer();send(CIV_EVENT_IDS.resume,"district=1",player);await pump();
+    assert.match(text(player),/is built|complete/);
+    assert.equal(mc.placed.get(bottom),"minecraft:diamond_block");
+    assert.equal(mc.placed.get(top),"minecraft:air");
+    assert.equal(mc.written.has(top),false,"neither half may be written beside a foreign obstruction");
+    assert.equal(districtBuilder.isBusy(),false);
+});
+
+test("saved lot diagnostics explain placement shortfalls without changing the city or its storage", MIN_TIMEOUT, async () => {
+    await forkCity();
+    const before = propsSnapshot();
+    const city = worldFingerprint();
+    const writes = mc.writes;
+    const propWrites = mc.propWrites;
+    const player = makePlayer();
+    send(CIV_EVENT_IDS.diag, "lots district=1", player);
+    await pump();
+    const out = text(player);
+    assert.match(out, /saved lot audit/, out);
+    assert.match(out, /Shortfalls:|All requested facilities/, out);
+    assert.match(out, /Read-only inspection/, out);
+    assert.equal(mc.writes, writes);
+    assert.equal(mc.propWrites, propWrites);
+    assert.deepEqual(propsSnapshot(), before);
+    assert.deepEqual(worldFingerprint(), city);
+    assert.equal(districtBuilder.isBusy(), false);
+    assert.equal(mc.areas.size, 0);
+    const unbuilt = makePlayer();
+    send(CIV_EVENT_IDS.diag, "lots district=2", unbuilt);
+    await pump();
+    assert.match(text(unbuilt), /needs a completed district/);
+    assert.deepEqual(propsSnapshot(), before);
+    const preview = makePlayer();
+    send(CIV_EVENT_IDS.diag,"lots district=1 preview=balanced",preview);
+    await pump();
+    assert.match(text(preview),/balanced preview/);
+    assert.match(text(preview),/preview only/);
+    assert.deepEqual(propsSnapshot(),before,"preview cannot persist a replacement plan");
+    assert.deepEqual(worldFingerprint(),city,"preview cannot rebuild the existing city");
+    assert.equal(mc.writes,writes);
+    assert.equal(mc.propWrites,propWrites);
+    assert.equal(districtBuilder.isBusy(),false);
+});
+
+// Seen in the live world: a district read that skipped one unloaded tile passed the region gate (its columns were
+// never ATTEMPTED, so `unloaded` stayed 0) and the site plan then failed much later on "gate ... sits on unloaded or
+// invalid ground" - six minutes after the command started. A hole must stop the plan at the read.
+test("a district tile whose hold never comes up refuses the plan at the read, never plans around the hole", MIN_TIMEOUT, async () => {
+    await forkCity();
+    CIV.holdTimeoutTicks = 60;
+    // The second tile and its smaller fallback holds stay unread on every attempt.
+    let failedTile;
+    mc.createMode = (_chunks, options, n) => {
+        if (n === 2) failedTile = { x0: options.from.x, z0: options.from.z, x1: options.to.x, z1: options.to.z };
+        return failedTile && options.from.x >= failedTile.x0 && options.from.z >= failedTile.z0
+            && options.to.x <= failedTile.x1 && options.to.z <= failedTile.z1 ? "never" : undefined;
+    };
+    const player = makePlayer();
+    send(CIV_EVENT_IDS.plan, D2, player);
+    await pump();
+    const out = text(player);
+    assert.match(out, /Stopped at stalled - nothing was changed/, out.slice(-900));
+    assert.match(out, /3 of 4 survey tiles stalled/, out.slice(-900));
+    assert.match(out, /Nothing was written and no column was guessed/, out.slice(-900));
+    assert.doesNotMatch(out, /Plan is valid/, "a hole never yields a valid plan");
+    assert.doesNotMatch(out, /sits on unloaded or invalid ground/, "the refusal names the read, not a gate six minutes later");
+    assert.equal(mc.writes, 0, "a refused plan writes no block");
+    assert.equal(districtById(store.load().kingdom, "district-2").civ, undefined, "district 2 was not started");
+    assert.equal(builder.hasSession(), false, "nothing was left half-planned");
+});
+
 test("planning and building district 2 writes nothing inside district 1's protected footprint and changes none of its blocks", MIN_TIMEOUT, async () => {
     const base = await forkCity();
     const plan = base.outcome.plan;
@@ -1415,12 +2168,24 @@ test("planning and building district 2 writes nothing inside district 1's protec
     await pump();
     const out = text(player);
     assert.match(out, /=== Ironquarry \(enlarged\) is built ===/, out.slice(-1200));
+    const nextSite = rehydrateStored(2).record;
+    const shared = base.outcome.record.gates.filter((g) => g.between.includes(2));
+    assert.ok(shared.length > 0);
+    for (const original of shared) {
+        const again = nextSite.gates.find((g) => g.id === original.id);
+        assert.ok(again, `shared gate ${original.id} remains in the neighbor plan`);
+        assert.equal(again.walkingLevel, original.walkingLevel, "an existing gate roof must never become the neighbor's new ground");
+    }
     const d1Cells = new Set();
     for (const [k, id] of blocksBefore) if (naturalAt(...k.split(",").map(Number)) !== id) d1Cells.add(k);
     assert.ok(d1Cells.size > 20000, `district 1 had ${String(d1Cells.size)} modified cells to protect`);
     const changed = [];
     for (const k of d1Cells) {
         const [x, y, z] = k.split(",").map(Number);
+        // A cell district 1 left as AIR is cleared vegetation, not a block it placed: district 2 may light the
+        // ground it inherited (a tree felled by district 1's own canopy clearing can stand on district-2 land).
+        // Every solid block district 1 placed is still protected here.
+        if (blocksBefore.get(k) === "minecraft:air") continue;
         if (typeAt(x, y, z) !== blocksBefore.get(k)) changed.push(`${k}: was ${blocksBefore.get(k)}, now ${typeAt(x, y, z)}`);
     }
     assert.deepEqual(changed.slice(0, 5), [], `${String(changed.length)} block(s) district 1 placed were modified by the district-2 build`);
@@ -1448,6 +2213,23 @@ test("planning and building district 2 writes nothing inside district 1's protec
     assert.ok(refused > 0, `the build reported no protected-footprint refusals at all: ${out.slice(-900)}`);
     assert.match(out, new RegExp(`${String(refused)}x inside a protected footprint`));
     assert.deepEqual(districtById(store.load().kingdom, "district-1").civ, districtById(kingdomBefore, "district-1").civ, "district-1's civ record is untouched");
+});
+
+test("a corrupt completed neighbor survey refuses new construction instead of measuring its roof as ground", MIN_TIMEOUT, async () => {
+    await forkCity();
+    const previous = siteStoreFor(1).loadPlan().plan;
+    previous.ground.hash = "bad-survey-hash";
+    assert.equal(siteStoreFor(1).savePlan(previous).ok, true);
+    const player = makePlayer();
+    send(CIV_EVENT_IDS.generate, D2, player);
+    await pump();
+    assert.match(text(player), /Cannot reuse district 1's original ground/);
+    assert.match(text(player), /hash|checksum|corrupt/);
+    assert.equal(mc.writes, 0);
+    assert.equal(districtById(store.load().kingdom, "district-2").civ, undefined);
+    assert.equal(siteStoreFor(2).loadPlan().status, "absent");
+    assert.equal(districtBuilder.isBusy(), false);
+    assert.equal(mc.areas.size, 0);
 });
 
 test("a district-2 build that crashes twice resumes after a restart to exactly the world an uninterrupted build leaves", { timeout: 900000 }, async () => {
@@ -1634,7 +2416,7 @@ test("district 3 cannot start while district 2 is building, and civ:generate_sta
     assert.match(lineFor("district-1"), /: complete, stage complete \d+ \/ \d+ ops, placed \d+, skipped \d+/);
     assert.match(lineFor("district-1"), /plan [0-9a-f]{8}/);
     assert.match(lineFor("district-2"), /: building, stage \w+ \d+ \/ \d+ ops/);
-    assert.match(status, /Stored queue: \d+% \(\d+ \/ \d+ ops\), state \w+; continue with \/scriptevent civ:generate_resume district=2/);
+    assert.match(status, /Stored queue: \d+(?:\.\d+)?% \(\d+ \/ \d+ ops\), state \w+; continue with \/scriptevent civ:generate_resume district=2/);
     assert.match(lineFor("district-3"), /: not started - build district-2 first/);
     assert.match(lineFor("district-4"), /: not started - build district-3 first/);
     assert.match(lineFor("district-5"), /: not started - build district-4 first/);

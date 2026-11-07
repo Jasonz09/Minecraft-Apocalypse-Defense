@@ -1,3 +1,4 @@
+import { DIPLOMACY, diplomacyProblems } from "../sim/diplomacy.js";
 import { KINGDOM_SCHEMA_VERSION, MIN_SUPPORTED_SCHEMA_VERSION, STORAGE_KEYS } from "../config.js";
 import { migrateKingdom, readSchemaVersion } from "./migrations.js";
 import { createInitialKingdom, deserializeKingdom, serializeKingdom } from "./state.js";
@@ -17,6 +18,12 @@ import { createInitialKingdom, deserializeKingdom, serializeKingdom } from "./st
  * @param {import("@minecraft/server").World} target
  */
 export function createKingdomStore(target) {
+    /** A recognized current-format extension must fail closed, never enter generic reseeding.
+     * @param {any} parsed */
+    function unreadableDiplomacy(parsed){
+        const ids=Array.isArray(parsed?.districts)?parsed.districts.map((/** @type {any} */d)=>d?.id):[];
+        return diplomacyProblems(parsed?.diplomacy,parsed?.step,ids);
+    }
     const storageKey = STORAGE_KEYS.kingdom;
     const quarantineKey = STORAGE_KEYS.quarantine;
 
@@ -26,7 +33,9 @@ export function createKingdomStore(target) {
             return undefined;
         }
         try {
-            return readSchemaVersion(JSON.parse(raw));
+            const parsed=JSON.parse(raw);
+            const version=readSchemaVersion(parsed);
+            return parsed?.diplomacy?.v>DIPLOMACY.version||(typeof version==="number"&&version<3&&Object.hasOwn(parsed,"diplomacy"))||(version===KINGDOM_SCHEMA_VERSION&&unreadableDiplomacy(parsed).length>0)?Number.POSITIVE_INFINITY:version;
         } catch (_error) {
             return undefined;
         }
@@ -75,7 +84,9 @@ export function createKingdomStore(target) {
             return { kingdom: undefined, status: "corrupt", reason: `saved state is not valid JSON (${String(error)})` };
         }
 
+        if (parsed?.diplomacy?.v>DIPLOMACY.version) return {kingdom:undefined,status:"newer",reason:"Saved diplomacy format is newer; preserved without changes."};
         const version = readSchemaVersion(parsed);
+        if (typeof version==="number"&&version<3&&Object.hasOwn(parsed,"diplomacy")) return {kingdom:undefined,status:"unsupported",reason:"Legacy save already contains a diplomacy extension; preserved for explicit migration."};
         if (version === undefined) {
             return { kingdom: undefined, status: "corrupt", reason: "saved state has no schemaVersion" };
         }
@@ -92,6 +103,10 @@ export function createKingdomStore(target) {
                 status: "unsupported",
                 reason: `saved state is schema v${String(version)}; the oldest readable version is v${String(MIN_SUPPORTED_SCHEMA_VERSION)}`,
             };
+        }
+        if(version===KINGDOM_SCHEMA_VERSION){
+            const reasons=unreadableDiplomacy(parsed);
+            if(reasons.length)return {kingdom:undefined,status:"unsupported",reason:`Diplomatic records are unreadable; kingdom preserved: ${reasons.join("; ")}`};
         }
         if (version < KINGDOM_SCHEMA_VERSION) {
             const result = migrateKingdom(parsed);
@@ -114,6 +129,7 @@ export function createKingdomStore(target) {
      */
     function save(kingdom) {
         const storedVersion = readStoredVersion();
+        if(storedVersion===Number.POSITIVE_INFINITY)throw new Error("refusing to overwrite a newer or unsupported diplomacy format");
         if (storedVersion !== undefined && storedVersion > KINGDOM_SCHEMA_VERSION) {
             throw new Error(`refusing to overwrite a v${String(storedVersion)} save with v${String(KINGDOM_SCHEMA_VERSION)}`);
         }

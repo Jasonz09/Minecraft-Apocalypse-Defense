@@ -1,0 +1,18 @@
+[
+  {
+    "path": "CivilizationApocalypse_BP\\scripts\\integration\\civilianTravel.js",
+    "sha256": "DB15747CE5C43F6338F3AA11DFEB42C220050C81032727630C0F8889C854A633"
+  },
+  {
+    "path": "CivilizationApocalypse_BP\\scripts\\integration\\civilianDestinations.js",
+    "sha256": "13AD5F3A7036901AA6E2C3602A255FD8E5019EEC49A3FA6432F9770F81A604B4"
+  },
+  {
+    "path": "CivilizationApocalypse_BP\\scripts\\commands\\people.js",
+    "sha256": "37793F439EFC58C1DE9B2E876537FAE829A5ABCEADEAEBB27F3F2B09B2DB9D73"
+  },
+  {
+    "path": "CivilizationApocalypse_BP\\scripts\\main.js",
+    "sha256": "80537025C35B312DE59B2175B5A0BACADBA35FADCECF723D261924D96410D95E"
+  }
+]

@@ -1,0 +1,122 @@
+{
+  "scope": "STAGED ONLY. Null compiled trust. No installation, main-source modification or native acceptance.",
+  "proposedFiles": [
+    {
+      "staged": "proposed/commands/people.js",
+      "destination": "CivilizationApocalypse_BP/scripts/commands/people.js",
+      "sha256": "5B470C441E09143351115FA0FDA5B0F4E59AFE1DFC70C2C44DBA762E852E0E43",
+      "baselineSha256": "61DBB52AF4C27D2DB75E0F6AD22296E150C88709C70610BB9F663EEC0387F559"
+    },
+    {
+      "staged": "proposed/events/welcome.js",
+      "destination": "CivilizationApocalypse_BP/scripts/events/welcome.js",
+      "sha256": "AAEBED353A1302D8D25B5D2300708C63333D1AB2FBE91ADA2EBC7FDBF1DC5AC0",
+      "baselineSha256": "DB13FB3B27163CE821A4962D9AF5771583534B534E93DE4CC15D6E415BAB4E55"
+    },
+    {
+      "staged": "proposed/integration/creationBindings.js",
+      "destination": "CivilizationApocalypse_BP/scripts/integration/creationBindings.js",
+      "sha256": "F334676FB356CA7532567FAA8D9BB5B1FE093CA594CCE725CC46036553A3FB52",
+      "baselineSha256": null
+    },
+    {
+      "staged": "proposed/integration/creationRuntime.js",
+      "destination": "CivilizationApocalypse_BP/scripts/integration/creationRuntime.js",
+      "sha256": "307FEF10556CC2AF5A0409C83F8A0371F6A1FDCE5FC3667C514198D9C5A677F4",
+      "baselineSha256": null
+    },
+    {
+      "staged": "proposed/integration/freshFixtureTrust.js",
+      "destination": "CivilizationApocalypse_BP/scripts/integration/freshFixtureTrust.js",
+      "sha256": "5914C01773380ED8DF19B8AB7A271251F65E5EA6EDC7128AB0110808ACA7EADF",
+      "baselineSha256": null
+    },
+    {
+      "staged": "proposed/integration/peopleStreets.js",
+      "destination": "CivilizationApocalypse_BP/scripts/integration/peopleStreets.js",
+      "sha256": "B0E2F279198203E015817104818FC4A7D52C30EADF96350C5B4CB58B67C180D0",
+      "baselineSha256": "FB3AAE2AD293B902E53A6DC87BEEA8E4EA17BEA6BCD0419927229CA5468D526E"
+    },
+    {
+      "staged": "proposed/integration/popSync.js",
+      "destination": "CivilizationApocalypse_BP/scripts/integration/popSync.js",
+      "sha256": "ED93FC892FC19CC44DF865F98BF954058B7C5314D5961BDF36F0F13A767D58A7",
+      "baselineSha256": "4F658ABC6153DB289F73C3E987CE20C9FFE86EBA07C9F78F096783BD7EB86443"
+    },
+    {
+      "staged": "proposed/integration/privateFreshFixture.js",
+      "destination": "CivilizationApocalypse_BP/scripts/integration/privateFreshFixture.js",
+      "sha256": "F9F600D6D73151F5D2F1345EAB04440352D49DA76F68432D73A1A803F6AC96D0",
+      "baselineSha256": null
+    },
+    {
+      "staged": "proposed/main.js",
+      "destination": "CivilizationApocalypse_BP/scripts/main.js",
+      "sha256": "11D3875F2F0FADD15B09226C10E80543123C25DE646A5E6F2317F45D2DD9C241",
+      "baselineSha256": "417E9C7181F9792CCAB013ED2BC48CA66AA05F169A8E8DF141A919554998AF62"
+    },
+    {
+      "staged": "proposed/sim/starter.js",
+      "destination": "CivilizationApocalypse_BP/scripts/sim/starter.js",
+      "sha256": "50F751F967BCDA377329C3BABB61332A7402513F59C00A44A9DE18965CB59CB0",
+      "baselineSha256": "C343B6629D04C2121D2E13BF31A5941F5EFEE4C9459D5AC7C5D12A8E0FEA95E6"
+    }
+  ],
+  "evidenceFiles": {
+    "BASELINE.json": "991A72B37398A62762EB03F665C42FF15648EA818995F3F0C839302F7CB40EDF",
+    "binding.test.mjs": "8E13DEF2553063C1060AD9CC4DB553F31C766EF2A12DF62FBD0B58D9056FB1B7",
+    "compatibility-before-assertion-fix.log": "27FD29849F51723A08486F72BDFED70A5100370267BC1322E7EF9108C9BBADAB",
+    "compatibility-final.log": "8AC060629E505AF665220BEDB42E45EF4F9BEE6EC09B6EAE6382603DD50B8322",
+    "composed.test.mjs": "A0919AB3A0241AE2C7226DC7BABA497E9399D44E6519B6700706956CD89B9E41",
+    "fixture.test.mjs": "E3C6D61A0171D121C23E50E56381150A52E92498C1697E37F1A116545AB19117",
+    "focused-final.log": "43F96F1632CB109447AAD46300585D093C30B79C16F663ABD62DC8CE731BBCF4",
+    "focused-initial.log": "8013AA3F7CD8E25B076E2AC062CF57ACE123A0B0E0512A54068936AB61682C87",
+    "focused-second.log": "A3095149B9B9840D6FD9BC34E3AF74781097F5A548E562836EFBE0B733F30FF2",
+    "focused-third.log": "6D36E073F64F5DF50E325CBEF80C96BA7918F97917BD24C0D22F9841481FEB42",
+    "loader.mjs": "F211FA9C0C909A4F2C3D8D05ED65C1A22D604F9D8AB23971039F5DF4DC2348BA",
+    "native-stub.mjs": "C8F1B54D1B1DF36FC3A0410F57A2CA710DD25D92264B8332DE8AEC883F58AE44",
+    "proposed.patch": "93722DF19CC4179DEDA2815949C3912BC67ABC570624943E8FC910DAB479D58A",
+    "README.md": "C569CB16E1990AD90C36527BD0EA4CE08F688F6178204D95AFC6F2611A675AF1",
+    "register.mjs": "38E39EA17DBFC362D6444B2D60EE2AF5FF1D19471D83AFC767767AAA8215ABC7",
+    "synthetic-trust.mjs": "F632A56FF1E900448F2E25FC11F3FF0F1E14BD385EC7A8B09A5CD1E95C327CBA",
+    "teardown.test.mjs": "3DC0507FE6E7354E9836C92FA218067618973A4AB3D1579350D39861CB993CE3",
+    "tsconfig.json": "220473726F5E715CD182EFA8BDE620B22D3B436107C04443D0FB9F0212897295",
+    "typecheck-final.log": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+    "typecheck-initial.log": "61FAEED636B27479C60E7C1090FD4834F07CAD55DBECCC47EB344344F1575027",
+    "typecheck-second.log": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+  },
+  "sourceAndDependencyPins": {
+    "CivilizationApocalypse_BP/scripts/config.js": "5B6E5325C3EB32B6C41EB3456E39AB529FC96C11B69A62BCF4DC8080C6F8D816",
+    "CivilizationApocalypse_BP/scripts/kingdom/state.js": "D86F68AE94D64A41437096E9FFB569E63148001B5F72A5FCA8603330F21F4ABD",
+    "CivilizationApocalypse_BP/manifest.json": "D72C4320CE3A3FD404C81821042EB2DB163B8283E1A62533C5553A7B0E0B362D",
+    "CivilizationApocalypse_RP/manifest.json": "DD789999BB1893624D00C2A75A347F19AF74796917B36B3722D905E06B22BAA2",
+    "dev/staging/private-creation-fixture/CHECKPOINT.json": "D74C1DD1340618AD476C74F30262898C1B0B38401A5C746C8D19660DC9A31EE8",
+    "dev/staging/population-creation-wiring/CHECKPOINT.json": "79B603D8C61742C34788F44C7111A14952B18102F7F5893663EC71B4D6216F77",
+    "dev/staging/population-creation-binding-v2/CHECKPOINT.json": "78E2A35726A73B41CCB87BB43F4A9B0855AF904E99C494BC6EB6E36F390B2708"
+  },
+  "reviewedSourceBytesUnchanged": [
+    "creationBindings.js",
+    "privateFreshFixture.js",
+    "freshFixtureTrust.js",
+    "wiring-stage popSync.js"
+  ],
+  "actualCompiledDescriptor": null,
+  "compatibility": {
+    "tests": 89,
+    "pass": 89,
+    "fail": 0,
+    "durationMs": 245.7624,
+    "log": "compatibility-final.log"
+  },
+  "strictTypecheck": {
+    "exitCode": 0,
+    "log": "typecheck-final.log"
+  },
+  "nativeAcceptance": false,
+  "remaining": [
+    "Independent composed review",
+    "Genuine closed vanilla fixture receipt and derivative preparation chain",
+    "Native initial activation/birth/unload/rejoin/gate-off/crash acceptance",
+    "First-hour preparation must remain exact initial; no auto developer flag, rewind or reset"
+  ]
+}

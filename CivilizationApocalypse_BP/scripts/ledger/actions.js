@@ -1,3 +1,4 @@
+import { diplomaticReadiness, sendDiplomaticMission } from "../sim/diplomacy.js";
 import { CIV_EVENT_IDS, POLICY_MODES, POPULATION_DEFAULTS } from "../config.js";
 import { canAfford, districtById } from "../kingdom/state.js";
 import { closeImpact, findGate, setGateMode } from "../sim/gatecontrol.js";
@@ -164,6 +165,20 @@ function serviceOf(ctx, group, name) {
 
 /** @type {Record<string, ActionSpec>} */
 const SPECS = {
+    "diplomacy.mission": {
+        id:"diplomacy.mission",kind:"mutate",touchesKingdom:true,services:[],
+        calls:[{module:"sim/diplomacy.js",name:"sendDiplomaticMission"}],
+        describe(kingdom,params){
+            const kind=String(params.kind),realmId=params.realmId===undefined?null:String(params.realmId),ready=diplomaticReadiness(kingdom,kind,realmId);
+            return {title:kind==="scout"?"Send scouts":kind==="alliance"?`Propose alliance: ${ready.realmName??"unknown"}`:`Send envoy: ${ready.realmName??"unknown"}`,lines:ready.ok?[kind==="scout"?"Seeks a new regional contact; relations begin neutral.":kind==="envoy"?"Improves relations by up to 25 and refreshes news.":"Asks for an alliance; strained defenses may mean refusal.",`Cost: 6 food and 2 supplies from ${ready.homeName}.`,`The report returns after ${ready.hours} kingdom hours.`,"Travel is simulated; no physical settlement or route is placed."]:[ready.reason??"Mission unavailable."],confirmLabel:"Send expedition",blocked:ready.ok?undefined:ready.reason};
+        },
+        run(ctx,params){
+            const kind=String(params.kind),realmId=params.realmId===undefined?null:String(params.realmId),result=sendDiplomaticMission(ctx.kingdom,kind,realmId);
+            return result.ok?{ok:true,title:"Expedition sent",lines:[`Report due in ${result.hours} kingdom hours.`,"Read Diplomacy for the returning report."]}:{ok:false,title:"Mission refused",lines:[],reason:"reason" in result?result.reason:"Mission unavailable."};
+        },
+    },
+
+
     "military.recruit": {
         id: "military.recruit",
         kind: "mutate",
@@ -368,11 +383,11 @@ const SPECS = {
         touchesKingdom: false,
         services: ["civ.resume"],
         calls: [],
-        describe(_kingdom, params) {
+        describe(kingdom, params) {
             const index = Number(params.district);
             return {
-                title: `Resume district-${String(index)}`,
-                lines: ["Reloads the saved plan and job queue, checks the checksum, then continues.", "Progress is reported in chat."],
+                title: `Resume ${String(districtById(kingdom, `district-${String(index)}`)?.name ?? `District ${String(index)}`)}`,
+                lines: ["Continues construction from the saved progress. Buildings already placed stay in the world.", "Progress is reported in chat."],
                 confirmLabel: "Resume",
             };
         },

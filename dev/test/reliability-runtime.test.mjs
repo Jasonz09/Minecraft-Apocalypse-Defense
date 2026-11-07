@@ -26,10 +26,12 @@ const mc = {
     worldMessages: [],
     spawnSubscribers: [],
     itemUseSubscribers: [],
+    interactSubscribers: [],
     scriptEventSubscribers: [],
     intervals: [],
     clearedRuns: [],
     deferredRuns: [],
+    constructionJobs: [],
     failDimension: false,
 };
 globalThis.__mc = mc;
@@ -45,6 +47,7 @@ mc.world = {
     afterEvents: {
         playerSpawn: { subscribe: (callback) => mc.spawnSubscribers.push(callback) },
         itemUse: { subscribe: (callback) => mc.itemUseSubscribers.push(callback) },
+        playerInteractWithBlock: { subscribe: (callback) => mc.interactSubscribers.push(callback) },
     },
     getDynamicPropertyIds() {
         guard("world.getDynamicPropertyIds");
@@ -74,12 +77,18 @@ mc.world = {
     },
     sendMessage(message) {
         guard("world.sendMessage");
-        mc.worldMessages.push(message);
+        mc.worldMessages.push(typeof message === "string" ? message.split("\n") : message);
     },
 };
 mc.system = {
+    beforeEvents: { startup: { subscribe: () => undefined } },
     afterEvents: {
         scriptEventReceive: { subscribe: (callback, options) => mc.scriptEventSubscribers.push({ callback, options }) },
+    },
+    runJob(generator) {
+        guard("system.runJob");
+        mc.constructionJobs.push(generator);
+        return 100000+mc.constructionJobs.length;
     },
     runInterval(callback, ticks) {
         const id = mc.intervals.length + 1;
@@ -143,17 +152,20 @@ try {
 }
 const earlySnapshot = {
     accesses: [...mc.earlyAccesses],
+    constructionJobs: mc.constructionJobs.length,
     spawn: mc.spawnSubscribers.length,
     itemUse: mc.itemUseSubscribers.length,
+    interact: mc.interactSubscribers.length,
     scriptEvents: mc.scriptEventSubscribers.length,
     intervals: mc.intervals.map((entry) => entry.ticks),
 };
+const importDeferredRuns=[...mc.deferredRuns];
 mc.ready = true;
 
 // ---- helpers --------------------------------------------------------------------------
 function makePlayer(name = "Steve") {
     const messages = [];
-    return { typeId: "minecraft:player", name, messages, sendMessage: (message) => messages.push(message) };
+    return { typeId: "minecraft:player", name, messages, sendMessage: (message) => messages.push(typeof message === "string" ? message.split("\n") : message) };
 }
 
 function resetWorld() {
@@ -200,17 +212,20 @@ test("main.js: importing it during early execution does not touch world state an
     assert.deepEqual(earlySnapshot.accesses, [], "no world reads, writes, dimension lookups or messages at module scope");
 });
 
-test("main.js: registers exactly the subscriptions the pack needs, the horn ticker and one hourly interval", () => {
-    assert.equal(earlySnapshot.spawn, 2, "the welcome greeting and the horn grant both follow playerSpawn");
+test("main.js: registers exactly the subscriptions and four bounded runtime timers", () => {
+    assert.equal(earlySnapshot.spawn, 3, "welcome, horn and template Ledger delivery follow playerSpawn");
     assert.equal(earlySnapshot.itemUse, 1, "the horn's use handler");
+    assert.equal(earlySnapshot.interact, 1, "the gate-lever interaction listener");
     assert.equal(earlySnapshot.scriptEvents, 9, "status + inspection + debug + physical + gates + civ + starter script-event subscribers, + the people switch, + the Ledger development switch (the only Ledger listener while the gate is off)");
-    assert.deepEqual([...earlySnapshot.intervals].sort((a, b) => a - b), [BEACON.guideTicks, 40, SIM.stepTicks], "gate-adapter poll (40 ticks), the horn's guide ticker, and one interval at the in-game-hour cadence");
+    assert.deepEqual([...earlySnapshot.intervals].sort((a, b) => a - b), [1, BEACON.guideTicks, 40, SIM.stepTicks], "one civilian travel poll (1 tick; driver defaults to 4-tick correction), gate-adapter poll (40 ticks), horn guide ticker, and simulation hour");
     for (const { options } of mc.scriptEventSubscribers) {
         assert.deepEqual(options?.namespaces, ["civ"], "every script-event subscription is namespace-filtered");
     }
 });
 
 test("registration is idempotent: calling the register functions again adds no duplicate subscribers", async () => {
+    const originalTimers = [...mc.intervals];
+    await load("main.js");
     const store = createKingdomStore(mc.world);
     (await load("events", "welcome.js")).registerWelcomeOnJoin(store);
     (await load("commands", "status.js")).registerStatusCommand(store);
@@ -222,11 +237,46 @@ test("registration is idempotent: calling the register functions again adds no d
     (await load("commands", "starter.js")).registerStarterCommands(store);
     (await load("integration", "beaconBindings.js")).registerSeedBeacon(store);
     (await load("commands", "people.js")).registerPeopleCommand((await load("integration", "peopleRuntime.js")).createPeopleRuntime(store));
-    assert.equal(mc.spawnSubscribers.length, 2);
+    assert.equal((await load("integration", "gateLevers.js")).registerGateLevers(store), false, "the lever listener was already subscribed at import");
+    assert.equal(mc.spawnSubscribers.length, 3);
     assert.equal(mc.itemUseSubscribers.length, 1);
+    assert.equal(mc.interactSubscribers.length, 1, "one lever listener, not two");
     assert.equal(mc.scriptEventSubscribers.length, 9);
     assert.equal(loop.isSimulationLoopRunning(), true);
-    assert.equal(mc.intervals.length, 3, "re-registering starts no extra interval (gate poll + horn guide + simulation hour)");
+    assert.equal(mc.intervals.length, 4, "re-registering starts no extra interval (travel + gate poll + horn guide + simulation hour)");
+    assert.equal(mc.intervals.filter(({ ticks }) => ticks === 1).length, 1, "exactly one civilian travel timer survives repeated registration/import");
+    assert.deepEqual(mc.intervals, originalTimers, "existing timer callbacks and identities are retained");
+});
+
+test("main.js: the civilian travel timer is inert until explicitly configured", () => {
+    resetWorld();
+    seed();
+    const before = [...mc.properties];
+    const deferredBefore = [...mc.deferredRuns];
+    const timer = mc.intervals.filter(({ ticks }) => ticks === 1);
+    assert.equal(timer.length, 1);
+    const originalMethods = Object.entries(mc.world).filter(([, value]) => typeof value === "function");
+    const calls = [];
+    const originalTick = Object.getOwnPropertyDescriptor(mc.system, "currentTick");
+    try {
+        // Trap even reads: an inactive trial must not query entities, dimensions,
+        // population or saved state, much less steer an entity or change the world.
+        for (const [name] of originalMethods) {
+            mc.world[name] = () => { calls.push(name); throw new Error(`inactive travel accessed world.${name}`); };
+        }
+        for (let tick = 0; tick <= 120; tick += 1) {
+            Object.defineProperty(mc.system, "currentTick", { configurable: true, value: tick });
+            timer[0].callback();
+        }
+    } finally {
+        for (const [name, method] of originalMethods) mc.world[name] = method;
+        if (originalTick) Object.defineProperty(mc.system, "currentTick", originalTick);
+        else delete mc.system.currentTick;
+    }
+    assert.deepEqual(calls, [], "off by default means no world access or entity discovery on any timer tick");
+    assert.deepEqual([...mc.properties], before, "saved state is byte-for-byte unchanged");
+    assert.deepEqual(mc.worldMessages, []);
+    assert.deepEqual(mc.deferredRuns, deferredBefore, "the inactive timer schedules no deferred world work");
 });
 
 // ---- welcome --------------------------------------------------------------------------
@@ -681,6 +731,24 @@ function seedBuiltDevWorld({ districts = 5 } = {}) {
 const allStoredKeys = () => [...mc.properties.keys()];
 const text = (/** @type {any[]} */ messages) => messages.flat().join("\n");
 
+test("chat readouts send real newlines instead of raw fragments that Bedrock concatenates", () => {
+    resetWorld();
+    seed();
+    const received = [];
+    const player = { typeId: "minecraft:player", name: "reader", sendMessage: (message) => received.push(message) };
+    scriptEvent("civ:status", "", { player });
+    assert.equal(typeof received[0], "string", "a raw fragment array loses all line breaks in the real game");
+    assert.match(received[0], /\nDistricts: 5\n/);
+    const send = mc.world.sendMessage;
+    mc.world.sendMessage = (message) => received.push(message);
+    try {
+        scriptEvent("civ:status");
+        assert.equal(received[1], received[0], "server and player readouts must render the same readable lines");
+    } finally {
+        mc.world.sendMessage = send;
+    }
+});
+
 test("starter: the documented ids are the registered ids", () => {
     assert.deepEqual(STARTER_EVENT_IDS, { status: "civ:starter_status", arm: "civ:starter_arm", verify: "civ:starter_verify" });
     assert.equal(STARTER.keepKeyPrefixes.includes(PLAN_PREFIX), true, "the master plan must survive arming");
@@ -747,6 +815,130 @@ test("starter: arming a built dev world resets the simulation and keeps the buil
     assert.match(text(player.messages), /export/i, "the reply must tell the developer what to do next");
 });
 
+test("starter: cleans newer people, roster and lamp state; foreign properties survive", () => {
+    resetWorld();
+    seedBuiltDevWorld();
+    const cleanup = ["civ_people", "civ_pop", "civ:people_meta", "civ:people_a_0", "civ:lamps:1"];
+    for (const key of cleanup) mc.properties.set(key, "development state");
+    mc.properties.set("civ_people_other", "foreign");
+    const player = makePlayer();
+    scriptEvent(STARTER_EVENT_IDS.arm, "confirm", { player });
+    assert.equal(storedKingdom().starter.templateId, STARTER.templateId);
+    for (const key of cleanup) assert.equal(mc.properties.has(key), false, key);
+    assert.equal(mc.properties.get("civ_people_other"), "foreign");
+    scriptEvent(STARTER_EVENT_IDS.verify, "", { player });
+    assert.match(text(player.messages.at(-1)), /Ready for export/);
+    assert.doesNotMatch(text(player.messages.at(-1)), /already armed/);
+});
+
+test("starter: wrong-source farm journals and invalid keys refuse arming and post-arm export without losing state",()=>{
+    const complete={v:1,index:1,checksum:"0123abcd",dimension:"minecraft:overworld",complete:true,
+        entries:[{farmId:"building-d1-farm_allot-1",planId:"89abcdef",phase:"done",seenTick:null}]};
+    const cases=[
+        {key:"civ:farm_lights:1",journal:{...complete,checksum:"ffffffff"}},
+        {key:"civ:farm_lights:1",journal:{...complete,index:2}},
+        {key:"civ:farm_lights:future",journal:complete},
+        {key:"civ:farm_lights:01",journal:complete},
+        {key:"civ:farm_lights:1",journal:complete,dimension:"minecraft:nether"},
+        {key:"civ:farm_lights:1",journal:{...complete,complete:false}},
+        {key:"civ:farm_lights:1",journal:{...complete,entries:[{...complete.entries[0],phase:"removing"}]}},
+        {key:"civ:farm_lights:1",raw:"{unreadable"},
+    ];
+    for(const entry of cases)for(const verify of [false,true]) {
+        resetWorld();const kingdom=seedBuiltDevWorld();
+        kingdom.districts[0].civ.checksum=complete.checksum;
+        kingdom.districts[0].civ.dimension=entry.dimension??complete.dimension;
+        mc.properties.set(STORAGE_KEYS.kingdom,serializeKingdom(kingdom));
+        const player=makePlayer();
+        if(verify){scriptEvent(STARTER_EVENT_IDS.arm,"confirm",{player});assert.equal(storedKingdom().starter.templateId,STARTER.templateId);}
+        const raw=entry.raw??JSON.stringify(entry.journal);mc.properties.set(entry.key,raw);
+        const before=[...mc.properties];
+        scriptEvent(verify?STARTER_EVENT_IDS.verify:STARTER_EVENT_IDS.arm,verify?"":"confirm",{player});
+        assert.match(text(player.messages.at(-1)),/farm lighting must finish/);
+        assert.doesNotMatch(text(player.messages.at(-1)),/Ready for export|Now export/);
+        assert.deepEqual([...mc.properties],before,"refusal preserves the kingdom, journal and all development keys byte-for-byte");
+        assert.equal(mc.properties.get(entry.key),raw);
+    }
+});
+
+test("starter: a complete source-matching farm journal survives arming and successful export verification",()=>{
+    resetWorld();const kingdom=seedBuiltDevWorld();
+    kingdom.districts[0].civ.checksum="0123abcd";kingdom.districts[0].civ.dimension="minecraft:overworld";
+    mc.properties.set(STORAGE_KEYS.kingdom,serializeKingdom(kingdom));
+    const key="civ:farm_lights:1",raw=JSON.stringify({v:1,index:1,checksum:"0123abcd",dimension:"minecraft:overworld",complete:true,
+        entries:[{farmId:"building-d1-farm_allot-1",planId:"89abcdef",phase:"done",seenTick:null}]});
+    mc.properties.set(key,raw);const player=makePlayer();
+    scriptEvent(STARTER_EVENT_IDS.arm,"confirm",{player});
+    assert.equal(storedKingdom().starter.templateId,STARTER.templateId);
+    assert.equal(mc.properties.get(key),raw,"arming retains the completed migration's exact provenance");
+    const before=[...mc.properties];scriptEvent(STARTER_EVENT_IDS.verify,"",{player});
+    assert.match(text(player.messages.at(-1)),/Ready for export/);assert.deepEqual([...mc.properties],before);
+});
+
+test("starter: failed or silent cleanup never arms or resets the kingdom and can be retried", () => {
+    const original = mc.world.setDynamicProperty;
+    for (const silent of [false, true]) {
+        resetWorld();
+        seedBuiltDevWorld();
+        mc.properties.set("civ_pop", "old cursor");
+        const before = mc.properties.get(STORAGE_KEYS.kingdom);
+        const player = makePlayer();
+        mc.world.setDynamicProperty = function (key, value) {
+            if (key === "civ_pop" && value === undefined) {
+                if (!silent) throw new Error("storage refused cleanup");
+                return;
+            }
+            return original.call(this, key, value);
+        };
+        try {
+            scriptEvent(STARTER_EVENT_IDS.arm, "confirm", { player });
+            assert.equal(mc.properties.get(STORAGE_KEYS.kingdom), before);
+            assert.match(text(player.messages), /Arming stopped/);
+            assert.doesNotMatch(text(player.messages), /Now export/);
+        } finally {
+            mc.world.setDynamicProperty = original;
+        }
+        scriptEvent(STARTER_EVENT_IDS.arm, "confirm", { player });
+        assert.equal(storedKingdom().starter.templateId, STARTER.templateId, "a failed cleanup must leave arming retryable");
+    }
+});
+
+test("starter: unreadable keys refuse arming and export verification without modifying the save", () => {
+    resetWorld();
+    seedBuiltDevWorld();
+    const before = mc.properties.get(STORAGE_KEYS.kingdom);
+    const original = mc.world.getDynamicPropertyIds;
+    mc.world.getDynamicPropertyIds = () => { throw new Error("key enumeration failed"); };
+    const player = makePlayer();
+    try {
+        scriptEvent(STARTER_EVENT_IDS.arm, "confirm", { player });
+        scriptEvent(STARTER_EVENT_IDS.verify, "", { player });
+        assert.equal(mc.properties.get(STORAGE_KEYS.kingdom), before);
+        assert.match(text(player.messages), /state keys cannot be read/);
+        assert.doesNotMatch(text(player.messages), /Ready for export/);
+    } finally {
+        mc.world.getDynamicPropertyIds = original;
+    }
+});
+
+test("starter: verification refuses export with post-arm population drift or development residue", () => {
+    resetWorld();
+    seedBuiltDevWorld();
+    const player = makePlayer();
+    scriptEvent(STARTER_EVENT_IDS.arm, "confirm", { player });
+    mc.properties.set("civ_pop", "old cursor");
+    scriptEvent(STARTER_EVENT_IDS.verify, "", { player });
+    assert.doesNotMatch(text(player.messages.at(-1)), /Ready for export/);
+    assert.match(text(player.messages.at(-1)), /development state remains/i);
+    mc.properties.delete("civ_pop");
+    const changed = storedKingdom();
+    changed.districts[0].civilians += 1;
+    mc.properties.set(STORAGE_KEYS.kingdom, serializeKingdom(changed));
+    scriptEvent(STARTER_EVENT_IDS.verify, "", { player });
+    assert.match(text(player.messages.at(-1)), /population has drifted/);
+    assert.doesNotMatch(text(player.messages.at(-1)), /Ready for export/);
+});
+
 test("starter: four of five districts is not a starting kingdom, and says which one is missing", () => {
     resetWorld();
     seedBuiltDevWorld({ districts: 4 });
@@ -802,6 +994,7 @@ test("starter: a gate under a manual override, mid-move, or unreadable blocks ar
         ["forced_closed", () => mc.properties.set("civ_gatereg", JSON.stringify({ v: 1, gates: [{ id: "gate-east", role: "unmanaged", mode: "forced_closed" }] })), /manual override/i],
         ["mid-move", () => mc.properties.set("civ_gate_gate-east", JSON.stringify({ v: 1, id: "gate-east", actual: "open", to: "closed", rows: 0, attempts: 0, retryAt: 0, reason: null })), /still moving/i],
         ["corrupt registry", () => mc.properties.set("civ_gatereg", "{not json"), /gate registry reads as 'corrupt'/i],
+        ["lost kingdom link", () => mc.properties.set("civ_gatereg", JSON.stringify({ v: 1, gates: [{ id: "gate-east", role: "primary", simGateId: "gate-district-1-district-2" }] })), /gate linkage is incomplete/i],
         ["wrong shape registry", () => mc.properties.set("civ_gatereg", JSON.stringify([{ id: "gate-east" }])), /gate registry reads as 'invalid shape'/i],
     ];
     for (const [label, mutate, expected] of cases) {
@@ -861,4 +1054,47 @@ test("starter: status and verify are read-only and say what a built world would 
     assert.match(text(player.messages.slice(1, 2)), /Starter verify/);
     assert.equal(allStoredKeys().sort().join(","), before, "neither command may write");
     assert.equal(allStoredKeys().includes(STORAGE_KEYS.kingdom), true);
+});
+
+// Real entry-point registration/joins and deferred callbacks, with native work
+// surfaces instrumented. Reads of saved state/messages remain ordinary join work.
+async function assertJoinDoesNoTerrainWork(extraJoin){
+    resetWorld();
+    const kingdom=createInitialKingdom();
+    kingdom.districts[0].civ={district:1,status:"complete",stage:"complete",checksum:"07515fcb",dimension:"minecraft:overworld",ops:1,opsTotal:1,
+        seed:1,startedStep:0,anchor:{x:0,z:0},centre:{x:0,z:0}};
+    seed(kingdom);
+    const originalDimension=mc.world.getDimension,reads=[],jobCount=mc.constructionJobs.length;
+    let cursor=mc.deferredRuns.length;
+    mc.world.getDimension=function(name){const dimension=originalDimension(name);return {...dimension,
+        getBlock(p){reads.push(["getBlock",p]);return undefined;},
+        getTopmostBlock(p){reads.push(["getTopmostBlock",p]);return undefined;},
+        getBlockFromRay(...args){reads.push(["getBlockFromRay",args]);return undefined;},
+        runCommand(command){if(/tickingarea\s+add|setblock|fill\s|structure\s+load/.test(command))reads.push(["terrain command",command]);return{successCount:0};}};};
+    if(extraJoin)mc.spawnSubscribers.push(extraJoin);
+    try{
+        assert.equal(earlySnapshot.constructionJobs,0,"main import scheduled no terrain/plan/construction generator");
+        const player=makePlayer("JoinProof");player.dimension={id:"minecraft:overworld"};player.isValid=true;
+        spawn(player);
+        const queue=[...importDeferredRuns];let processed=0;
+        for(;;){
+            while(cursor<mc.deferredRuns.length)queue.push(mc.deferredRuns[cursor++]);
+            if(!queue.length)break;
+            assert.ok(++processed<=64,"join deferred work must remain bounded");
+            queue.shift()();await Promise.resolve();
+        }
+        assert.deepEqual(reads,[],"join must perform no terrain/block reads or construction commands");
+        assert.equal(mc.constructionJobs.length,jobCount,"join must schedule no terrain/plan/construction job");
+    }finally{
+        mc.world.getDimension=originalDimension;
+        mc.constructionJobs.splice(jobCount);
+        if(extraJoin)assert.equal(mc.spawnSubscribers.pop(),extraJoin);
+    }
+}
+test("main import/player join/deferred join callbacks schedule no terrain, plan or construction work",async()=>{
+    await assertJoinDoesNoTerrainWork();
+});
+test("join behavioral proof fails if a subscriber reads terrain or schedules a construction generator",async()=>{
+    await assert.rejects(assertJoinDoesNoTerrainWork(()=>mc.world.getDimension("overworld").getBlock({x:0,y:64,z:0})),/terrain\/block reads/);
+    await assert.rejects(assertJoinDoesNoTerrainWork(()=>mc.system.runJob((function*(){})())),/schedule no terrain\/plan\/construction job/);
 });

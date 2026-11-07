@@ -101,6 +101,35 @@ test("a quiet hour says nothing at all", () => {
     assert.deepEqual(messages, []);
 });
 
+test("routine survey limits and empty evacuation attempts stay in the log without hourly chat", () => {
+    const chronicle = fresh();
+    chronicle.onHour({ kingdom: kingdomAt(40, []) });
+    for (const step of [41, 42]) {
+        const kingdom = kingdomAt(step, [
+            "expansion survey reached its bound of 4 lands this step",
+            "Ironquarry: no civilians left to move.",
+        ]);
+        const before = JSON.stringify(kingdom);
+        assert.equal(chronicle.onHour({ kingdom }), 0);
+        assert.equal(JSON.stringify(kingdom), before, "the complete diagnostic log is retained");
+    }
+    assert.deepEqual(messages, []);
+});
+
+test("routine notices cannot crowd out battles, evacuation warnings or unfamiliar events", () => {
+    const line = composeLine(43, [
+        "expansion survey reached its bound of 4 lands this step",
+        "Ironquarry: no civilians left to move.",
+        "Hearthgate: assault 14 against 1 effective defenders - wall 64 -> 60, 3 raiders and 0 of our soldiers lost.",
+        "Saltmere: every route is blocked (every safe neighbour has no capacity).",
+        "Ashfall: scouts discovered a northern settlement.",
+    ].map(text => ({ text })));
+    assert.match(line, /Hearthgate: wall 64 to 60/);
+    assert.match(line, /Saltmere: no evacuation route/);
+    assert.match(line, /scouts discovered a northern settlement/);
+    assert.doesNotMatch(line, /survey reached|no civilians left/);
+});
+
 test("nobody in the world is nobody to tell: the hour is marked told and not replayed later", () => {
     const chronicle = fresh();
     chronicle.onHour({ kingdom: kingdomAt(20, []) });

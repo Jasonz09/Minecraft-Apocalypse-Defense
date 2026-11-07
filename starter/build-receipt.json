@@ -1,0 +1,16 @@
+{
+    "templateId": "civapoc-starter",
+    "armed": true,
+    "builtDistricts": ["district-1", "district-2", "district-3", "district-4", "district-5"],
+    "civilians": 400,
+    "soldiers": 150,
+    "districts": 5,
+    "jobPending": 0,
+    "centre": { "x": -187, "z": -621 },
+    "radius": 220,
+    "keptKeys": ["civ:kingdom", "civ:plan", "civ_gatereg", "civ_gate_"],
+    "wipedKeys": ["civ:jobs", "civ:devgate"],
+    "worldName": "CivTest Hearthgate",
+    "minecraftVersion": "1.26.52",
+    "verifiedBy": "civ:starter_verify run in the build world on 2026-10-30 01:25 (local): 'Armed as civapoc-starter v1.0.0; Population: 400 civilians / 150 soldiers over 5 districts (published baseline); Built districts: district-1, district-2, district-3, district-4, district-5; Master plan stored: yes; Development keys still present: none'. The world had already been armed earlier that session and had drifted to 404/148 while the simulation ran, so the arm was re-applied with a deployment-local permission (repo untouched); the deployed pack was restored byte-identically (122/122 files) before the export. World saved from the pause menu with the simulation paused, then exported with Minecraft 1.26.52."
+}

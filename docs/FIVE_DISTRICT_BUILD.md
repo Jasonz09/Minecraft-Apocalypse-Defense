@@ -1,13 +1,16 @@
 # Building the five-district civilization once, in a dedicated world
 
+Current checkpoint (2026-11-02): the preserved archive described below is stale and now fails the
+release parity gate. Actual template import is blocked, and current gate/build fixes are being
+tested on separate worlds. See [PROGRESS.md](PROGRESS.md); the October status below is historical.
+
 Status: everything below is implemented and verified **offline against a fake Bedrock world**, and the
-sequence has since been walked in the real game: districts 1 (Hearthgate) and 2 (Ironquarry) are built end
-to end and verified inside Minecraft (Bedrock 1.26.5203, 2026-10-26, in a development save -
-`docs/PROGRESS.md`). Districts 3-5 have not been run in the game, and no `.mctemplate` exists.
-`npm run template:release-check` exits nonzero until all five districts are physically built and verified
-in game, marked `built` in `starter/template.json` and covered by a signed receipt - which none of them is,
-because the packaged starter world has never been built - and the packager refuses
-`--zip` while it does. That refusal is the design, not a failure to work around.
+sequence has been walked in the real game: districts 1 (Hearthgate) and 2 (Ironquarry) were built end
+to end and verified inside Minecraft (Bedrock 1.26.5203, 2026-10-26), districts 3 (Whitethorn),
+4 (Saltmere) and 5 (Ashfall) followed on 2026-10-29/30 (Minecraft 1.26.52, `docs/PROGRESS.md`). The world
+was then armed, exported and packaged, so `npm run template:release-check` exits 0 and
+`dist/templates/civapoc-starter.mctemplate` exists. The refusals described in this document are still the
+design: they fire if a district is not built, marked `built` and receipted.
 
 ## 1. What changed in the model
 
@@ -38,9 +41,15 @@ The pack registers no slash commands of its own, so the short form answers "unkn
 | `civ:generate_resume` | `[district=1-5]` | continues the district that is building (or the named one) after an abort, a crash or a Minecraft restart |
 | `civ:generate_abort` | `[district=1-5]` | stops cleanly; blocks already placed stay, the queue keeps its cursor |
 | `civ:generate_diag` | none | survey/tile/chunk/timing diagnostics |
+| `civ:gate_relink` | `confirm saved` | on a backed-up build copy, verify all completed stored district plans and recover the oldest shared-gate measurements. Refuses missing coverage or conflicting routes; changes links only. Follow with `civ:gate_status` and `civ:gate_test` |
 | `civ:generate_devgate` | `on` / `off` | the development flag for privileged build privileges; refuses any other value |
+| `civ:lights` / `civ:lights_natural` | `[district=1-5\|all]` | revises a completed district to sparse pathside lighting, using its saved plan. Removes obsolete generated outdoor posts and wall lamps, preserves buildings/interiors and changed fixtures, adds shorter lantern posts and stone torch stands. Saves per fixture. Default: district 1; `district=all` chains completed districts |
+| `civ:lights_status` | none | natural-lighting state and saved fixture cursor; archived retrofit state when no revision exists |
+| `civ:lights_abort` | none | stops the lighting job and releases temporary holds; the fixture cursor is saved |
 
-Omitting `district=` means district 1, so the previous single-district usage is unchanged.
+Omitting `district=` means district 1, so the previous single-district usage is unchanged. The three
+`civ:lights*` ids are the one exception: they do not need the development gate, and they refuse any
+district that is not `complete`.
 
 ## 3. The sequence
 
@@ -130,9 +139,10 @@ accepts these block states.
 
 ## 5. What to capture from the in-game run
 
-Partly captured for districts 1-2 on 2026-10-26: both `civ:generate_status` lines are recorded in
-`docs/PROGRESS.md`, along with site screenshots of the builds. Nothing else below is recorded as captured,
-and districts 3-5 have not been run in the game.
+Partly captured: all five districts ran in the game (1-2 on 2026-10-26, 3-5 on 2026-10-29/30), and both
+`civ:generate_status` lines plus site screenshots for districts 1-2 are recorded in `docs/PROGRESS.md`;
+districts 3-5 were built and then armed, exported and packaged, but their per-run status lines are not copied
+there. The remaining items below are not recorded as captured.
 
 * `civ:generate_status` text, once per district and once at the end.
 * `civ:generate_diag` after the first district, so the survey/slice timing becomes measured rather
@@ -152,9 +162,10 @@ that output, export the world, and follow `docs/STARTER_WORLD.md`.
 
 ## 6. What is still deliberately not finished
 
-* `starter/template.json` marks all five districts `starterWorld: true` with `status: "planner-ready"`.
-  A district becomes `built` only after it has been built and inspected in Minecraft, and
-  `template:release-check` plus `--zip` enforce that. Do not edit the flags to get a package out.
+* `starter/template.json` marks all five districts `starterWorld: true` with `status: "built"` - each
+  became `built` only after it had been built and inspected in Minecraft. `template:release-check` plus
+  `--zip` still enforce that, so a district flipped back to `planner-ready` blocks packaging again.
+  Do not edit the flags to get a package out.
 * Known geometry imperfection, inside the wall stage: summed over the five districts, the wall elements
   report more band columns than their own operations cover - 15,146 reported against 14,952 distinct
   columns at seed 21 (194 apart, the worst single element 30), and 14,650 against 14,368 on flat ground

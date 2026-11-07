@@ -205,7 +205,14 @@ export function createPopWorld(options = {}) {
         /** @param {{ x: number, y: number, z: number }} location */
         getBlock(location) {
             alive();
-            return isLoadedAt(location) ? { typeId: "minecraft:grass_block", isValid: true } : undefined;
+            if (!isLoadedAt(location)) {
+                return undefined;
+            }
+            // Above the surface is air. Answering "grass" at every height made the headroom test in
+            // people/columns.js fail against this world for every column, so no street could ever be found here -
+            // a fake that could not say "open sky" was testing a world nobody plays in.
+            const y = Number(location?.y);
+            return { typeId: Number.isFinite(y) && y > GROUND_Y ? "minecraft:air" : "minecraft:grass_block", isValid: true };
         },
         /**
          * `Dimension.getTopmostBlock(locationXZ, minHeight?)` as 2.7.0 declares it. This world is a flat

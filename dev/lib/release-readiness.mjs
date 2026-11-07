@@ -64,7 +64,7 @@ export function fullReleaseProblems(spec, receipt) {
  * lists diverge, a world that was armed with Hearthgate alone can be stamped READY here.
  *
  * @param {any} spec the parsed starter/template.json
- * @param {{ templateId?: string, templateVersion?: number[], builtRequired?: string[], keepKeyPrefixes?: string[], wipeKeyPrefixes?: string[] }} starterConfig the pack's STARTER block
+ * @param {{ templateId?: string, templateVersion?: number[], builtRequired?: string[], keepKeyPrefixes?: string[], wipeKeyPrefixes?: string[], wipeKeys?: string[] }} starterConfig the pack's STARTER block
  * @returns {string[]}
  */
 export function starterConfigProblems(spec, starterConfig) {
@@ -88,6 +88,9 @@ export function starterConfigProblems(spec, starterConfig) {
     }
     if (!same(starterConfig.wipeKeyPrefixes, spec?.starter?.wipeKeyPrefixes)) {
         problems.push(`${label}.wipeKeyPrefixes drifted from template.json`);
+    }
+    if (!same(starterConfig.wipeKeys, spec?.starter?.wipeKeys)) {
+        problems.push(`${label}.wipeKeys drifted from template.json`);
     }
     return problems;
 }

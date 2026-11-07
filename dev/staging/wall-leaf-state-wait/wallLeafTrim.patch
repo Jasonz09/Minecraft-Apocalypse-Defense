@@ -1,0 +1,48 @@
+--- CivilizationApocalypse_BP/scripts/civ/wallLeafTrim.js
++++ CivilizationApocalypse_BP/scripts/civ/wallLeafTrim.js
+@@ -225,6 +225,28 @@
+ /** @param {LeafPlan} plan @param {LeafContext} ctx @param {LeafStore} io @param {LeafOptions} [options] */
+ export function prepareLeafTrim(plan,ctx,io,options={}){const g=prepareLeafTrimSteps(plan,ctx,io,options);for(;;){const n=g.next();if(n.done)return n.value;}}
+ 
++/** A retry hint, NEVER a write permission. Every retry reruns the entire proof. */
++export class LeafUpdatePendingError extends Error {}
++/** @param {any} before @param {any} current */
++function onlyLeafUpdateDiffers(before,current){
++    if(!before||!current||!isLeaves(before.typeId)||before.typeId!==current.typeId||before.persistent!==false||current.persistent!==false)return false;
++    const a=before.states,b=current.states;
++    if(!a||!b||a.persistent_bit!==false||b.persistent_bit!==false||typeof a.update_bit!=="boolean"||typeof b.update_bit!=="boolean"||a.update_bit===b.update_bit)return false;
++    const keys=Object.keys(a).sort();
++    return JSON.stringify(keys)===JSON.stringify(Object.keys(b).sort())&&keys.every(k=>k==="update_bit"||JSON.stringify(a[k])===JSON.stringify(b[k]));
++}
++
++/** Diagnostic only: compare already-read bounded snapshots; no native reads or recovery permission. */
++/** @param {LeafPoint} target @param {any} before @param {any} current */
++function leafIdentityDifference(target,before,current){
++    const changes=[];
++    for(const field of ["typeId","persistent"])if(JSON.stringify(before?.[field])!==JSON.stringify(current?.[field]))changes.push({field,before:before?.[field],current:current?.[field]});
++    const a=before?.states??{},b=current?.states??{};
++    for(const field of [...new Set([...Object.keys(a),...Object.keys(b)])].sort())if(JSON.stringify(a[field])!==JSON.stringify(b[field]))changes.push({field:"states."+field,before:a[field],current:b[field]});
++    // Existing receipt/read validators bound state keys and values. First four changes are exact; omitted count is explicit.
++    return `admitted leaf identity/states changed; preserve target and receipt at ${key(target)}; differing fields ${changes.length}: ${JSON.stringify(changes.slice(0,4))}${changes.length>4?`; ${changes.length-4} more omitted`:""}`;
++}
++
+ /** One already-admitted candidate commit. No yield in the <=56-read proof/write
+  * section; the native controller drives one such commit per cooperative slice,
+  * with loaded read/protection/source proof and no chunk-loading permission. */
+@@ -239,7 +261,15 @@
+     let changed=0;
+     if(first.state==="eligible"){
+         first.target=proposal.target;
+-        if(JSON.stringify(targetSnapshot(first))!==JSON.stringify(entry.before))fail("admitted leaf identity/states changed; preserve target and receipt");
++        const currentTarget=targetSnapshot(first);
++        if(JSON.stringify(currentTarget)!==JSON.stringify(entry.before)){
++            const message=leafIdentityDifference(proposal.target,entry.before,currentTarget);
++            if(onlyLeafUpdateDiffers(entry.before,currentTarget)){
++                barrier(ctx,io,raw,plan);
++                throw new LeafUpdatePendingError(message);
++            }
++            fail(message);
++        }
+         const second=checkProof(proposal,ctx,counter);
+         if(second.state!==first.state||JSON.stringify(second.snapshots)!==JSON.stringify(first.snapshots))fail("local contact/leaf changed before commit");
+         barrier(ctx,io,raw,plan);

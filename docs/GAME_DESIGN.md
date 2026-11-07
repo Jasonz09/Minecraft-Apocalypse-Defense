@@ -1,8 +1,11 @@
 # Game design — as implemented
 
-Everything below is saved simulation state. **No civilian, soldier, golem or wolf entity is
-spawned anywhere in this build**, and no city is generated. Iron golems, wolves, real
-models, combat and NPC AI are future milestones named in the brief, not features here.
+The rules below describe the authoritative saved simulation. The project now also has five physical
+district layouts and opt-in civilian villagers, golem soldiers and siege mobs; those additions do not
+make all simulated activity physical. Combat outcomes still come from the simulation, and soldier
+classes, work routines and physical battle feedback remain unfinished. For the current evidence and
+the intended finished experience recovered from the original chat, see [PROGRESS.md](PROGRESS.md)
+and [ROADMAP.md](ROADMAP.md).
 
 ## The kingdom
 
@@ -96,12 +99,13 @@ blocks occupation and claims outright.
 One simulation step is one in-game hour (24 steps to a Minecraft day). The step runs on a
 1000-tick interval, never per game tick, and catch-up is clamped to `SIM.maxCatchUpSteps`.
 
-## Deliberately not designed yet
+## Physical gameplay still unfinished (updated 2026-11-02)
 
-Physical city generation, entity spawning of any kind, melee combat resolution against real
-mobs, player-controlled building, multiple kingdoms, UI screens, and any AI for named
-characters. The demo build adapter places blocks only when explicitly opted in — see
-`docs/TESTING.md`.
+City generation and entity spawning exist, and the Ledger UI is implemented behind a development
+gate. Remaining work includes physical combat feedback, civilian jobs and travel, archer/swordsman/
+cavalry roles, physical evacuation/reinforcement, autonomous full-district expansion, multiple
+kingdoms and diplomacy. The original demo build adapter remains a limited opt-in demonstration;
+it is not the complete district construction system. See [ROADMAP.md](ROADMAP.md).
 
 ## Roadmap
 Population as visible entities, the zombie invasion director and the long-term siege balance fix are recorded in [ROADMAP.md](ROADMAP.md). The siege balance fix is on master (7679415).

@@ -1,20 +1,26 @@
+import {treeInspectionBounds,withinTreeInspection,TREE_INSPECTION_SOURCE_LIMITS,isTreeInspectionProtection} from "../civ/treeInspectionStreaming.js";
 import { BlockPermutation, world } from "@minecraft/server";
 import { CIV, PHYSICAL } from "../config.js";
 import { CIV_LIMITS } from "../civ/budget.js";
-import { SITE_PLAN_VERSION, planDistrictSiteSteps, rehydrateSiteSteps, siteContainmentProblemsSteps, siteJobSpecs, siteOpCount, siteOpsFor, siteOptionsOf } from "../civ/districtplan.js";
+import { SITE_PLAN_VERSION, SITE_STAGES, planDistrictSiteSteps, rehydrateSiteSteps, siteContainmentProblemsSteps, siteJobSpecs, siteOpCount, siteOpsFor, siteOptionsOf } from "../civ/districtplan.js";
 import { auditRecord, shortfallOf } from "../civ/facilities.js";
 import * as jobs from "../civ/jobs.js";
+import { decodeTreeClearance, encodeTreeClearance } from "../civ/treeclear.js";
+import { onExactOutline } from "../civ/sharedtree.js";
+import { createTreeRootRefusalCache } from "../civ/treeRootRefusalCache.js";
 import { planCivilizationDetailedSteps } from "../civ/masterplan.js";
 import { markYield, newOps } from "../civ/regions.js";
 import { normalizeOp } from "../civ/opnorm.js";
 import { PLAN_PREFIX, PLAN_VERSION, createPlanStore, utf8Length } from "../civ/planstore.js";
-import { clipField, exportSiteGroundSteps, siteGroundBytes, siteGroundRegion } from "../civ/siteprofile.js";
+import { clipField, exportSiteGroundSteps, importSiteGroundSteps, siteGroundBytes, siteGroundRegion } from "../civ/siteprofile.js";
 import { SITE_DEFAULTS, TERRAIN_POLICY_DEFAULT, overlapsExclusion, rankSites, scanRadiusFor, siteTerrainPolicy } from "../civ/siteselect.js";
 import { validatePlanSteps } from "../civ/validatesteps.js";
 import { classifyTerrainCell, isBenign, isLeaves, isLog, isNaturalGround, isPlant, isTreePart } from "../structures/terrain.js";
 import { activeToken, cancelActiveJob, finishJob } from "./districtBuilder.js";
 import { CIV_TICKING_ID, countTiles, holdArea, nextTick, releaseArea, runJobAsync, scanFull, scanProgressive, tileSizeNow } from "./civScan.js";
 import { finishProgress, getProgress, heartbeat, nowTick, resetProgressForTests, setPhase, touch } from "./civProgress.js";
+import { createChunkLoader } from "./chunkLeases.js";
+import { isDoorOp, lowerDoorOp, placeDoorPair } from "./doorPlacement.js";
 
 /**
  * Bedrock boundary for the one-command civilization workflow, WRITE side, plus the planning
@@ -95,8 +101,9 @@ export const MAX_SANE_OPS = 400000;
 /** The districts a civilization has, in the order they may be built. */
 export const DISTRICT_INDEXES = Object.freeze([1, 2, 3, 4, 5]);
 /** Largest bounding box (blocks per side) of one construction window; the held tile is 128. */
-/** Largest span (blocks) of one construction window; the held tile must also fit 8 blocks of apron on every side. */
-const windowMaxSpan = () => Math.max(4, Math.min(100, tileSizeNow() - 28));
+/** Normal windows retain the compact apron; an actual tree requests its wider proof area separately. */
+const windowMaxSpan = (/** @type {number} */ side) => Math.max(1, Math.min(95, side - 33));
+const constructionChunks = createChunkLoader(undefined, nowTick, { prefix: "civ-build-load-", padding: 0, maxUnits: 16, maxChunks: 16, maxGroups: 1 });
 const WORLD_MIN_Y = -64;
 const WORLD_MAX_Y = 319;
 
@@ -118,6 +125,13 @@ export function sitePrefixFor(index) {
 /** @param {number} index @returns {string} the job-prefix slot holding ONE district's queue (district 1 keeps the plain `civ:jobs`) */
 export function jobPrefixFor(index) {
     return index === 1 ? jobs.JOB_PREFIX : `${jobs.JOB_PREFIX}:d${String(index)}`;
+}
+
+/** Maintenance stays in the transient jobs family, separate from every original build queue.
+ * @param {number} index */
+export function cityRepairPrefixFor(index) {
+    assertIndex(index);
+    return `${jobs.JOB_PREFIX}:repair:d${index}`;
 }
 
 /** @param {number} index @returns {string} the kingdom district id this index is recorded under */
@@ -147,8 +161,12 @@ function jobStoreFor(index, options = {}) {
 
 /** Largest tree-like component the clearer will examine (a giant 2x2 spruce is ~800 cells; a few merged crowns fit). */
 const CIV_TREE_CAP = 4000;
-/** Horizontal Chebyshev reach around the blocked cell: covers a giant spruce's crown (radius <= 8). */
-const CIV_TREE_REACH_H = 8;
+/** Cached neighbor checks still cost CPU even when no new world block is read. */
+const CIV_TREE_VISITS_PER_SLICE = 32;
+/** A canopy may reach its own logs through leaves, without joining every tree in a forest. */
+const CIV_TREE_LEAF_HOPS = 6;
+/** Bounded room for branching trees and merged crowns; never silently sever a log at this limit. */
+const CIV_TREE_REACH_H = 16;
 /** Vertical reach above/below the seed: a giant spruce stands ~30 blocks tall, so the old 8 left its crown behind. */
 const CIV_TREE_REACH_V = 40;
 
@@ -255,7 +273,7 @@ const inRect = (rect, x, z) => x >= rect.x0 && x <= rect.x1 && z >= rect.z0 && z
 /**
  * A footprint nothing may be written in: a rectangle, optionally narrowed to the exact polygon of the land it
  * claims (a district outline) and grown by `grow` blocks so the shared wall band stays a single owner's work.
- * @typedef {{ x0: number, z0: number, x1: number, z1: number, polygon?: [number, number][], grow?: number, label?: string }} ProtectedArea
+ * @typedef {{ x0: number, z0: number, x1: number, z1: number, polygon?: [number, number][], grow?: number, label?: string, districtIndex?:number }} ProtectedArea
  */
 
 /** @param {[number, number][]} poly @param {number} x @param {number} z */
@@ -338,6 +356,30 @@ export function inProtectedArea(areas, x, z) {
     return false;
 }
 
+/**
+ * Reuse the unchanged protection decision for each integer X/Z column in one construction
+ * session. Tree neighbors at different heights otherwise repeat polygon/segment work.
+ * The areas remain fixed for the session; nothing here caches live blocks or tree verdicts.
+ * A byte per column covers the region and tree apron, with the existing field-memory ceiling.
+ * Outside/non-grid queries and oversized bounds retain the original uncached predicate.
+ * @param {readonly ProtectedArea[]} areas @param {Rect} region
+ * @returns {(x:number,z:number)=>boolean}
+ */
+export function createProtectedColumnLookup(areas, region) {
+    const x0=region.x0-17,z0=region.z0-17,x1=region.x1+17,z1=region.z1+17;
+    const width=x1-x0+1,height=z1-z0+1;
+    if (![x0,z0,x1,z1,width,height].every(Number.isSafeInteger) || width<=0 || height<=0 || width*height>CIV_LIMITS.maxFieldBytes) {
+        return (x,z)=>inProtectedArea(areas,x,z);
+    }
+    const cells=new Uint8Array(width*height);
+    return (x,z)=>{
+        if(!Number.isInteger(x)||!Number.isInteger(z)||x<x0||x>x1||z<z0||z>z1) return inProtectedArea(areas,x,z);
+        const index=(z-z0)*width+x-x0;
+        if(cells[index]===0)cells[index]=inProtectedArea(areas,x,z)?2:1;
+        return cells[index]===2;
+    };
+}
+
 // ---------------------------------------------------------------------------------------------
 // Planning (read-only)
 
@@ -345,6 +387,7 @@ export function inProtectedArea(areas, x, z) {
  * @typedef {{
  *   token: Job, dimension: Dimension, anchor: { x: number, z: number }, radius: number, seed: number,
  *   exclusions: ProtectedArea[], plannerFootprints?: ProtectedArea[],
+ *   previousBuilds?: { index: number, checksum?: string, startedStep?: number }[],
  *   say: (lines: string[]) => void, maxPlanBytes?: number,
  *   progress?: import("./civProgress.js").Progress,
  *   district?: number, siteMode?: "search" | "here", planSeed?: number,
@@ -469,10 +512,58 @@ async function planOnStoredMaster(ctx, plan, index, storedSeed) {
         return finishFail(out, read.stage, read.problems);
     }
     out.region = read.region;
-    out.groundField = read.fine.field;
+    const reused = await runJobAsync(ctx.token, reusePriorGroundSteps(ctx, plan, read.fine.field, ops), ctx.progress);
+    if (reused === undefined || ctx.token.cancelled) return finishFail(out, "cancelled", ["cancelled"]);
+    if (!reused.ok) return finishFail(out, "saved-ground", reused.reasons);
+    out.groundField = reused.field;
     out.stats.fine = read.fine.stats;
     out.stats.survey = { tilesScanned: read.fine.stats.attempted, tilesTotal: read.fine.stats.tilesTotal, chunksScanned: read.fine.stats.chunksScanned, columns: read.columns, mode: "stored-plan" };
     return planDistrictTail(ctx, plan, index, planSeed, out, false);
+}
+
+/**
+ * Earlier builds changed their surveyed columns. Their checksum-verified frozen
+ * ground, in build order, remains the source of truth in overlaps: reading the
+ * finished roof again would stack another gate/wall above it. Live block guards
+ * still protect anything the player changed after that survey.
+ * @param {PlanContext} ctx @param {any} plan @param {any} live
+ * @param {import("../civ/regions.js").Ops} ops
+ * @returns {Generator<void, {ok:true, field:any} | {ok:false, reasons:string[]}, void>}
+ */
+function* reusePriorGroundSteps(ctx, plan, live, ops) {
+    const prior = [...(ctx.previousBuilds ?? [])].filter((entry) => entry.index !== (ctx.district ?? 1))
+        .sort((a, b) => (a.startedStep ?? 0) - (b.startedStep ?? 0) || a.index - b.index);
+    /** @type {any[]} */
+    const layers = [];
+    for (const entry of prior) {
+        setPhase(ctx.progress,4,`verifying district ${entry.index} original ground`);
+        ctx.say([`Verifying district ${entry.index}'s saved original ground before reusing overlapping terrain (read-only)...`]);
+        const saved = yield* loadSavedRunSteps({ checksum: entry.checksum }, ops, entry.index);
+        if (!saved.ok) return { ok: false, reasons: [`Cannot reuse district ${entry.index}'s original ground: ${saved.reasons.join("; ")}`] };
+        if (saved.queue.state !== "complete" || saved.payload.anchor?.x !== plan.anchor.x || saved.payload.anchor?.z !== plan.anchor.z) {
+            return { ok: false, reasons: [`District ${entry.index}'s saved ground does not belong to this completed city.`] };
+        }
+        try {
+            const field = yield* importSiteGroundSteps(saved.payload.ground, ops);
+            const expected = siteGroundRegion(plan, entry.index);
+            if ((/** @type {const} */ (["x0", "z0", "x1", "z1"])).some((key) => expected[key] !== field.bounds[key])) {
+                return { ok: false, reasons: [`District ${entry.index}'s saved ground covers the wrong region.`] };
+            }
+            layers.push(field);
+        } catch (error) {
+            return { ok: false, reasons: [`District ${entry.index}'s saved ground is unreadable: ${String(error)}`] };
+        }
+    }
+    if (layers.length > 0) ctx.say([`Reusing original ground from ${layers.length} completed district(s) where the surveys overlap; existing roofs and walls are not new terrain.`]);
+    return { ok: true, field: { ...live, at(/** @type {number} */ x, /** @type {number} */ z) {
+        for (const field of layers) {
+            const b = field.bounds;
+            if (x < b.x0 || x > b.x1 || z < b.z0 || z > b.z1) continue;
+            const cell = field.at(x, z);
+            if (cell.k !== "unloaded") return cell;
+        }
+        return live.at(x, z);
+    } } };
 }
 
 /** @param {PlanOutcome} out @param {string} stage @param {string[]} reasons */
@@ -541,6 +632,13 @@ async function readRegion(ctx, plan, index, numbered = false) {
     if (fine.stats.unloaded > 0) {
         return { ok: false, stage: "unloaded", problems: [`${String(fine.stats.unloaded)} column(s) of ${districtLabel(index, plan)} could not be read (chunks not loaded); nothing was guessed and nothing was changed`] };
     }
+    // A tile whose hold never came up is skipped without being read, so its columns stay unknown and `unloaded`
+    // (which counts attempted-but-unreadable columns) stays 0. Left unchecked, such a hole passes this gate and the
+    // site plan then fails much later on "unloaded or invalid ground" - or plans around the hole. Refuse here.
+    const stalledTiles = Array.isArray(fine.stats.stalledTiles) ? fine.stats.stalledTiles.length : 0;
+    if (stalledTiles > 0) {
+        return { ok: false, stage: "unloaded", problems: [`${String(stalledTiles)} tile(s) of ${districtLabel(index, plan)} never finished loading, so part of its ground was never read; nothing was guessed and nothing was changed. Keep the area loaded (stand at the district centre) and run the command again`] };
+    }
     return { ok: true, fine, region, columns };
 }
 
@@ -573,7 +671,7 @@ async function planDistrictTail(ctx, plan, index, planSeed, out, numbered) {
     setPhase(ctx.progress, 5, "district plan");
     ctx.say(numbered ? ["[5/6] Planning walls, gates, roads and buildings..."] : [`Planning ${label}'s walls, gates, roads and buildings...`]);
     const clipped = clipField(out.groundField, region);
-    const done = await runJobAsync(ctx.token, planSiteSteps(plan, index, clipped, region, out.groundField, { seed: planSeed, excludeFootprints: ctx.plannerFootprints ?? ctx.exclusions, ops, policy: ctx.policy }), ctx.progress);
+    const done = await runJobAsync(ctx.token, planSiteSteps(plan, index, clipped, region, out.groundField, { seed: planSeed, excludeFootprints: ctx.plannerFootprints ?? ctx.exclusions, ops, policy: ctx.policy, lighting: "natural", gateHeight: "surface", gatePassage: "clear", gateRoof: "guarded", roofSupport: "joists", interiorLights: "anchored-v1", lotTerrain: "survey-balanced", farmLighting: "frontage-v1", waterPiles: "spaced-v1" }), ctx.progress);
     if (ctx.token.cancelled || done === undefined) {
         out.cancelled = true;
         return fail("cancelled", ["cancelled"]);
@@ -765,6 +863,7 @@ async function planNewMaster(ctx, index) {
     out.stats.ranking = { evaluated: found.evaluated, reads: found.reads, mode: explicit ? "here" : "search" };
     if (found.site === null) {
         const reasons = explicit ? [`where you stand is not suitable: ${found.reasons.slice(0, 6).join("; ")}`] : found.reasons.slice(0, 8);
+        for (const sample of coarse.stats.unreadSamples) reasons.push(`Unread terrain sample ${sample}`);
         if (coverage !== undefined) {
             reasons.push(coverage);
         }
@@ -875,14 +974,14 @@ function* planMasterSteps(field, options) {
  * A district the composer has no layout for is refused here and the refusal reason is what the caller reports.
  *
  * @param {any} plan @param {number} index @param {any} clipped @param {Rect} region @param {any} rawField
- * @param {{ seed: number, excludeFootprints: ProtectedArea[], ops: import("../civ/regions.js").Ops, policy?: any }} options
+ * @param {{ seed: number, excludeFootprints: ProtectedArea[], ops: import("../civ/regions.js").Ops, policy?: any, lighting?: string, gateHeight?: string, gatePassage?: string, gateRoof?: string, roofSupport?: string, interiorLights?: string, lotTerrain?: string, farmLighting?: string, waterPiles?: string }} options
  * @returns {Generator<void, { ok: true, record: any, ground: any, notes: string[] } | { ok: false, stage: string, problems: string[], retry?: boolean }, void>}
  */
 function* planSiteSteps(plan, index, clipped, region, rawField, options) {
     if (!planHasDistrict(plan, index)) {
         return { ok: false, stage: "site-plan", problems: [`the stored master plan has no district ${String(index)}`], retry: false };
     }
-    const site = yield* seams.planSite(plan, index, clipped, { seed: options.seed, excludeFootprints: options.excludeFootprints, ops: options.ops, policy: options.policy });
+    const site = yield* seams.planSite(plan, index, clipped, { seed: options.seed, excludeFootprints: options.excludeFootprints, ops: options.ops, policy: options.policy, lighting: options.lighting, gateHeight: options.gateHeight, gatePassage: options.gatePassage, gateRoof: options.gateRoof, roofSupport: options.roofSupport, interiorLights: options.interiorLights, lotTerrain: options.lotTerrain, farmLighting: options.farmLighting, waterPiles: options.waterPiles });
     if (!site.ok || site.record === null || site.problems.length > 0) {
         return { ok: false, stage: "site-plan", problems: [`district ${String(index)} has no construction plan yet: ${site.problems.slice(0, 8).join(" | ")}`], retry: true };
     }
@@ -1268,6 +1367,7 @@ export function storageFootprint() {
         ...DISTRICT_INDEXES.map((index) => ({ prefix: sitePrefixFor(index), limit: CIV_LIMITS.maxPlanBytes, kind: "plan" })),
         { prefix: jobs.JOB_PREFIX, limit: CIV_LIMITS.maxJobBytes, kind: "jobs" },
         ...DISTRICT_INDEXES.map((index) => ({ prefix: jobPrefixFor(index), limit: CIV_LIMITS.maxJobBytes, kind: "jobs" })),
+        ...DISTRICT_INDEXES.map((index) => ({ prefix: cityRepairPrefixFor(index), limit: CIV_LIMITS.maxJobBytes, kind: "jobs" })),
     ];
     /** @type {Record<string, { keys: number, bytes: number, longest: number, limit: number, kind: string }>} */
     const found = {};
@@ -1332,9 +1432,12 @@ export function storageFootprint() {
  *   onStageComplete?: (stage: string) => void,
  *   onEnd: (result: EndResult) => void,
  *   saveEveryOps?: number, progress?: import("./civProgress.js").Progress,
+ *   completedCityRepair?: boolean,
+ *   sharedTreeProtection?: import("../civ/sharedtree.js").SharedTreeProtection,
+ *   saveQueue?: (queue:JobQueue) => {ok:boolean, reason?:string, status?:string},
  * }} ConstructionOptions
  * @typedef {{ status: "complete" | "paused" | "failed", reason?: string, counts: Counts, spot?: { x: number, y: number, z: number }, opsPlanned: number, opsDone: number, slices: SliceStats }} EndResult
- * @typedef {{ slices: number, maxOps: number, maxWrites: number, maxReads: number }} SliceStats
+ * @typedef {{ slices: number, maxOps: number, maxWrites: number, maxReads: number, maxTreeVisits: number }} SliceStats
  */
 
 /** @returns {Counts} */
@@ -1345,10 +1448,11 @@ function newCounts() {
 /**
  * @typedef {{
  *   opts: ConstructionOptions, token: Job, dimension: Dimension, queue: JobQueue, record: any, plan: any,
- *   counts: Counts, slice: SliceStats, meter: { reads: number, writes: number, ops: number },
- *   heldRect: Rect | undefined, perms: Map<string, any>, opCache: Map<string, CanonicalOp[]>, own: Map<number, number | { last: number, all: number[], seq: number[] }>, ids: string[], idIndex: Map<string, number>,
- *   treeRefused: Set<string>, cur: { element: number, cursor: number } | undefined, sinceSave: number, lastPct: number, lastStage: string,
- *   stagesDone: Set<string>, lastHoldBox: string | undefined, waiting: number, status: string, done: Promise<EndResult> | undefined, planned: number,
+ *   inspectionBounds?:ReturnType<typeof treeInspectionBounds>, inspectionCurrent?:()=>boolean,
+ *   counts: Counts, slice: SliceStats, meter: { reads: number, writes: number, ops: number, treeVisits: number },
+ *   heldRect: Rect | undefined, holdSide: number, fragmented: boolean, chunkLease: ReturnType<typeof constructionChunks.acquire> | undefined, holdState?: {status:string,held:boolean}, fallbackReported?:boolean, perms: Map<string, any>, opCache: Map<string, CanonicalOp[]>, own: Map<number, number | { last: number, all: number[], seq: number[] }>, ownStage: Map<number, number>, ids: string[], idIndex: Map<string, number>,
+ *   treeRefused: Map<string,string>, treeRootRefused:ReturnType<typeof createTreeRootRefusalCache>, sharedTreeWallTargets: Map<number,number>, finalTreeBoundaryWalls:Set<number>, protectedAt: (x:number,z:number)=>boolean, treeHold?: Rect, lastSkipReason?: string, lastUnread?: string, firstUnread?:string, cur: { element: number, cursor: number } | undefined, sinceSave: number, lastPct: number, lastStage: string,
+ *   stagesDone: Set<string>, lastHoldBox: string | undefined, waiting: number | undefined, status: string, done: Promise<EndResult> | undefined, planned: number,
  * }} Session
  */
 
@@ -1423,20 +1527,36 @@ function elementOps(s, stage, index) {
  * @param {Session} s
  */
 function* indexOwnBlocks(s) {
+    const inspection=s.inspectionBounds;
+    let inspectionWork=0;
     let sinceYield = 0;
     for (const stageInfo of s.queue.stages) {
         const list = /** @type {any[]} */ (s.record[stageInfo.name] ?? []);
+        const stageOrdinal = SITE_STAGES.indexOf(stageInfo.name);
         for (let index = 0; index < list.length; index += 1) {
             if (s.token.cancelled) {
                 return;
             }
-            const ops = elementOps(s, stageInfo.name, index);
-            for (const op of ops) {
+            // Only the private read-only inspector bypasses the four-element normalized-op cache.
+            const ops = inspection?siteOpsFor(s.record,stageInfo.name,index):elementOps(s, stageInfo.name, index);
+            for (const raw of ops) {
+                const op=inspection?normalizeOp(raw):raw;
+                if(inspection&&++inspectionWork>=CIV_LIMITS.maxBlocksPerSlice){inspectionWork=0;yield;}
+                if(inspection&&!withinTreeInspection(inspection,op))continue;
                 const key = cellKey(s, op.x, op.y, op.z);
                 if (key < 0) {
                     continue;
                 }
+                if(inspection&&!s.own.has(key)&&s.own.size>=TREE_INSPECTION_SOURCE_LIMITS.entries)throw Error("Tree inspection own projection exceeds cap; nothing truncated");
+                s.ownStage.set(key, stageOrdinal);
+                if(s.opts.completedCityRepair&&s.opts.sharedTreeProtection?.boundaryPlans) {
+                    if(stageInfo.name==="walls"&&op.kind==="wall"&&!isAir(op.id)&&!isTreePart(op.id))s.finalTreeBoundaryWalls.add(key);
+                    else s.finalTreeBoundaryWalls.delete(key);
+                }
                 const id = idNumber(s, op.id);
+                if (s.opts.completedCityRepair && s.opts.sharedTreeProtection && stageInfo.name === "walls"
+                    && !isAir(op.id) && !isTreePart(op.id) && s.protectedAt(op.x,op.z)
+                    && (isSharedWallFill(s.opts.protectedRects,op)||sharedBoundaryTreeWall(s,op))) s.sharedTreeWallTargets.set(key,id);
                 const have = s.own.get(key);
                 if (have === undefined) {
                     s.own.set(key, id);
@@ -1454,7 +1574,7 @@ function* indexOwnBlocks(s) {
             }
             s.planned += ops.length;
             sinceYield += ops.length;
-            if (sinceYield >= CIV_LIMITS.maxBlocksPerSlice * 5) {
+            if (!inspection && sinceYield >= CIV_LIMITS.maxBlocksPerSlice * 5) {
                 sinceYield = 0;
                 yield;
             }
@@ -1487,9 +1607,11 @@ function endSlice(s) {
     s.slice.maxOps = Math.max(s.slice.maxOps, s.meter.ops);
     s.slice.maxWrites = Math.max(s.slice.maxWrites, s.meter.writes);
     s.slice.maxReads = Math.max(s.slice.maxReads, s.meter.reads);
+    s.slice.maxTreeVisits = Math.max(s.slice.maxTreeVisits, s.meter.treeVisits);
     s.meter.ops = 0;
     s.meter.reads = 0;
     s.meter.writes = 0;
+    s.meter.treeVisits = 0;
 }
 
 /**
@@ -1538,10 +1660,12 @@ function permutationFor(s, op) {
  * @returns {{ id: string, persistent?: boolean } | undefined}
  */
 function readLive(s, x, y, z) {
+    if(s.inspectionBounds||s.inspectionCurrent)return readInspectionLive(s,x,y,z);
     s.meter.reads += 1;
     try {
         const block = s.dimension.getBlock({ x, y, z });
         if (block === undefined || block.isValid === false) {
+            s.lastUnread = `tree read at (${x}, ${y}, ${z}): ${block === undefined ? "no block returned" : "invalid block"}`;
             return undefined;
         }
         const id = block.typeId;
@@ -1550,9 +1674,52 @@ function readLive(s, x, y, z) {
             return { id, persistent: state !== false };
         }
         return { id };
-    } catch (_error) {
+    } catch (error) {
+        s.lastUnread = `tree read at (${x}, ${y}, ${z}): ${String(error)}`;
         return undefined;
     }
+}
+
+/** Inspector-only wrapper; construction keeps its exact original native read path.
+ * @param {Session} s @param {number} x @param {number} y @param {number} z
+ * @returns {{id:string,persistent?:boolean}|undefined} */
+function readInspectionLive(s, x, y, z) {
+    s.meter.reads += 1;
+    const current=()=>{if(s.inspectionCurrent&&s.inspectionCurrent()!==true)throw Error("Tree inspection source/player/job changed during native read");};
+    if(s.inspectionBounds&&!withinTreeInspection(s.inspectionBounds,{x,y,z}))throw Error("Tree inspection read escaped its verified source projection");
+    current();
+    try {
+        const block = s.dimension.getBlock({ x, y, z });current();
+        if(block===undefined){s.lastUnread=`tree read at (${x}, ${y}, ${z}): no block returned`;return undefined;}
+        const valid=block.isValid;current();
+        if(valid===false){s.lastUnread=`tree read at (${x}, ${y}, ${z}): invalid block`;return undefined;}
+        const id = block.typeId;current();
+        if (isLeaves(id)) {
+            const permutation=block.permutation;current();
+            let state;
+            if(permutation!==undefined&&permutation!==null){const get=permutation.getState;current();state=get.call(permutation,"persistent_bit");current();}
+            return { id, persistent: state !== false };
+        }
+        return { id };
+    } catch (error) {
+        current();
+        s.lastUnread = `tree read at (${x}, ${y}, ${z}): ${String(error)}`;
+        return undefined;
+    }
+}
+
+/** Diagnostics only: no extra block reads, holds or authorization.
+ * @param {Session} s */
+function unreadHoldDetail(s) {
+    const rect=s.heldRect;
+    const bounds=rect?`${rect.x0},${rect.z0} to ${rect.x1},${rect.z1}`:"none";
+    const hold=s.holdState?`${s.holdState.status}, held=${s.holdState.held}`:"not reported";
+    let capacity="";
+    try {
+        const manager=world.tickingAreaManager,used=manager?.chunkCount,max=manager?.maxChunkCount;
+        if(Number.isFinite(used)&&Number.isFinite(max))capacity=`; manager chunks ${used}/${max}`;
+    } catch(_error) { /* unavailable diagnostics are omitted, never invented */ }
+    return `held X/Z ${bounds}; last hold ${hold}${capacity}`;
 }
 
 /**
@@ -1570,19 +1737,143 @@ export function treeNeighbourBenign(id, context = {}) {
     return context.insideFinishedDistrict === true || isBenign(id) || (context.plannedNonAir ?? []).includes(id);
 }
 
+/** Exact final blocks from a stage already reached belong to this saved plan.
+ * @param {Session} s @param {number} x @param {number} y @param {number} z @param {string} id */
+function isBuiltPlanCell(s, x, y, z, id) {
+    if (isAir(id)) return false;
+    const at = cellKey(s, x, y, z);
+    const placedStage = s.ownStage.get(at), currentStage = s.opts.completedCityRepair ? SITE_STAGES.length - 1 : SITE_STAGES.indexOf(s.lastStage);
+    return placedStage !== undefined && currentStage >= 0 && placedStage <= currentStage
+        && plannedAt(s, x, y, z).final === id;
+}
+
+/** A shared outline is neither a license to enter an interior nor an ID-only ownership guess.
+ * Every polygon claiming this exact boundary must have its own verified final wall match.
+ * This helper is used only by completed-city tree maintenance, never normal construction.
+ * @param {Session} s @param {{x:number,y:number,z:number,id:string,kind:string}} op */
+function sharedBoundaryTreeWall(s,op) {
+    const verified=s.opts.sharedTreeProtection?.boundaryPlans;
+    if(!s.opts.completedCityRepair||!verified||s.record.districtIndex!==s.opts.district||op.kind!=="wall"||isAir(op.id)||isTreePart(op.id)
+        ||!onExactOutline(s.record.outline,op.x,op.z))return false;
+    let matched=false;
+    for(const area of s.opts.protectedRects) {
+        // Preserve the existing global prototype/unknown-rectangle veto.
+        if(!area.polygon)return false;
+        if(!inRect(area,op.x,op.z))continue;
+        const boundary=onExactOutline(area.polygon,op.x,op.z);
+        if(!boundary&&!insidePolygon(area.polygon,op.x,op.z))continue;
+        if(!boundary||!Number.isSafeInteger(area.districtIndex)||area.districtIndex===s.opts.district)return false;
+        const neighbors=verified.filter(plan=>plan.districtIndex===area.districtIndex);
+        if(neighbors.length!==1)return false;
+        const neighbor=neighbors[0];
+        if(JSON.stringify(neighbor.outline)!==JSON.stringify(area.polygon)
+            ||neighbor.finalWalls.get(`${op.x},${op.y},${op.z}`)!==op.id)return false;
+        matched=true;
+    }
+    return matched;
+}
+
+/** Only verified completed-city masonry targets can enter a neighbor's outer margin.
+ * Neighbor interiors/prototypes remain excluded by isSharedWallFill during indexing.
+ * @param {Session} s @param {{x:number,y:number,z:number}} cell */
+function treeCellProtected(s,cell) {
+    if (!s.protectedAt(cell.x,cell.z)) return false;
+    if (!s.opts.completedCityRepair || !s.opts.sharedTreeProtection) return true;
+    const target=s.sharedTreeWallTargets.get(cellKey(s,cell.x,cell.y,cell.z));
+    const id=target===undefined ? undefined : s.ids[target];
+    if(id===undefined||id!==plannedAt(s,cell.x,cell.y,cell.z).final)return true;
+    const op={...cell,id,kind:"wall"};
+    if(isSharedWallFill(s.opts.protectedRects,op))return false;
+    return !s.finalTreeBoundaryWalls.has(cellKey(s,cell.x,cell.y,cell.z))||!sharedBoundaryTreeWall(s,op);
+}
+
+/** @param {Session} s @param {{x:number,y:number,z:number,id:string}[]} cells */
+function usesSharedTreeMargin(s,cells) {
+    return cells.some(cell=>isLog(cell.id)&&s.protectedAt(cell.x,cell.z)&&!treeCellProtected(s,cell));
+}
+
+/** Margin clearance gets no blanket 'protected neighbor is benign' exception.
+ * Verified neighboring wood/planting cells veto the entire component, even if
+ * their historical placement was later overwritten. Other exact neighbor finals
+ * may justify contact only; this function never makes them erasable.
+ * @param {Session} s @param {{x:number,y:number,z:number,id:string}[]} cells
+ * @returns {Generator<void,string|undefined,void>} */
+function* validateSharedTreeMargin(s,cells) {
+    const protection=s.opts.sharedTreeProtection;
+    if (!protection) return "shared-margin tree clearance has no verified neighboring plans";
+    for (const cell of cells) {
+        if (s.meter.treeVisits>=CIV_TREE_VISITS_PER_SLICE) { endSlice(s);yield; }
+        s.meter.treeVisits++;
+        const key=`${cell.x},${cell.y},${cell.z}`;
+        if (protection.plannedTrees.has(key)) return `tree overlaps a verified neighboring wood or planting target at ${key}`;
+        yield* budgetFor(s,28,0);
+        const live=readLive(s,cell.x,cell.y,cell.z);
+        if (!live) return "a chunk next to the tree is not loaded";
+        if (isAir(live.id)) continue;
+        if (live.id!==cell.id || live.persistent===true) return `shared-margin tree changed at ${key}; the component was preserved`;
+        for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++)for(let dz=-1;dz<=1;dz++) {
+            const x=cell.x+dx,y=cell.y+dy,z=cell.z+dz;
+            const near=readLive(s,x,y,z);
+            if (!near) return "a chunk next to the tree is not loaded";
+            const neighborKey=`${x},${y},${z}`;
+            if (near.persistent===true&&!isBuiltPlanCell(s,x,y,z,near.id)) return `persistent leaves touch shared-margin tree at ${neighborKey}`;
+            if (!isBenign(near.id) && !plannedAt(s,x,y,z).nonAir.includes(near.id)
+                && !(protection.finalBlocks.get(neighborKey)??[]).includes(near.id)) {
+                return `${near.id} touches a shared-margin tree at ${neighborKey} without a verified planned match`;
+            }
+        }
+    }
+    return undefined;
+}
+
 /**
  * Prove that the canopy/trunk component containing (seed) is a natural tree (same rules as
  * structures/terrain.js classifyTrees) in budgeted steps, then clear the cells inside the claimed region.
  *
  * @param {Session} s @param {{ x: number, y: number, z: number }} seed
- * @returns {Generator<void, { ok: boolean, reason?: string }, void>}
+ * @param {boolean} [inspectOnly]
+ * @returns {Generator<void, { ok: boolean, reason?: string, cells?: number, logs?: number, leaves?: number }, void>}
  */
-function* clearTree(s, seed) {
+function* clearTree(s, seed, inspectOnly = false) {
+    if (inspectOnly && s.queue.treeClearance !== undefined) throw new Error("Tree inspection requires an independent queue.");
+    if (s.queue.treeClearance !== undefined) {
+        const proof = s.queue.treeClearance;
+        const cells = decodeTreeClearance(proof);
+        if (!cells || s.cur?.element !== proof.element || s.cur?.cursor !== proof.cursor) throw new Error("Pending tree clearance does not match this saved operation; nothing changed.");
+        const wide={x0:s.opts.region.x0-4,z0:s.opts.region.z0-4,x1:s.opts.region.x1+4,z1:s.opts.region.z1+4};
+        const boundary=cells.find(cell=>isLog(cell.id)&&(!inRect(wide,cell.x,cell.z)||treeCellProtected(s,cell)));
+        if (boundary) throw new Error(`Pending tree clearance crosses protected clearance at ${boundary.x},${boundary.y},${boundary.z}; the remaining component was preserved.`);
+        if (usesSharedTreeMargin(s,cells)) {
+            const reason=yield* validateSharedTreeMargin(s,cells);
+            if (reason?.includes("not loaded")) return {ok:false,reason};
+            if (reason) throw new Error(`Pending tree clearance refused: ${reason}`);
+        }
+        // A restart may have removed the last leaf or the trunk base. Reuse only the exact cells
+        // already proven natural, and recheck their current blocks and neighbors before continuing.
+        for (const cell of cells) {
+            yield* budgetFor(s, 28, 0);
+            const live = readLive(s, cell.x, cell.y, cell.z);
+            if (!live) return { ok: false, reason: "a chunk next to the tree is not loaded" };
+            if (isAir(live.id)) continue;
+            if (live.id !== cell.id || live.persistent === true) throw new Error(`Pending tree clearance changed at ${cell.x},${cell.y},${cell.z}; the changed block was preserved.`);
+            for (let dx=-1; dx<=1; dx++) for (let dy=-1; dy<=1; dy++) for (let dz=-1; dz<=1; dz++) {
+                const x=cell.x+dx, y=cell.y+dy, z=cell.z+dz;
+                const near = readLive(s,x,y,z);
+                if (!near) return { ok:false, reason:"a chunk next to the tree is not loaded" };
+                if ((near.persistent === true && !isBuiltPlanCell(s,x,y,z,near.id)) || !treeNeighbourBenign(near.id, { insideFinishedDistrict:s.protectedAt(x,z), plannedNonAir:plannedAt(s,x,y,z).nonAir })) {
+                    throw new Error(`Pending tree clearance is now beside ${near.id}; the tree and neighboring blocks were preserved.`);
+                }
+            }
+        }
+        return yield* eraseProvenTree(s,cells);
+    }
     const cap = CIV_TREE_CAP;
     const key = (/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ z) => `${String(x)},${String(y)},${String(z)}`;
     if (s.treeRefused.has(key(seed.x, seed.y, seed.z))) {
-        return { ok: false, reason: "tree already judged not natural" };
+        return { ok: false, reason: s.treeRefused.get(key(seed.x, seed.y, seed.z)) };
     }
+    const cachedRoot=s.treeRootRefused.get(key(seed.x,seed.y,seed.z));
+    if(cachedRoot!==undefined)return {ok:false,reason:cachedRoot};
     /** @type {Map<string, { id: string, persistent?: boolean } | undefined>} */
     const seen = new Map();
     const read = function* (/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ z) {
@@ -1593,22 +1884,46 @@ function* clearTree(s, seed) {
         }
         return seen.get(k);
     };
-    /** @type {Set<string>} */
-    const visited = new Set([key(seed.x, seed.y, seed.z)]);
+    // Follow one connected LOG structure. Leaves can link unrelated rooted trees;
+    // following those links into another trunk made ordinary jungle gates refuse.
+    // Revisit a leaf only when a nearer selected log gives it a shorter canopy path.
+    /** @type {Map<string,number>} */
+    const visited = new Map([[key(seed.x, seed.y, seed.z),0]]);
+    const collected = new Set();
+    /** @type {Map<string,Set<string>>} */
+    const leafLogContacts = new Map();
     /** @type {{ x: number, y: number, z: number, id: string }[]} */
     const component = [];
-    const queue = [seed];
+    const queue = [{...seed,hops:0}];
+    let head=0, selectedLog=false;
     let reason;
-    while (queue.length > 0 && reason === undefined) {
-        const cell = /** @type {{ x: number, y: number, z: number }} */ (queue.pop());
+    let cacheRefusal = true;
+    /** @type {string|undefined} */let rootDependency;
+    while (head < queue.length && reason === undefined) {
+        if (s.meter.treeVisits >= CIV_TREE_VISITS_PER_SLICE) {
+            endSlice(s);
+            yield;
+        }
+        s.meter.treeVisits++;
+        const cell = /** @type {{ x: number, y: number, z: number, hops:number }} */ (queue[head++]);
+        const currentKey=key(cell.x,cell.y,cell.z);
+        if(visited.get(currentKey)!==cell.hops)continue;
         const here = yield* read(cell.x, cell.y, cell.z);
         if (here === undefined) {
             reason = "a chunk next to the tree is not loaded";
             break;
         }
-        component.push({ ...cell, id: here.id });
+        if (isBuiltPlanCell(s, cell.x, cell.y, cell.z, here.id)) {
+            reason = "the selected tree cell belongs to the saved plan and was preserved";
+            break;
+        }
+        if(!collected.has(currentKey)) {
+            component.push({ x:cell.x,y:cell.y,z:cell.z,id:here.id });
+            collected.add(currentKey);
+        }
+        if(isLog(here.id))selectedLog=true;
         if (isLeaves(here.id) && here.persistent === true) {
-            reason = `${here.id} is player-placed (persistent leaves)`;
+            reason = `${here.id} is player-placed (persistent leaves) at ${cell.x},${cell.y},${cell.z}`;
             break;
         }
         if (component.length > cap) {
@@ -1629,90 +1944,199 @@ function* clearTree(s, seed) {
                         reason = "a chunk next to the tree is not loaded";
                         break;
                     }
+                    // City garden leaves are deliberately persistent. Keep exact already-built
+                    // plantings and frames out of the natural proof instead of treating them as
+                    // foreign player work or traversing into their decorative tree.
+                    if (isTreePart(neighbour.id) && isBuiltPlanCell(s,nx,ny,nz,neighbour.id)) continue;
+                    if (neighbour.persistent === true) {
+                        reason = `${neighbour.id} is player-placed (persistent leaves) at ${nx},${ny},${nz}`;
+                        break;
+                    }
                     const benign = treeNeighbourBenign(neighbour.id, {
-                        insideFinishedDistrict: inProtectedArea(s.opts.protectedRects, nx, nz),
+                        insideFinishedDistrict: s.protectedAt(nx, nz),
                         plannedNonAir: plannedAt(s, nx, ny, nz).nonAir,
                     });
                     if (!benign) {
                         reason = `${neighbour.id} touches a tree - may be a player build`;
                         break;
                     }
-                    if (isTreePart(neighbour.id) && !visited.has(key(nx, ny, nz)) && Math.abs(nx - seed.x) <= CIV_TREE_REACH_H && Math.abs(ny - seed.y) <= CIV_TREE_REACH_V && Math.abs(nz - seed.z) <= CIV_TREE_REACH_H) {
-                        visited.add(key(nx, ny, nz));
-                        queue.push({ x: nx, y: ny, z: nz });
+                    if (isTreePart(neighbour.id)) {
+                        const hereLog=isLog(here.id), nearLog=isLog(neighbour.id);
+                        if(isLeaves(here.id)&&nearLog) {
+                            const contacts=leafLogContacts.get(currentKey)??new Set();
+                            contacts.add(key(nx,ny,nz));leafLogContacts.set(currentKey,contacts);
+                        }
+                        if(nearLog&&!hereLog&&selectedLog)continue;
+                        const hops=nearLog?0:hereLog?1:neighbour.id==='minecraft:vine'?cell.hops:cell.hops+1;
+                        if(!nearLog&&hops>CIV_TREE_LEAF_HOPS)continue;
+                        const nextKey=key(nx,ny,nz), previous=visited.get(nextKey);
+                        if(previous!==undefined&&previous<=hops)continue;
+                        const within = Math.abs(nx - seed.x) <= CIV_TREE_REACH_H && Math.abs(ny - seed.y) <= CIV_TREE_REACH_V && Math.abs(nz - seed.z) <= CIV_TREE_REACH_H;
+                        if (!within && hereLog && nearLog) {
+                            reason = "a trunk or branch continues beyond the bounded tree survey; the component was kept whole";
+                            cacheRefusal = false;
+                            break;
+                        }
+                        if (within) {
+                            if(nearLog)selectedLog=true;
+                            visited.set(nextKey,hops);
+                            queue.push({ x: nx, y: ny, z: nz, hops });
+                        }
                     }
                 }
             }
         }
     }
+    if(reason===undefined) {
+        // Do not strip a neighboring trunk's last leaf and then misclassify that
+        // untouched natural tree as a player-made log pillar on a later operation.
+        const ownLogs=new Set(component.filter(c=>isLog(c.id)).map(c=>key(c.x,c.y,c.z)));
+        let kept = 0;
+        for (const c of component) {
+            const contacts=leafLogContacts.get(key(c.x,c.y,c.z));
+            if (isLeaves(c.id) && contacts && [...contacts].some(k => !ownLogs.has(k))) continue;
+            component[kept++] = c;
+        }
+        component.length = kept;
+    }
     if (reason === undefined) {
         const logs = component.filter((cell) => isLog(cell.id));
-        if (logs.length > 0 && !component.some((cell) => isLeaves(cell.id))) {
+        const wide = { x0:s.opts.region.x0-4, z0:s.opts.region.z0-4, x1:s.opts.region.x1+4, z1:s.opts.region.z1+4 };
+        const boundaryLog = logs.find(cell=>!inRect(wide,cell.x,cell.z) || treeCellProtected(s,cell));
+        if (boundaryLog !== undefined) {
+            const boundary = !inRect(wide,boundaryLog.x,boundaryLog.z) ? "outside bounded district clearance" : "inside protected clearance";
+            reason = `a trunk or branch crosses a protected clearance boundary; the component was kept whole (${boundaryLog.id} at ${boundaryLog.x},${boundaryLog.y},${boundaryLog.z}: ${boundary})`;
+            cacheRefusal = false;
+        }
+        else if (logs.length > 0 && !component.some((cell) => isLeaves(cell.id))) {
             reason = "a log-only structure has no leaves - may be a player build";
         } else if (logs.length > 0) {
             const lowest = logs.reduce((best, cell) => (cell.y < best.y ? cell : best), /** @type {{ x: number, y: number, z: number, id: string }} */ (logs[0]));
             const base = yield* read(lowest.x, lowest.y - 1, lowest.z);
-            if (base === undefined || !(isNaturalGround(base.id) || isLog(base.id))) {
-                reason = "a tree trunk does not stand on natural ground";
+            // An earlier wall/gate pad may already have replaced the soil below a
+            // neighboring intact trunk. Accept only the exact final planned block
+            // from a stage already reached, never arbitrary masonry under a log.
+            const ownBase=base!==undefined&&isBuiltPlanCell(s,lowest.x,lowest.y-1,lowest.z,base.id);
+            if (base === undefined || !(isNaturalGround(base.id) || isLog(base.id) || ownBase)) {
+                if(base===undefined)cacheRefusal=false;
+                else rootDependency=key(lowest.x,lowest.y-1,lowest.z);
+                reason = `a tree trunk does not stand on natural ground (${String(base?.id??"unloaded")} at ${lowest.x},${lowest.y-1},${lowest.z})`;
             }
         }
+    }
+    if (reason===undefined && usesSharedTreeMargin(s,component)) {
+        reason=yield* validateSharedTreeMargin(s,component);
+        if (reason!==undefined) cacheRefusal=false;
+    }
+    if (inspectOnly) {
+        return {
+            ok: reason === undefined,
+            ...(reason === undefined ? {} : { reason }),
+            cells: component.length,
+            logs: component.filter(cell => isLog(cell.id)).length,
+            leaves: component.filter(cell => isLeaves(cell.id)).length,
+        };
     }
     if (reason !== undefined) {
         if (reason.includes("not loaded")) {
             return { ok: false, reason };
         }
-        for (const cell of component) {
-            s.treeRefused.add(key(cell.x, cell.y, cell.z));
+        // Boundary verdicts depend on the current component. Another clearance may
+        // disconnect it; recheck instead of retaining a verdict lost on restart.
+        if(cacheRefusal&&rootDependency!==undefined){
+            s.treeRootRefused.remember(rootDependency,[...component.map(cell=>key(cell.x,cell.y,cell.z)),key(seed.x,seed.y,seed.z)],reason);
+        } else if (cacheRefusal) {
+            for (const cell of component) s.treeRefused.set(key(cell.x, cell.y, cell.z),reason);
+            s.treeRefused.set(key(seed.x, seed.y, seed.z),reason);
         }
-        s.treeRefused.add(key(seed.x, seed.y, seed.z));
         return { ok: false, reason };
     }
+    if (!s.cur) throw new Error("Cannot save tree proof without a construction cursor.");
+    s.queue.treeClearance = encodeTreeClearance(seed,component,s.cur.element,s.cur.cursor,CIV_TREE_REACH_H);
+    if (!decodeTreeClearance(s.queue.treeClearance)) throw new Error("Tree proof could not be encoded safely; nothing was cleared.");
+    jobs.markProgress(s.queue,s.cur.element,s.cur.cursor);
+    persistProgress(s); // write-ahead proof: a failed/oversize save cannot be followed by a clear
+    return yield* eraseProvenTree(s,component);
+}
+
+/** @param {Session} s @param {{x:number,y:number,z:number,id:string}[]} component
+ * @returns {Generator<void, {ok:boolean,reason?:string}, void>}
+ */
+function* eraseProvenTree(s,component) {
     const air = permutationFor(s, { x: 0, y: 0, z: 0, id: "minecraft:air", kind: "clear" });
     const wide = { x0: s.opts.region.x0 - 4, z0: s.opts.region.z0 - 4, x1: s.opts.region.x1 + 4, z1: s.opts.region.z1 + 4 };
-    // Clear in reverse discovery order: every parent outlives its children, so a crash half way leaves a connected
-    // remainder that still contains the seed - the replay finds it again and finishes the same job.
+    // The persisted exact cell list survives even when a partial clear disconnects the remaining canopy.
     for (let ci = component.length - 1; ci >= 0; ci -= 1) {
         const cell = /** @type {{ x: number, y: number, z: number, id: string }} */ (component[ci]);
-        if (!inRect(wide, cell.x, cell.z) || inProtectedArea(s.opts.protectedRects, cell.x, cell.z)) {
+        if (!inRect(wide, cell.x, cell.z) || treeCellProtected(s,cell)) {
             continue;
         }
         yield* budgetFor(s, 2, 1);
         const live = readLive(s, cell.x, cell.y, cell.z);
-        if (live === undefined || !isTreePart(live.id)) {
+        if (live === undefined) return { ok:false, reason:"a chunk next to the tree is not loaded" };
+        if (!isAir(live.id) && live.id !== cell.id) throw new Error(`Pending tree clearance changed at ${cell.x},${cell.y},${cell.z}; the changed block was preserved.`);
+        if (live.persistent === true) throw new Error(`Pending tree clearance changed at ${cell.x},${cell.y},${cell.z}; persistent leaves were preserved.`);
+        if (!isTreePart(live.id)) {
+            continue;
+        }
+        // A log the plan ALREADY placed in an earlier stage is not part of the tree, even when the canopy reaches
+        // it. Without this, clearing a tree beside a finished frame ate five of its logs. A tree standing on a
+        // cell the plan builds LATER still has live != planned there, so it is cleared as it must be.
+        if (isBuiltPlanCell(s,cell.x,cell.y,cell.z,live.id)) {
             continue;
         }
         try {
             const block = s.dimension.getBlock({ x: cell.x, y: cell.y, z: cell.z });
             s.meter.reads += 1;
             if (block === undefined) {
-                continue;
+                return { ok:false, reason:"a chunk next to the tree is not loaded" };
             }
             block.setPermutation(air);
             s.meter.writes += 1;
             s.counts.treeCells += 1;
+            // A neighboring canopy may now fit the same bounded natural-tree proof.
+            // Refusals are reusable only while the surveyed vegetation is unchanged.
+            if (s.treeRefused.size > 0) s.treeRefused.clear();
+            s.treeRootRefused.clear();
         } catch (error) {
             s.counts.failed += 1;
             sample(s, `tree cell ${String(cell.x)},${String(cell.y)},${String(cell.z)}: ${String(error)}`);
         }
     }
     s.counts.treesCleared += 1;
+    delete s.queue.treeClearance;
+    persistProgress(s);
     return { ok: true };
 }
 
 /**
  * Apply one op against the live world. Returns "unloaded" when the chunk is not available (nothing done).
  * @param {Session} s @param {CanonicalOp} op
- * @returns {Generator<void, "ok" | "unloaded", void>}
+ * @returns {Generator<void, "ok" | "unloaded" | "tree-hold", void>}
  */
 function* applyOp(s, op) {
+    if (s.queue.treeClearance !== undefined) {
+        const [x,y,z] = s.queue.treeClearance.seed;
+        if (!s.heldRect || !contains(s.heldRect,{x0:x,z0:z,x1:x,z1:z},17)) return "tree-hold";
+        const resumed = yield* clearTree(s,{x,y,z});
+        if (!resumed.ok) return "unloaded";
+    }
     s.meter.ops += 1;
     const counts = s.counts;
+    // Completed-city maintenance never replays old air cuts or a wall block replaced
+    // by a later gate, road, building or planting operation in the exact saved plan.
+    if (s.opts.completedCityRepair && ((!((s.lastStage === "walls") || (s.lastStage === "lots" && isDoorOp(op))))
+        || isAir(op.id) || plannedAt(s,op.x,op.y,op.z).final !== op.id)) {
+        counts.notes += 1;
+        return "ok";
+    }
     if (op.kind === "note") {
         counts.notes += 1;
         return "ok";
     }
     /** @param {string} reason */
     const skip = (reason) => {
+        s.lastSkipReason = reason;
         counts.skipped += 1;
         const key = reasonKey(reason);
         counts.byReason[key] = (counts.byReason[key] ?? 0) + 1;
@@ -1723,8 +2147,11 @@ function* applyOp(s, op) {
         skip("outside the planned area");
         return "ok";
     }
-    const insideNeighbourLand = inProtectedArea(s.opts.protectedRects, op.x, op.z);
-    const fillsSharedBand = insideNeighbourLand && isSharedWallFill(s.opts.protectedRects, op);
+    const insideNeighbourLand = s.protectedAt(op.x, op.z);
+    const fillsVerifiedBoundary=insideNeighbourLand&&s.opts.completedCityRepair&&s.lastStage==="walls"
+        &&s.finalTreeBoundaryWalls.has(cellKey(s,op.x,op.y,op.z))&&plannedAt(s,op.x,op.y,op.z).final===op.id
+        &&sharedBoundaryTreeWall(s,op);
+    const fillsSharedBand = insideNeighbourLand && (isSharedWallFill(s.opts.protectedRects, op)||fillsVerifiedBoundary);
     if (insideNeighbourLand && !fillsSharedBand) {
         counts.outside += 1;
         skip("inside a protected footprint");
@@ -1733,15 +2160,21 @@ function* applyOp(s, op) {
     let target;
     try {
         target = s.dimension.getBlock({ x: op.x, y: op.y, z: op.z });
-    } catch (_error) {
+    } catch (error) {
+        s.lastUnread=`operation target read at (${op.x}, ${op.y}, ${op.z}): ${String(error)}`;
         target = undefined;
     }
     s.meter.reads += 1;
     if (target === undefined || target.isValid === false) {
+        s.lastUnread??=`operation target read at (${op.x}, ${op.y}, ${op.z}): ${target===undefined?"no block returned":"invalid block"}`;
         return "unloaded";
     }
-    let verdict = classifyCivOp(op, target.typeId, plannedAt(s, op.x, op.y, op.z, op.id));
-    if (verdict.action === "tree") {
+    const existingId=target.typeId;
+    if(existingId===undefined)s.lastUnread=`operation target type at (${op.x}, ${op.y}, ${op.z}): no type id returned`;
+    let verdict = classifyCivOp(op, existingId, plannedAt(s, op.x, op.y, op.z, op.id));
+    for(let treeAttempt=0;verdict.action === "tree"&&treeAttempt<8;treeAttempt++) {
+        if (!s.heldRect || !contains(s.heldRect,{x0:op.x,z0:op.z,x1:op.x,z1:op.z},17)) return "tree-hold";
+        const beforeCells=counts.treeCells;
         const cleared = yield* clearTree(s, { x: op.x, y: op.y, z: op.z });
         if (!cleared.ok) {
             if (cleared.reason?.includes("not loaded")) {
@@ -1751,16 +2184,22 @@ function* applyOp(s, op) {
             skip(`tree not cleared: ${String(cleared.reason)}`);
             return "ok";
         }
+        yield* budgetFor(s,1,0);
         try {
             target = s.dimension.getBlock({ x: op.x, y: op.y, z: op.z });
-        } catch (_error) {
+        } catch (error) {
+            s.lastUnread=`operation re-read after tree at (${op.x}, ${op.y}, ${op.z}): ${String(error)}`;
             target = undefined;
         }
         s.meter.reads += 1;
         if (target === undefined || target.isValid === false) {
+            s.lastUnread??=`operation re-read after tree at (${op.x}, ${op.y}, ${op.z}): ${target===undefined?"no block returned":"invalid block"}`;
             return "unloaded";
         }
-        verdict = classifyCivOp(op, target.typeId, plannedAt(s, op.x, op.y, op.z, op.id));
+        const afterTreeId=target.typeId;
+        if(afterTreeId===undefined)s.lastUnread=`operation re-read after tree type at (${op.x}, ${op.y}, ${op.z}): no type id returned`;
+        verdict = classifyCivOp(op, afterTreeId, plannedAt(s, op.x, op.y, op.z, op.id));
+        if(verdict.action === "tree"&&counts.treeCells===beforeCells)break;
     }
     // A wall filling in the shared band may stand on raw terrain and on nothing else. classifyCivOp decides
     // a block is "ours" when its id is one this plan targets at that cell, and two districts' walls are made
@@ -1769,6 +2208,26 @@ function* applyOp(s, op) {
     // stands there - at most a dressing block, because the column itself is already solid masonry.
     if (fillsSharedBand && verdict.action === "place" && !isRawTerrain(String(target.typeId))) {
         skip(`occupied by ${String(target.typeId)} in a finished neighbour's band`);
+        return "ok";
+    }
+    if (isDoorOp(op) && (verdict.action === "place" || verdict.action === "built")) {
+        const lower=lowerDoorOp(op);
+        if (plannedAt(s,lower.x,lower.y,lower.z).final !== op.id || plannedAt(s,lower.x,lower.y+1,lower.z).final !== op.id) {
+            skip("door has no matching planned pair");
+            return "ok";
+        }
+        yield* budgetFor(s,7,2);
+        const door = placeDoorPair(s.dimension,lower);
+        s.meter.reads += door.reads;
+        s.meter.writes += door.writes;
+        if (door.status === "unloaded") return "unloaded";
+        if (door.status === "present") counts.built++;
+        else if (door.status === "placed") {
+            counts.placed++;
+            for(const y of [lower.y,lower.y+1])if(isBuiltPlanCell(s,lower.x,y,lower.z,lower.id))s.treeRootRefused.invalidate(`${lower.x},${y},${lower.z}`);
+        }
+        else if (door.status === "blocked") skip(door.reason ?? "door placement refused");
+        else { counts.failed++; sample(s,`door (${op.x},${op.y},${op.z}): ${door.reason}`); }
         return "ok";
     }
     if (verdict.action === "built") {
@@ -1788,6 +2247,7 @@ function* applyOp(s, op) {
     }
     try {
         target.setPermutation(permutationFor(s, op));
+        if(isBuiltPlanCell(s,op.x,op.y,op.z,op.id))s.treeRootRefused.invalidate(`${op.x},${op.y},${op.z}`);
         s.meter.writes += 1;
         counts.placed += 1;
     } catch (error) {
@@ -1822,13 +2282,13 @@ const contains = (r, inner, pad) => inner.x0 - pad >= r.x0 && inner.x1 + pad <= 
 
 /** The next window of work whose touched area fits one held tile (shrinks the window until it does). @param {Session} s */
 function chooseWindow(s) {
-    for (const maxOps of [400, 200, 100, 50, 25, 12, 6, 3, 1]) {
+    for (const maxOps of s.treeHold ? [1] : [400, 200, 100, 50, 25, 12, 6, 3, 1]) {
         const work = jobs.nextWork(s.queue, { maxOps: Math.min(maxOps, CIV_LIMITS.maxBlocksPerSlice) });
         if (work.items.length === 0) {
             return { work, box: undefined };
         }
         const box = windowBox(s, work.items);
-        if (box.x1 - box.x0 + 1 <= windowMaxSpan() && box.z1 - box.z0 + 1 <= windowMaxSpan()) {
+        if (box.x1 - box.x0 + 1 <= windowMaxSpan(s.holdSide) && box.z1 - box.z0 + 1 <= windowMaxSpan(s.holdSide)) {
             return { work, box };
         }
         if (maxOps === 1) {
@@ -1838,18 +2298,54 @@ function chooseWindow(s) {
     return { work: jobs.nextWork(s.queue, { maxOps: 1 }), box: undefined };
 }
 
-/** @param {Rect} box @returns {Rect} */
-function holdRectFor(box) {
-    const cx = Math.floor((box.x0 + box.x1) / 2);
-    const cz = Math.floor((box.z0 + box.z1) / 2);
-    const half = tileSizeNow() / 2;
-    return { x0: cx - half, z0: cz - half, x1: cx + half - 1, z1: cz + half - 1 };
+/** @param {Rect} box @param {number} side @param {number} apron @returns {Rect} */
+function holdRectFor(box, side, apron) {
+    // A 128-block square at arbitrary coordinates spans NINE chunks per side.
+    // Align the start and reserve the requested apron plus up to 15 blocks
+    // lost to alignment. chooseWindow bounds the work to fit that exact area.
+    const x0 = Math.floor((box.x0 - apron) / 16) * 16;
+    const z0 = Math.floor((box.z0 - apron) / 16) * 16;
+    return { x0, z0, x1: x0 + side - 1, z1: z0 + side - 1 };
+}
+
+/** @param {Session} s @param {Rect} box @param {number} [apron] */
+async function holdConstructionWindow(s, box, apron = 9) {
+    if (apron===17 && s.holdSide<64) s.fragmented=true;
+    if (!s.fragmented) {
+        s.chunkLease?.release();
+        s.chunkLease = undefined;
+        const rect = holdRectFor(box, s.holdSide, apron);
+        return { rect, held: await holdArea(s.dimension, rect, s.token, CIV_TICKING_ID, s.opts.progress) };
+    }
+    releaseArea(s.token);
+    // A single work column plus its full 17-block apron spans at most sixteen
+    // individual chunks, even when the larger rectangular holds are unavailable.
+    const rect={x0:Math.floor((box.x0-apron)/16)*16,z0:Math.floor((box.z0-apron)/16)*16,
+        x1:Math.floor((box.x1+apron)/16)*16+15,z1:Math.floor((box.z1+apron)/16)*16+15};
+    const units = [];
+    for (let x = rect.x0; x <= rect.x1; x += 16) for (let z = rect.z0; z <= rect.z1; z += 16) {
+        units.push({ dimension: s.dimension, cells: [{ x, y: 64, z }, { x: x + 15, y: 64, z: z + 15 }] });
+    }
+    const lease = s.chunkLease ?? constructionChunks.acquire(units);
+    if (s.chunkLease) lease.retarget(units);
+    s.chunkLease = lease;
+    if (s.opts.progress) s.opts.progress.chunksPending = units.length;
+    let state = lease.status();
+    while (state.state === "loading" && !s.token.cancelled) { await nextTick(); state = lease.status(); }
+    if (s.opts.progress) s.opts.progress.chunksPending = 0;
+    const held = { held: state.state === "ready", status: /** @type {"held" | "stalled" | "cancelled"} */ (s.token.cancelled ? "cancelled" : state.state === "ready" ? "held" : "stalled"), note: state.reason };
+    if (!held.held) { lease.release(); s.chunkLease = undefined; }
+    return { rect, held };
+}
+
+/** Remove only this pack's abandoned construction leases before a new run. */
+export function recoverConstructionHolds() {
+    if (session === undefined) constructionChunks.recover();
 }
 
 /** Persist the job queue and the small kingdom record. @param {Session} s @param {Record<string, any>} [extra] */
 function persistProgress(s, extra = {}) {
-    const { jobStore } = stores(s.opts.district ?? 1);
-    const result = jobStore.saveQueue(s.queue);
+    const result = s.opts.saveQueue ? s.opts.saveQueue(s.queue) : stores(s.opts.district ?? 1).jobStore.saveQueue(s.queue);
     if (!result.ok) {
         throw new Error(`could not store progress (${String(result.reason ?? result.status)})`);
     }
@@ -1861,7 +2357,7 @@ function persistProgress(s, extra = {}) {
 /**
  * One job: windows of work until a hold is needed, the work ends, or something goes wrong.
  * @param {Session} s
- * @returns {Generator<void, { status: "need-hold", box: Rect } | { status: "complete" | "paused" | "failed" | "cancelled", reason?: string }, void>}
+ * @returns {Generator<void, { status: "need-hold", box: Rect, apron?: number } | { status: "complete" | "paused" | "failed" | "cancelled", reason?: string }, void>}
  */
 function* constructionJob(s) {
     for (;;) {
@@ -1875,7 +2371,7 @@ function* constructionJob(s) {
             }
             return { status: "paused", reason: work.blocked ?? `the job queue is ${s.queue.state}` };
         }
-        if (box !== undefined && (s.heldRect === undefined || !contains(s.heldRect, box, 8))) {
+        if (box !== undefined && (s.heldRect === undefined || !contains(s.heldRect, box, 9))) {
             const boxKey = `${String(box.x0)},${String(box.z0)},${String(box.x1)},${String(box.z1)}`;
             if (s.heldRect === undefined || s.lastHoldBox !== boxKey) {
                 s.lastHoldBox = boxKey;
@@ -1898,19 +2394,54 @@ function* constructionJob(s) {
                     }
                 }
                 yield* budgetFor(s, 2, 1);
-                const result = yield* applyOp(s, /** @type {CanonicalOp} */ (ops[i]));
+                const op = /** @type {CanonicalOp} */ (ops[i]);
+                const skippedBefore = s.counts.skipped;
+                s.lastSkipReason = undefined;
+                s.lastUnread = undefined;
+                s.cur = { element:item.element, cursor:i };
+                const result = yield* applyOp(s, op);
+                if (result === "tree-hold") {
+                    const [x,,z]=s.queue.treeClearance?.seed ?? [op.x,op.y,op.z];
+                    s.treeHold={x0:x,z0:z,x1:x,z1:z};
+                    jobs.markProgress(s.queue,item.element,i);
+                    persistProgress(s);
+                    // The tree hold replaces the normal window's physical lease.
+                    s.lastHoldBox = undefined;
+                    return {status:"need-hold",box:s.treeHold,apron:17};
+                }
                 if (result === "unloaded") {
-                    s.waiting += 1;
+                    s.waiting ??= nowTick();
+                    s.firstUnread ??= s.lastUnread;
                     s.counts.unloadedWaits += 1;
-                    if (s.waiting > PHYSICAL.unloadedRetrySlices) {
+                    if (nowTick() - s.waiting >= CIV.buildUnloadedRetryTicks) {
                         jobs.markProgress(s.queue, item.element, i);
-                        return { status: "paused", reason: "a chunk in the build area is not loaded" };
+                        return { status: "paused", reason: `a chunk in the build area is not loaded at operation (${String(op.x)}, ${String(op.y)}, ${String(op.z)}), ${op.kind}; the cell or its tree clearance could not be read${s.lastUnread ? `; ${s.lastUnread}` : ""}${s.firstUnread&&s.firstUnread!==s.lastUnread?`; first failed read: ${s.firstUnread}`:""}; ${unreadHoldDetail(s)}` };
                     }
                     endSlice(s);
-                    yield;
+                    const retryTick = nowTick();
+                    do { yield; } while (!s.token.cancelled && nowTick() === retryTick);
                     continue;
                 }
-                s.waiting = 0;
+                // A skipped decorative block can be reported and left alone. A skipped gate
+                // passage or gatehouse cannot be called complete: preserve the obstruction and
+                // this exact cursor so the developer can resolve it and resume safely.
+                if (item.stage === "gates" && s.counts.skipped > skippedBefore && !s.protectedAt(op.x, op.z)) {
+                    let existing;
+                    try {
+                        existing = s.dimension.getBlock({ x: op.x, y: op.y, z: op.z })?.typeId;
+                    } catch (_error) {
+                        existing = undefined;
+                    }
+                    s.meter.reads += 1;
+                    const final = plannedAt(s, op.x, op.y, op.z).final;
+                    if (existing === undefined || (existing !== op.id && existing !== final && !(isAir(op.id) && isAir(existing)))) {
+                        jobs.markProgress(s.queue, item.element, i);
+                        return { status: "paused", reason: `gate construction is obstructed by ${String(existing ?? "unloaded terrain")} at ${op.x}, ${op.y}, ${op.z}${s.lastSkipReason ? `; ${s.lastSkipReason}` : ""}; nothing was overwritten; resolve the obstruction and resume` };
+                    }
+                }
+                s.waiting = undefined;
+                s.firstUnread = undefined;
+                s.treeHold = undefined;
                 i += 1;
                 s.cur = { element: item.element, cursor: i };
             }
@@ -1945,13 +2476,13 @@ function* constructionJob(s) {
 }
 
 /**
- * Index, hold and run. Resolves with the final report; every exit path releases the chunks and the job slot
- * (except cancellation, whose cleanup belongs to abortCiv).
+ * Create isolated construction bookkeeping. This alone starts no work and writes no blocks or properties.
  *
- * @param {ConstructionOptions} opts
+ * @param {ConstructionOptions} opts @param {boolean} [inspection]
  * @returns {Session}
  */
-export function startConstruction(opts) {
+function createConstructionSession(opts,inspection=false) {
+    if(isTreeInspectionProtection(opts.sharedTreeProtection)&&!inspection)throw Error("Read-only tree inspection projection cannot authorize construction or repair");
     /** @type {Session} */
     const s = {
         opts,
@@ -1961,22 +2492,30 @@ export function startConstruction(opts) {
         record: opts.record,
         plan: opts.plan,
         counts: newCounts(),
-        slice: { slices: 0, maxOps: 0, maxWrites: 0, maxReads: 0 },
-        meter: { reads: 0, writes: 0, ops: 0 },
+        slice: { slices: 0, maxOps: 0, maxWrites: 0, maxReads: 0, maxTreeVisits: 0 },
+        meter: { reads: 0, writes: 0, ops: 0, treeVisits: 0 },
         heldRect: undefined,
+        holdSide: tileSizeNow(),
+        fragmented: false,
+        chunkLease: undefined,
         perms: new Map(),
         opCache: new Map(),
         own: new Map(),
+        ownStage: new Map(),
         ids: [],
         idIndex: new Map(),
-        treeRefused: new Set(),
+        treeRefused: new Map(),
+        treeRootRefused: createTreeRootRefusalCache(),
+        sharedTreeWallTargets: new Map(),
+        finalTreeBoundaryWalls: new Set(),
+        protectedAt: createProtectedColumnLookup(opts.protectedRects,opts.region),
         cur: undefined,
         sinceSave: 0,
         lastPct: Math.floor(jobs.progress(opts.queue).pct / 10),
         lastStage: opts.queue.stages[0]?.name ?? "clear",
         stagesDone: new Set(),
         lastHoldBox: undefined,
-        waiting: 0,
+        waiting: undefined,
         status: "starting",
         done: undefined,
         planned: 0,
@@ -1986,10 +2525,176 @@ export function startConstruction(opts) {
             s.stagesDone.add(info.name);
         }
     }
+    return s;
+}
+
+/** @param {ConstructionOptions} opts @returns {Session} */
+export function startConstruction(opts) {
+    recoverConstructionHolds();
+    const s = createConstructionSession(opts);
     session = s;
     opts.token.kind = "civ-build";
     s.done = run(s);
     return s;
+}
+
+/** Load a wall/door maintenance journal without writing or resetting the original queue.
+ * @param {any} record @param {number} index */
+export function prepareCityRepair(record, index) {
+    assertIndex(index);
+    const fresh = jobs.createQueue(jobSpecsOf(record), { planHash:record.checksum, maxAttempts:8 });
+    const repairStages = fresh.stages.filter(stage => stage.name === "walls" || stage.name === "lots");
+    if (repairStages.length !== 2) throw new Error("The saved plan has no wall and lot stages.");
+    const isRepair = (/** @type {number} */ element) => repairStages.some(stage => element >= stage.start && element < stage.start + stage.count);
+    for (let i=0;i<fresh.total.length;i++) if (!isRepair(i)) jobs.markProgress(fresh,i,/** @type {number} */(fresh.total[i]));
+    const store = jobs.createJobStore(world, { prefix:cityRepairPrefixFor(index), maxBytes:seams.maxJobBytes ?? CIV_LIMITS.maxJobBytes });
+    const loaded = store.loadQueue({ recoverRunning:false });
+    if (loaded.status !== "absent" && loaded.status !== "ok") throw new Error(`City repair journal is ${loaded.status}; ${loaded.reason ?? "nothing changed"}.`);
+    let queue = fresh;
+    if (loaded.queue) {
+        const saved = loaded.queue;
+        if (saved.planHash !== record.checksum || JSON.stringify(saved.stages) !== JSON.stringify(fresh.stages)
+            || JSON.stringify(saved.requires) !== JSON.stringify(fresh.requires)
+            || saved.total.length !== fresh.total.length
+            || !fresh.total.every((n,i) => n === saved.total[i] && fresh.hash[i] === saved.hash[i])
+            || saved.status.some((status,i) => !isRepair(i) && (status !== "done" || saved.cursor[i] !== fresh.total[i]))
+            || (saved.treeClearance !== undefined && (!isRepair(saved.treeClearance.element) || saved.state === "complete"))) {
+            throw new Error("City repair journal does not match this exact saved plan; nothing changed.");
+        }
+        if (saved.state === "aborted") throw new Error("This city repair was permanently aborted; nothing changed.");
+        if (saved.state !== "complete") {
+            queue = saved;
+            jobs.recover(queue);
+            jobs.resume(queue);
+        }
+    }
+    const stageOps = repairStages.reduce((sum,stage) => sum + fresh.total.slice(stage.start,stage.start+stage.count).reduce((n,total) => n+total,0),0);
+    return { queue, store, stageOps };
+}
+
+/** Replay only exact final non-air wall and paired-door targets. The caller verifies a completed district first.
+ * Proofs/cursors persist in an independent journal; the original completion record stays intact.
+ * @param {Pick<ConstructionOptions,"token"|"dimension"|"plan"|"record"|"region"|"protectedRects"|"district"|"say"|"onEnd"|"sharedTreeProtection">} opts */
+export function startCityRepair(opts) {
+    const prepared = prepareCityRepair(opts.record,opts.district);
+    const saved = prepared.store.saveQueue(prepared.queue);
+    if (!saved.ok) throw new Error(`Could not save city repair before starting (${saved.reason ?? saved.status}); no blocks changed.`);
+    return startConstruction({
+        ...opts, queue:prepared.queue, completedCityRepair:true,
+        saveQueue:queue => prepared.store.saveQueue(queue),
+        saveCiv() { return true; },
+    });
+}
+
+/** Survey unique final non-air wall targets, one temporarily loaded chunk at a time.
+ * This checks block ids only; it does not prove block states, walkability or foundations.
+ * It never saves a queue, changes blocks or registers a construction session.
+ * @param {Pick<ConstructionOptions,"token"|"dimension"|"plan"|"record"|"region"|"protectedRects"|"district">} opts */
+export async function auditCityWalls(opts) {
+    recoverConstructionHolds();
+    const s = createConstructionSession({
+        ...opts, queue:jobs.createQueue(jobSpecsOf(opts.record),{planHash:opts.record.checksum}),
+        say() {}, onEnd() {}, saveCiv() { throw new Error("Read-only wall audit cannot save progress."); },
+    });
+    /** @type {Record<string,number>} */
+    const counts = {present:0,missing:0,tree:0,other:0,protected:0,unloaded:0};
+    /** @type {Record<string,string[]>} */
+    const samples = {};
+    /** @type {Map<string,Map<number,CanonicalOp>>} */
+    const chunks = new Map();
+    const seen = new Set();
+    let total = 0, surveyed = 0;
+    /** @param {string} category @param {CanonicalOp} op @param {string} [actual] */
+    const add = (category,op,actual) => {
+        counts[category] = (counts[category] ?? 0)+1;
+        if(category === "present")return;
+        const rows=samples[category] ?? (samples[category]=[]);
+        if(rows.length<4)rows.push(`${op.x},${op.y},${op.z}: ${actual ?? category}; expected ${op.id}`);
+    };
+    function* collect() {
+        for(let i=0;i<s.record.walls.length;i++)for(const op of siteOpsFor(s.record,"walls",i)) {
+            if(s.token.cancelled)return;
+            if(++s.meter.ops >= CIV_LIMITS.maxBlocksPerSlice) { endSlice(s);yield; }
+            const cell=cellKey(s,op.x,op.y,op.z);
+            if(isAir(op.id)||plannedAt(s,op.x,op.y,op.z).final!==op.id||seen.has(cell))continue;
+            seen.add(cell);total++;
+            if(s.protectedAt(op.x,op.z)&&!isSharedWallFill(s.opts.protectedRects,op)) { add("protected",op);continue; }
+            const chunk=`${Math.floor(op.x/16)*16},${Math.floor(op.z/16)*16}`;
+            const targets=chunks.get(chunk) ?? new Map();
+            targets.set(cell,op);chunks.set(chunk,targets);
+        }
+    }
+    /** @param {Map<number,CanonicalOp>} targets @param {boolean} loaded @param {string} [loadReason] */
+    function* inspect(targets,loaded,loadReason) {
+        for(const op of targets.values()) {
+            if(s.token.cancelled)return;
+            if(++s.meter.ops >= CIV_LIMITS.maxBlocksPerSlice) { endSlice(s);yield; }
+            yield* budgetFor(s,1,0);
+            const live=loaded ? readLive(s,op.x,op.y,op.z) : undefined;
+            if(live)surveyed++;
+            add(!live ? "unloaded" : live.id===op.id ? "present" : isAir(live.id) ? "missing"
+                : isTreePart(live.id) ? "tree" : "other",op,live?.id ?? loadReason ?? "unreadable block");
+        }
+    }
+    try {
+        await runJobAsync(s.token,indexOwnBlocks(s));
+        if(!s.token.cancelled)await runJobAsync(s.token,collect());
+        for(const [chunk,targets] of chunks) {
+            if(s.token.cancelled)break;
+            const [x,z]=chunk.split(",").map(Number);
+            const units=[{dimension:s.dimension,cells:[{x:/** @type {number} */(x),y:64,z:/** @type {number} */(z)},
+                {x:/** @type {number} */(x)+15,y:64,z:/** @type {number} */(z)+15}]}];
+            if(s.chunkLease)s.chunkLease.retarget(units);
+            else s.chunkLease=constructionChunks.acquire(units);
+            let state=s.chunkLease.status();
+            while(state.state==="loading"&&!s.token.cancelled) { await nextTick();state=s.chunkLease.status(); }
+            if(!s.token.cancelled)await runJobAsync(s.token,inspect(targets,state.state==="ready",state.reason));
+            if(state.state!=="ready") { s.chunkLease.release();s.chunkLease=undefined; }
+        }
+        return {complete:!s.token.cancelled&&counts.unloaded===0,total,surveyed,counts,samples};
+    } finally {
+        s.chunkLease?.release();
+        releaseArea(s.token);
+    }
+}
+
+/** Read-only proof using the production tree survey and its normal work/chunk budgets.
+ * It owns a fresh in-memory queue, never saves construction progress and never erases a block.
+ * @param {Pick<ConstructionOptions, "token" | "dimension" | "plan" | "record" | "region" | "protectedRects" | "district" | "sharedTreeProtection">&{current?:()=>boolean}} opts
+ * @param {{x:number,y:number,z:number}} seed
+ */
+export async function inspectNaturalTree(opts, seed) {
+    if (![seed.x, seed.y, seed.z].every(Number.isInteger) || seed.y < -63 || seed.y > 318
+        || !inRect(opts.region, seed.x, seed.z)) throw new Error("Tree inspection needs an integer cell inside this district and the world height.");
+    const s = createConstructionSession({
+        ...opts, completedCityRepair:true, queue: jobs.createQueue(jobSpecsOf(opts.record), { planHash: opts.record.checksum }),
+        say() {}, onEnd() {}, saveCiv() { throw new Error("Read-only tree inspection cannot save construction progress."); },
+    },true);
+    // Private read-only bounds cannot enter the construction/mutation entry points.
+    s.inspectionBounds=treeInspectionBounds(seed);s.inspectionCurrent=opts.current;
+    const current=()=>{if(s.inspectionCurrent&&s.inspectionCurrent()!==true)throw Error("Tree inspection source/player/job changed");};
+    /** @template T @param {Generator<any,T,any>} generator @returns {Generator<any,T,any>} */
+    function* checked(generator){for(;;){current();const n=generator.next();current();if(n.done)return n.value;yield;current();}}
+    // A completed district may contain its own final foundations, frames and ornaments.
+    s.lastStage = "dressing";
+    try {
+        current();
+        await runJobAsync(s.token, checked(indexOwnBlocks(s)));
+        if (s.token.cancelled) return { ok:false, reason:"inspection cancelled" };
+        current();
+        const held = await holdConstructionWindow(s, { x0:seed.x, z0:seed.z, x1:seed.x, z1:seed.z }, 17);
+        s.heldRect = held.rect;
+        current();
+        if (s.token.cancelled) return { ok:false, reason:"inspection cancelled" };
+        if (!held.held.held) return { ok:false, reason:held.held.note ?? "inspection chunks did not load" };
+        const live = readLive(s, seed.x, seed.y, seed.z);
+        if (!live || !isTreePart(live.id)) return { ok:false, reason:`inspection cell is ${live?.id ?? "unreadable"}` };
+        const result = await runJobAsync(s.token, checked(clearTree(s, seed, true)));
+        current();return result ?? { ok:false, reason:"inspection cancelled" };
+    } finally {
+        s.chunkLease?.release();
+        releaseArea(s.token);
+    }
 }
 
 /** @param {Session} s @returns {Promise<EndResult>} */
@@ -2000,6 +2705,8 @@ async function run(s) {
         const overall = jobs.progress(s.queue);
         /** @type {EndResult} */
         const result = { status, reason, counts: s.counts, opsPlanned: overall.totalOps, opsDone: overall.totalOps - overall.remainingOps, slices: s.slice };
+        s.chunkLease?.release();
+        s.chunkLease = undefined;
         try {
             if (status === "complete") {
                 result.spot = await safeSpot(s);
@@ -2032,19 +2739,32 @@ async function run(s) {
             return /** @type {EndResult} */ ({ status: "paused", counts: s.counts, opsPlanned: 0, opsDone: 0, slices: s.slice });
         }
         s.status = "building";
-        s.opts.say([`Building ${String(s.planned)} planned blocks (${String(jobs.progress(s.queue).remainingOps)} remaining). Chunks are held for you; you do not need to stay close.`]);
+        s.opts.say([`Building ${String(s.planned)} planned blocks (${String(jobs.progress(s.queue).remainingOps)} remaining). Construction requests chunk holds; if capacity is unavailable, it relies on already-loaded chunks and may require you nearby.`]);
         for (;;) {
             const result = await runJobAsync(s.token, constructionJob(s));
             if (s.token.cancelled || result === undefined || result.status === "cancelled") {
                 return /** @type {EndResult} */ ({ status: "paused", counts: s.counts, opsPlanned: 0, opsDone: 0, slices: s.slice });
             }
             if (result.status === "need-hold") {
-                const rect = holdRectFor(result.box);
-                const held = await holdArea(s.dimension, rect, s.token, CIV_TICKING_ID, s.opts.progress);
+                const { rect, held } = await holdConstructionWindow(s, result.box, result.apron);
+                s.holdState={status:held.status,held:held.held};
+                if(!held.held&&held.status==="nocapacity"&&!s.fallbackReported) {
+                    s.fallbackReported=true;
+                    s.opts.say(["No ticking-area capacity: construction is relying on already-loaded chunks. If it pauses for an unreadable cell, move near that cell and resume."]);
+                }
+                if (!s.token.cancelled && (held.status === "stalled" || held.status === "shrink") && s.holdSide > 16) {
+                    s.holdSide = Math.max(16, Math.floor(s.holdSide / 32) * 16);
+                    s.fragmented = true;
+                    s.heldRect = undefined;
+                    s.lastHoldBox = undefined;
+                    s.opts.say([`The construction area did not load; retrying the saved operation in smaller ${String(s.holdSide)}-block windows.`]);
+                    continue;
+                }
                 if (!s.token.cancelled && (held.status === "stalled" || held.status === "shrink" || held.status === "error")) {
                     return await end("paused", `the chunks around ${String(rect.x0)},${String(rect.z0)} would not load (${String(held.note)}); nothing is lost - run /scriptevent civ:generate_resume district=${String(s.opts.district ?? 1)} when the area loads`);
                 }
                 if (s.token.cancelled) {
+                    s.chunkLease?.release();
                     releaseArea(s.token);
                     return /** @type {EndResult} */ ({ status: "paused", counts: s.counts, opsPlanned: 0, opsDone: 0, slices: s.slice });
                 }
@@ -2061,6 +2781,8 @@ async function run(s) {
             return /** @type {EndResult} */ ({ status: "paused", counts: s.counts, opsPlanned: 0, opsDone: 0, slices: s.slice });
         }
         return await end("failed", `unexpected error: ${String(error)}`);
+    } finally {
+        s.chunkLease?.release();
     }
 }
 
@@ -2096,7 +2818,7 @@ export function sessionStatus() {
         return undefined;
     }
     const overall = jobs.progress(s.queue);
-    return { district: s.opts.district ?? 1, status: s.status, stage: s.lastStage, pct: overall.pct, done: overall.totalOps - overall.remainingOps, total: overall.totalOps, counts: s.counts, slice: s.slice };
+    return { district: s.opts.district ?? 1, repair:s.opts.completedCityRepair ? "city" : undefined, status: s.status, stage: s.lastStage, pct: overall.pct, done: overall.totalOps - overall.remainingOps, total: overall.totalOps, counts: s.counts, slice: s.slice };
 }
 
 /**
@@ -2128,6 +2850,7 @@ export function abortConstruction() {
     } catch (_error) {
         saved = false;
     }
+    s.chunkLease?.release();
     releaseArea(s.token);
     session = undefined;
     const overall = jobs.progress(s.queue);
@@ -2163,6 +2886,9 @@ export function abortCivJob(finalState = "cancelled", error = undefined) {
 export function civAbortLines(result, resumeId) {
     const stopped = result.stopped;
     if (stopped === undefined) {
+        if (result.kind === "civ-wall-leaf-repair") {
+            return ["Stopped wall-leaf maintenance. Any completed replacements remain in the world. Retained receipts will be rechecked on rerun."];
+        }
         return [`Stopped the ${result.kind} job. It had not started building: no block was written by it.`];
     }
     return [

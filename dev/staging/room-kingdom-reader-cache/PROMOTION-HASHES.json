@@ -1,0 +1,71 @@
+{
+  "utc": "2026-11-07T01:54:31.033626+00:00",
+  "scope": "STAGING ONLY; command-local immutable validated decode reuse; all fresh raw and source/native barriers retained",
+  "files": [
+    {
+      "source": "dev/staging/room-kingdom-reader-cache/proposed/CivilizationApocalypse_BP/scripts/commands/civ.js",
+      "target": "CivilizationApocalypse_BP/scripts/commands/civ.js",
+      "sha256": "6850D8FC7935D8BE691B8EE5FE2C1CF57E87DA33AAB25AA67329629C210D6063",
+      "baselineSha256": "B0E0A19CADC9C39AAF7D0DE453664AE763B37FB6E1AC8310C0295DCAABBA20EE"
+    },
+    {
+      "source": "dev/staging/room-kingdom-reader-cache/proposed/CivilizationApocalypse_BP/scripts/integration/roomKingdomReader.js",
+      "target": "CivilizationApocalypse_BP/scripts/integration/roomKingdomReader.js",
+      "sha256": "8A1F1A9BDD4CBF88858859F47058E0B4EFD18542FE98E0E6DFE719209E8721D1",
+      "baselineSha256": null
+    },
+    {
+      "source": "dev/staging/room-kingdom-reader-cache/proposed-dev/test/room-kingdom-reader-cache.test.mjs",
+      "target": "dev/test/room-kingdom-reader-cache.test.mjs",
+      "sha256": "2B2DE9A83B56D53081BC6A5E6233A0E3553316CE8191F5DDF8580FC7E2530102",
+      "baselineSha256": null
+    },
+    {
+      "source": "dev/staging/room-kingdom-reader-cache/proposed-dev/test/room-vegetation-preview.test.mjs",
+      "target": "dev/test/room-vegetation-preview.test.mjs",
+      "sha256": "572EE2AA55030521766C6856CA9D659AA44A64D428E2D3E70491667F90703778",
+      "baselineSha256": "3AE534A25FBE9C635C34FE0B3205B94E0DFBD6145302ED6BE0048DD71B45DDD2"
+    }
+  ],
+  "focused": {
+    "tests": 9,
+    "pass": 9,
+    "fail": 0,
+    "durationMs": 619.392,
+    "log": "focused-iterative-final.log"
+  },
+  "strictTypecheck": {
+    "exitCode": 0,
+    "config": "tsconfig.json",
+    "log": "typecheck-iterative-final.log"
+  },
+  "testSha256": "7C9CDAC554D8225CB3D08544E141BC1222EC329FB9A37D30492C48EA22504154",
+  "sourceDependencies": {
+    "CivilizationApocalypse_BP/scripts/kingdom/store.js": "8C49CCAC4D7A905E0D831A9D7BFAA2354E10484B67FEDB122B8D022B9DC193F5",
+    "CivilizationApocalypse_BP/scripts/kingdom/state.js": "F757E2EF72354542E7E4F4B0435AC77A9D8131EEE9B34C91CC1B5D56C14F481E",
+    "CivilizationApocalypse_BP/scripts/civ/wallLeafRepair.js": "97998CF2E8A2318601B3AB75E0950DC242A57D534C3C1B996EDF83464BA08770",
+    "CivilizationApocalypse_BP/scripts/civ/roomVegetationPreview.js": "6CA1FF81158112438520A1695250E8748CBA74F51010089FD91CBE3F415F0FDC"
+  },
+  "deepExtensionRegression": {
+    "depth": 14000,
+    "rawBytesBelow32767": true,
+    "oldStoreStatus": "ok",
+    "recursiveFreeze": "RangeError Maximum call stack size exceeded",
+    "iterativeFreeze": "PASS preserves and freezes all nodes",
+    "initialFailureLog": "deep-extension-14000-before-fix.log"
+  },
+  "centralOverlay": {
+    "tests": 46,
+    "pass": 46,
+    "fail": 0,
+    "durationMs": 1204.6697,
+    "log": "central-overlay-second.log",
+    "scope": "12 new default production-import cases plus all34 prior room module/isolated adapter cases; overlay only used to test unpromoted source",
+    "nativeAdapterCases": [
+      "REAL existing store serialized valid kingdom +real source guard475cells success",
+      "Native first full-state getter corrupting fresh raw refuses at1cell",
+      "Final fresh raw getter player dimension mutation refuses publication",
+      "Final fresh raw getter cancellation refuses publication"
+    ]
+  }
+}

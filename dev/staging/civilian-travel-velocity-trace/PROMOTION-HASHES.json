@@ -1,0 +1,82 @@
+{
+  "scope": "STAGING ONLY FINAL FROZEN after approved localaccessor/coercion-order fix; no main/full/deploy/native",
+  "baseline": "installed162/1984",
+  "files": [
+    {
+      "source": "dev/staging/civilian-travel-velocity-trace/proposed/CivilizationApocalypse_BP/scripts/integration/civilianTravel.js",
+      "target": "CivilizationApocalypse_BP/scripts/integration/civilianTravel.js",
+      "sha256": "9E719476E0DA1687777EF8E337D77455BA6D92EBB436B51937299D2B9D48FD3E",
+      "baselineSha256": "514D1F8D4AEAE51954194FF4F0BB75F82512F0E19A762E483828F1D2F0FF7DF7"
+    },
+    {
+      "source": "dev/staging/civilian-travel-velocity-trace/proposed-dev/test/civilian-travel-velocity-trace.test.mjs",
+      "target": "dev/test/civilian-travel-velocity-trace.test.mjs",
+      "sha256": "9A100CD5767D5A85699C644A4E70224AA049BB217351F11FEC7FCBE55C0F5DAD",
+      "baselineSha256": null
+    },
+    {
+      "source": "dev/staging/civilian-travel-velocity-trace/proposed-dev/test/civilian-travel-trace.test.mjs",
+      "target": "dev/test/civilian-travel-trace.test.mjs",
+      "sha256": "BAC499F0E0B6EE47AC967FC39E903297B934C2B1F9B62C915FDDD61B522C40A6",
+      "baselineSha256": "B83E82E89BEA2B60AD1BEC27D68E5E88D007266BD913BC0F31F64863555EB197"
+    },
+    {
+      "source": "dev/staging/civilian-travel-velocity-trace/proposed-dev/test/civilian-travel-cadence.test.mjs",
+      "target": "dev/test/civilian-travel-cadence.test.mjs",
+      "sha256": "E20E2E723D37CD9975F69694ED1CA45DC62BF61A5EE7005DD8676C142847AC7C",
+      "baselineSha256": "0EFD81EFA291810DBA8BF53F8C8DFF0B9B81156B62B59CDCA0FDDB7023891648"
+    },
+    {
+      "source": "dev/staging/civilian-travel-velocity-trace/proposed-dev/fixtures/civilian-travel-before-velocity-trace.json",
+      "target": "dev/fixtures/civilian-travel-before-velocity-trace.json",
+      "sha256": "1FCE168A9CAB6A5C4850CE69A5FF2C34F40CE5F9F400D8AA11716A06CEED9DC6",
+      "baselineSha256": null
+    }
+  ],
+  "evidence": {
+    "focused": {
+      "tests": 54,
+      "pass": 54,
+      "newCases": 20,
+      "existingCases": 34,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "durationMs": 513.4563,
+      "log": "focused-final.log",
+      "logSha256": "12016FAF0659474A2729F9E18AEBD74A2598FA8C03D3282D1E1F22FC4928C3C6"
+    },
+    "strictIsolatedTsc": {
+      "exitCode": 0,
+      "stdout": "",
+      "command": "npx.cmd tsc -p dev/staging/civilian-travel-velocity-trace/typecheck/tsconfig.json"
+    },
+    "historicalHarnessFailure": "focused-initial.log: URL string passed as filesystempath in stagingoverlay,3filesfailedbeforetestexecution; fixednewURL wrapper only, runtimecandidateunchanged",
+    "coercionGapBeforeFix": {
+      "tests": 20,
+      "pass": 18,
+      "fail": 2,
+      "durationMs": 496.5931,
+      "log": "invalidraw-before-order-fix.log",
+      "detail": "Plain eager x/z copy changed invalid x.valueOf coercion ordering and could alterimpulse/readZafterthrow. Root approvedlocalaccessorargument, unchangedtravelImpulse nowpulls rawaxes at originaltime.",
+      "historicalCandidate": "proposed-before-coercion-fix.js",
+      "historicalPins": "PROMOTION-before-coercion-fix.json"
+    }
+  },
+  "contracts": [
+    "SamegetVelocityAPIread once, samex/z nativegetter order/count, noYgetter",
+    "Same actualimpulses/nativequeries/status/ownership through6before-after scenarios",
+    "Capture only finiteprimitive pre-impulsex/z; no nativehandles retained",
+    "Explicit label pre-impulse horizontal velocity from existing read x=...,z=...;y=not sampled",
+    "Blockedbefore/partial/invalidexistingread remains unavailable; finalgate/identity/refusalguards unchanged",
+    "No clearVelocity/attribute/AI/force/height/tolerance/timer/property/actor changes",
+    "Existingtrace/cadencetests retain allcontrolassertions; only intentional velocitysuffix normalized forhistoricaltracecompare and originalexpressionstaticcontract updated tosame-readcapture",
+    "UnmodifiedtravelImpulse itself triggers same nativeX\u2192coercionX\u2192nativeZ ordering via LOCALaccessor-backed argument, noProxy. Null/undefined/malformed/numericstring/valueOf-mutation/throwingX parity covered. Finite primitive snapshot only; nonnumber values unavailable."
+  ],
+  "pending": [
+    "Root independent review",
+    "Centralfocused/TSC/full verification ifpromoted",
+    "Closeddeployment",
+    "Nativevelocityobservation; noAIcausal/movementarrival/cleanup acceptance"
+  ]
+}

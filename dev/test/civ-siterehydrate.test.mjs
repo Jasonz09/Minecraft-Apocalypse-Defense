@@ -148,7 +148,7 @@ test("planning on the original field and on the imported ground give the same re
         bounds: river.bounds,
         at(x, z) {
             const cell = river.at(x, z);
-            return Math.abs(z - midZ) <= 2 ? { g: cell.g - 3, k: "water", tree: false } : cell;
+            return Math.abs(z - midZ) <= 2 ? { g: cell.g - 3, k: "water", tree: false, surface: cell.g - 1 } : cell;
         },
     };
     const a = D.planDistrictSite(plan, 1, wet, { seed: 7 });

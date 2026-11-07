@@ -37,7 +37,7 @@ export const OP_KINDS = Object.freeze({
     road: { safety: "natural-ground", doc: "road surface block (replaces the ground top or sits on a fill)" },
     structure: { safety: "build", doc: "blueprint building blocks" },
     support: { safety: "build", doc: "bridge pillars and other posts under a structure (may stand in still water)" },
-    dress: { safety: "build", doc: "decoration (lamps, fences); reserved, currently not emitted" },
+    dress: { safety: "build", doc: "decoration (lamp posts, lanterns, wall stairs, plaza dressing)" },
     bridge: { safety: "build", doc: "bridge deck and railing over a gap" },
     stair: { safety: "natural-ground", doc: "stair block with facing states (road slope, wall access, pad edge)" },
     footing: { safety: "natural-ground", doc: "wall / gate / building footing replacing ground below the surface" },

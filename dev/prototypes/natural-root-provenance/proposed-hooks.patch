@@ -1,0 +1,27 @@
+Design artifact only: helper is root-refusal-deps.mjs alongside this file.
+Do not apply to frozen active sources. Production integration needs typed
+session metadata/helper, matching all relevant actual-write paths, and full QA.
+
+--- a/CivilizationApocalypse_BP/scripts/integration/civBuilder.js
++++ b/CivilizationApocalypse_BP/scripts/integration/civBuilder.js
+@@
+     let cacheRefusal = true;
++    let rootDependency;
+@@
+             if (base === undefined || !(isNaturalGround(base.id) || isLog(base.id) || ownBase)) {
++                rootDependency={x:lowest.x,y:lowest.y-1,z:lowest.z};
+                 reason = `a tree trunk does not stand on natural ground (...existing text...)`;
+@@
+-        if (cacheRefusal) {
++        if (cacheRefusal && rootDependency) {
++            // Cap metadata; when full, do not cache this root refusal at all.
++            rememberRootRefusal(s,rootDependency,component,seed,reason);
++        } else if (cacheRefusal) {
+@@
+         target.setPermutation(permutationFor(s, op));
++        // Only successful actual writes remove dependent negative evidence.
++        // The next request must run the entire natural-tree proof again.
++        invalidateAfterActualWrite(s,op);
+@@
+             if (s.treeRefused.size > 0) s.treeRefused.clear();
++            forgetRootDependencies(s);

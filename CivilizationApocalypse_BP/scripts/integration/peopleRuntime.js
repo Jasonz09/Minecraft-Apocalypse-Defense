@@ -75,6 +75,24 @@ function describeDriver(driver) {
 }
 
 /**
+ * A thrown driver's message plus the frame that threw it. The message alone names the symptom (an engine
+ * location that was not loaded), never the line that asked for it, so every crash in the same class reads
+ * identically and the operator cannot tell one driver's bug from another's.
+ *
+ * @param {unknown} error
+ * @returns {string}
+ */
+function errorOrigin(error) {
+    const message = String(error);
+    const stack = typeof (/** @type {any} */ (error)?.stack) === "string" ? /** @type {any} */ (error).stack : "";
+    const frame = String(stack)
+        .split("\n")
+        .map((line) => line.trim())
+        .find((line) => line.startsWith("at ") && /[^\s]+\.js:\d+/.test(line));
+    return frame === undefined ? message : `${message} [${frame.replace(/^at\s+/, "")}]`;
+}
+
+/**
  * @param {ReturnType<typeof import("../kingdom/store.js").createKingdomStore>} kingdomStore
  */
 export function createPeopleRuntime(kingdomStore) {
@@ -172,9 +190,9 @@ export function createPeopleRuntime(kingdomStore) {
                 }
             } catch (error) {
                 entry.errors += 1;
-                entry.lastError = String(error);
+                entry.lastError = errorOrigin(error);
                 stats.errors += 1;
-                stats.lastError = `${driver.id}: ${String(error)}`;
+                stats.lastError = `${driver.id}: ${errorOrigin(error)}`;
             }
         }
     }

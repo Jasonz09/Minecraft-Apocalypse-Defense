@@ -4,6 +4,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { extractZip, writeZip } from "./lib/zip.mjs";
 import { fullReleaseProblems, starterConfigProblems } from "./lib/release-readiness.mjs";
 import { validateTemplateDir } from "./validate-template.mjs";
+import { contentPackProblems, packBindings } from "./lib/content-packs.mjs";
 
 /**
  * Build a shippable `.mctemplate` from an ARMED development world.
@@ -115,6 +116,9 @@ if (!insideDist) {
     process.exit(1);
 }
 
+const sourcePacks=(spec.packs??[]).map(p=>({root:join(projectRoot,p.source),kind:p.kind}));
+const contentProblems=contentPackProblems(sourcePacks);
+if(contentProblems.length){fail(contentProblems);process.exit(1);}
 const staged = join(outRoot, spec.templateId);
 // These guards run BEFORE any staging cleanup; the builder recursively removes
 // its own staging directory and must never accidentally remove a source world.
@@ -215,6 +219,11 @@ for (const pack of spec.packs ?? []) {
     console.log(`packed ${pack.kind}/${pack.packageDir} (${pack.packageDir.length} char folder name)`);
 }
 
+// Rebuild bindings for both kinds; an exported world may carry stale/missing RP bindings.
+for(const kind of ["behavior_packs","resource_packs"]) {
+    const file=kind==="behavior_packs"?"world_behavior_packs.json":"world_resource_packs.json";
+    writeFileSync(join(staged,file),JSON.stringify(packBindings(sourcePacks,kind),null,4)+"\n");
+}
 writeFileSync(
     join(staged, "manifest.json"),
     `${JSON.stringify(
@@ -224,6 +233,9 @@ writeFileSync(
                 description: "pack.description",
                 version: spec.templateVersion,
                 uuid: spec.manifest.headerUuid,
+                lock_template_options: spec.manifest.lockTemplateOptions,
+                base_game_version: spec.manifest.baseGameVersion,
+                allow_random_seed: false,
             },
             modules: [{ version: spec.templateVersion, type: spec.manifest.moduleType, uuid: spec.manifest.moduleUuid }],
             format_version: spec.manifest.formatVersion,

@@ -1,0 +1,17 @@
+{
+  "utc": "2026-11-07T02:17:55.632931+00:00",
+  "decision": "No scoped safety blocker found; native passage/arrival/hold/return remains unaccepted",
+  "allStagePinsAnd3ActiveBaselinesMatch": true,
+  "independentFocused": {
+    "tests": 48,
+    "pass": 48,
+    "fail": 0,
+    "durationMs": 1993.4811,
+    "log": "independent-focused.log"
+  },
+  "policy": "Only exact minecraft:air or minecraft:short_grass body/head/rise; strict isTravelBodyAir unchanged; footing regex unchanged excludes grass plant. No family/solid/replaceable/generalflora fallback.",
+  "driver": "Only import/shared body predicate changes; swept cells, floor policy,256reads, identity/feet/source/threat guards, velocity helper/order, force/speed/height/cadence unchanged; no plant or block writes.",
+  "planner": "Same clearance predicate, same native read sites/caps/search ordering; retained exact original feet/head/rise primitive IDs and exact fresh equality, including shortgrass-to-AIR refusal. Preview grants no motion/vertical/work authority.",
+  "hazards": "Fern/tallgrass/vines/crops/fences/doors/liquids/fire/cactus/unknown remain refused; no weakening protected/decor editing policy because no edit path.",
+  "limits": "No native collision-box proof was established by retrieved primary identifier docs; offline48tests support narrow declared gameplay policy only. Actual D5 grass cell passage requires root native trial and before/after plant checks."
+}

@@ -1,0 +1,19 @@
+{
+  "scope": "Offline real-five-source frozen-production parity result; full original detailed data promoted to eventual central reference fixture",
+  "pass": true,
+  "fullResultAndFrozenReference": "proposed-dev/fixtures/leaf-source-streaming-real-fresh-golden.json",
+  "log": "fresh-five-source.log",
+  "streamMs": 17847.2011,
+  "totalMs": 28837.0262,
+  "planId": "c835b06e",
+  "targets": 35911,
+  "surveyed": 34673,
+  "unloaded": 1238,
+  "tree": 17,
+  "eligible": 14,
+  "refused": 3,
+  "complete": false,
+  "exactSurveyRowsContactsReasonsStatsAndGlobals": true,
+  "exactFrozenBatchPlan": true,
+  "nativeMemoryOrStabilityProof": false
+}

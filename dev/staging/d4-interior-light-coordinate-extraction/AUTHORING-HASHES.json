@@ -1,0 +1,17 @@
+{
+  "status": "AUTHORING ONLY; UNRUN. User using computer; no hydration/WALparse or checks authorized now.",
+  "scope": "D4 exact source-supported fixture coordinates plus D5 chapel D5-only operation/ground classification; no origin or repair permission",
+  "files": {
+    "extract-closed-input.py": "C92989118BFCF99F488A6B8BBD419E291D018E78EF96AE4180648C4CC49FFE87",
+    "inspect-saved-fixtures.mjs": "1D7E699F8788DF96CBFEE6F26F8F566EB168D038E8A683D349638090CF7AAE1A",
+    "README.md": "2A60272E134E6BC03B22C0BD273FB010FE62E97BF21E52F830D688B64F4F70D4"
+  },
+  "limitations": [
+    "Both scripts unexecuted; future closed-only root approval required",
+    "No current native log coordinate/state census",
+    "Original ground tree flag does not reconstruct natural tree topology",
+    "No all-district lastwriter compile",
+    "Exact clear Ys are retained; min/max alone does not imply every layer was plannedAIR",
+    "No wallreceipt/AIRbypass/fixture manipulation/plant removal"
+  ]
+}

@@ -1,0 +1,54 @@
+[
+  {
+    "path": "BP/functions/ca_combat_fixture/clear_gear.mcfunction",
+    "sha256": "1666B00AF84645B9D454A640743BAA868BDA376F55E55D6DB7E1D054402CF5BD"
+  },
+  {
+    "path": "BP/functions/ca_combat_fixture/engage.mcfunction",
+    "sha256": "375AF5F159C4A54A93F0599D25DE62E9BFE7E7057A96A58D2769DD31BC6949B3"
+  },
+  {
+    "path": "BP/functions/ca_combat_fixture/internal/clear_gear_body.mcfunction",
+    "sha256": "5C617CC9CA2FD3F3DBB68A901E75A21A6054FD262DC8E27833CDF6C57831998B"
+  },
+  {
+    "path": "BP/functions/ca_combat_fixture/internal/engage_body.mcfunction",
+    "sha256": "32DB0C03873FDF9DB4B6059F6BB52AD1F9E41DBFDFE0CAF950A066475067FE34"
+  },
+  {
+    "path": "BP/functions/ca_combat_fixture/internal/prepare_body.mcfunction",
+    "sha256": "048AB1E5A13361F2C3528ABF5F8CF9414F2A0CDBDBE8C879AC7B391880C4DABF"
+  },
+  {
+    "path": "BP/functions/ca_combat_fixture/prepare.mcfunction",
+    "sha256": "ACD56B7BEC58E801A3008C25CF2E07406AACD86B2932C4455DB7253AE927A9BE"
+  },
+  {
+    "path": "BP/functions/ca_combat_fixture/spawn.mcfunction",
+    "sha256": "D5E8C703E4C33D95971521531F282143CB141456EB2818C39FEC415CB4E2879B"
+  },
+  {
+    "path": "BP/functions/ca_combat_fixture/spawn_caged.mcfunction",
+    "sha256": "DFA83C2F48DDC2646B78E350CF1D7C33D2CC839F522280AA52115879A4072FE0"
+  },
+  {
+    "path": "BP/functions/ca_combat_fixture/view_cage.mcfunction",
+    "sha256": "0D7ABED43D910C39CF12063F402CCB4AEEC87D4DD56AE035B7EFE494FF8A2B6D"
+  },
+  {
+    "path": "BP/functions/ca_combat_fixture/view_guard.mcfunction",
+    "sha256": "3E9CE8235B2A5B9BFAB04903A0C2C11A830FE329DB5BDAA5E07DB0060BC81EFE"
+  },
+  {
+    "path": "BP/manifest.json",
+    "sha256": "891F1AE8A829C890CC0984F020284E3A6A5C9567198E0270E900B1423136DA0E"
+  },
+  {
+    "path": "BP/scripts/fixtureInspection.js",
+    "sha256": "136050E2C5F73C7D7F88742D9CAD38AB434737FC15FBC66F6BA7F2017D58D5E8"
+  },
+  {
+    "path": "BP/scripts/main.js",
+    "sha256": "9CDD869A9BFD0440A0F086CCADC3E83D0DCC6A2704DA4B8DD7C34E61CAA93926"
+  }
+]

@@ -1,0 +1,371 @@
+{
+  "sourceSha256": "186502AC8A63CB2D9F414CACB070419A2071AF13EC5848BB0A842F7ACA13312A",
+  "cases": {
+    "normal": {
+      "v": 1,
+      "policy": "wall-leaves-trim-v1",
+      "index": 4,
+      "checksum": "35635162",
+      "masterHash": "9e5e307e",
+      "dimension": "minecraft:overworld",
+      "sources": [
+        {
+          "index": 4,
+          "checksum": "35635162"
+        },
+        {
+          "index": 5,
+          "checksum": "23a6aeca"
+        }
+      ],
+      "requested": [
+        {
+          "x": 0,
+          "y": 70,
+          "z": 0
+        }
+      ],
+      "proposals": [
+        {
+          "target": {
+            "x": 0,
+            "y": 70,
+            "z": 0,
+            "id": "minecraft:stone_bricks",
+            "kind": "wall"
+          },
+          "contacts": [
+            {
+              "point": {
+                "x": -1,
+                "y": 69,
+                "z": -1
+              },
+              "historical": false,
+              "expected": []
+            },
+            {
+              "point": {
+                "x": -1,
+                "y": 69,
+                "z": 0
+              },
+              "historical": false,
+              "expected": []
+            },
+            {
+              "point": {
+                "x": -1,
+                "y": 69,
+                "z": 1
+              },
+              "historical": false,
+              "expected": []
+            },
+            {
+              "point": {
+                "x": -1,
+                "y": 70,
+                "z": -1
+              },
+              "historical": false,
+              "expected": []
+            },
+            {
+              "point": {
+                "x": -1,
+                "y": 70,
+                "z": 0
+              },
+              "historical": false,
+              "expected": []
+            },
+            {
+              "point": {
+                "x": -1,
+                "y": 70,
+                "z": 1
+              },
+              "historical": false,
+              "expected": []
+            },
+            {
+              "point": {
+                "x": -1,
+                "y": 71,
+                "z": -1
+              },
+              "historical": false,
+              "expected": []
+            },
+            {
+              "point": {
+                "x": -1,
+                "y": 71,
+                "z": 0
+              },
+              "historical": false,
+              "expected": []
+            },
+            {
+              "point": {
+                "x": -1,
+                "y": 71,
+                "z": 1
+              },
+              "historical": false,
+              "expected": []
+            },
+            {
+              "point": {
+                "x": 0,
+                "y": 69,
+                "z": -1
+              },
+              "historical": false,
+              "expected": []
+            },
+            {
+              "point": {
+                "x": 0,
+                "y": 69,
+                "z": 0
+              },
+              "historical": false,
+              "expected": [
+                "minecraft:cobblestone"
+              ]
+            },
+            {
+              "point": {
+                "x": 0,
+                "y": 69,
+                "z": 1
+              },
+              "historical": false,
+              "expected": []
+            },
+            {
+              "point": {
+                "x": 0,
+                "y": 70,
+                "z": -1
+              },
+              "historical": false,
+              "expected": []
+            },
+            {
+              "point": {
+                "x": 0,
+                "y": 70,
+                "z": 0
+              },
+              "historical": false,
+              "expected": [
+                "minecraft:stone_bricks"
+              ]
+            },
+            {
+              "point": {
+                "x": 0,
+                "y": 70,
+                "z": 1
+              },
+              "historical": false,
+              "expected": []
+            },
+            {
+              "point": {
+                "x": 0,
+                "y": 71,
+                "z": -1
+              },
+              "historical": false,
+              "expected": []
+            },
+            {
+              "point": {
+                "x": 0,
+                "y": 71,
+                "z": 0
+              },
+              "historical": false,
+              "expected": []
+            },
+            {
+              "point": {
+                "x": 0,
+                "y": 71,
+                "z": 1
+              },
+              "historical": false,
+              "expected": []
+            },
+            {
+              "point": {
+                "x": 1,
+                "y": 69,
+                "z": -1
+              },
+              "historical": false,
+              "expected": []
+            },
+            {
+              "point": {
+                "x": 1,
+                "y": 69,
+                "z": 0
+              },
+              "historical": false,
+              "expected": []
+            },
+            {
+              "point": {
+                "x": 1,
+                "y": 69,
+                "z": 1
+              },
+              "historical": false,
+              "expected": []
+            },
+            {
+              "point": {
+                "x": 1,
+                "y": 70,
+                "z": -1
+              },
+              "historical": false,
+              "expected": []
+            },
+            {
+              "point": {
+                "x": 1,
+                "y": 70,
+                "z": 0
+              },
+              "historical": false,
+              "expected": []
+            },
+            {
+              "point": {
+                "x": 1,
+                "y": 70,
+                "z": 1
+              },
+              "historical": false,
+              "expected": []
+            },
+            {
+              "point": {
+                "x": 1,
+                "y": 71,
+                "z": -1
+              },
+              "historical": false,
+              "expected": []
+            },
+            {
+              "point": {
+                "x": 1,
+                "y": 71,
+                "z": 0
+              },
+              "historical": false,
+              "expected": []
+            },
+            {
+              "point": {
+                "x": 1,
+                "y": 71,
+                "z": 1
+              },
+              "historical": false,
+              "expected": []
+            }
+          ]
+        }
+      ],
+      "refused": [],
+      "planId": "ffa2ec57",
+      "compileScannedOps": 2
+    },
+    "candidate-metadata-refusal": {
+      "v": 1,
+      "policy": "wall-leaves-trim-v1",
+      "index": 4,
+      "checksum": "35635162",
+      "masterHash": "9e5e307e",
+      "dimension": "minecraft:overworld",
+      "sources": [
+        {
+          "index": 4,
+          "checksum": "35635162"
+        },
+        {
+          "index": 5,
+          "checksum": "23a6aeca"
+        }
+      ],
+      "requested": [
+        {
+          "x": 0,
+          "y": 70,
+          "z": 0
+        }
+      ],
+      "proposals": [],
+      "refused": [
+        {
+          "target": {
+            "x": 0,
+            "y": 70,
+            "z": 0,
+            "id": "minecraft:stone_bricks",
+            "label": "original-refusal-metadata"
+          },
+          "reason": "candidate is not the exact final stateless solid masonry wall target"
+        }
+      ],
+      "planId": "7fcc8f99",
+      "compileScannedOps": 3
+    },
+    "historical": {
+      "v": 1,
+      "policy": "wall-leaves-trim-v1",
+      "index": 4,
+      "checksum": "35635162",
+      "masterHash": "9e5e307e",
+      "dimension": "minecraft:overworld",
+      "sources": [
+        {
+          "index": 4,
+          "checksum": "35635162"
+        },
+        {
+          "index": 5,
+          "checksum": "23a6aeca"
+        }
+      ],
+      "requested": [
+        {
+          "x": 0,
+          "y": 70,
+          "z": 0
+        }
+      ],
+      "proposals": [],
+      "refused": [
+        {
+          "target": {
+            "x": 0,
+            "y": 70,
+            "z": 0
+          },
+          "reason": "candidate has historical planned vegetation/decor ownership"
+        }
+      ],
+      "planId": "086d38c6",
+      "compileScannedOps": 4
+    }
+  }
+}

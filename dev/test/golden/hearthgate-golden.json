@@ -1,16 +1,16 @@
 {
- "description": "Golden snapshot of district 1 (Hearthgate) site output, recorded at HEAD 143afa9 before the WP2 five-district change. Any change to district 1 output must fail dev/test/civ-five-district.test.mjs.",
- "head": "143afa9",
+ "description": "Golden snapshot of district 1 (Hearthgate) site output. Regenerated for the two-wide lit tower passage (its crown lantern hangs), the walkway stairs and the district lighting; any change to district 1 output must fail dev/test/civ-five-district.test.mjs.",
+ "head": "f9a150c",
  "version": 2,
  "layoutId": "hearthgate-enlarged",
  "cases": {
   "seed 21 rough": {
    "seed": 21,
    "relief": 18,
-   "checksum": "53c81775",
-   "siteOpCount": 75155,
-   "opCount": 75155,
-   "opsSha256": "69dba8a7c70bf18505cc342404ea6e6756af222ed9c53002b8335c5c21d947ba",
+   "checksum": "740703e5",
+   "siteOpCount": 81765,
+   "opCount": 81765,
+   "opsSha256": "3d2e71567fc919f845a6ce42a3dc944d8d353005959f2461dcfdce366b17a022",
    "elements": [
     {
      "stage": "clear",
@@ -87,38 +87,38 @@
     {
      "stage": "clear",
      "id": "clear-roads",
-     "total": 47,
-     "hash": "87e812de"
+     "total": 116,
+     "hash": "655d9e96"
     },
     {
      "stage": "walls",
      "id": "wall-1",
-     "total": 14055,
-     "hash": "e4dccc61"
+     "total": 14134,
+     "hash": "b8db844a"
     },
     {
      "stage": "walls",
      "id": "wall-3",
-     "total": 8458,
-     "hash": "d0f07523"
+     "total": 8531,
+     "hash": "553facd8"
     },
     {
      "stage": "walls",
      "id": "wall-4",
-     "total": 8868,
-     "hash": "a0a1b2a2"
+     "total": 8938,
+     "hash": "2db6d0df"
     },
     {
      "stage": "walls",
      "id": "wall-7",
-     "total": 5426,
-     "hash": "b83c9647"
+     "total": 5465,
+     "hash": "b9925a42"
     },
     {
      "stage": "walls",
      "id": "wall-9",
-     "total": 2236,
-     "hash": "70522de0"
+     "total": 2291,
+     "hash": "7e0cb4b5"
     },
     {
      "stage": "gates",
@@ -1412,6 +1412,18 @@
     },
     {
      "stage": "dressing",
+     "id": "lamps",
+     "total": 6204,
+     "hash": "cccdfeb9"
+    },
+    {
+     "stage": "dressing",
+     "id": "room-lights",
+     "total": 21,
+     "hash": "d9240dbb"
+    },
+    {
+     "stage": "dressing",
      "id": "hq-plaza",
      "total": 46,
      "hash": "e29f6f40"
@@ -1421,10 +1433,10 @@
   "seed 3 rough": {
    "seed": 3,
    "relief": 18,
-   "checksum": "574153b3",
-   "siteOpCount": 75256,
-   "opCount": 75256,
-   "opsSha256": "c5b76895a7a687d6f73c4b682035e68beb15ca696ba544c86d603b169a9fe966",
+   "checksum": "37d2b30b",
+   "siteOpCount": 81807,
+   "opCount": 81807,
+   "opsSha256": "aafbe448530f8c3e354ceee971971d02e18845d03dae97bcaeac035074066e2b",
    "elements": [
     {
      "stage": "clear",
@@ -1489,32 +1501,32 @@
     {
      "stage": "clear",
      "id": "clear-roads",
-     "total": 82,
-     "hash": "d3362535"
+     "total": 212,
+     "hash": "5c9dc6a5"
     },
     {
      "stage": "walls",
      "id": "wall-1",
-     "total": 17561,
-     "hash": "d8ac006f"
+     "total": 17653,
+     "hash": "05c73044"
     },
     {
      "stage": "walls",
      "id": "wall-3",
-     "total": 4962,
-     "hash": "0b9d815f"
+     "total": 5018,
+     "hash": "efd0c200"
     },
     {
      "stage": "walls",
      "id": "wall-5",
-     "total": 11890,
-     "hash": "01a99e2e"
+     "total": 11933,
+     "hash": "71a5e780"
     },
     {
      "stage": "walls",
      "id": "wall-7",
-     "total": 3524,
-     "hash": "1472bc11"
+     "total": 3575,
+     "hash": "e310b0a9"
     },
     {
      "stage": "gates",
@@ -2916,6 +2928,18 @@
     },
     {
      "stage": "dressing",
+     "id": "lamps",
+     "total": 6158,
+     "hash": "0f625947"
+    },
+    {
+     "stage": "dressing",
+     "id": "room-lights",
+     "total": 21,
+     "hash": "35a67eaa"
+    },
+    {
+     "stage": "dressing",
      "id": "hq-plaza",
      "total": 53,
      "hash": "e50c088a"
@@ -2925,10 +2949,10 @@
   "seed 7 rough": {
    "seed": 7,
    "relief": 18,
-   "checksum": "35adcecb",
-   "siteOpCount": 71268,
-   "opCount": 71268,
-   "opsSha256": "f0883f35bc5ac4688612210ea06d7fcea5276734b29ce0cdbba794fa48346a03",
+   "checksum": "e511be5a",
+   "siteOpCount": 77161,
+   "opCount": 77161,
+   "opsSha256": "cd1e0504ecbf873b27fbc093d04611ef0121f3c3440ba21ebb9efb4b78c6e120",
    "elements": [
     {
      "stage": "clear",
@@ -3083,26 +3107,26 @@
     {
      "stage": "clear",
      "id": "clear-roads",
-     "total": 77,
-     "hash": "ac923bdf"
+     "total": 284,
+     "hash": "03920b2a"
     },
     {
      "stage": "walls",
      "id": "wall-2",
-     "total": 11804,
-     "hash": "3404c06c"
+     "total": 11842,
+     "hash": "30530843"
     },
     {
      "stage": "walls",
      "id": "wall-3",
-     "total": 14915,
-     "hash": "bb5ef8d0"
+     "total": 15023,
+     "hash": "b62010ff"
     },
     {
      "stage": "walls",
      "id": "wall-9",
-     "total": 5940,
-     "hash": "7c90724a"
+     "total": 6004,
+     "hash": "07103c05"
     },
     {
      "stage": "gates",
@@ -4333,16 +4357,28 @@
      "id": "stairs-4",
      "total": 32,
      "hash": "694022b5"
+    },
+    {
+     "stage": "dressing",
+     "id": "lamps",
+     "total": 5454,
+     "hash": "80549b22"
+    },
+    {
+     "stage": "dressing",
+     "id": "room-lights",
+     "total": 22,
+     "hash": "dfde2168"
     }
    ]
   },
   "seed 21 flat": {
    "seed": 21,
    "relief": 2,
-   "checksum": "1b382b32",
-   "siteOpCount": 67079,
-   "opCount": 67079,
-   "opsSha256": "76dbe4e146b40f64d01690f228ca548cf1ec952363054a2c9fffde37937924ad",
+   "checksum": "4d74b357",
+   "siteOpCount": 73543,
+   "opCount": 73543,
+   "opsSha256": "4b7cc429eb010754c2bb0eee9b96fdfe6d6e8e951e5449173f1b33f39d80ae58",
    "elements": [
     {
      "stage": "clear",
@@ -4395,38 +4431,38 @@
     {
      "stage": "clear",
      "id": "clear-roads",
-     "total": 32,
-     "hash": "adebde49"
+     "total": 114,
+     "hash": "aaa966b0"
     },
     {
      "stage": "walls",
      "id": "wall-1",
-     "total": 12344,
-     "hash": "67d31ca1"
+     "total": 12389,
+     "hash": "0d7bfa33"
     },
     {
      "stage": "walls",
      "id": "wall-3",
-     "total": 8812,
-     "hash": "21205c66"
+     "total": 8831,
+     "hash": "a715d8d7"
     },
     {
      "stage": "walls",
      "id": "wall-4",
-     "total": 9806,
-     "hash": "21b81190"
+     "total": 9882,
+     "hash": "c9ac1dff"
     },
     {
      "stage": "walls",
      "id": "wall-7",
-     "total": 4845,
-     "hash": "c75e01a9"
+     "total": 4877,
+     "hash": "e6810de1"
     },
     {
      "stage": "walls",
      "id": "wall-9",
-     "total": 3588,
-     "hash": "ea632694"
+     "total": 3631,
+     "hash": "c4513e20"
     },
     {
      "stage": "gates",
@@ -5495,16 +5531,28 @@
      "id": "stairs-5",
      "total": 28,
      "hash": "f899c7b8"
+    },
+    {
+     "stage": "dressing",
+     "id": "lamps",
+     "total": 6144,
+     "hash": "566d6cb0"
+    },
+    {
+     "stage": "dressing",
+     "id": "room-lights",
+     "total": 23,
+     "hash": "8e074c8a"
     }
    ]
   },
   "seed 3 flat": {
    "seed": 3,
    "relief": 2,
-   "checksum": "382bfb48",
-   "siteOpCount": 58905,
-   "opCount": 58905,
-   "opsSha256": "63d97c462be2c42e78ce82e43409268318addbeec19506f808870e1fe12cb313",
+   "checksum": "4e2c105e",
+   "siteOpCount": 65234,
+   "opCount": 65234,
+   "opsSha256": "0967de49053268530485ba2c545c78778045e9876434b1f60035c3101b98d6a0",
    "elements": [
     {
      "stage": "clear",
@@ -5641,32 +5689,32 @@
     {
      "stage": "clear",
      "id": "clear-roads",
-     "total": 123,
-     "hash": "c6455a04"
+     "total": 388,
+     "hash": "889d2bbb"
     },
     {
      "stage": "walls",
      "id": "wall-10",
-     "total": 5301,
-     "hash": "5af7eeab"
+     "total": 5348,
+     "hash": "d24b8f43"
     },
     {
      "stage": "walls",
      "id": "wall-11",
-     "total": 16639,
-     "hash": "c9d5a3a0"
+     "total": 16770,
+     "hash": "7dbd8c2e"
     },
     {
      "stage": "walls",
      "id": "wall-7",
-     "total": 6320,
-     "hash": "b3ac73d5"
+     "total": 6342,
+     "hash": "10d3acc3"
     },
     {
      "stage": "walls",
      "id": "wall-8",
-     "total": 2233,
-     "hash": "e7b87142"
+     "total": 2274,
+     "hash": "25ec1214"
     },
     {
      "stage": "gates",
@@ -6717,16 +6765,28 @@
      "id": "stairs-5",
      "total": 28,
      "hash": "3dae32c0"
+    },
+    {
+     "stage": "dressing",
+     "id": "lamps",
+     "total": 5799,
+     "hash": "bebf6a84"
+    },
+    {
+     "stage": "dressing",
+     "id": "room-lights",
+     "total": 24,
+     "hash": "0fa746c4"
     }
    ]
   },
   "seed 7 flat": {
    "seed": 7,
    "relief": 2,
-   "checksum": "0100b51f",
-   "siteOpCount": 61019,
-   "opCount": 61019,
-   "opsSha256": "1b72bd58287d355d66f18eba03f581e61312f384d56b19c447d8c84702e1dab2",
+   "checksum": "9ad44e6f",
+   "siteOpCount": 67100,
+   "opCount": 67100,
+   "opsSha256": "dcf9e7a12d9e7d755d99cdb9860d464f8f117a9b2578aef34b7b8ae089895dfe",
    "elements": [
     {
      "stage": "clear",
@@ -6875,26 +6935,26 @@
     {
      "stage": "clear",
      "id": "clear-roads",
-     "total": 128,
-     "hash": "4e2730d8"
+     "total": 315,
+     "hash": "fa91c540"
     },
     {
      "stage": "walls",
      "id": "wall-1",
-     "total": 10605,
-     "hash": "14f7b1dd"
+     "total": 10656,
+     "hash": "0bb58b50"
     },
     {
      "stage": "walls",
      "id": "wall-3",
-     "total": 15030,
-     "hash": "01224bbf"
+     "total": 15149,
+     "hash": "36ebde48"
     },
     {
      "stage": "walls",
      "id": "wall-9",
-     "total": 5334,
-     "hash": "148dd4fc"
+     "total": 5399,
+     "hash": "0bf0886e"
     },
     {
      "stage": "gates",
@@ -7981,6 +8041,18 @@
      "id": "stairs-4",
      "total": 28,
      "hash": "cdd11fdb"
+    },
+    {
+     "stage": "dressing",
+     "id": "lamps",
+     "total": 5635,
+     "hash": "5a83693a"
+    },
+    {
+     "stage": "dressing",
+     "id": "room-lights",
+     "total": 24,
+     "hash": "6f4971cb"
     }
    ]
   }

@@ -115,7 +115,11 @@ test("no people walk the streets while a district build holds the world", () => 
 
 test("main.js wires the streets driver, so the pack's one door has something behind it", () => {
     const source = readFileSync(join(scriptsRoot, "main.js"), "utf8");
-    assert.match(source, /peopleRuntime\.register\(createPeopleStreets\(\)\)/, "the streets driver is registered in main.js");
+    assert.equal([...source.matchAll(/\bcreatePeopleStreets\(/g)].length, 1, "one streets instance owns population reconciliation");
+    assert.match(source, /const streets=createPeopleStreets\(\{readMilitarySelection:military\.store\.load,militaryDiagnostics\}\)/, "the sole owner reads shared selection and receives only an observational diagnostics dependency");
+    assert.match(source, /createOrdersDriver\(\{readMilitarySelection:military\.store\.load,admittedGroups:\(\)=>streets\.admittedGroups\(world\)\}\)/, "Orders uses the same selection and sole owner's admitted groups");
+    assert.match(source, /peopleRuntime\.register\(streets\)/, "the streets driver is registered in main.js");
+    assert.match(source, /admittedGroups:\(\)=>streets\.admittedGroups\(world\)/, "travel receives admission from the sole streets owner");
     assert.match(source, /startSimulationLoop\(kingdomStore, \{\s*onStep:/, "and the loop reports each hour to the runtime");
     assert.match(source, /peopleRuntime\.onStep\(report\)/, "the report reaches the people runtime");
     assert.match(source, /createChronicle\(\{ readKingdom:/, "and the chronicle is given the kingdom it tells the story of");
@@ -172,6 +176,19 @@ test("a driver's own reason for doing nothing is printed, not just the count", (
     assert.doesNotMatch(shown, /nothing=/, "a null field adds no line");
 });
 
+test("the people command routes explicit travel requests and cancels steering immediately when switched off",()=>{
+    resetWorld(1);const player=makePlayer(),calls=[];let stops=0;
+    switched.travelCommand=message=>{calls.push(message);return ["travel reply"];};
+    switched.stopTravel=()=>{stops++;};
+    const writes=mc.propWrites;
+    send(CIV_EVENT_IDS.people,"travel status",player);
+    send(CIV_EVENT_IDS.people,"travel stop",player);
+    assert.deepEqual(calls,["status","stop"]);assert.match(text(player),/travel reply/);
+    assert.equal(mc.propWrites,writes,"travel commands do not toggle population or write a route property");
+    send(CIV_EVENT_IDS.people,"off",player);assert.equal(stops,1);assert.equal(mc.props.get("civ_people"),false);
+    delete switched.travelCommand;delete switched.stopTravel;
+});
+
 test("a rejected hour still reaches the drivers, and it hands them the kingdom the loop refused to change", () => {
     const live = inhabited();
     const seen = recorder("walker");
@@ -187,4 +204,13 @@ test("a rejected hour still reaches the drivers, and it hands them the kingdom t
     // mc.writes counts BLOCK writes; a persisting runtime is a PROPERTY write.
     assert.equal(mc.propWrites, 0, "the runtime writes no dynamic property, so a rejected step stays rejected");
     assert.equal(mc.props.get("civ:kingdom"), savedKingdom, "the saved kingdom is unchanged after a refused hour");
+});
+
+test("people inspection command delegates one bounded read-only request without toggling gate",()=>{
+ resetWorld(1);const player=makePlayer(),calls=[];
+ switched.inspectCommand=message=>{calls.push(message);return["read-only inspection reply"];};
+ const writes=mc.propWrites;
+ send(CIV_EVENT_IDS.people,"inspect group=district-1:sol:0",player);
+ assert.deepEqual(calls,["group=district-1:sol:0"]);assert.match(text(player),/read-only inspection reply/);assert.equal(mc.propWrites,writes);
+ delete switched.inspectCommand;
 });

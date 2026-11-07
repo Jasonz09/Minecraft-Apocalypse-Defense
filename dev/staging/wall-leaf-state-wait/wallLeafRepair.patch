@@ -1,0 +1,64 @@
+--- CivilizationApocalypse_BP/scripts/civ/wallLeafRepair.js
++++ CivilizationApocalypse_BP/scripts/civ/wallLeafRepair.js
+@@ -1,4 +1,4 @@
+-import {POLICY,compileLeafTrimSteps,previewLeafTrim,prepareLeafTrimSteps,resumeLeafTrimSteps,commitOneLeafTrim,key,readLeafTrimReceipt} from "./wallLeafTrim.js";
++import {POLICY,compileLeafTrimSteps,previewLeafTrim,prepareLeafTrimSteps,resumeLeafTrimSteps,commitOneLeafTrim,LeafUpdatePendingError,key,readLeafTrimReceipt} from "./wallLeafTrim.js";
+ import {previewWallLeavesSteps} from "./wallleafpreview.js";
+ import {utf8Length} from "./planstore.js";
+ 
+@@ -54,8 +54,8 @@
+ /** Pure injected controller. New batches admit only freshly eligible loaded
+  * candidates. Interrupted batches recover ORIGINAL coordinates from their receipt.
+  * No lease/chunk loader, original queue save, or broad tree clearer exists here. */
+-/** @param {import("./wallLeafTrim.js").LeafInput} input @param {import("./wallLeafTrim.js").LeafContext} ctx @param {import("@minecraft/server").World} world @param {{confirm?:boolean,policy?:string}} [options] */
+-export function* wallLeafRepairSteps(input,ctx,world,{confirm=false,policy}={}){
++/** @param {import("./wallLeafTrim.js").LeafInput} input @param {import("./wallLeafTrim.js").LeafContext} ctx @param {import("@minecraft/server").World} world @param {{confirm?:boolean,policy?:string,readTick?:()=>number}} [options] */
++export function* wallLeafRepairSteps(input,ctx,world,{confirm=false,policy,readTick}={}){
+     if(policy!==POLICY)fail("explicit versioned wall-leaf policy required");
+     if(!Number.isInteger(input.index)||input.index<1||input.index>5||!hash(input.checksum)||!hash(input.masterHash))fail("verified source identity required");
+     /** @type {{state:string,writeAttempts:number,verifiedChanges:number,rows:{target:import("./wallLeafTrim.js").LeafPoint,state:string,reason?:string,reads:number}[],journalKey:string|null,complete:boolean,globalSurvey:null|{targets:number,surveyed:number,unloaded:number,tree:number,refused:number,truncated:boolean,complete:boolean}}} */
+@@ -112,14 +112,39 @@
+         if(!confirm)return view;
+         yield* guarded(prepareLeafTrimSteps(plan,ctx,io,{policy}),ctx);
+         /** @type {import("./wallLeafTrim.js").LeafContext} */ const committedCtx={...ctx,write:op=>{view.writeAttempts++;ctx.write(op);}};
+-        for(const proposal of plan.proposals){
+-            if(ctx.sourcesCurrent()!==true)fail("fresh source/cancellation guard refused before commit");
+-            const result=commitOneLeafTrim(plan,key(proposal.target),committedCtx,io,{policy});
+-            view.verifiedChanges+=result.changed;yield;
+-        }
++        yield* commitLeafTrimBatchSteps(plan,committedCtx,io,{policy,readTick,onCommitted:changed=>{view.verifiedChanges+=changed;}});
+         if(ctx.sourcesCurrent()!==true)fail("fresh source/cancellation guard refused after commit");
+         view.complete=readLeafTrimReceipt(io.load()).complete;view.state=view.complete?"batch complete":"pending";return view;
+     }catch(error){view.state=ctx.cancelled?.()?"cancelled: receipt retained":"held: "+String(error instanceof Error?error.message:error);return view;}
++}
++
++export const WALL_LEAF_WAIT_LIMITS=Object.freeze({ticks:6000,attemptsPerTarget:512,totalAttempts:32768,slices:65536,retryTicks:20});
++/** Bounded cooperative retries of exact admitted identities. No receipt rebinding or timers. */
++/** @param {import("./wallLeafTrim.js").LeafPlan} plan @param {import("./wallLeafTrim.js").LeafContext} ctx @param {import("./wallLeafTrim.js").LeafStore} io @param {{policy?:string,readTick?:()=>number,onCommitted?:(changed:number)=>void}} options */
++export function* commitLeafTrimBatchSteps(plan,ctx,io,{policy,readTick,onCommitted=()=>{}}){
++    const queue=plan.proposals.map(proposal=>({proposal,attempts:0,nextTick:0}));
++    let start,previous,attempts=0,slices=0,changed=0;
++    while(queue.length){
++        if(ctx.cancelled?.()||ctx.sourcesCurrent()!==true)fail("fresh source/cancellation guard refused before commit/retry");
++        if(++slices>WALL_LEAF_WAIT_LIMITS.slices)fail("leaf update wait slice deadline reached; receipt retained");
++        let now;
++        if(readTick){now=readTick();if(!Number.isSafeInteger(now)||now<0||(previous!==undefined&&now<previous))fail("leaf update retry clock unreadable");previous=now;}
++        if(start!==undefined&&(now===undefined||now-start>=WALL_LEAF_WAIT_LIMITS.ticks))fail("leaf update wait tick deadline reached; receipt retained");
++        const item=queue.shift();if(!item)break;
++        if(now!==undefined&&now<item.nextTick){queue.push(item);yield;continue;}
++        if(++attempts>WALL_LEAF_WAIT_LIMITS.totalAttempts||++item.attempts>WALL_LEAF_WAIT_LIMITS.attemptsPerTarget)fail("leaf update wait attempt deadline reached; receipt retained");
++        try{
++            const result=commitOneLeafTrim(plan,key(item.proposal.target),ctx,io,{policy});
++            changed+=result.changed;onCommitted(result.changed);
++        }catch(error){
++            if(!(error instanceof LeafUpdatePendingError))throw error;
++            if(now===undefined)fail("leaf update wait requires a readable clock; receipt retained");
++            if(start===undefined)start=now;
++            item.nextTick=now+WALL_LEAF_WAIT_LIMITS.retryTicks;queue.push(item);
++        }
++        yield;
++    }
++    return changed;
+ }
+ 
+ /** Native adapter: keeps the exact Block handle from the final read. The writer

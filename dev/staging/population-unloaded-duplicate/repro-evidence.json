@@ -1,0 +1,18 @@
+{
+  "scope": "SIMULATION using unchanged production owner/policy and existing loaded-only fakeworld; not native cause proof",
+  "group": "district-1:civ:0",
+  "defaultCaps": {
+    "total": 24,
+    "district": 8
+  },
+  "oldLivingHidden": true,
+  "admittedCursorBeforeMissing": true,
+  "newBirthDespiteHiddenOld": true,
+  "ids": [
+    "e1",
+    "e5"
+  ],
+  "refusedAfterReload": "Error: military owner duplicate conflict; representatives preserved; group=district-1:civ:0 observed=2 sampleIds=e5,e1",
+  "allActorsPreserved": true,
+  "selectedSwordsmanUnchanged": "e3"
+}

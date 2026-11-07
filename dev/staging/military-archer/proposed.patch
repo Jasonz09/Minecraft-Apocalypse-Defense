@@ -1,0 +1,1981 @@
+--- a/CivilizationApocalypse_BP/entities/archer.json
++++ b/CivilizationApocalypse_BP/entities/archer.json
+@@ -0,0 +1,194 @@
++{
++  "format_version": "1.26.20",
++  "minecraft:entity": {
++    "description": {
++      "identifier": "civ_trial:archer",
++      "is_spawnable": false,
++      "is_summonable": true
++    },
++    "components": {
++      "minecraft:type_family": {
++        "family": [
++          "civ_guard",
++          "irongolem",
++          "mob"
++        ]
++      },
++      "minecraft:health": {
++        "value": 30,
++        "max": 30
++      },
++      "minecraft:collision_box": {
++        "width": 0.6,
++        "height": 1.95
++      },
++      "minecraft:physics": {},
++      "minecraft:pushable_by_entity": {},
++      "minecraft:pushable_by_block": {},
++      "minecraft:persistent": {},
++      "minecraft:movement": {
++        "value": 0.23
++      },
++      "minecraft:movement.basic": {},
++      "minecraft:jump.static": {},
++      "minecraft:navigation.walk": {
++        "can_path_over_water": false,
++        "avoid_water": true,
++        "can_pass_doors": true,
++        "can_open_doors": false,
++        "can_break_doors": false
++      },
++      "minecraft:home": {
++        "restriction_radius": 12,
++        "restriction_type": "all_movement"
++      },
++      "minecraft:behavior.float": {
++        "priority": 0
++      },
++      "minecraft:behavior.move_towards_home_restriction": {
++        "priority": 1,
++        "speed_multiplier": 1
++      },
++      "minecraft:behavior.hurt_by_target": {
++        "priority": 1,
++        "alert_same_type": false,
++        "hurt_owner": false,
++        "entity_types": [
++          {
++            "filters": {
++              "all_of": [
++                {
++                  "any_of": [
++                    {
++                      "test": "is_family",
++                      "subject": "other",
++                      "value": "zombie"
++                    },
++                    {
++                      "test": "is_family",
++                      "subject": "other",
++                      "value": "illager"
++                    }
++                  ]
++                },
++                {
++                  "test": "is_family",
++                  "subject": "other",
++                  "operator": "not",
++                  "value": "player"
++                },
++                {
++                  "test": "is_family",
++                  "subject": "other",
++                  "operator": "not",
++                  "value": "villager"
++                },
++                {
++                  "test": "is_family",
++                  "subject": "other",
++                  "operator": "not",
++                  "value": "irongolem"
++                },
++                {
++                  "test": "is_family",
++                  "subject": "other",
++                  "operator": "not",
++                  "value": "civ_guard"
++                }
++              ]
++            },
++            "max_dist": 10,
++            "must_see": true,
++            "must_see_forget_duration": 1,
++            "reevaluate_description": true
++          }
++        ]
++      },
++      "minecraft:behavior.nearest_attackable_target": {
++        "priority": 2,
++        "must_see": true,
++        "must_reach": true,
++        "must_see_forget_duration": 1,
++        "persist_time": 0,
++        "scan_interval": 10,
++        "within_radius": 12,
++        "entity_types": [
++          {
++            "filters": {
++              "all_of": [
++                {
++                  "any_of": [
++                    {
++                      "test": "is_family",
++                      "subject": "other",
++                      "value": "zombie"
++                    },
++                    {
++                      "test": "is_family",
++                      "subject": "other",
++                      "value": "pillager"
++                    },
++                    {
++                      "test": "is_family",
++                      "subject": "other",
++                      "value": "vindicator"
++                    }
++                  ]
++                },
++                {
++                  "test": "has_tag",
++                  "subject": "other",
++                  "value": "civbesiege:v1"
++                },
++                {
++                  "test": "is_family",
++                  "subject": "other",
++                  "operator": "not",
++                  "value": "player"
++                },
++                {
++                  "test": "is_family",
++                  "subject": "other",
++                  "operator": "not",
++                  "value": "villager"
++                },
++                {
++                  "test": "is_family",
++                  "subject": "other",
++                  "operator": "not",
++                  "value": "irongolem"
++                },
++                {
++                  "test": "is_family",
++                  "subject": "other",
++                  "operator": "not",
++                  "value": "civ_guard"
++                }
++              ]
++            },
++            "max_dist": 10
++          }
++        ]
++      },
++      "minecraft:behavior.look_at_player": {
++        "priority": 5,
++        "look_distance": 6,
++        "probability": 0.03
++      },
++      "minecraft:behavior.random_look_around": {
++        "priority": 6
++      },
++      "minecraft:shooter": {
++        "def": "civ_trial:guard_arrow",
++        "sound": "bow"
++      },
++      "minecraft:behavior.ranged_attack": {
++        "priority": 3,
++        "speed_multiplier": 1,
++        "attack_interval_min": 1.5,
++        "attack_interval_max": 2.0,
++        "attack_radius": 10.0
++      }
++    }
++  }
++}
+--- a/CivilizationApocalypse_BP/entities/guard_arrow.json
++++ b/CivilizationApocalypse_BP/entities/guard_arrow.json
+@@ -0,0 +1,71 @@
++{
++  "format_version": "1.26.20",
++  "minecraft:entity": {
++    "description": {
++      "identifier": "civ_trial:guard_arrow",
++      "is_spawnable": false,
++      "is_summonable": false
++    },
++    "components": {
++      "minecraft:collision_box": {
++        "width": 0.25,
++        "height": 0.25
++      },
++      "minecraft:physics": {},
++      "minecraft:projectile": {
++        "on_hit": {
++          "impact_damage": {
++            "damage": 4,
++            "filter": "monster",
++            "knockback": true,
++            "destroy_on_hit": true,
++            "destroy_on_hit_requires_damage": false,
++            "scale_damage_with_difficulty": false
++          }
++        },
++        "ignored_entities": [
++          "minecraft:player",
++          "minecraft:villager",
++          "minecraft:villager_v2",
++          "minecraft:iron_golem",
++          "civ_trial:swordsman",
++          "civ_trial:archer"
++        ],
++        "hit_sound": "bow.hit",
++        "power": 1.6,
++        "gravity": 0.05,
++        "uncertainty_base": 0,
++        "uncertainty_multiplier": 0,
++        "anchor": 1,
++        "offset": [
++          0,
++          -0.1,
++          0
++        ],
++        "should_bounce": false
++      },
++      "minecraft:timer": {
++        "looping": false,
++        "time": 5,
++        "time_down_event": {
++          "event": "civ_trial:expire",
++          "target": "self"
++        }
++      }
++    },
++    "component_groups": {
++      "civ_trial:expired": {
++        "minecraft:instant_despawn": {}
++      }
++    },
++    "events": {
++      "civ_trial:expire": {
++        "add": {
++          "component_groups": [
++            "civ_trial:expired"
++          ]
++        }
++      }
++    }
++  }
++}
+--- a/CivilizationApocalypse_BP/scripts/commands/military.js
++++ b/CivilizationApocalypse_BP/scripts/commands/military.js
+@@ -2,7 +2,7 @@
+ import { createMilitarySelectionStore } from "../integration/militarySelectionStore.js";
+ import { classifyTags } from "../population/identity.js";
+ import { POP_CURSOR_KEY } from "../population/settings.js";
+-import { SWORDSMAN_TYPE } from "../population/militarySelection.js";
++import { SWORDSMAN_TYPE, MILITARY_TYPES } from "../population/militarySelection.js";
+ 
+ // This is an operator-selected, separately restored fixture, not a universal
+ // freshness detector. Its reviewed closed-world source has SHA256 prefix672745b7.
+@@ -34,7 +34,7 @@
+         if(first.length!==1||first[0].civ?.status!=="complete"||first[0].civ?.checksum!=="07515fcb"||first[0].civ?.centre?.x!==-69||first[0].civ?.centre?.z!==-599)throw new Error("Hearthgate does not match the reviewed Nov 3 fixture");
+         for(let n=2;n<=5;n++) {
+             const matches=districts.filter(d=>d.id===`district-${n}`);
+-            if(matches.length!==1||matches[0].civ!==undefined||matches[0].physical!==undefined)throw new Error("districts 2–5 must be unbuilt in the reviewed fixture");
++            if(matches.length!==1||matches[0].civ!==undefined||matches[0].physical!==undefined)throw new Error("districts 2â€“5 must be unbuilt in the reviewed fixture");
+         }
+         if(districts.some(d=>d.physical!==undefined))throw new Error("prototype district state is incompatible with this fixture");
+     }
+@@ -46,7 +46,7 @@
+         const groupIds=[];
+         for(const entity of entities) {
+             if(!entity||entity.isValid===false)throw new Error("a loaded census handle is unreadable");
+-            if(entity.typeId===SWORDSMAN_TYPE)throw new Error("a trial guard already exists; it is preserved");
++            if(MILITARY_TYPES.includes(entity.typeId))throw new Error("a trial guard already exists; it is preserved");
+             const tags=entity.getTags();
+             if(!Array.isArray(tags)||tags.length>256)throw new Error("a loaded census tag list is unreadable");
+             const identity=classifyTags(tags);
+@@ -62,28 +62,28 @@
+         isBusy:deps.isBusy,readCanonicalCensus:census,
+         verifyFreshTrial:request=>{
+             freshConditions();
+-            return {verified:request.trialId===`${MILITARY_FIXTURE_ID}-swordsman`,fixtureId:MILITARY_FIXTURE_ID,dimension:"minecraft:overworld"};
++            return {verified:request.trialId===`${MILITARY_FIXTURE_ID}-${request.class??"swordsman"}`,fixtureId:MILITARY_FIXTURE_ID,dimension:"minecraft:overworld"};
+         },
+     });
+     const statusLines=()=>{
+         const read=store.load();
+         if(read.status==="refused")return [`Military trial held: ${read.reason}. No selection changed.`];
+-        return [read.selection?`Military trial selection: ${read.selection.groupId}, swordsman; fixture ${read.selection.fixtureId}.`:"Military trial selection: off.",
++        return [read.selection?`Military trial selection: ${read.selection.groupId}, ${read.selection.class}; fixture ${read.selection.fixtureId}.`:"Military trial selection: off.",
+             "One opt-in stationary guard trial; native combat acceptance and casualty accounting are unfinished."];
+     };
+     /** @param {string} message @param {any} event */
+     function command(message,event) {
+         if(message.trim()==="status"||message.trim()==="")return statusLines();
+-        const match=/^select district=([1-5]) group=(0|[1-9]\d{0,4}) fixture=([A-Za-z0-9_-]{1,64})( confirm)?$/.exec(message.trim());
+-        if(!match)return ["Usage: civ:people military status | select district=N group=G fixture=nov3-d1-672745b7 [confirm]."];
++        const match=/^select district=([1-5]) group=(0|[1-9]\d{0,4}) fixture=([A-Za-z0-9_-]{1,64})(?: class=(archer))?( confirm)?$/.exec(message.trim());
++        if(!match)return ["Usage: civ:people military status | select district=N group=G fixture=nov3-d1-672745b7 [class=archer] [confirm]."];
+         if(match[3]!==MILITARY_FIXTURE_ID)return ["Military trial refused: unknown fixture provenance; nothing changed."];
+-        if(!match[4])return ["Selection preview only. Use a separately restored, SHA-verified Nov 3 D1 fixture before ever switching people on.",
++        if(!match[5])return ["Selection preview only. Use a separately restored, SHA-verified Nov 3 D1 fixture before ever switching people on.",
+             "The fixture label is an operator provenance assertion; runtime checks cannot prove arbitrary unloaded-world absence.",
+             "Append confirm to select one existing soldier group. No entity is spawned by selection."];
+         source=event?.sourceEntity;
+         try {
+             freshConditions();
+-            store.activate({groupId:`district-${match[1]}:sol:${match[2]}`,trialId:`${MILITARY_FIXTURE_ID}-swordsman`,dimension:"minecraft:overworld"});
++            store.activate({groupId:`district-${match[1]}:sol:${match[2]}`,trialId:`${MILITARY_FIXTURE_ID}-${match[4]??"swordsman"}`,class:match[4]?"archer":"swordsman",dimension:"minecraft:overworld"});
+             return [...statusLines(),"Selection saved and read back. The existing people owner alone may later admit the guard."];
+         } catch(error) {return [`Military trial refused: ${String(error instanceof Error?error.message:error)}.`];}
+         finally {source=undefined;}
+--- a/CivilizationApocalypse_BP/scripts/integration/militaryLifecycleDiagnostics.js
++++ b/CivilizationApocalypse_BP/scripts/integration/militaryLifecycleDiagnostics.js
+@@ -1,5 +1,5 @@
+ import {classifyTags,isCanonicalFor} from "../population/identity.js";
+-import {SWORDSMAN_TYPE} from "../population/militarySelection.js";
++import {SWORDSMAN_TYPE,MILITARY_TYPES} from "../population/militarySelection.js";
+ 
+ /** Live read only. Missing/throwing fields are unknown, never replaced by spawn coordinates.
+  * @param {any} handle */
+@@ -21,7 +21,7 @@
+     let hurtTick=/** @type {number|null} */(null),hurtUsed=0,hurtDropped=0,hurtProcessed=0,hurtHeld=0,incoming=0,outgoing=0;
+     const hurtLimits={perTick:32,session:1000000,rows:16};
+     const clipped=(/** @type {any} */v)=>String(v??"unknown").slice(0,160);
+-    function selected(){if(!enabled)return null;try{const r=deps.readSelection();return r?.status==="ok"&&r.selection?.typeId===SWORDSMAN_TYPE?{...r.selection,stamp:r.stamp}:null;}catch(_error){return null;}}
++    function selected(){if(!enabled)return null;try{const r=deps.readSelection();return r?.status==="ok"&&MILITARY_TYPES.includes(r.selection?.typeId)?{...r.selection,stamp:r.stamp}:null;}catch(_error){return null;}}
+     const tick=()=>{try{const t=deps.tick();return Number.isFinite(t)?t:null;}catch(_error){return null;}};
+     /** @param {any} row */
+     function append(row){events.push({tick:tick(),...row});if(events.length>16)events.shift();}
+@@ -105,7 +105,7 @@
+  * @param {import("@minecraft/server").World} world
+  * @param {ReturnType<typeof createMilitaryLifecycleDiagnostics>} diagnostics */
+ export function registerMilitaryLifecycleSignals(world,diagnostics){
+-    world.afterEvents.entityDie?.subscribe(event=>diagnostics.onDie(event),{entityTypes:[SWORDSMAN_TYPE]});
+-    world.afterEvents.entityRemove?.subscribe(event=>diagnostics.onRemove(event),{entityTypes:[SWORDSMAN_TYPE]});
++    world.afterEvents.entityDie?.subscribe(event=>diagnostics.onDie(event),{entityTypes:[...MILITARY_TYPES]});
++    world.afterEvents.entityRemove?.subscribe(event=>diagnostics.onRemove(event),{entityTypes:[...MILITARY_TYPES]});
+     world.afterEvents.entityHurt?.subscribe(event=>diagnostics.onHurt(event));
+ }
+--- a/CivilizationApocalypse_BP/scripts/integration/militarySelectionStore.js
++++ b/CivilizationApocalypse_BP/scripts/integration/militarySelectionStore.js
+@@ -1,7 +1,7 @@
+ import { buildGroupTable, parseGroupId } from "../population/groups.js";
+ import { findValidationProblems } from "../kingdom/state.js";
+ import { resolveConfig } from "../population/reconcile.js";
+-import { MILITARY_SELECTION_KEY, SWORDSMAN_TYPE, decodeMilitarySelection, encodeMilitarySelection } from "../population/militarySelection.js";
++import { MILITARY_SELECTION_KEY, SWORDSMAN_TYPE, ARCHER_TYPE, decodeMilitarySelection, encodeMilitarySelection } from "../population/militarySelection.js";
+ 
+ /**
+  * Injected storage boundary. Fresh provenance and successful canonical census are
+@@ -24,7 +24,7 @@
+         if(census?.complete!==true||!Array.isArray(census.groupIds)||census.groupIds.some(id=>parseGroupId(id)===null)||new Set(census.groupIds).size!==census.groupIds.length)throw new Error("canonical military census is incomplete or ambiguous");
+         return census;
+     }
+-    /** @param {{groupId:string,trialId:string,dimension:string}} request */
++    /** @param {{groupId:string,trialId:string,dimension:string,class?:"swordsman"|"archer"}} request */
+     function activate(request) {
+         const prior=load();if(prior.status!=="absent")throw new Error(prior.reason??"military selection already exists; clear it explicitly before activation");
+         const census=context();
+@@ -36,7 +36,8 @@
+         const config=resolveConfig(deps.config??{}),table=buildGroupTable(kingdom,config);
+         if(table.problems.length||table.groups.filter(g=>g.id===request.groupId&&g.kind==="sol"&&g.headcount>0).length!==1)throw new Error("select exactly one existing canonical soldier group");
+         if(census.groupIds.includes(request.groupId))throw new Error("selected group already has a representative; live replacement is forbidden");
+-        const raw=encodeMilitarySelection(/** @type {import("../population/militarySelection.js").MilitarySelection} */({v:1,trialId:request.trialId,fixtureId:proof.fixtureId,groupId:request.groupId,class:"swordsman",typeId:SWORDSMAN_TYPE,dimension:"minecraft:overworld"}));
++        const classId=request.class??"swordsman";if(!["swordsman","archer"].includes(classId))throw new Error("unsupported military class");
++        const raw=encodeMilitarySelection(/** @type {import("../population/militarySelection.js").MilitarySelection} */({v:classId==="archer"?2:1,trialId:request.trialId,fixtureId:proof.fixtureId,groupId:request.groupId,class:classId,typeId:classId==="archer"?ARCHER_TYPE:SWORDSMAN_TYPE,dimension:"minecraft:overworld"}));
+         // Callbacks must not yield; root owns the fresh-fixture/census proof. Detect
+         // a selection changed by an injected read before committing this value.
+         if(load().status!=="absent")throw new Error("military selection changed during activation");
+--- a/CivilizationApocalypse_BP/scripts/population/militarySelection.js
++++ b/CivilizationApocalypse_BP/scripts/population/militarySelection.js
+@@ -5,7 +5,9 @@
+ export const MILITARY_SELECTION_KEY = "civ:military_trial";
+ export const MILITARY_SELECTION_MAX_BYTES = 1024;
+ export const SWORDSMAN_TYPE = "civ_trial:swordsman";
+-/** @typedef {{v:1,trialId:string,fixtureId:string,groupId:string,class:"swordsman",typeId:typeof SWORDSMAN_TYPE,dimension:"minecraft:overworld"}} MilitarySelection */
++export const ARCHER_TYPE = "civ_trial:archer";
++export const MILITARY_TYPES=Object.freeze([SWORDSMAN_TYPE,ARCHER_TYPE]);
++/** @typedef {{v:1|2,trialId:string,fixtureId:string,groupId:string,class:"swordsman"|"archer",typeId:typeof SWORDSMAN_TYPE|typeof ARCHER_TYPE,dimension:"minecraft:overworld"}} MilitarySelection */
+ /** @typedef {{status:"absent"|"ok"|"refused",selection:MilitarySelection|null,stamp:string,reason:string|null}} MilitarySelectionRead */
+ /** @param {unknown} value */
+ const identifier = value => typeof value === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(value);
+@@ -17,8 +19,8 @@
+     try {
+         const value=JSON.parse(raw),keys=["class","dimension","fixtureId","groupId","trialId","typeId","v"];
+         if (!value || typeof value!=="object" || Array.isArray(value) || Object.keys(value).sort().join(",")!==keys.join(",")) return refused("military selection fields are invalid");
+-        if(value.v!==1 || value.class!=="swordsman" || value.typeId!==SWORDSMAN_TYPE || value.dimension!=="minecraft:overworld" || !identifier(value.trialId) || !identifier(value.fixtureId) || parseGroupId(value.groupId)?.kind!=="sol") return refused("military selection version, identity, class or dimension is unsupported");
+-        const selection=Object.freeze(/** @type {MilitarySelection} */({v:1,trialId:value.trialId,fixtureId:value.fixtureId,groupId:value.groupId,class:"swordsman",typeId:SWORDSMAN_TYPE,dimension:"minecraft:overworld"}));
++        if(!((value.v===1&&value.class==="swordsman"&&value.typeId===SWORDSMAN_TYPE)||(value.v===2&&value.class==="archer"&&value.typeId===ARCHER_TYPE)) || value.dimension!=="minecraft:overworld" || !identifier(value.trialId) || !identifier(value.fixtureId) || parseGroupId(value.groupId)?.kind!=="sol") return refused("military selection version, identity, class or dimension is unsupported");
++        const selection=Object.freeze(/** @type {MilitarySelection} */({v:value.v,trialId:value.trialId,fixtureId:value.fixtureId,groupId:value.groupId,class:value.class,typeId:value.typeId,dimension:"minecraft:overworld"}));
+         return {status:"ok",selection,stamp:JSON.stringify(selection),reason:null};
+     } catch (_error) {return refused("military selection JSON is unreadable");}
+ }
+@@ -47,7 +49,7 @@
+     const typeForGroup=group=>{
+         const parsed=parseGroupId(group.id);
+         if(!parsed||group.kind!==parsed.kind||group.district!==parsed.district||group.index!==parsed.index) throw new Error("military group identity mismatch");
+-        return selection?.groupId===group.id?SWORDSMAN_TYPE:POP_ENTITY_TYPES[parsed.kind];
++        return selection?.groupId===group.id?selection.typeId:POP_ENTITY_TYPES[parsed.kind];
+     };
+     return {selection,stamp:validated.stamp,typeForGroup};
+ }
+--- a/CivilizationApocalypse_RP/animations/archer.animation.json
++++ b/CivilizationApocalypse_RP/animations/archer.animation.json
+@@ -0,0 +1,24 @@
++{
++  "format_version": "1.8.0",
++  "animations": {
++    "animation.civ_trial.archer.bow_hold": {
++      "loop": true,
++      "bones": {
++        "right_arm": {
++          "rotation": [
++            -65,
++            0,
++            0
++          ]
++        },
++        "left_arm": {
++          "rotation": [
++            -65,
++            35,
++            0
++          ]
++        }
++      }
++    }
++  }
++}
+--- a/CivilizationApocalypse_RP/entity/archer.entity.json
++++ b/CivilizationApocalypse_RP/entity/archer.entity.json
+@@ -0,0 +1,34 @@
++{
++  "format_version": "1.10.0",
++  "minecraft:client_entity": {
++    "description": {
++      "identifier": "civ_trial:archer",
++      "materials": {
++        "default": "entity_alphatest"
++      },
++      "textures": {
++        "default": "textures/entity/civ_trial/swordsman"
++      },
++      "geometry": {
++        "default": "geometry.civ_trial.archer"
++      },
++      "animations": {
++        "walk": "animation.civ_trial.swordsman.walk",
++        "look": "animation.civ_trial.swordsman.look",
++        "bow_hold": "animation.civ_trial.archer.bow_hold"
++      },
++      "scripts": {
++        "animate": [
++          "look",
++          {
++            "walk": "query.modified_move_speed > 0.01"
++          },
++          "bow_hold"
++        ]
++      },
++      "render_controllers": [
++        "controller.render.civ_trial.archer"
++      ]
++    }
++  }
++}
+--- a/CivilizationApocalypse_RP/entity/guard_arrow.entity.json
++++ b/CivilizationApocalypse_RP/entity/guard_arrow.entity.json
+@@ -0,0 +1,32 @@
++{
++  "format_version": "1.10.0",
++  "minecraft:client_entity": {
++    "description": {
++      "identifier": "civ_trial:guard_arrow",
++      "materials": {
++        "default": "arrow"
++      },
++      "textures": {
++        "default": "textures/entity/arrows"
++      },
++      "geometry": {
++        "default": "geometry.arrow"
++      },
++      "animations": {
++        "move": "animation.arrow.move"
++      },
++      "scripts": {
++        "pre_animation": [
++          "variable.shake = query.shake_time - query.frame_alpha;",
++          "variable.shake_power = variable.shake > 0.0 ? -Math.sin(variable.shake * 200.0) * variable.shake : 0.0;"
++        ],
++        "animate": [
++          "move"
++        ]
++      },
++      "render_controllers": [
++        "controller.render.arrow"
++      ]
++    }
++  }
++}
+--- a/CivilizationApocalypse_RP/models/entity/archer.geo.json
++++ b/CivilizationApocalypse_RP/models/entity/archer.geo.json
+@@ -0,0 +1,1434 @@
++{
++  "format_version": "1.12.0",
++  "minecraft:geometry": [
++    {
++      "description": {
++        "identifier": "geometry.civ_trial.archer",
++        "texture_width": 64,
++        "texture_height": 32,
++        "visible_bounds_width": 2.5,
++        "visible_bounds_height": 3,
++        "visible_bounds_offset": [
++          0,
++          1.2,
++          0
++        ]
++      },
++      "bones": [
++        {
++          "name": "body",
++          "pivot": [
++            0,
++            12,
++            0
++          ],
++          "cubes": [
++            {
++              "origin": [
++                -4,
++                12,
++                -2
++              ],
++              "size": [
++                8,
++                10,
++                4
++              ],
++              "uv": {
++                "north": {
++                  "uv": [
++                    8,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "south": {
++                  "uv": [
++                    8,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "east": {
++                  "uv": [
++                    8,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "west": {
++                  "uv": [
++                    8,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "up": {
++                  "uv": [
++                    8,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "down": {
++                  "uv": [
++                    8,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                }
++              }
++            },
++            {
++              "origin": [
++                -4.25,
++                12,
++                -2.25
++              ],
++              "size": [
++                8.5,
++                1.5,
++                4.5
++              ],
++              "uv": {
++                "north": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "south": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "east": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "west": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "up": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "down": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                }
++              }
++            },
++            {
++              "origin": [
++                -3.5,
++                16,
++                -2.3
++              ],
++              "size": [
++                7,
++                5,
++                0.5
++              ],
++              "uv": {
++                "north": {
++                  "uv": [
++                    16,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "south": {
++                  "uv": [
++                    16,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "east": {
++                  "uv": [
++                    16,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "west": {
++                  "uv": [
++                    16,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "up": {
++                  "uv": [
++                    16,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "down": {
++                  "uv": [
++                    16,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                }
++              }
++            }
++          ]
++        },
++        {
++          "name": "head",
++          "parent": "body",
++          "pivot": [
++            0,
++            22,
++            0
++          ],
++          "cubes": [
++            {
++              "origin": [
++                -4,
++                22,
++                -4
++              ],
++              "size": [
++                8,
++                8,
++                8
++              ],
++              "uv": {
++                "north": {
++                  "uv": [
++                    0,
++                    8
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "south": {
++                  "uv": [
++                    0,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "east": {
++                  "uv": [
++                    0,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "west": {
++                  "uv": [
++                    0,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "up": {
++                  "uv": [
++                    0,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "down": {
++                  "uv": [
++                    0,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                }
++              }
++            },
++            {
++              "origin": [
++                -4.4,
++                27,
++                -4.4
++              ],
++              "size": [
++                8.8,
++                3.4,
++                8.8
++              ],
++              "uv": {
++                "north": {
++                  "uv": [
++                    8,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "south": {
++                  "uv": [
++                    8,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "east": {
++                  "uv": [
++                    8,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "west": {
++                  "uv": [
++                    8,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "up": {
++                  "uv": [
++                    8,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "down": {
++                  "uv": [
++                    8,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                }
++              }
++            },
++            {
++              "origin": [
++                -4.4,
++                24.5,
++                0.5
++              ],
++              "size": [
++                8.8,
++                3,
++                3.9
++              ],
++              "uv": {
++                "north": {
++                  "uv": [
++                    8,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "south": {
++                  "uv": [
++                    8,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "east": {
++                  "uv": [
++                    8,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "west": {
++                  "uv": [
++                    8,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "up": {
++                  "uv": [
++                    8,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "down": {
++                  "uv": [
++                    8,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                }
++              }
++            }
++          ]
++        },
++        {
++          "name": "left_leg",
++          "parent": "body",
++          "pivot": [
++            2,
++            12,
++            0
++          ],
++          "cubes": [
++            {
++              "origin": [
++                0,
++                2,
++                -2
++              ],
++              "size": [
++                4,
++                10,
++                4
++              ],
++              "uv": {
++                "north": {
++                  "uv": [
++                    24,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "south": {
++                  "uv": [
++                    24,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "east": {
++                  "uv": [
++                    24,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "west": {
++                  "uv": [
++                    24,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "up": {
++                  "uv": [
++                    24,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "down": {
++                  "uv": [
++                    24,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                }
++              }
++            },
++            {
++              "origin": [
++                0,
++                0,
++                -2.5
++              ],
++              "size": [
++                4,
++                3,
++                4.5
++              ],
++              "uv": {
++                "north": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "south": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "east": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "west": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "up": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "down": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                }
++              }
++            }
++          ]
++        },
++        {
++          "name": "right_leg",
++          "parent": "body",
++          "pivot": [
++            -2,
++            12,
++            0
++          ],
++          "cubes": [
++            {
++              "origin": [
++                -4,
++                2,
++                -2
++              ],
++              "size": [
++                4,
++                10,
++                4
++              ],
++              "uv": {
++                "north": {
++                  "uv": [
++                    24,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "south": {
++                  "uv": [
++                    24,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "east": {
++                  "uv": [
++                    24,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "west": {
++                  "uv": [
++                    24,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "up": {
++                  "uv": [
++                    24,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "down": {
++                  "uv": [
++                    24,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                }
++              }
++            },
++            {
++              "origin": [
++                -4,
++                0,
++                -2.5
++              ],
++              "size": [
++                4,
++                3,
++                4.5
++              ],
++              "uv": {
++                "north": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "south": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "east": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "west": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "up": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "down": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                }
++              }
++            }
++          ]
++        },
++        {
++          "name": "left_arm",
++          "parent": "body",
++          "pivot": [
++            5,
++            21,
++            0
++          ],
++          "cubes": [
++            {
++              "origin": [
++                4,
++                13,
++                -2
++              ],
++              "size": [
++                3,
++                9,
++                4
++              ],
++              "uv": {
++                "north": {
++                  "uv": [
++                    8,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "south": {
++                  "uv": [
++                    8,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "east": {
++                  "uv": [
++                    8,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "west": {
++                  "uv": [
++                    8,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "up": {
++                  "uv": [
++                    8,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "down": {
++                  "uv": [
++                    8,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                }
++              }
++            },
++            {
++              "origin": [
++                4,
++                10,
++                -2
++              ],
++              "size": [
++                3,
++                3,
++                4
++              ],
++              "uv": {
++                "north": {
++                  "uv": [
++                    0,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "south": {
++                  "uv": [
++                    0,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "east": {
++                  "uv": [
++                    0,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "west": {
++                  "uv": [
++                    0,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "up": {
++                  "uv": [
++                    0,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "down": {
++                  "uv": [
++                    0,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                }
++              }
++            }
++          ]
++        },
++        {
++          "name": "right_arm",
++          "parent": "body",
++          "pivot": [
++            -5,
++            21,
++            0
++          ],
++          "cubes": [
++            {
++              "origin": [
++                -7,
++                13,
++                -2
++              ],
++              "size": [
++                3,
++                9,
++                4
++              ],
++              "uv": {
++                "north": {
++                  "uv": [
++                    8,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "south": {
++                  "uv": [
++                    8,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "east": {
++                  "uv": [
++                    8,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "west": {
++                  "uv": [
++                    8,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "up": {
++                  "uv": [
++                    8,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "down": {
++                  "uv": [
++                    8,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                }
++              }
++            },
++            {
++              "origin": [
++                -7,
++                10,
++                -2
++              ],
++              "size": [
++                3,
++                3,
++                4
++              ],
++              "uv": {
++                "north": {
++                  "uv": [
++                    0,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "south": {
++                  "uv": [
++                    0,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "east": {
++                  "uv": [
++                    0,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "west": {
++                  "uv": [
++                    0,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "up": {
++                  "uv": [
++                    0,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "down": {
++                  "uv": [
++                    0,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                }
++              }
++            }
++          ]
++        },
++        {
++          "name": "bow",
++          "parent": "right_arm",
++          "pivot": [
++            -5.5,
++            11,
++            -2
++          ],
++          "rotation": [
++            0,
++            0,
++            0
++          ],
++          "cubes": [
++            {
++              "origin": [
++                -6.2,
++                8,
++                -3.6
++              ],
++              "size": [
++                0.8,
++                3,
++                0.8
++              ],
++              "uv": {
++                "north": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "south": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "east": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "west": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "up": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "down": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                }
++              }
++            },
++            {
++              "origin": [
++                -6.2,
++                11,
++                -4.4
++              ],
++              "size": [
++                0.8,
++                3,
++                0.8
++              ],
++              "uv": {
++                "north": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "south": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "east": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "west": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "up": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "down": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                }
++              }
++            },
++            {
++              "origin": [
++                -6.2,
++                14,
++                -3.6
++              ],
++              "size": [
++                0.8,
++                3,
++                0.8
++              ],
++              "uv": {
++                "north": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "south": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "east": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "west": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "up": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "down": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                }
++              }
++            },
++            {
++              "origin": [
++                -6,
++                8,
++                -2.9
++              ],
++              "size": [
++                0.15,
++                9,
++                0.15
++              ],
++              "uv": {
++                "north": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "south": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "east": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "west": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "up": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                },
++                "down": {
++                  "uv": [
++                    32,
++                    0
++                  ],
++                  "uv_size": [
++                    8,
++                    8
++                  ]
++                }
++              }
++            }
++          ]
++        }
++      ]
++    }
++  ]
++}
+--- a/CivilizationApocalypse_RP/render_controllers/archer.render_controllers.json
++++ b/CivilizationApocalypse_RP/render_controllers/archer.render_controllers.json
+@@ -0,0 +1,16 @@
++{
++  "format_version": "1.8.0",
++  "render_controllers": {
++    "controller.render.civ_trial.archer": {
++      "geometry": "Geometry.default",
++      "materials": [
++        {
++          "*": "Material.default"
++        }
++      ],
++      "textures": [
++        "Texture.default"
++      ]
++    }
++  }
++}

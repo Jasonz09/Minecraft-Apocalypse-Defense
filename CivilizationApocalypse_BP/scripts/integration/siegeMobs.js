@@ -5,7 +5,7 @@ import { createKingdomStore } from "../kingdom/store.js";
 import { protectedRects } from "../commands/civ.js";
 import { inProtectedArea, loadMasterPlan, PROTECT_MARGIN, WRITE_PROTECT_GROW } from "./civBuilder.js";
 import { BEARINGS } from "../sim/invasion/composition.js";
-import { armInvasionDirector, invasionThreatOf } from "../sim/invasion/director.js";
+import { armInvasionDirector, invasionThreatOf, waveInFieldOf } from "../sim/invasion/director.js";
 import { peopleGateOn } from "../people/gate.js";
 
 /**
@@ -19,10 +19,11 @@ import { peopleGateOn } from "../people/gate.js";
  * import (Script API v2 early execution).
  *
  * What "under attack" means is the simulation's own reading, not a new one: `sim/invasion/director.js`
- * `invasionThreatOf()` - a district with a non-zero `assault` and its `security` at `alert` or worse. The same
- * call also arms the invasion director (`armInvasionDirector`), so the numbers that decide the battle and the
- * entities that fight it are one decision made once per hour. Outcomes still come from `sim/war.js`: these mobs
- * are the fight, not the arithmetic, and no number is read back out of them.
+ * `invasionThreatOf()` - a district with a non-zero `assault` and its `security` at `alert` or worse - plus
+ * `waveInFieldOf()`, the band the director still has marching. The same arming call keeps the director up, so
+ * the numbers that decide the battle and the entities that fight it are one decision made once per hour.
+ * Outcomes still come from `sim/war.js`: these mobs are the fight, not the arithmetic, and no number is read
+ * back out of them.
  *
  * Rules this module will not break:
  *  - it never writes a block, ever. It reads columns to find a standable place to stand, and that is all;
@@ -41,6 +42,10 @@ import { peopleGateOn } from "../people/gate.js";
  *
  * Deliberately NOT waited for: the director's `wave.physical` flag, which is set from player proximity. The
  * brief is a siege with no player involvement, so the war state alone decides.
+ *
+ * The band stands for the whole of a wave, not only for the hour the war step resolved: `withWaveInField` adds
+ * the wave's district to the threat read, so a raid the arithmetic has already finished still has its attackers
+ * at the wall while the director says they are in the field, and they leave when the wave is spent.
  *
  * @typedef {any} DimensionLike
  * @typedef {any} Kingdom
@@ -96,12 +101,17 @@ export const SIEGE_DEFAULTS = Object.freeze({
     /** lateral offsets tried within a ring, in blocks, and how many each side */
     lateralGap: 3,
     lateralSteps: 5,
-    /** blocks of vegetation a column probe may walk down through before it gives up */
-    maxClearSteps: 6,
+    /** blocks a column probe may walk down through before it gives up. A jungle tree crowns the column at its
+     * full height - 10 to 20 blocks of leaves and trunk over flat ground, with an air gap of a few blocks under
+     * the crown - and a budget that counted only vegetation read every column of a jungle district as
+     * unstandable, so no band could form up there at all. The descent counts leaves, trunk AND the air gap. */
+    maxClearSteps: 24,
     /** columns a district may be asked about per hour; the cheap protection test rejects most of them */
     maxCandidates: 240,
-    /** block reads spent per district per hour - the expensive half of the search, and what really bounds it */
-    maxProbes: 72,
+    /** block reads spent per district per hour - the expensive half of the search, and what really bounds it.
+     * A column costs 1 topmost read + up to `maxClearSteps` descents + 2 headroom reads = 27 at worst. 48
+     * columns is 1296 reads, under the 72 x 19 = 1368 the old vegetation-only walk allowed. */
+    maxProbes: 48,
     /** the roster. Terrain picks which of these three a column gets; `large` picks the fourth. */
     types: Object.freeze({
         raider: "minecraft:pillager",
@@ -122,9 +132,6 @@ export const BEARING_VECTORS = /** @type {Record<string, Readonly<{ x: number, z
     west: Object.freeze({ x: -1, z: 0 }),
     "north-west": Object.freeze({ x: -1, z: -1 }),
 }));
-
-/** Block kinds vegetation: a column whose top is one of these is probed one block lower. */
-const CLEARABLE = Object.freeze(["tree", "cover"]);
 
 /* ------------------------------------------------------------------ *
  * Small pure helpers
@@ -317,19 +324,99 @@ export function attackerTypeFor(column, wantsLarge, config) {
  */
 export function bandFor(district, wave, config) {
     const assault = toInt(district?.assault);
-    if (assault <= 0) {
-        return { assault, desired: 0, brutes: 0, large: false };
-    }
     const fromWar = Math.ceil(assault / Math.max(1, toInt(config.assaultPerAttacker)));
     const fromWave = isObject(wave) && String(wave.districtId) === String(district?.id)
         ? toInt(wave.strikes?.[wave.strike]?.counts?.raider) + toInt(wave.strikes?.[wave.strike]?.counts?.archer)
         : 0;
+    // No assault on the books and no band in the field: nothing is asked for. A district the director still has
+    // a wave against keeps its attackers even after the war step has resolved the numbers, which is the one case
+    // where `fromWar` is 0 and the band is not.
+    if (fromWar <= 0 && fromWave <= 0) {
+        return { assault, desired: 0, brutes: 0, large: false };
+    }
     const wanted = Math.max(fromWar, fromWave > 0 ? Math.min(fromWave, toInt(config.maxPerDistrict)) : 0);
     const desired = clamp(wanted, 1, toInt(config.maxPerDistrict));
     const large = assault >= toInt(config.largeForceAssault) || (isObject(wave) && String(wave.kind) === "major" && String(wave.districtId) === String(district?.id));
     const deliveredBrutes = isObject(wave) && String(wave.districtId) === String(district?.id) ? toInt(wave.delivered?.brute) : 0;
     const brutes = large ? clamp(Math.max(1, deliveredBrutes), 1, toInt(config.maxVindicators)) : 0;
     return { assault, desired, brutes, large };
+}
+
+/**
+ * The war step resolves an assault inside the same hour it lands, so the saved kingdom at the hour boundary
+ * usually reads `assault: 0` even though a raid just hit a wall. `advanceKingdomStep` therefore reports the
+ * numbers as the fight started (`report.attacks`), and this merges them into the director's threat reading:
+ * the physical layer arms and forms up on what actually happened, not only on the survivors left behind.
+ *
+ * @param {{ threatened: boolean, assault: number, districtIds: string[] }} read
+ * @param {any} report the hour's step report, which carries `attacks` when the war step fought
+ * @returns {{ threatened: boolean, assault: number, districtIds: string[], reported: Map<string, number> }}
+ */
+function withReportedAttacks(read, report) {
+    /** @type {Map<string, number>} */
+    const reported = new Map();
+    const attacks = Array.isArray(report?.attacks) ? report.attacks : [];
+    for (const attack of attacks) {
+        const id = attack?.districtId === undefined ? "" : String(attack.districtId);
+        if (id.length === 0) {
+            continue;
+        }
+        const assault = toInt(attack?.assault);
+        if (assault <= 0) {
+            continue;
+        }
+        reported.set(id, Math.max(reported.get(id) ?? 0, assault));
+    }
+    if (reported.size === 0) {
+        return { ...read, reported };
+    }
+    const ids = new Set((Array.isArray(read?.districtIds) ? read.districtIds : []).map(String));
+    let assault = toInt(read?.assault);
+    for (const [id, value] of reported) {
+        ids.add(id);
+        assault = Math.max(assault, value);
+    }
+    return { threatened: ids.size > 0, assault, districtIds: [...ids].sort(), reported };
+}
+
+/**
+ * A wave in the field is a threat in its own right. The war step resolves an assault inside the hour it lands,
+ * so the saved kingdom reads peaceful for every hour after the fight - but the director's band is still marching
+ * (or still standing at the wall) for the rest of its stage run. A raid is a standing event, not a one-hour
+ * special effect, and this is what keeps the physical layer standing with it.
+ *
+ * The assault number is not invented: the district joins the list with no assault of its own, and `bandFor` sizes
+ * it from the wave's own strike. The arming line the director logs therefore still reports what is on the books.
+ *
+ * @param {{ threatened: boolean, assault: number, districtIds: string[] }} read
+ * @param {any} wave the wave `waveInFieldOf` still has in the field, if any
+ * @returns {{ threatened: boolean, assault: number, districtIds: string[] }}
+ */
+function withWaveInField(read, wave) {
+    if (!isObject(wave)) {
+        return read;
+    }
+    const id = wave.districtId === undefined ? "" : String(wave.districtId);
+    if (id.length === 0) {
+        return read;
+    }
+    const ids = new Set((Array.isArray(read?.districtIds) ? read.districtIds : []).map(String));
+    if (ids.has(id)) {
+        return read;
+    }
+    ids.add(id);
+    return { threatened: true, assault: toInt(read?.assault), districtIds: [...ids].sort() };
+}
+
+/**
+ * @param {{ reported?: Map<string, number> }} threat
+ * @param {string} districtId
+ * @param {any} district
+ * @returns {number}
+ */
+function reportedAssaultOf(threat, districtId, district) {
+    const reported = threat?.reported instanceof Map ? threat.reported.get(String(districtId)) : undefined;
+    return reported === undefined ? toInt(district?.assault) : toInt(reported);
 }
 
 /* ------------------------------------------------------------------ *
@@ -354,6 +441,80 @@ export function physicalCentreOf(district) {
         return { x: origin.x, z: origin.z, source: "prototype layout" };
     }
     return null;
+}
+
+/**
+ * The approach bearing whose outward direction points most nearly from `centre` at `toward`. A dot product over
+ * the eight fixed vectors, not a compass read: the value has to be one of `BEARINGS` for the levy and the band to
+ * agree on a wall. Ties keep the earlier `BEARINGS` entry, so the answer never depends on object order.
+ *
+ * @param {{ x: number, z: number }} centre
+ * @param {{ x: number, z: number }} toward
+ * @returns {string | undefined} a `BEARINGS` entry, or undefined when there is no direction to measure
+ */
+export function bearingToward(centre, toward) {
+    const dx = Number(toward?.x) - Number(centre?.x);
+    const dz = Number(toward?.z) - Number(centre?.z);
+    if (!Number.isFinite(dx) || !Number.isFinite(dz) || (dx === 0 && dz === 0)) {
+        return undefined;
+    }
+    const length = Math.hypot(dx, dz);
+    let best;
+    let bestDot = -Infinity;
+    for (const name of BEARINGS) {
+        const vector = BEARING_VECTORS[name];
+        // Both sides are normalised: the diagonal entries are (±1, ±1), so dividing by the target's length
+        // alone would let a diagonal tie with a cardinal it points exactly through.
+        const dot = (dx * vector.x + dz * vector.z) / (length * Math.hypot(vector.x, vector.z));
+        if (dot > bestDot) {
+            bestDot = dot;
+            best = name;
+        }
+    }
+    return best;
+}
+
+/**
+ * Where each built district's fight should come from while a player is around: the wall on the side that faces
+ * them. The levy already posts toward the wave's bearing (`peopleOrders.js` `anchorSectionFor`) and the band
+ * already stands along it, so naming this one value is what puts the garrison and the enemy on the same wall -
+ * which is also the only wall a player standing in the district can see.
+ *
+ * A district with no physical centre, and an empty or non-numeric anchor list, are left out: the director then
+ * draws its bearing exactly as it did before. This never invents a place; it only chooses among the eight.
+ *
+ * @param {any} kingdom
+ * @param {Array<{ x: number, z: number }>} anchors
+ * @returns {Record<string, string>}
+ */
+export function preferredApproachesOf(kingdom, anchors) {
+    /** @type {Record<string, string>} */
+    const out = {};
+    const players = Array.isArray(anchors) ? anchors.filter((point) => point !== null && typeof point === "object" && Number.isFinite(point.x) && Number.isFinite(point.z)) : [];
+    if (players.length === 0) {
+        return out;
+    }
+    const districts = Array.isArray(kingdom?.districts) ? kingdom.districts : [];
+    for (const district of districts) {
+        const centre = physicalCentreOf(district);
+        if (centre === null) {
+            continue;
+        }
+        let nearest;
+        let nearestDistance = Infinity;
+        for (const player of players) {
+            const distance = Math.hypot(player.x - centre.x, player.z - centre.z);
+            if (distance < nearestDistance) {
+                nearestDistance = distance;
+                nearest = player;
+            }
+        }
+        const bearing = nearest === undefined ? undefined : bearingToward(centre, nearest);
+        if (bearing !== undefined) {
+            out[String(district.id)] = bearing;
+        }
+    }
+    return out;
 }
 
 /**
@@ -447,11 +608,16 @@ function candidateColumns(centre, bearing, reach, config) {
 }
 
 /**
- * Read one column: what stands on it, and whether a mob can stand there. Vegetation is walked down through;
- * lava, an unreadable chunk and a column with a roof over it are refused. Water is not refused - it is where a
- * drowned is posted.
+ * Read one column: what stands on it, and whether a mob can stand there. Canopy, vegetation and the air gap
+ * under a canopy are walked down through; the first solid block is the ground. Lava, an unreadable chunk and a
+ * column with a roof over it are refused. Water is not refused - it is where a drowned is posted.
  *
- * Reads only: nothing here writes a block, and the fake world proves that.
+ * The descent is what makes a jungle district siegeable: `getTopmostBlock` answers the tree crown, and a probe
+ * that stopped at the first air block below it read every approach column as unstandable. `maxClearSteps`
+ * bounds the walk-down, so a canyon or a cave mouth without a floor in reach is a refusal, not a guessed height.
+ *
+ * Reads only: nothing here writes a block, and the fake world proves that. The cost is one topmost read, up to
+ * `maxClearSteps` descent reads, and two headroom reads - 27 at the configured ceiling, once per column.
  *
  * @param {DimensionLike} dimension
  * @param {number} x
@@ -469,52 +635,67 @@ export function columnAt(dimension, x, z, config) {
     if (top === undefined || top === null) {
         return null;
     }
-    let y = Math.floor(Number(top.location?.y));
-    let id = String(top.typeId);
+    // `getTopmostBlock` answers even for a chunk the engine has released; reading the block it points at then
+    // throws LocationInUnloadedChunkError. That is an unreadable column, exactly like an unloaded chunk, and it
+    // has to be this function's answer rather than an exception out of the caller's hour: this probe is the only
+    // place either driver reads the ground, and one distant post used to take the whole hour down with it.
+    let y;
+    let id;
+    try {
+        y = Math.floor(Number(top.location?.y));
+        id = String(top.typeId);
+    } catch (_error) {
+        return null;
+    }
     if (!Number.isFinite(y)) {
         return null;
     }
-    for (let step = 0; step < toInt(config.maxClearSteps); step += 1) {
-        if (!CLEARABLE.includes(classifyBlock(id).kind)) {
+    const budget = toInt(config.maxClearSteps);
+    for (let step = 0; step <= budget; step += 1) {
+        const info = classifyBlock(id);
+        if (info.kind === "lava") {
+            return null;
+        }
+        if (info.kind === "water") {
+            return { x, y, z, water: true, surface: id, class: "water" };
+        }
+        // Air, loose cover and the tree itself are not ground: walk one block down. Everything else is the
+        // surface, and the headroom test below decides whether a mob can stand on it.
+        if (info.kind !== "air" && info.kind !== "cover" && info.kind !== "tree") {
+            for (const headroom of [y + 1, y + 2]) {
+                let kind;
+                try {
+                    const cell = dimension.getBlock({ x, y: headroom, z });
+                    if (cell === undefined || cell === null) {
+                        return null;
+                    }
+                    kind = classifyBlock(String(cell.typeId)).kind;
+                } catch (_error) {
+                    return null;
+                }
+                if (kind !== "air" && kind !== "cover") {
+                    return null;
+                }
+            }
+            return { x, y: y + 1, z, water: false, surface: id, class: info.class ?? "bare" };
+        }
+        if (step === budget) {
             break;
         }
         let below;
         try {
             below = dimension.getBlock({ x, y: y - 1, z });
+            if (below === undefined || below === null) {
+                return null;
+            }
+            id = String(below.typeId);
         } catch (_error) {
-            return null;
-        }
-        if (below === undefined || below === null) {
             return null;
         }
         y -= 1;
-        id = String(below.typeId);
     }
-
-    const info = classifyBlock(id);
-    if (info.kind === "lava") {
-        return null;
-    }
-    if (info.kind === "water") {
-        return { x, y, z, water: true, surface: id, class: "water" };
-    }
-
-    for (const headroom of [y + 1, y + 2]) {
-        let cell;
-        try {
-            cell = dimension.getBlock({ x, y: headroom, z });
-        } catch (_error) {
-            return null;
-        }
-        if (cell === undefined || cell === null) {
-            return null;
-        }
-        const kind = classifyBlock(String(cell.typeId)).kind;
-        if (kind !== "air" && kind !== "cover") {
-            return null;
-        }
-    }
-    return { x, y: y + 1, z, water: false, surface: id, class: info.class ?? "bare" };
+    // The budget ran out with no floor in reach: no column, never a height invented in mid-air.
+    return null;
 }
 
 /* ------------------------------------------------------------------ *
@@ -852,7 +1033,8 @@ export function createSiegeDriver(deps = {}) {
             return cleared;
         }
 
-        const threat = invasionThreatOf(kingdom);
+        const wave = waveInFieldOf(kingdom.invasion);
+        const threat = withReportedAttacks(withWaveInField(invasionThreatOf(kingdom), wave), ctx?.report);
         const armed = persistArming(world, threat, notes);
 
         if (threat.threatened !== true) {
@@ -881,7 +1063,6 @@ export function createSiegeDriver(deps = {}) {
         }
 
         const census = censusOf(dimension, notes);
-        const wave = isObject(kingdom.invasion) && kingdom.invasion.enabled === true ? kingdom.invasion.wave : null;
         const districtNameOf = (/** @type {string} */ id) => String(districtById(kingdom, id)?.name ?? id);
 
         /** @type {Map<string, BandOrder>} */
@@ -903,9 +1084,12 @@ export function createSiegeDriver(deps = {}) {
                 rows.push({ districtId, assault: toInt(district?.assault), desired: 0, present: (census.get(districtId) ?? []).length, created: 0, removed: 0, bearing: "-", reason: "no physical record: this district has never been built" });
                 continue;
             }
-            const asked = bandFor(district, wave, config);
+            const asked = bandFor({ ...district, assault: reportedAssaultOf(threat, districtId, district) }, wave, config);
             const bearing = bearingFor(district, wave);
             const dir = BEARING_VECTORS[bearing] ?? BEARING_VECTORS.north;
+            const pressed = asked.assault > 0
+                ? `assault ${String(asked.assault)} against ${String(district?.security ?? "secure")}`
+                : `${String(wave?.id ?? "a wave")} is still in the field, with no assault left on the books`;
             orders.set(districtId, {
                 districtId,
                 districtName: districtNameOf(districtId),
@@ -915,7 +1099,7 @@ export function createSiegeDriver(deps = {}) {
                 large: asked.large,
                 centre: { x: centre.x, z: centre.z },
                 bearing,
-                reason: `assault ${String(asked.assault)} against ${String(district?.security ?? "secure")} (${centre.source})`,
+                reason: `${pressed} (${centre.source})`,
                 reach: wallReach(areas, centre, dir, outlineOf(plan, district)),
             });
         }

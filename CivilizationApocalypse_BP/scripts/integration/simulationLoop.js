@@ -1,6 +1,7 @@
 import { SIM } from "../config.js";
 import { advanceKingdom } from "../sim/tick.js";
 import { isDemoEnabled, materialiseNextStage } from "./buildAdapter.js";
+import { preferredApproachesOf } from "./siegeMobs.js";
 import { system, world } from "@minecraft/server";
 
 /**
@@ -15,6 +16,26 @@ import { system, world } from "@minecraft/server";
 
 /** @type {(() => void) | undefined} */
 let stopHandle = undefined;
+
+/**
+ * Players standing in the dimension being simulated, as flat X/Z anchors. An unreadable player list is the same
+ * as nobody standing there: the director then draws its bearing as it always did, so this never blocks an hour.
+ *
+ * @param {string} dimensionName
+ * @returns {Array<{ x: number, z: number }>}
+ */
+function anchorPositions(dimensionName) {
+    try {
+        const dimension = world.getDimension(dimensionName);
+        return world
+            .getAllPlayers()
+            .filter((player) => player.dimension?.id === dimension.id)
+            .map((player) => ({ x: player.location.x, z: player.location.z }));
+    } catch (error) {
+        /** @type {any} */ (globalThis).console?.warn?.(`[civ] could not read players for the invasion aim: ${String(error)}`);
+        return [];
+    }
+}
 
 /**
  * @param {ReturnType<typeof import("../kingdom/store.js").createKingdomStore>} kingdomStore
@@ -34,7 +55,7 @@ export function startSimulationLoop(kingdomStore, options = {}) {
             return;
         }
 
-        const advanced = advanceKingdom(loaded.kingdom, 1);
+        const advanced = advanceKingdom(loaded.kingdom, 1, { approach: preferredApproachesOf(loaded.kingdom, anchorPositions(dimensionName)) });
         const report = /** @type {any} */ ({ ...advanced, problem: undefined, build: undefined, buildError: undefined });
         if (report.skipped > 0) {
             // advanceKingdomStep already rolled the state back, so there is nothing to

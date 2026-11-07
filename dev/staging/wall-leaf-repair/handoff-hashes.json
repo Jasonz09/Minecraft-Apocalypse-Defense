@@ -1,0 +1,34 @@
+[
+  {
+    "path": "leaf-trim.mjs",
+    "sha256": "32D2A5C20F322FACE6C28FEDA269BD316D5C65DCE3B3FDA9CC310C5CD7505F4D"
+  },
+  {
+    "path": "proposed/CivilizationApocalypse_BP/scripts/civ/wallLeafRepair.js",
+    "sha256": "442342002D8737323E6804B23F6800FC7B7DABAE60134B077D09F984558392F7"
+  },
+  {
+    "path": "proposed/CivilizationApocalypse_BP/scripts/civ/wallLeafTrim.js",
+    "sha256": "319F6BCC1FA307B5E86BFFD9E0819749526AC981ED96118664F73F667317AE2C"
+  },
+  {
+    "path": "proposed/CivilizationApocalypse_BP/scripts/commands/civ.js",
+    "sha256": "68CD17A71BA34E1F5C855AEFB633CA448FFE8CA0CE2FF486A732243713C87CAD"
+  },
+  {
+    "path": "proposed/CivilizationApocalypse_BP/scripts/sim/starter.js",
+    "sha256": "C343B6629D04C2121D2E13BF31A5941F5EFEE4C9459D5AC7C5D12A8E0FEA95E6"
+  },
+  {
+    "path": "proposed.patch",
+    "sha256": "858C107D0772587BBB663F707132721C2393E5D070711D0F992AB003F0ED3901"
+  },
+  {
+    "path": "README.md",
+    "sha256": "54243944CE69E005B5A827EFC1B09A83F2450E40E541E1D96B9D78DBE8372972"
+  },
+  {
+    "path": "wall-leaf-repair.mjs",
+    "sha256": "167D4E42BBDA0FCBBD19E1B4B6B967FD18932499E28845D7D42088B566FF7F89"
+  }
+]

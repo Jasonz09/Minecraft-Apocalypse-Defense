@@ -1,0 +1,8 @@
+{
+  "extends": "../../../../tsconfig.json",
+  "include": [
+    "../bindings.mjs",
+    "typecheck/scripts/integration/popSync.js"
+  ],
+  "exclude": []
+}

@@ -35,6 +35,7 @@ const mc = {
     writes: 0,
     written: new Set(),
     placed: new Map(),
+    blockStates: new Map(),
     colTop: new Map(),
     firstWrite: undefined,
     areas: new Map(),
@@ -52,6 +53,8 @@ const mc = {
     unloaded: () => false,
     rejectStates: () => false,
     persistent: () => false,
+    requireAtomicDoors: false,
+    atomicDoor: false,
     maxReadsPerSlice: 0,
     maxWritesPerSlice: 0,
     slices: 0,
@@ -123,7 +126,11 @@ function makeBlock(x, y, z) {
             return typeAt(x, y, z);
         },
         location: { x, y, z },
-        permutation: { getState: (name) => (name === "persistent_bit" ? mc.persistent(x, y, z) : undefined) },
+        permutation: { getState: (name) => {
+            const saved = mc.blockStates.get(key(x,y,z));
+            const states = saved && saved.id === mc.placed.get(key(x,y,z)) ? saved.states : undefined;
+            return name === "persistent_bit" ? mc.persistent(x,y,z) || states?.persistent_bit === true : states?.[name];
+        } },
         setPermutation(permutation) {
             if (mc.dieAtWrites !== null && mc.writes >= mc.dieAtWrites) mc.dead = true;
             if (mc.dead) return;
@@ -139,7 +146,8 @@ function makeBlock(x, y, z) {
             }
             const k = key(x, y, z);
             mc.written.add(k);
-            mc.placed.set(k, permutation.id);
+            mc.placed.set(k, mc.requireAtomicDoors && permutation.id.endsWith("_door") && !mc.atomicDoor ? "minecraft:air" : permutation.id);
+            mc.blockStates.set(k, { id:permutation.id, states:{...permutation.states} });
             if (permutation.id !== "minecraft:air") {
                 const ck = `${x},${z}`;
                 if ((mc.colTop.get(ck) ?? -999) < y) mc.colTop.set(ck, y);
@@ -150,6 +158,22 @@ function makeBlock(x, y, z) {
 
 const dimension = {
     id: "minecraft:overworld",
+    runCommand(command) {
+        const match=/^setblock (-?\d+) (-?\d+) (-?\d+) (minecraft:[a-z_]+_door) (\[.*\]) (keep|replace)$/.exec(command);
+        if (!match) throw new Error(`Unexpected harness command: ${command}`);
+        const [,sx,sy,sz,id,encoded,mode]=match;
+        const x=Number(sx), y=Number(sy), z=Number(sz);
+        const states=JSON.parse(`{${encoded.slice(1,-1).replace(/("[^"]+")=/g,"$1:")}}`);
+        if (isUnloaded(x,y,z) || isUnloaded(x,y+1,z)) throw new Error("door chunk is unloaded");
+        if (mode==="keep" && typeAt(x,y,z)!=="minecraft:air") return {successCount:0};
+        // Native lower-half setblock creates its matching upper half in the same operation.
+        mc.atomicDoor=true;
+        try {
+            makeBlock(x,y,z).setPermutation({id,states:{...states,upper_block_bit:false}});
+            makeBlock(x,y+1,z).setPermutation({id,states:{...states,upper_block_bit:true}});
+        } finally { mc.atomicDoor=false; }
+        return {successCount:1};
+    },
     isChunkLoaded: (location) => !isUnloaded(Math.floor(location.x), 64, Math.floor(location.z)),
     getTopmostBlock({ x, z }) {
         mc.reads += 1;
@@ -196,6 +220,7 @@ mc.world = {
             return n;
         },
         hasTickingArea: (id) => mc.areas.has(id),
+        getAllTickingAreas: () => [...mc.areas.keys()].map((identifier) => ({ identifier })),
         getTickingArea: (id) => (mc.areas.has(id) ? { identifier: id, isFullyLoaded: mc.areas.get(id).loaded === true } : undefined),
         removeTickingArea(id) {
             if (!mc.areas.has(id)) throw new TickingAreaError("UnknownIdentifier");
@@ -397,6 +422,7 @@ function resetWorld(seed = 1, options = {}) {
     mc.writes = 0;
     mc.written = new Set();
     mc.placed = new Map();
+    mc.blockStates = new Map();
     mc.colTop = new Map();
     mc.firstWrite = undefined;
     mc.areas.clear();
@@ -414,6 +440,8 @@ function resetWorld(seed = 1, options = {}) {
     mc.unloaded = () => false;
     mc.rejectStates = () => false;
     mc.persistent = () => false;
+    mc.requireAtomicDoors = false;
+    mc.atomicDoor = false;
     mc.maxReadsPerSlice = 0;
     mc.maxWritesPerSlice = 0;
     mc.slices = 0;

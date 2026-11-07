@@ -1,0 +1,2 @@
+# Caged profile only; manual exact1 + full readable HP required.
+execute in overworld if entity @s[type=minecraft:player,m=spectator,x=-145.5,y=82,z=-630.5,r=128] if entity @e[type=civ_trial:swordsman,tag="civpop:v1:district-1:sol:1"] if entity @e[type=minecraft:pillager,name="CA_CombatFixture"] unless entity @e[name="CA_CombatFixture",tag="civbesiege:v1"] run function ca_combat_fixture/pillager/internal/clear_gear_body

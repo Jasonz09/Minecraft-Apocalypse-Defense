@@ -488,17 +488,83 @@ test("towers: end caps, every sharp corner, and never more than 40 blocks apart 
     }
 });
 
-test("tower tunnel keeps the walkway open: a 2-high passage runs through every tower along the wall", () => {
+test("tower tunnel keeps the walkway open: a two-wide, three-high passage runs through every tower", () => {
     const result = walls.wallOps([[0, 0], [100, 0]], () => GROUND_Y, { buttressSpacing: 0 });
-    const ops = new Set(allOps(result).map(cellKey));
+    const byCell = new Map(allOps(result).map((op) => [cellKey(op), op]));
     for (const tower of result.towers.filter((t) => t.kind === "spacing")) {
         for (let dx = -2; dx <= 2; dx += 1) {
             const x = tower.x + dx;
-            assert.ok(ops.has(`${x},${GROUND_Y + 7},0`), "walkway surface present under the tunnel");
-            assert.ok(!ops.has(`${x},${GROUND_Y + 8},0`) && !ops.has(`${x},${GROUND_Y + 9},0`), `tunnel blocked at ${x}`);
+            // The wall runs along +x, so the second lane is the z+1 side of the wall.
+            for (const lane of [0, 1]) {
+                assert.ok(byCell.has(`${x},${GROUND_Y + 7},${lane}`), `walkway surface present under the tunnel at ${x},${lane}`);
+                for (const rise of [8, 9, 10]) {
+                    const op = byCell.get(`${x},${GROUND_Y + rise},${lane}`);
+                    // A hanging lantern at the crown of the passage is passable and never floats: the roof block
+                    // over it supports it. Anything else in the clearance would block the walkway.
+                    if (op !== undefined && op.id === "minecraft:lantern") {
+                        assert.equal(`${x},${lane},${rise}`, `${tower.x},0,10`, `a lantern may only hang at the crown of the tunnel, not at ${x},${rise},${lane}`);
+                        assert.equal(op.states?.hanging, true, "the crown lantern hangs from the roof; standing at that height it would float");
+                        continue;
+                    }
+                    assert.equal(op, undefined, `tunnel blocked at x=${x}, y=${GROUND_Y + rise}, z=${lane} by ${String(op?.id)}`);
+                }
+            }
         }
-        assert.ok(ops.has(`${tower.x},${GROUND_Y + 10},0`), "roof over the tunnel");
+        assert.ok(byCell.has(`${tower.x},${GROUND_Y + 11},0`), "roof over the tunnel");
+        assert.equal(byCell.get(`${tower.x},${GROUND_Y + 10},0`)?.id, "minecraft:lantern", "the passage has a lantern at its crown");
     }
+});
+
+test("the wall top is lit: every merlon carries a lantern and every tower has one over its passage and on its roof", () => {
+    const result = walls.wallOps([[0, 0], [100, 0]], () => GROUND_Y, { buttressSpacing: 0 });
+    const ops = allOps(result);
+    const columns = columnsOf(ops);
+    const towerXs = result.towers.map((tower) => Math.abs(tower.x)).filter((x) => x >= 0 && x <= 100);
+    let merlonLamps = 0;
+    let towerLamps = 0;
+    for (const op of ops) {
+        if (op.id !== "minecraft:lantern") continue;
+        const col = columns.get(`${op.x},${op.z}`) ?? [];
+        const body = col.filter((o) => o.layer !== "parapet" && o.layer !== "tower").map((o) => o.y);
+        const top = body.length === 0 ? undefined : Math.max(...body);
+        if (op.layer === "parapet") {
+            merlonLamps += 1;
+            assert.ok(top !== undefined, "a lantern stands on a wall column");
+            assert.equal(op.y, top + walls.WALL.merlonHeight + 1, "one block above a two-high merlon");
+            assert.equal(Math.abs(op.z), 1, "battlements are on the outer edges, never on the walkway");
+        } else if (op.layer === "tower") {
+            towerLamps += 1;
+            assert.ok(towerXs.some((x) => Math.abs(x - op.x) <= 2), `tower lantern at ${op.x},${op.y},${op.z} is not on a tower`);
+        } else {
+            assert.fail(`a lantern has layer ${op.layer}`);
+        }
+    }
+    assert.ok(merlonLamps >= 40, `only ${merlonLamps} merlon lanterns`);
+    assert.equal(towerLamps, result.towers.length * 2, "each tower gets a passage lamp and a roof lamp");
+});
+
+test("a rising wall top is stepped with stairs, so the whole top walks without jumping", () => {
+    // Ground climbs one block every four cells, inside one tower spacing so the sample stays a plain wall.
+    const result = walls.wallOps([[0, 0], [19, 0]], (x) => GROUND_Y + Math.floor(Number(x) / 4), { buttressSpacing: 0 });
+    const ops = allOps(result);
+    const stairs = ops.filter((op) => op.id === "minecraft:stone_brick_stairs");
+    assert.ok(stairs.length > 0, "the climb produced stairs");
+    assert.ok(stairs.every((op) => op.layer === "walkway"), "stairs are part of the walkway");
+    assert.ok(stairs.every((op) => ["north", "south", "east", "west"].includes(String(op.dir))), "every stair faces a compass direction");
+    /** @type {Map<number, any>} */
+    const walk = new Map();
+    for (const op of ops.filter((o) => o.layer === "walkway" && o.z === 0)) walk.set(op.x, op);
+    let rises = 0;
+    for (let x = 0; x < 19; x += 1) {
+        const a = walk.get(x);
+        const b = walk.get(x + 1);
+        if (a === undefined || b === undefined || a.y === b.y) continue;
+        rises += 1;
+        const lower = a.y < b.y ? a : b;
+        assert.equal(lower.id, "minecraft:stone_brick_stairs", `the rise at x=${x} has a stair at its lower cell`);
+        assert.equal(lower.dir, a.y < b.y ? "east" : "west", `and it faces the climb at x=${x}`);
+    }
+    assert.ok(rises > 0, "the fixture really climbs");
 });
 
 test("buttresses sit on the outer faces of straight runs, are attached to the wall, and stay clear of towers", () => {
@@ -581,7 +647,7 @@ test("wall adversarial inputs: bad paths and profiles throw, holes are filled fr
     assert.equal(new Set(allOps(hairpin).map(cellKey)).size, allOps(hairpin).length, "overlapping bands still emit each cell once");
     // a 40-block cliff
     const cliff = walls.wallOps([[0, 0], [60, 0]], (x) => (x < 30 ? 40 : 80), { buttressSpacing: 0 });
-    const tops = [...columnsOf(allOps(cliff)).values()].map((ops) => Math.max(...ops.filter((op) => op.layer !== "parapet").map((op) => op.y)));
+    const tops = [...columnsOf(allOps(cliff)).values()].map((ops) => Math.max(...ops.filter((op) => op.layer !== "parapet" && op.id !== "minecraft:lantern").map((op) => op.y)));
     assert.ok(Math.max(...tops) <= 80 + 7 + 4, "cliff top stays bounded");
     // negative coordinates and Map/object profiles
     const neg = walls.wallOps([[-50, -50], [-10, -50]], new Map([["-50,-50", 64]]), {});
@@ -1271,6 +1337,80 @@ test("command ids have exactly one colon and are the documented ones", () => {
         assert.match(id, /^[a-z][a-z0-9_]*:[a-z][a-z0-9_]*$/);
         assert.equal(id.split(":").length, 2);
     }
+});
+
+test("gate relink repairs an old export without resetting play progress or rebuilding blocks", () => {
+    reset();
+    const loaded = store.load().kingdom;
+    loaded.step = 22;
+    loaded.districts[0].civilians = 67;
+    delete gate(loaded, 1, 2).physical;
+    delete gate(loaded, 1, 2).mode;
+    store.save(loaded);
+    mc.properties.set("civ_gatereg", JSON.stringify({ v: 1, gates: [
+        { id: "gate-1", between: [1, 2], purpose: "main", role: "primary", simGateId: GATE_ID, spec: SPEC },
+    ] }));
+    mc.properties.set(`civ_gate_${GATE_ID}`, JSON.stringify({ v: 1, id: GATE_ID, actual: "closed", to: null, rows: 0, attempts: 0, retryAt: 0, reason: null }));
+    const before = mc.properties.get("civ:kingdom");
+    const player = makePlayer();
+    send("civ:gate_status", GATE_ID, player);
+    assert.match(said(player), /recorded geometry; blocks not verified/);
+    assert.match(said(player), /Saved position .*closed, destination null/);
+    assert.equal(mc.properties.get("civ:kingdom"), before, "diagnostics are read-only");
+    send("civ:gate_relink", "", player);
+    assert.equal(mc.properties.get("civ:kingdom"), before, "confirmation is required");
+    send("civ:gate_relink", "confirm", player);
+    assert.match(said(player), /Gate links repaired/);
+    const repaired = store.load().kingdom;
+    const found = gate(repaired, 1, 2);
+    assert.equal(found.mode, "auto");
+    assert.equal(found.physical.link.planId, "gate-1");
+    assert.equal(found.physical.state, "closed");
+    assert.equal(found.state, "sealed");
+    assert.equal(repaired.step, 22);
+    assert.equal(repaired.districts[0].civilians, 67);
+    assert.equal(mc.writes, 0);
+    const once = mc.properties.get("civ:kingdom");
+    send("civ:gate_relink", "confirm", player);
+    assert.equal(mc.properties.get("civ:kingdom"), once, "repeating repair is idempotent");
+});
+
+test("gate relink refuses missing, corrupt and unsettled evidence before changing the kingdom", () => {
+    for (const registry of [undefined, "{bad", JSON.stringify({ v: 1, gates: [null] }), JSON.stringify({ v: 1, gates: [
+        { id: "gate-1", between: [1, 2], purpose: "main", role: "primary", simGateId: GATE_ID, spec: SPEC },
+    ] })]) {
+        reset();
+        if (registry !== undefined) mc.properties.set("civ_gatereg", registry);
+        const before = mc.properties.get("civ:kingdom");
+        const player = makePlayer();
+        send("civ:gate_relink", "confirm", player);
+        assert.match(said(player), /Gate relink refused/);
+        assert.equal(mc.properties.get("civ:kingdom"), before);
+        assert.equal(mc.writes, 0);
+    }
+});
+
+test("gate relink retains an interrupted move so the normal controller can resume it", () => {
+    reset();
+    const current = store.load().kingdom;
+    delete gate(current, 1, 2).physical;
+    delete gate(current, 1, 2).mode;
+    store.save(current);
+    mc.properties.set("civ_gatereg", JSON.stringify({ v: 1, gates: [
+        { id: "gate-1", between: [1, 2], purpose: "main", role: "primary", simGateId: GATE_ID, spec: SPEC },
+        { id: "gate-2", between: [1, 2], purpose: "reinforce", role: "companion", simGateId: GATE_ID, spec: { ...SPEC, at: { x: 200, z: 200 } } },
+    ] }));
+    const interrupted = JSON.stringify({ v: 1, id: GATE_ID, actual: "partial", to: "closed", rows: 1, attempts: 2, retryAt: 0, reason: "chunk unloaded" });
+    mc.properties.set(`civ_gate_${GATE_ID}`, interrupted);
+    mc.properties.set("civ_gate_gate-2", JSON.stringify({ v: 1, id: "gate-2", actual: "open", to: null, rows: 0, attempts: 0, retryAt: 0, reason: null }));
+    const player = makePlayer();
+    send("civ:gate_relink", "confirm", player);
+    assert.match(said(player), /Gate links repaired/);
+    const repaired = gate(store.load().kingdom, 1, 2);
+    assert.equal(repaired.physical.target, "closed");
+    assert.equal(repaired.state, "open", "a partial portcullis is not a sealed route");
+    assert.equal(mc.properties.get(`civ_gate_${GATE_ID}`), interrupted, "row markers and retry evidence survive repair");
+    assert.equal(mc.writes, 0);
 });
 
 test("civ:gate_list shows state, mode, physical state and the policy's view", () => {

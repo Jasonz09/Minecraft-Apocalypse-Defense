@@ -1,0 +1,58 @@
+{
+  "utc": "2026-11-07T02:55:00.613102+00:00",
+  "scope": "Independent10path final frozen/baseline/dependency/copy review, lightweight89+8cases/strictTSC+final feedback repro; no main edits/full/native/UI",
+  "decision": "No remaining blocker found in scoped composed review. Not promotion/native-approved: genuine compiled descriptor/provenance and central full/native acceptance remain absent.",
+  "manifestSha256": "9E506E5C430F2926F966E160BE3C5016F36AAE7DE43B748F7372477BA28A4236",
+  "proposedPaths": 10,
+  "allProposedBaselineEvidenceDependencyPinsMatch": true,
+  "typecheckTree10ProposalsByteExact": true,
+  "fourReviewedCoreAdapterTrustOwnerBytesExact": true,
+  "compiledDescriptor": null,
+  "independentCompatibilityBeforeFinalFeedbackOnlyChange": {
+    "tests": 89,
+    "pass": 89,
+    "fail": 0,
+    "durationMs": 1270.3717,
+    "log": "focused-89.log"
+  },
+  "strictWholeCopiedRuntimeBeforeFinalFeedbackOnlyChange": {
+    "exitCode": 0,
+    "log": "typecheck.log"
+  },
+  "finalAuthorCompatibility": {
+    "tests": 90,
+    "pass": 90,
+    "fail": 0,
+    "durationMs": 280.2157,
+    "log": "compatibility-final.log"
+  },
+  "finalAuthorStrictTypecheck": {
+    "exitCode": 0,
+    "log": "typecheck-final.log"
+  },
+  "independentRestartStreets": {
+    "tests": 8,
+    "pass": 8,
+    "fail": 0,
+    "durationMs": 154.713,
+    "log": "restart-streets-final.log",
+    "scope": "Actual restarted runtime +new same-owner streets after before/after all3activationwrites, onhour andoffgate; configuredbeforeintent HOLD vs nullbaseline legacy; no-devflag refusal thenpeopleon stays0birth/0write"
+  },
+  "review": [
+    "Activation status/fullfamily checks precede defaultfallback, legacy initialization and death processing. Partial/unconfigured/future markers/freshheader-without-completion hold; configured absent activation+core also holds after missed/refused firstspawn.",
+    "Completed durable receipt validates bindingregistry/epoch after ordinary play; caller/developer/score edits do not revoke existing ownership. No recurring global scoreboard/virgin-state promise.",
+    "Gateoff uses same applyActions/removeOne with full preflight, repeated current militarypolicy AFTERmetadata and fresh native identity/location/loading proof. Positive exact invalidated handle removal alone grants terminal owner-remove. Unknown/legacy/duplicate/unloaded preserve, failed writes may hold.",
+    "All v2 issuance inventory and late native/policy removal fixes remain byte-exact; loaded absence/entityRemove never substitutes for strict exact canonical entityDie, no aggregate casualty debit.",
+    "Welcome adds optional hook after ensureInitial within existing subscription. Null trust hook is zero-read; no developerflag writes. Actual sourceEntity passes to private adapter; missing/wrongdim/publicfresh request cannot create authority.",
+    "Starter/export retain/refuse entire activation/binding families against broadwipe. External operator bypass/stale receipt is outside runtime proof.",
+    "Schema3 current dependencies/BP+RP manifests pinned. No archertype extension/newtimer/owner/spawner/guardteleport. Actual vanilla source+derivative preparation timing and native firstbirth/unload/rejoin/offgate remain required."
+  ],
+  "operatorFeedbackFix": {
+    "peopleCommandSha256": "B79FB7205A2F3186D08C7F0901053F2DC5872FD88B0B9CD8795853765BE7A448",
+    "description": "Narrow creation branch catches its runtime refusal, replies Creation history refused, returns; unrelated generic handlers unchanged.",
+    "historicalFailure": "command-refusal.log",
+    "finalExactRegression": "command-refusal-after-fix.log",
+    "passed": true
+  },
+  "history": "Independent initial6restart test expected old beforewrite legacy path during WIP; updated configuredpending-HOLD is stricter. Original expectation log/source retained, not a new unsafe ownership failure."
+}

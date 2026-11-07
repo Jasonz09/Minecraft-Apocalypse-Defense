@@ -1,0 +1,38 @@
+{
+  "scope": "Logical retained string/structure counts, NOT native or JS heap byte measurements.",
+  "summaries": {
+    "actualFixture": {
+      "sourceKeys": 27,
+      "initialRawUtf8Bytes": 267989,
+      "originalRetainedSerializedUtf8Bytes": 274235,
+      "originalRetainedSerializedCodeUnits": 274235,
+      "newRetainedLogicalStringCodeUnits": 270299,
+      "newRawValueCodeUnits": 267989,
+      "newKeyCodeUnits": 479,
+      "newProtectionCodeUnits": 1831,
+      "newRawKeyAndValueReferences": 54,
+      "newPairArrays": 27,
+      "newOuterValuesArray": 1,
+      "newProtectionStrings": 1,
+      "newCaptureObject": 1
+    },
+    "syntheticMax1500000Bytes": {
+      "sourceKeys": 28,
+      "initialRawUtf8Bytes": 1500000,
+      "originalRetainedSerializedUtf8Bytes": 1506280,
+      "originalRetainedSerializedCodeUnits": 1506280,
+      "newRetainedLogicalStringCodeUnits": 1502336,
+      "newRawValueCodeUnits": 1500000,
+      "newKeyCodeUnits": 505,
+      "newProtectionCodeUnits": 1831,
+      "newRawKeyAndValueReferences": 56,
+      "newPairArrays": 28,
+      "newOuterValuesArray": 1,
+      "newProtectionStrings": 1,
+      "newCaptureObject": 1
+    }
+  },
+  "quotaEquivalence": "Initial source/allkeys counts, source types and UTF8<=1.5MB computed exactly as before. Each current() requires the exact same sorted source keys and exact===raw strings; immutable string equality implies unchanged UTF8 quota without rescan. Every call still rereads all keys/raws/protection/cancel.",
+  "bounds": "At most128retained source key/value pairs plus1projection string, one fixed snapshot per guard; no accumulation per yield. This retains string values/references, not kingdom/entity objects. Existing engine/key/projection bounds unchanged.",
+  "heapLimit": "Array/object headers, engine string representation and API-copy behavior differ; UTF8/codeunit counts are not an exact heap allocation/savings claim."
+}

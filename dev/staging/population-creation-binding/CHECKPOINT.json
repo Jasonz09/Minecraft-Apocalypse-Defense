@@ -1,0 +1,57 @@
+{
+  "utc": "2026-11-07T01:34:32.773123+00:00",
+  "scope": "ISOLATED creation/binding protocol+optional sole-owner patch; NOT production-ready/promoted/installed",
+  "files": [
+    {
+      "path": "dev\\staging\\population-creation-binding\\bindings.mjs",
+      "sha256": "7972BE0789E9187EDE2969645851D7C27850D8772971616220CC4253FC61FFB3"
+    },
+    {
+      "path": "dev\\staging\\population-creation-binding\\proposed-popSync.js",
+      "sha256": "E7AAEDCC51B09087D900127ED0259346AEDD0EAEB7146F4FC5633948D245D202"
+    },
+    {
+      "path": "dev\\staging\\population-creation-binding\\binding.test.mjs",
+      "sha256": "DE5AA90A17563706654AECBFD456D5BFD0D80FA85EF519A5E741162213510E6D"
+    },
+    {
+      "path": "dev\\staging\\population-creation-binding\\owner.patch",
+      "sha256": "C0C50FADE34F1C4AAEC77F4707C2425EED415A69BF40C7CD83084A83EC77A1EB"
+    },
+    {
+      "path": "dev\\staging\\population-creation-binding\\frozen-popSync.js",
+      "sha256": "9C0CF7C87FA092DA024EEB8F087C389CCC50013579E05AA772FE45737E0378A6"
+    }
+  ],
+  "activeOwnerBaselineUnchanged": true,
+  "baselineOwnerSha256": "4F658ABC6153DB289F73C3E987CE20C9FFE86EBA07C9F78F096783BD7EB86443",
+  "focused": {
+    "tests": 13,
+    "pass": 13,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 257.554,
+    "log": "dev\\staging\\population-creation-binding\\focused-final.log"
+  },
+  "strictTypecheck": "NOT RUN; standaloneMJS has no complete production typing/entry yet",
+  "originalBugReproduction": "dev/staging/population-unloaded-duplicate/repro-evidence.json",
+  "schema": {
+    "meta": "civ:pop_bind:v1:meta",
+    "groupPrefix": "civ:pop_bind:v1:",
+    "version": 1,
+    "maxASCIIBytesPerProperty": 1024,
+    "maxRecords": 2048,
+    "maxObservedPerPass": 48,
+    "maxKeyCensus": 4096,
+    "retirementHistory": "One last issued generation/terminal per stablegroup, never delete to infer neverissued. No unbounded event history."
+  },
+  "incomplete": [
+    "Privileged verifyFreshWorld callback is TEST CONTRACT, not yet an unforgeable real runtime fixture verifier. Must replace before promotion.",
+    "No main/peopleStreets/command/starter/template wiring yet; future entry must initialize before first ownership and never silently bypass corrupt/missing active ledger.",
+    "No aggregate casualty debit or cohort integration. Death receipt proves physical instance gone only.",
+    "Legacyunloaded history cannot safely be inferred from cursor; legacyunknown holds births and automaticremoval/retag.",
+    "Crash-beforeactorbind may leave pendingunknown/untagged orphan and hold thatgroup until positive recovery evidence. No automatic destructive repair.",
+    "4096globalkeys/2048bindingrecords bound physicalmaterialization metadata, not aggregatepopulation. Future capacity/chunking needed before largerworld use."
+  ]
+}

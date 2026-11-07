@@ -284,10 +284,49 @@ test("an assaulted district's posts shift toward the bearing of the attack, and 
     assert.deepEqual(neighbour.rows.map((row) => [row.section, row.x, row.z]), peaceNeighbour.rows.map((row) => [row.section, row.x, row.z]), "district-2 was not assaulted and its posts did not budge");
 });
 
+test("a wave still in the field keeps the levy facing it after the war step has spent the assault", () => {
+    const kingdom = resetOrdersWorld();
+    putLevy(kingdom, "district-1", 6);
+    const step = 3;
+    const run = driver();
+    run.onHour(context(kingdom, step));
+    const peace = levyRows(run.status(), "district-1");
+
+    // The hour boundary the live world shows: the assault was resolved inside the hour, and the wave the siege
+    // driver is standing its attackers on is still in the field. The levy face the band, not the empty books.
+    press(kingdom, "district-1", { assault: 24, security: "alert", bearing: "east" });
+    kingdom.districts[0].assault = 0;
+    run.onHour(context(kingdom, step));
+    const war = levyRows(run.status(), "district-1");
+    assert.match(war.reason, /under assault from the east/, "the hour says where the band is, not that the district is at peace");
+    assert.equal(war.rows.length, peace.rows.length, "the same levy is posted, only toward a different face");
+    assert.ok(war.rows.some((row, position) => row.section !== peace.rows[position].section), "at least one post moved toward the attack");
+
+    // The same wave, spent: now there is nothing in the field to face.
+    kingdom.invasion.wave.outcome = "repelled";
+    kingdom.invasion.wave.endedStep = step;
+    run.onHour(context(kingdom, step));
+    assert.match(levyRows(run.status(), "district-1").reason, /at peace/, "a spent wave does not keep the levy at action stations");
+});
+
+test("a posted levy is named in the hour's rows by its identity tag, not by an engine id no operator can read", () => {
+    // In the live world 2.7.0 answers `handle.id` wider than a double: the notes printed
+    // `no standable ground on wall section 7 for -94489280508`, which names no levy anyone can find.
+    const kingdom = resetOrdersWorld();
+    putLevy(kingdom, "district-1", 6);
+    const run = driver();
+    run.onHour(context(kingdom, 0));
+    const rows = levyRows(run.status(), "district-1").rows;
+    assert.ok(rows.length > 0, "a levy that stands within view is reported at all");
+    for (const row of rows) {
+        assert.match(row.id, /^district-1:sol:[0-9]+$/, `a row names a levy a person can find, got ${String(row.id)}`);
+    }
+    assert.equal(new Set(rows.map((row) => row.id)).size, rows.length, "and each levy is named once");
+});
+
 /* ------------------------------------------------------------------ *
  * REQUIRED 5: conservation
  * ------------------------------------------------------------------ */
-
 test("an hour of orders creates nothing and destroys nothing: every entity id in the world is the same", () => {
     const kingdom = resetOrdersWorld();
     putLevy(kingdom, "district-1", 6);

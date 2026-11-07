@@ -15,7 +15,7 @@ import { reply } from "./reply.js";
  */
 
 /**
- * @param {{ statusLines: () => string[] }} runtime the runtime created in main.js, so the counters the
+ * @param {{ statusLines: () => string[], inspectCommand?:(message:string)=>string[],travelCommand?:(message:string)=>string[],militaryCommand?:(message:string,event:any)=>string[],destinationsCommand?:(message:string,event:any)=>Promise<string[]>,routePreviewCommand?:(message:string,event:any)=>Promise<string[]>,stopTravel?:()=>void }} runtime the runtime created in main.js, so the counters the
  *   command prints are the ones the engine keeps.
  * @returns {boolean} true the first time it is called
  */
@@ -30,10 +30,37 @@ export function registerPeopleCommand(runtime) {
                 return;
             }
             try {
+                if(/^inspect(?:\s|$)/.test(event.message.trim())){
+                    reply(runtime.inspectCommand?.(event.message.trim().slice(7).trim())??["Population inspection is unavailable."],event);return;
+                }
+                if(/^military(?:\s|$)/.test(event.message.trim())) {
+                    reply(runtime.militaryCommand?.(event.message.trim().slice(8).trim(),event)??["Military trial is unavailable."],event);return;
+                }
+                if(/^travel route-preview(?:\s|$)/.test(event.message.trim())) {
+                    const message=event.message.trim().slice("travel route-preview".length).trim();
+                    reply(["Checking a loaded path between the saved buildings; read-only, walking is not tested..."],event);
+                    void Promise.resolve().then(()=>runtime.routePreviewCommand?.(message,event)??["Saved route preview is unavailable."])
+                        .then(lines=>reply(lines,event)).catch(error=>reply([`Read-only route preview failed: ${String(error)}.`],event));
+                    return;
+                }
+                if(/^travel destinations(?:\s|$)/.test(event.message.trim())) {
+                    const preview=event.message.trim().slice("travel destinations".length).trim();
+                    reply(["Verifying saved building destinations; read-only, native clearance remains unverified..."],event);
+                    // Promise completion is handled separately; existing travel stays synchronous.
+                    void Promise.resolve().then(()=>runtime.destinationsCommand?.(preview,event)
+                        ??["Saved destination preview is unavailable."])
+                        .then(lines=>reply(lines,event))
+                        .catch(error=>reply([`Destination preview failed: ${String(error)}. Nothing changed.`],event));
+                    return;
+                }
+                if(/^travel(?:\s|$)/.test(event.message.trim())) {
+                    reply(runtime.travelCommand?.(event.message.trim().slice(6).trim())??["Civilian travel trial is unavailable."],event);return;
+                }
                 const want = parsePeopleCommand(event.message);
                 if (want === "on" || want === "off") {
                     try {
                         world.setDynamicProperty(PEOPLE.gateKey, want === "on");
+                        if(want==="off")runtime.stopTravel?.();
                     } catch (error) {
                         reply([`The people gate could not be changed: ${String(error)}`], event);
                         return;

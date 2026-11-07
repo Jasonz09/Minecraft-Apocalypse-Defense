@@ -1,0 +1,101 @@
+{
+  "scope": "Frozen86of87PASS, actualD1positiveFAIL, strictTSCpass checkpoint",
+  "files": [
+    {
+      "path": "base-hashes.json",
+      "sha256": "394F83507A0B845BF4BE32D6FE39798E9D42DA9694A3DAC3CBC37610731F24FF"
+    },
+    {
+      "path": "civilian-work-road-actual-D1-20261106.json",
+      "sha256": "68BB1430FCA897798401B4D124733EF2A71FEF7D5E9E85AE69B71A41A07CB5FB"
+    },
+    {
+      "path": "civilian-work-road-focused-final-20261106.log",
+      "sha256": "1BB4A623AAADA7ED4B0460C3D2BA6794E6B38EB9150B4FA3646DAB553A7048EC"
+    },
+    {
+      "path": "civilian-work-road-typecheck-20261106.log",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "path": "handoff.json",
+      "sha256": "E2B351E8DC5A6B6EBE09AA51AEDB2B1772A2DF6B21E117F3A47CC0BC00D3DD85"
+    },
+    {
+      "path": "INGRESS-DESIGN.md",
+      "sha256": "7B21BEC5B2432C6FC23E4933A3175449193A4C576E270457F18DC0ADA16D6D0B"
+    },
+    {
+      "path": "pack-base-hashes.json",
+      "sha256": "6D7F41E6B1FDF77A9626CF98E55B30B0EF80B4465F0AA66E947D532928E3A388"
+    },
+    {
+      "path": "prepare.mjs",
+      "sha256": "2FCE6928C4DD8B6632E1CD4CBE5DB10A70D58399E4E8EB967C2235BEE6CC6A18"
+    },
+    {
+      "path": "README.md",
+      "sha256": "A695B69DB26B9204B16030FE19D6B6D32D702D6B16B63A8BC47AD120EF50F9B2"
+    },
+    {
+      "path": "ROUTE-DESIGN.md",
+      "sha256": "36DE01CC19A43338CF3F92B16A951B91FEC6FB60988461EFBC1ED96BD7DF1FBD"
+    },
+    {
+      "path": "tsconfig.json",
+      "sha256": "EB004B50FC15A0F2FE9D0ED55C204AD9321982291FB61CB7933E54A2669E53CD"
+    },
+    {
+      "path": "tests/actual-road-source.test.mjs",
+      "sha256": "610B6037A45010829AC05D562BFE31E51634EFADA9D43C177045E6E029B26521"
+    },
+    {
+      "path": "tests/actual-source.test.mjs",
+      "sha256": "39B2BFD1B14B117F6A80D733D7B0DB723E166D574D5B46B224CE4374AF508380"
+    },
+    {
+      "path": "tests/command-wiring.test.mjs",
+      "sha256": "ADDB1DFBC07C81C5F60AE705395085F624FD2AE2DA7EAAA075F51FB7D565F7A6"
+    },
+    {
+      "path": "tests/road-fixture.mjs",
+      "sha256": "59399F39F85AD93C8D6ABC0311460412735C83F21087996C675D0D942954E135"
+    },
+    {
+      "path": "tests/road-route.test.mjs",
+      "sha256": "E39BC30125115FD07548524EBAEEE73B58B328104C6A6C3AA1972888085CDA66"
+    },
+    {
+      "path": "tests/work-assignment.test.mjs",
+      "sha256": "1153EBA177AA06F371FC61C5D6725E1F42F212132B2CD0E8A7B57CBD5B56AE50"
+    },
+    {
+      "path": "tests/work-runtime.test.mjs",
+      "sha256": "66B10579E1FB9CBAD3E8E4BAB7849BCF201B77A8CE10D64C619BD3D64BF04259"
+    },
+    {
+      "path": "proposed/CivilizationApocalypse_BP/scripts/main.js",
+      "sha256": "9F14D2AFB0F16C9EB8772181AA25E55AB637029BE17E3D212FBA1CE94EBE8C4E"
+    },
+    {
+      "path": "proposed/CivilizationApocalypse_BP/scripts/commands/people.js",
+      "sha256": "25273F0C7134661F0177890CF085647E3D68034C1D21770A7CF47EC8D371FEE5"
+    },
+    {
+      "path": "proposed/CivilizationApocalypse_BP/scripts/integration/civilianDestinations.js",
+      "sha256": "26D5CD2A2EB699FB5771FB14F0D99114D898D6DB5C20DC55B3E409727A752D63"
+    },
+    {
+      "path": "proposed/CivilizationApocalypse_BP/scripts/integration/civilianTravel.js",
+      "sha256": "C4BFF668B6AE09BBFC7A21F2EFF0A6F68D189C2C2F427BA3B42ABF6BA08CD700"
+    },
+    {
+      "path": "proposed/CivilizationApocalypse_BP/scripts/people/workAssignment.js",
+      "sha256": "19FAFA94B6AF8F4B309630B3A81C9D82C7961FE3C61E706EDE87C16C2BF822D1"
+    },
+    {
+      "path": "proposed/CivilizationApocalypse_BP/scripts/people/workRoadRoute.js",
+      "sha256": "3CB0B743043585480817FA0204E4CB23E11F21B492C3D20CB9992D2BCAFBAFEB"
+    }
+  ]
+}

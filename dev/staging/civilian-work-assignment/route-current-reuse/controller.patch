@@ -1,0 +1,33 @@
+--- a/CivilizationApocalypse_BP/scripts/integration/civilianDestinations.js
++++ b/CivilizationApocalypse_BP/scripts/integration/civilianDestinations.js
+@@ -56,9 +56,27 @@
+             if(player?.typeId!=="minecraft:player"||player.isValid===false||dimension!=="minecraft:overworld"||civ?.status!=="complete"||civ.stage!=="complete"||civ.dimension!==dimension)throw new Error("completed saved Overworld district/player required");
+             const sourceStamp=signature(civ);
+             token=deps.reserveJob("civilian-loaded-route-preview");if(!token)throw new Error("another construction/maintenance/preview job is running");
+-            const guard=createWallLeafSourceGuard(deps.world,deps.readKingdom);
+-            const safeDistrict=()=>{const rows=deps.readKingdom()?.districts?.filter((/** @type {any} */ d)=>d.id===`district-${index}`);return Array.isArray(rows)&&rows.length===1&&rows[0].security==="secure"&&Number(rows[0].assault??0)===0;};
+-            const current=()=>!token?.cancelled&&player.isValid!==false&&player.dimension?.id===dimension&&signature(find(index))===sourceStamp&&safeDistrict()&&guard.current()===true;
++            /** Per-call capture only: constructor reads are deliberately not retained.
++             * @type {{kingdom:any,reentered:boolean}|undefined} */ let capture;
++            const guard=createWallLeafSourceGuard(deps.world,()=>{const kingdom=deps.readKingdom();if(capture)capture.kingdom=kingdom;return kingdom;});
++            function current(){
++                // A nested check cannot overwrite/reuse the outer check's snapshot.
++                if(capture){capture.reentered=true;return false;}
++                /** @type {{kingdom:any,reentered:boolean}} */const frame={kingdom:undefined,reentered:false};capture=frame;
++                try{
++                    if(token?.cancelled||player.isValid===false||player.dimension?.id!==dimension)return false;
++                    // Unchanged FULL raw-key/value/protection audit EVERY check,
++                    // including both sides of every native block getter.
++                    if(guard.current()!==true||frame.reentered)return false;
++                    const kingdom=frame.kingdom;
++                    if(!kingdom||!Array.isArray(kingdom.districts)||kingdom.districts.length>32)return false;
++                    const rows=kingdom.districts.filter((/** @type {any} */ d)=>d.id===`district-${index}`);
++                    const good=rows.length===1&&signature(rows[0].civ)===sourceStamp
++                        &&rows[0].security==="secure"&&Number(rows[0].assault??0)===0;
++                    return good&&!frame.reentered&&!token?.cancelled&&player.isValid!==false&&player.dimension?.id===dimension;
++                }catch{return false;}
++                finally{capture=undefined;}
++            }
+             function verify(){if(!current())throw new Error("raw source/player/dimension/cancellation changed");}
+             /** @param {Generator<any,any,any>} generator */
+             function* checked(generator){for(;;){verify();const next=generator.next();verify();if(next.done)return next.value;yield;verify();}}

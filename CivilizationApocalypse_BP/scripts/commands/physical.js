@@ -71,13 +71,13 @@ function playerOf(event) {
 function say(player, lines) {
     try {
         if (player.isValid) {
-            player.sendMessage(lines);
+            player.sendMessage(lines.join("\n"));
             return;
         }
     } catch (_error) {
         // fall through to a broadcast
     }
-    world.sendMessage(lines);
+    world.sendMessage(lines.join("\n"));
 }
 
 /**

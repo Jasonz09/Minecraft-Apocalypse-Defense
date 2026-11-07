@@ -1,0 +1,93 @@
+{
+  "scope": "OFFLINE pinned CLOSEDCRC383540 all5saved-source loader/full-vs-bounded projection and SAME verified D5record+synthetic native fixture. No current world/SST/native627tree/memory or speed claim.",
+  "closedInputSha256": "779D961FE66BC90223F3494A539B0E72C16A2F4C1001B3473A02111072C0E994",
+  "sequence": 383540,
+  "seed": {
+    "x": -214,
+    "y": 69,
+    "z": -539
+  },
+  "loaderOrder": [
+    5,
+    1,
+    2,
+    3,
+    4
+  ],
+  "loadYields": 28205,
+  "fullCompileYields": 1002,
+  "guardChecks": 148966,
+  "retention": [
+    {
+      "phase": "selected-retained",
+      "index": 5,
+      "held": 1
+    },
+    {
+      "phase": "neighbor-retained",
+      "index": 1,
+      "held": 2
+    },
+    {
+      "phase": "neighbor-released",
+      "index": 1,
+      "held": 1
+    },
+    {
+      "phase": "neighbor-retained",
+      "index": 2,
+      "held": 2
+    },
+    {
+      "phase": "neighbor-released",
+      "index": 2,
+      "held": 1
+    },
+    {
+      "phase": "neighbor-retained",
+      "index": 3,
+      "held": 2
+    },
+    {
+      "phase": "neighbor-released",
+      "index": 3,
+      "held": 1
+    },
+    {
+      "phase": "neighbor-retained",
+      "index": 4,
+      "held": 2
+    },
+    {
+      "phase": "neighbor-released",
+      "index": 4,
+      "held": 1
+    }
+  ],
+  "peakVerifiedHeavyRecords": 2,
+  "verifiedSources": 5,
+  "projection": {
+    "plannedTrees": 0,
+    "finalContacts": 0,
+    "boundaryPlans": 4,
+    "finalWalls": 0
+  },
+  "sameAsFullRegionCompilationProjected": true,
+  "rawPropertiesUnchanged": true,
+  "blockWriteDelta": 0,
+  "propertyWriteDelta": 0,
+  "selectedProof": {
+    "sameResult": true,
+    "result": {
+      "ok": false,
+      "reason": "a tree trunk does not stand on natural ground (minecraft:air at -214,68,-539)",
+      "cells": 6,
+      "logs": 3,
+      "leaves": 3
+    },
+    "sameNativeReadPoints": true,
+    "nativeReads": 73,
+    "notActualGame627CellTree": true
+  },
+  "elapsedMs": 24525
+}

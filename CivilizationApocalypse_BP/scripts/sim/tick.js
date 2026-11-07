@@ -1,3 +1,4 @@
+import { runDiplomacyStep } from "./diplomacy.js";
 import { SIM } from "../config.js";
 import { findValidationProblems } from "../kingdom/state.js";
 import { formatGameTime } from "./clock.js";
@@ -120,19 +121,23 @@ function restore(kingdom, previous) {
  * refuse is rolled back and reported instead of being persisted or half-applied.
  *
  * @param {any} kingdom
- * @returns {{ step: number, gameTime: string, events: string[], problems: string[] }}
+ * @param {{ approach?: Record<string, string> }} [options] `approach` is handed to the invasion director only
+ * @returns {{ step: number, gameTime: string, events: string[], problems: string[], attacks: Array<{ districtId: string, name: string, assault: number }> }}
  */
-export function advanceKingdomStep(kingdom) {
+export function advanceKingdomStep(kingdom, options = {}) {
     const before = snapshot(kingdom);
     kingdom.step = Number(kingdom.step) + 1;
 
     const /** @type {string[]} */ events = [];
+    /** @type {Array<{ districtId: string, name: string, assault: number }>} */
+    const attacks = [];
     /** @type {string[]} */
     let problems;
     try {
         // Invasion director: a no-op unless kingdom.invasion exists (disabled by default; see docs/INVASION_DIRECTOR.md).
-        events.push(...runInvasionDirectorStep(kingdom));
-        events.push(...toEvents(runWarStep(kingdom)));
+        // Only the director's own key is forwarded, so a caller's other options cannot change another system.
+        events.push(...runInvasionDirectorStep(kingdom, options?.approach === undefined ? {} : { approach: options.approach }));
+        events.push(...toEvents(runWarStep(kingdom, attacks)));
         events.push(...toEvents(runGateControlStep(kingdom)));
         events.push(...toEvents(runEvacuationStep(kingdom)));
         events.push(...runConstructionStep(kingdom));
@@ -140,16 +145,17 @@ export function advanceKingdomStep(kingdom) {
         events.push(...runPolicyStep(kingdom));
         events.push(...toEvents(runPopulationStep(kingdom)));
         events.push(...runTrainingStep(kingdom));
+        events.push(...runDiplomacyStep(kingdom));
         problems = [...findValidationProblems(kingdom), ...validateGateRecords(kingdom)];
     } catch (error) {
         problems = [`a simulation system threw: ${String(error)}`];
     }
     if (problems.length > 0) {
         restore(kingdom, before);
-        return { step: Number(kingdom.step), gameTime: formatGameTime(Number(kingdom.step)), events: [], problems };
+        return { step: Number(kingdom.step), gameTime: formatGameTime(Number(kingdom.step)), events: [], problems, attacks: [] };
     }
 
-    return { step: Number(kingdom.step), gameTime: formatGameTime(Number(kingdom.step)), events, problems };
+    return { step: Number(kingdom.step), gameTime: formatGameTime(Number(kingdom.step)), events, problems, attacks };
 }
 
 /**
@@ -157,8 +163,9 @@ export function advanceKingdomStep(kingdom) {
  *
  * @param {any} kingdom
  * @param {number} steps
- * @param {{ stopOnProblem?: boolean }} options
- * @returns {{ ran: number, skipped: number, events: string[], rejected: { atStep: number, problems: string[] }[], time: string }}
+ * @param {{ stopOnProblem?: boolean, approach?: Record<string, string> }} options
+ * @returns {{ ran: number, skipped: number, events: string[], rejected: { atStep: number, problems: string[] }[],
+ *   attacks: Array<{ districtId: string, name: string, assault: number }>, time: string }}
  */
 export function advanceKingdom(kingdom, steps, options = {}) {
     const requested = Number.isInteger(steps) ? steps : 0;
@@ -169,11 +176,14 @@ export function advanceKingdom(kingdom, steps, options = {}) {
 
     const /** @type {string[]} */ events = [];
     const /** @type {{ atStep: number, problems: string[] }[]} */ rejected = [];
+    // Carried up from every accepted step, because this is the door the runtime actually calls: a report that
+    // drops `attacks` here tells the physical siege there was no fight, however loud the events were.
+    const /** @type {Array<{ districtId: string, name: string, assault: number }>} */ attacks = [];
     let ran = 0;
     let skipped = 0;
 
     for (let index = 0; index < limit; index += 1) {
-        const result = advanceKingdomStep(kingdom);
+        const result = advanceKingdomStep(kingdom, options);
         if (result.problems.length > 0) {
             rejected.push({ atStep: result.step, problems: result.problems });
             skipped += 1;
@@ -184,6 +194,7 @@ export function advanceKingdom(kingdom, steps, options = {}) {
         }
         ran += 1;
         events.push(...result.events);
+        attacks.push(...result.attacks);
     }
 
     return {
@@ -191,6 +202,7 @@ export function advanceKingdom(kingdom, steps, options = {}) {
         skipped,
         events,
         rejected,
+        attacks,
         time: formatGameTime(Number(kingdom.step)),
     };
 }

@@ -1,0 +1,30 @@
+import assert from "node:assert/strict";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import test from "node:test";
+import { archivePackProblems } from "../lib/pack-parity.mjs";
+import { writeZip } from "../lib/zip.mjs";
+
+test("release parity reads archive contents and detects stale, missing and obsolete scripts", (t) => {
+    const root = mkdtempSync(join(tmpdir(), "civapoc-parity-"));
+    t.after(() => rmSync(root, { recursive: true, force: true }));
+    const source = join(root, "pack");
+    const staged = join(root, "staged");
+    const embedded = join(staged, "behavior_packs", "CivApocBP");
+    mkdirSync(source, { recursive: true });
+    mkdirSync(embedded, { recursive: true });
+    writeFileSync(join(source, "main.js"), "current script");
+    writeFileSync(join(embedded, "main.js"), "current script");
+    const spec = { packs: [{ source: "pack", kind: "behavior_packs", packageDir: "CivApocBP" }] };
+    const archive = join(root, "candidate.mctemplate");
+    writeZip(staged, archive);
+    assert.deepEqual(archivePackProblems(archive, spec, root), []);
+    writeFileSync(join(source, "main.js"), "new script");
+    writeFileSync(join(source, "new.js"), "new feature");
+    assert.match(archivePackProblems(archive, spec, root).join("\n"), /stale packaged file: .*main.js/);
+    assert.match(archivePackProblems(archive, spec, root).join("\n"), /missing packaged file: .*new.js/);
+    writeFileSync(join(embedded, "obsolete.js"), "old feature");
+    writeZip(staged, archive);
+    assert.match(archivePackProblems(archive, spec, root).join("\n"), /unexpected packaged file: .*obsolete.js/);
+});

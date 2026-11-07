@@ -1,13 +1,15 @@
 import { ItemLockMode, ItemStack, system, world } from "@minecraft/server";
 import { ActionFormData, MessageFormData } from "@minecraft/server-ui";
 import { reply } from "../commands/reply.js";
-import { CIV_EVENT_IDS } from "../config.js";
+import { resumableDistrict } from "../commands/civ.js";
+import { CIV_EVENT_IDS, STARTER } from "../config.js";
 import { listGates } from "../sim/gatecontrol.js";
 import { createLedgerDevGate, ledgerGateOn } from "../ledger/devgate.js";
-import { createLedgerUi } from "../ledger/runtime.js";
+import { createLedgerUi, GATE_OFF_LINES } from "../ledger/runtime.js";
 import { startGateSelfTest } from "./civGates.js";
 import { DISTRICT_INDEXES, abortCivJob, civAbortLines, sessionStatus } from "./civBuilder.js";
 import { activeKind, isBusy } from "./districtBuilder.js";
+import { getProgress } from "./civProgress.js";
 import { getGateAdapter, readGateRecord, readGateRegistry, setUnmanagedMode } from "./gateAdapter.js";
 
 /**
@@ -16,7 +18,7 @@ import { getGateAdapter, readGateRecord, readGateRegistry, setUnmanagedMode } fr
  * function that the matching command already calls. It holds no rule of its own.
  *
  * Nothing runs at import. main.js calls registerLedgerDevGate() unconditionally (the switch must always listen)
- * and registerLedger() only while the development gate is on.
+ * and registerLedger() when a prepared template or the development switch enables it.
  *
  * @typedef {ReturnType<typeof import("../kingdom/store.js").createKingdomStore>} KingdomStore
  */
@@ -25,6 +27,14 @@ import { getGateAdapter, readGateRecord, readGateRegistry, setUnmanagedMode } fr
 let ledger;
 /** @type {ReturnType<typeof createLedgerDevGate> | undefined} */
 let devGate;
+
+/** Read only after early execution. A template's cleared development switch is not a gameplay lock.
+ * @param {KingdomStore} kingdomStore
+ */
+export function ledgerEnabled(kingdomStore) {
+    try { return ledgerGateOn(world, kingdomStore.load().kingdom); }
+    catch (_error) { return false; }
+}
 
 /**
  * Gate services (SERVICE_CONTRACT in ledger/actions.js). They share the world's one gate adapter, the same instance
@@ -72,10 +82,11 @@ const civServices = {
  * The live status the menus read. Built only from existing readers; never throws into the runtime.
  * @param {KingdomStore} kingdomStore
  */
-function liveStatus(kingdomStore) {
+export function liveStatus(kingdomStore) {
     const adapter = getGateAdapter(kingdomStore);
-    // A civilization job that is still planning has no session; the menus report it as no build running.
-    const busy = isBusy() && !String(activeKind()).startsWith("civ-") ? String(activeKind()) : undefined;
+    const kind = isBusy() ? String(activeKind()) : undefined;
+    const operation = kind?.startsWith("civ-") ? { kind, phase: getProgress()?.phaseName ?? "preparing" } : undefined;
+    const busy = operation === undefined ? kind : undefined;
     const loaded = kingdomStore.load();
     const simulated = loaded.kingdom ? listGates(loaded.kingdom).map(({ gate }) => String(gate.id)) : [];
     const unmanaged = readGateRegistry()
@@ -88,7 +99,7 @@ function liveStatus(kingdomStore) {
             actual: readGateRecord(String(entry.id))?.actual ?? "open",
         }));
     const moving = [...simulated, ...unmanaged.map((entry) => entry.id)].filter((id) => adapter.isRunning(id));
-    return { civ: { session: sessionStatus(), busy }, gates: { unmanaged, moving } };
+    return { civ: { session: sessionStatus(), busy, operation, resumable: resumableDistrict(loaded.kingdom) }, gates: { unmanaged, moving } };
 }
 
 /**
@@ -107,7 +118,7 @@ export function registerLedger(kingdomStore) {
             kingdomStore,
             services: { gates: gateServices(kingdomStore), civ: civServices },
             live: () => liveStatus(kingdomStore),
-            gateOpen: () => ledgerGateOn(world),
+            gateOpen: () => ledgerEnabled(kingdomStore),
         });
     }
     return ledger.register();
@@ -120,6 +131,32 @@ export function registerLedger(kingdomStore) {
  */
 export function registerLedgerDevGate(kingdomStore) {
     if (devGate === undefined) {
+        // Custom components must register during startup, even while the development gate is off.
+        // Vanilla books do not deliver the use events needed to open the menu.
+        system.beforeEvents.startup.subscribe((event) => {
+            event.itemComponentRegistry.registerCustomComponent("civapoc:open_ledger", {
+                onUse: (use) => {
+                    if (!ledgerEnabled(kingdomStore)) {
+                        system.run(() => use.source.sendMessage(GATE_OFF_LINES.join("\n")));
+                        return;
+                    }
+                    registerLedger(kingdomStore);
+                    ledger?.handleItemUse(use);
+                },
+            });
+        });
+        // Initial spawn runs after the welcome handler seeded/loaded the world.
+        // Rejoining recovers a lost Ledger and does not duplicate a held one.
+        world.afterEvents.playerSpawn.subscribe((event) => {
+            if (!event.initialSpawn) return;
+            system.run(() => {
+                try {
+                    if (kingdomStore.load().kingdom?.starter?.templateId !== STARTER.templateId || !ledgerEnabled(kingdomStore)) return;
+                    registerLedger(kingdomStore);
+                    ledger?.ensureForPlayer(event.player);
+                } catch (_error) { /* A disconnected player can retry on their next join. */ }
+            });
+        });
         devGate = createLedgerDevGate({ world, system, reply, enable: () => registerLedger(kingdomStore) });
     }
     return devGate.register();

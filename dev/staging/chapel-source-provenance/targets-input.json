@@ -1,0 +1,603 @@
+{
+  "scope": "39 historical coordinate descriptions from TWO separate censuses, not one atomic snapshot/current eligibility",
+  "page1Artifact": "dist\\native-room-census-161-20261106.json",
+  "page1ArtifactSha256": "72722573444738F30CC57A16880B487ABEEB80D4DD34E957E8BC7342360B2E33",
+  "page2": "7coordinates supplied by parent; final nativeartifact pending atcapture",
+  "rows": [
+    {
+      "position": {
+        "x": -219,
+        "y": 69,
+        "z": -537
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "source-discrepancy",
+      "saved": "minecraft:air",
+      "observation": "161 page1 /historical non-atomic census"
+    },
+    {
+      "position": {
+        "x": -218,
+        "y": 69,
+        "z": -535
+      },
+      "observedId": "minecraft:oak_log",
+      "fullStates": {
+        "old_log_type": "oak",
+        "pillar_axis": "y"
+      },
+      "classification": "source-discrepancy",
+      "saved": "minecraft:air",
+      "observation": "161 page1 /historical non-atomic census"
+    },
+    {
+      "position": {
+        "x": -215,
+        "y": 69,
+        "z": -539
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "source-discrepancy",
+      "saved": "minecraft:air",
+      "observation": "161 page1 /historical non-atomic census"
+    },
+    {
+      "position": {
+        "x": -215,
+        "y": 69,
+        "z": -538
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "source-discrepancy",
+      "saved": "minecraft:air",
+      "observation": "161 page1 /historical non-atomic census"
+    },
+    {
+      "position": {
+        "x": -214,
+        "y": 69,
+        "z": -539
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "source-discrepancy",
+      "saved": "minecraft:air",
+      "observation": "161 page1 /historical non-atomic census"
+    },
+    {
+      "position": {
+        "x": -214,
+        "y": 69,
+        "z": -538
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "source-discrepancy",
+      "saved": "minecraft:air",
+      "observation": "161 page1 /historical non-atomic census"
+    },
+    {
+      "position": {
+        "x": -218,
+        "y": 70,
+        "z": -535
+      },
+      "observedId": "minecraft:oak_log",
+      "fullStates": {
+        "old_log_type": "oak",
+        "pillar_axis": "y"
+      },
+      "classification": "source-discrepancy",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census"
+    },
+    {
+      "position": {
+        "x": -215,
+        "y": 70,
+        "z": -539
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "source-discrepancy",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census"
+    },
+    {
+      "position": {
+        "x": -215,
+        "y": 70,
+        "z": -538
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "source-discrepancy",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census"
+    },
+    {
+      "position": {
+        "x": -214,
+        "y": 70,
+        "z": -539
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "source-discrepancy",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census"
+    },
+    {
+      "position": {
+        "x": -214,
+        "y": 70,
+        "z": -538
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "source-discrepancy",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census"
+    },
+    {
+      "position": {
+        "x": -218,
+        "y": 71,
+        "z": -535
+      },
+      "observedId": "minecraft:oak_log",
+      "fullStates": {
+        "old_log_type": "oak",
+        "pillar_axis": "y"
+      },
+      "classification": "source-discrepancy",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census"
+    },
+    {
+      "position": {
+        "x": -215,
+        "y": 71,
+        "z": -539
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "source-discrepancy",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census"
+    },
+    {
+      "position": {
+        "x": -215,
+        "y": 71,
+        "z": -538
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "source-discrepancy",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census"
+    },
+    {
+      "position": {
+        "x": -214,
+        "y": 71,
+        "z": -539
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "source-discrepancy",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census"
+    },
+    {
+      "position": {
+        "x": -214,
+        "y": 71,
+        "z": -538
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "source-discrepancy",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census"
+    },
+    {
+      "position": {
+        "x": -218,
+        "y": 72,
+        "z": -536
+      },
+      "observedId": "minecraft:oak_log",
+      "fullStates": {
+        "old_log_type": "oak",
+        "pillar_axis": "z"
+      },
+      "classification": "source-discrepancy",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census"
+    },
+    {
+      "position": {
+        "x": -218,
+        "y": 72,
+        "z": -535
+      },
+      "observedId": "minecraft:oak_log",
+      "fullStates": {
+        "old_log_type": "oak",
+        "pillar_axis": "y"
+      },
+      "classification": "source-discrepancy",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census"
+    },
+    {
+      "position": {
+        "x": -215,
+        "y": 72,
+        "z": -539
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "source-discrepancy",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census"
+    },
+    {
+      "position": {
+        "x": -215,
+        "y": 72,
+        "z": -538
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "source-discrepancy",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census"
+    },
+    {
+      "position": {
+        "x": -214,
+        "y": 72,
+        "z": -539
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "source-discrepancy",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census"
+    },
+    {
+      "position": {
+        "x": -214,
+        "y": 72,
+        "z": -538
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "source-discrepancy",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census"
+    },
+    {
+      "position": {
+        "x": -219,
+        "y": 69,
+        "z": -538
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "classification": "source-discrepancy",
+      "saved": "minecraft:air",
+      "observation": "161 page1 /historical non-atomic census"
+    },
+    {
+      "position": {
+        "x": -219,
+        "y": 69,
+        "z": -536
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "classification": "source-discrepancy",
+      "saved": "minecraft:air",
+      "observation": "161 page1 /historical non-atomic census"
+    },
+    {
+      "position": {
+        "x": -219,
+        "y": 69,
+        "z": -535
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "classification": "source-discrepancy",
+      "saved": "minecraft:air",
+      "observation": "161 page1 /historical non-atomic census"
+    },
+    {
+      "position": {
+        "x": -218,
+        "y": 69,
+        "z": -538
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "classification": "source-discrepancy",
+      "saved": "minecraft:air",
+      "observation": "161 page1 /historical non-atomic census"
+    },
+    {
+      "position": {
+        "x": -218,
+        "y": 69,
+        "z": -537
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "classification": "source-discrepancy",
+      "saved": "minecraft:air",
+      "observation": "161 page1 /historical non-atomic census"
+    },
+    {
+      "position": {
+        "x": -218,
+        "y": 69,
+        "z": -536
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "classification": "source-discrepancy",
+      "saved": "minecraft:air",
+      "observation": "161 page1 /historical non-atomic census"
+    },
+    {
+      "position": {
+        "x": -217,
+        "y": 69,
+        "z": -536
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "classification": "source-discrepancy",
+      "saved": "minecraft:air",
+      "observation": "161 page1 /historical non-atomic census"
+    },
+    {
+      "position": {
+        "x": -217,
+        "y": 69,
+        "z": -535
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "classification": "source-discrepancy",
+      "saved": "minecraft:air",
+      "observation": "161 page1 /historical non-atomic census"
+    },
+    {
+      "position": {
+        "x": -219,
+        "y": 70,
+        "z": -538
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "classification": "source-discrepancy",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census"
+    },
+    {
+      "position": {
+        "x": -219,
+        "y": 70,
+        "z": -537
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "classification": "source-discrepancy",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census"
+    },
+    {
+      "position": {
+        "x": -219,
+        "y": 70,
+        "z": -536
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "saved": "no district op",
+      "observation": "162 page2 /separate later census observed betweenhours1105-1106, parent manualUI transcription"
+    },
+    {
+      "position": {
+        "x": -218,
+        "y": 70,
+        "z": -538
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "saved": "no district op",
+      "observation": "162 page2 /separate later census observed betweenhours1105-1106, parent manualUI transcription"
+    },
+    {
+      "position": {
+        "x": -218,
+        "y": 70,
+        "z": -537
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "saved": "no district op",
+      "observation": "162 page2 /separate later census observed betweenhours1105-1106, parent manualUI transcription"
+    },
+    {
+      "position": {
+        "x": -219,
+        "y": 71,
+        "z": -537
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "saved": "no district op",
+      "observation": "162 page2 /separate later census observed betweenhours1105-1106, parent manualUI transcription"
+    },
+    {
+      "position": {
+        "x": -219,
+        "y": 72,
+        "z": -537
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "saved": "no district op",
+      "observation": "162 page2 /separate later census observed betweenhours1105-1106, parent manualUI transcription"
+    },
+    {
+      "position": {
+        "x": -218,
+        "y": 72,
+        "z": -537
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "saved": "no district op",
+      "observation": "162 page2 /separate later census observed betweenhours1105-1106, parent manualUI transcription"
+    },
+    {
+      "position": {
+        "x": -217,
+        "y": 72,
+        "z": -537
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "saved": "no district op",
+      "observation": "162 page2 /separate later census observed betweenhours1105-1106, parent manualUI transcription"
+    }
+  ]
+}

@@ -1,13 +1,52 @@
 # Starter world - prebuilt kingdom as a Bedrock world template
 
-Status: **tooling and contract are implemented and verified offline. No `.mctemplate` exists yet,
-because the city the packaged template must contain has not been built in a starter world.** All five
-districts have registered enlarged layouts and all five are marked `planner-ready` in
-`starter/template.json`. Districts 1 (Hearthgate) and 2 (Ironquarry) **have been built end to end and
-verified inside Minecraft** (Bedrock 1.26.5203, 2026-10-26) - in a development save, recorded in
-`docs/PROGRESS.md`; that is not the starter world this document ships, and no district has been marked
-`built`, armed, exported or imported. Not built in game either: the 49x49 prototype (offline-only per
-`docs/PHYSICAL_DISTRICT_DESIGN.md`) and districts 3-5.
+Latest source verification (2026-11-05): **1,519 tests, five gates, 52/52 headless stages pass**.
+Boundary and opt-in anchored-column revisions are deployed to a separate restored test copy.
+Native tree inspection preserves a component entering a real neighboring interior. Four legacy
+districts now have 2,943 support changes, with one changed command hall preserved; Ashfall uses
+joists already. All four migrated districts repeat without further writes after rejoin.
+Native retained-column preview and raised legacy wall-profile validation remain pending.
+The release remains blocked on city acceptance, a fresh baseline and source-parity packaging.
+
+Prior checkpoint (2026-11-04): **release blocked**. The archive below is preserved historical
+output and now fails source-parity checks. A separate diagnostic template with explicit
+`lock_template_options: false` and `base_game_version: [1,26,60]` now imports through
+Create New World > Owned by me > Import templates and creates/loads a disposable world.
+The builder and validators now require these header fields. That candidate uses archived city
+data, not a release baseline. Corrected five-district validation copies now complete Ashfall
+without stacking shared gatehouses, and its shared/paired/outer gates pass native checks.
+A later balanced-layout copy completes with core services, five gardens and two kitchen farms;
+its shared/paired/outer gates pass and three missing door pairs are repaired. A street-level school
+check exposed pillars blocking its interior; guarded support repair clears the aisle, survives
+rejoin and repeats without changes. Wider repair reaches all five districts; one command hall
+is preserved because its live blocks differ from the original support plan. All five automated
+gates pass with 1,454 tests and 52/52 gameplay stages, including the read-only wall audit,
+notification changes, guarded wall/doorway maintenance, roof maintenance, tree-boundary
+corrections, work budgets and protected-column caching. Native construction first hits Minecraft's
+scripting watchdog; later saved-plan retries pass the unreadable cell and leaf-linked gate pause,
+then complete 52,258 operations and all four Ashfall gate tests. Subsequent maintenance restores
+2,537 wall/doorway blocks without failed writes; previously blocked doorway and wall samples
+pass exact native reads. A further 330 wall targets are restored and Ashfall's repeat audit
+confirms zero eligible air gaps and tree obstructions; other occupied and protected targets remain
+preserved. The tree-refusal cache correction and its failing-before/passing-after regression
+are included in the full pass. Complete city acceptance remains open. Neither the
+offline pass nor this partial native result establishes a releasable city or fresh baseline.
+The separate automatic Ledger delivery/menu/rejoin test passes natively.
+Full visual/gameplay acceptance and a fresh starting baseline remain.
+Source fixes clean newer development state and retain physical gate links during arming.
+See [PROGRESS.md](PROGRESS.md) for current evidence. The original chat also records a prototype
+completion in October; the older "offline-only" description below is historical and contradicted
+by that chat evidence.
+
+Status (2026-10-30): **built.** All five districts stand in a Minecraft world, the world was armed
+with `civ:starter_arm confirm`, verified with `civ:starter_verify`, exported, and packaged as
+`dist/templates/civapoc-starter.mctemplate` (17,345,764 bytes, 142 entries, sha256
+`19d3dde36cc42a98db2dda05063dd308fe2b50d01a60e82f266270dd4567fc45`). All five are marked `built` in
+`starter/template.json`, `starter/build-receipt.json` records the run, and
+`npm run template:release-check` exits 0. The staged contents were reopened in game and verified
+(section 9); importing the archive through Minecraft's own import UI is the one step **not** done -
+this machine has no `.mctemplate` file association. The 49x49 prototype remains offline-only per
+`docs/PHYSICAL_DISTRICT_DESIGN.md`.
 
 ## 1. What "prebuilt" means here
 
@@ -50,6 +89,9 @@ World](https://learn.microsoft.com/en-us/minecraft/creator/documents/createaworl
   `type: "world_template"`). Re-using a UUID that is already in `com.mojang` produces
   *"Failed to import"* - which is why the shipped UUIDs are fixed in `starter/template.json` and the
   validator refuses a template UUID that equals a pack UUID.
+- Include an explicit boolean `header.lock_template_options` and the authored
+  `header.base_game_version`; both are stored in `starter/template.json` and checked before
+  export. The current values were exercised in a successful native import/create test.
 - `texts/en_US.lang` supplies the UI name (`pack.name=` / `pack.description=`); `texts/languages.json`
   lists the languages (`["en_US"]` minimum). Without them the template is literally named "pack.name".
 - Add-on packs ride along in `behavior_packs/<dir>` + `world_behavior_packs.json` (and
@@ -139,10 +181,14 @@ fails if they ever drift.
 
 ## 5. One-time repeatable workflow
 
-Steps 1-5 happen inside Minecraft in a dedicated build world. As a run they have **not** been performed:
-districts 1 and 2 were built (step 2) in a development save on 2026-10-26, not in a fresh build world, and
-that save has not been returned to a shippable state, armed or exported. Steps 6-7 are offline and
-implemented, and step 8 needs the game again.
+Steps 1-5 happen inside Minecraft. As a run they were performed on 2026-10-30, in the world
+"CivTest Hearthgate" (Bedrock 1.26.52): the five districts were added to the development save
+district by district as they were built, and that save was then returned to a shippable state, armed,
+verified and exported (`starter/build-receipt.json`, `dist/export/CivTest-Hearthgate.mcworld`).
+Steps 6-7 are offline and now pass. Step 8 was only partly exercised: the staged tree was copied into
+`minecraftWorlds` and opened in the game (it verified as armed, below), but the `.mctemplate` archive
+was never imported through Minecraft's own import UI - this machine has no `.mctemplate` file
+association.
 
 1. **Create a dedicated build world** (e.g. `CIVBUILD-hearthgate`), normal/infinite generator, cheats
    on for `/scriptevent`. Never an existing world: the tooling never edits a live save.
@@ -170,14 +216,19 @@ implemented, and step 8 needs the game again.
    ```
    npm run template:release-check
    ```
-   It exits nonzero until all five districts are marked built, required and receipted. Only then does
-   adding `--zip` to step 6 produce `dist/templates/civapoc-starter.mctemplate`; with fewer than five
+   It exits nonzero until all five districts are marked built, required and receipted. For this
+   release it exits 0 (5/5 districts, receipt present, archive present); only then does
+   adding `--zip` to step 6 produce `dist/templates/civapoc-starter.mctemplate`. With fewer than five
    districts the packager refuses, because a one-district archive named as the starting kingdom would
    misrepresent the game.
 8. **Install for a test**: double-click `dist/templates/civapoc-starter.mctemplate` (importing the same
    UUID twice needs the old copy removed from `com.mojang\world_templates` first), then
    *Create New > Imported Templates*. The builder prints the artifact's `sha256`; record it with the
    receipt, because the file is reproducible and so a later rebuild can be proved identical.
+   **Not exercised for this release**: no `.mctemplate` file association is registered on this machine,
+   and dropping the folder into `com.mojang\world_templates` was not recognised by the game as an
+   imported template. What was tested instead: the staged tree (`dist/templates/civapoc-starter`) was
+   copied into `minecraftWorlds` and opened - see section 9.
 
 The builder refuses a receipt that does not match `template.json` (`armed !== true`, wrong id,
 `builtDistricts` missing a `builtRequired` entry, `jobPending !== 0`, non-integer centre).
@@ -189,10 +240,12 @@ mctemplate`, pack folder name ≤ 10 chars, pack source and manifest exist in th
 languages, `keepRandomSeed: false`, keep/wipe prefixes not overlapping, `civ:plan` kept, five districts
 with unique ids/names/roles and unique `<name>-enlarged` layout ids, and `starterWorld: true` only for
 a district whose layout is registered in `districtplan.ENLARGED_LAYOUTS` and whose status is not
-`planned`. The last rule is the one that stops an incomplete template being called finished: today it
-passes because all five registered layouts are present, and the run prints *"5 starter district(s) are
-planner-ready but not physically built ... template:release-check must refuse packaging until each one is
-built and verified in Minecraft"* rather than hiding it.
+`planned`. The last rule is the one that stops an incomplete template being called finished: it
+refused packaging while any starter district was still `planner-ready`, printing *"N starter
+district(s) are planner-ready but not physically built ... template:release-check must refuse packaging
+until each one is built and verified in Minecraft"*. For this release all five are marked `built`, so
+the validator reports no such note - and `dev/test/template.test.mjs` keeps both sides covered by
+flipping one district back to `planner-ready` on a clone and asserting the refusal returns.
 
 Package gate: required files present (`level.dat`, `levelname.txt`, `db/CURRENT`), no forbidden residue
 (`db/*.tmp`, `db/DIM*/`, `level.dat_new`, `world_behavior_packs.json.bak`), `level.dat` parses as
@@ -202,9 +255,10 @@ and the size stays under `maxWorldBytes` (256 MB).
 
 ## 7. Full-release gate: a staged preview is not a release
 
-**Development staging is not the finished product.** The existing starter spec marks all five districts as
-starter-world districts and none of them `built`; no district of the packaged template has been built -
-districts 1 and 2 stand only in a development save (`docs/PROGRESS.md`).
+**Development staging is not the finished product.** The starter spec asks for five starter-world
+districts and refuses packaging until each is marked `built` *and* receipted. For this release all
+five are marked `built`, all five stand physically in the packaged world (built in the development
+save between 2026-10-26 and 2026-10-30, `docs/PROGRESS.md`), and the receipt attests the run.
 The earlier packager could create a `.mctemplate` when just Hearthgate was marked complete.
 That was suitable for an experiment but misleading as a five-district release.
 
@@ -214,15 +268,16 @@ Before publishing, run:
 npm run template:release-check
 ```
 
-It reports the five required districts and explains why release is blocked. The regular
+It reports the five required districts and exits nonzero if any is missing or unreceipted. The regular
 `node dev/build-template.mjs --world <export> --receipt <receipt>` command can still **stage** a
 development world for review, but **adding `--zip` now refuses to create a release archive** until:
 
 - All five original districts are explicitly marked `starterWorld: true, status: "built"` in
   `starter/template.json` and listed exactly once in `starter.builtRequired`.
-- All five have genuinely been built and verified in a dedicated Minecraft world (and their
-  layouts are registered by the planner). The in-game `civ:starter_arm confirm` must also
-  enforce all five in the updated mirrored `STARTER.builtRequired` configuration.
+- All five have genuinely been built and inspected in the saved world that was packaged (the
+  development save, reset by arming rather than reused as-is), and their layouts are registered by
+  the planner. The in-game `civ:starter_arm confirm` also enforces all five through the mirrored
+  `STARTER.builtRequired` configuration.
 - `starter/build-receipt.json` confirms all five as built, 400 civilians, 150 soldiers, five
   districts, zero queued construction jobs, a matching template id, the city `centre`/`radius` the
   spawn check is measured against, the world name and Minecraft build, and real verification notes.
@@ -261,38 +316,54 @@ is build time, not contract or code:
 1. Done: `ENLARGED_LAYOUTS` in `scripts/civ/districtplan.js` maps **all five** indices
    (`hearthgate/ironquarry/whitethorn/saltmere/ashfall-enlarged`); the composer builds each district's
    walls, gatehouses, road profiles, pads, stairs and bridges from the master plan.
-2. Done: every entry already carries `starterWorld: true`, with `status: "planner-ready"`. Each one moves
-   to `built` only after that district has been built and inspected in the world being packaged.
-3. Partly done: districts 1 and 2 are built, in ring order, one `civ:generate` job each - but in a
-   development save that has never been armed or exported (`docs/PROGRESS.md`). Districts 3-5 still have
-   to be built, and `civ:starter_verify` re-run afterwards: it must show 5 complete districts and 0
-   pending jobs.
+2. Done: every entry carries `starterWorld: true`, and all five now carry `status: "built"` - each
+   moved to `built` only after that district had been built and inspected in the world being packaged.
+3. Done (2026-10-30): all five districts were built in ring order, one `civ:generate` job each. The
+   world was then returned to a shippable state, armed (`civ:starter_arm confirm`), verified
+   (`civ:starter_verify`: five complete districts, 400/150, 0 pending jobs, no wiped keys) and
+   exported; `--zip` produced the archive. See `docs/PROGRESS.md`.
 4. Inter-district wall/gate links come from the master plan's shared chains; the gate registry keeps
    them closable, so the template still ships with `auto` gates.
 
-## 9. What must be tested in Minecraft (and nothing here claims it has been)
+## 9. What was tested in Minecraft, and what was not
 
-- Import the template, create a world from it, and confirm the walls/roads/buildings are the ones that
-  were built - no generation runs at join.
-- `/scriptevent civ:status` on first join: 5 districts / 400 civilians / 150 soldiers, `step` near 0 -
-  i.e. the arming took, and `db/` really carried the armed properties.
-- `/scriptevent civ:starter_verify` says *Ready for export* and lists no wiped keys.
-- Rejoin after a quit: state persists and no `civ:jobs`/`civ:debug`/`civ:demo-` key reappears.
-- Expansion still works procedurally: `civ:generate_plan` for district 2 against the shipped plan.
-- The old 49x49 `district.physical` prototype world is untouched, and generation still refuses any
-  footprint overlapping an existing physical record.
+Checked on 2026-10-30, in a copy of the staged tree opened directly from `minecraftWorlds`
+(Bedrock 1.26.52; the `.mctemplate` import path itself was not exercised - section 5, step 8):
+
+- the world opened without running any generation, and the player stood beside Heartgate at the
+  saved spawn (-187, 90, -621; the world's own spawn is -187, 56, -621);
+- the join message read *"Civilization Apocalypse: 5 districts, 400 civilians, 150 soldiers"*, so the
+  armed kingdom really did ride inside `db/`;
+- `civ:status` answered with all five district lines (80 civilians each, ~30 soldiers each with the
+  small losses the siege had already caused) and the live situation block - the city, its people and
+  the simulation all came from the packaged files;
+- `civ:starter_status` reported the kept key prefixes (`civ:kingdom`, `civ:plan`, `civ:gatereg`,
+  `civ:gate_`), nothing wiped on arming, and refused to re-arm: *"this world is already armed as
+  'civapoc-starter' - re-arming would discard play state"* (the fail-closed step);
+- `civ:starter_verify` reported *Armed as 'civapoc-starter' v1.0.0*, five built districts, master plan
+  stored, no development keys - and, because that copy had been left running for six simulated hours,
+  a drifted population (410/147) rather than the baseline, which it named honestly.
+
+Still not tested, and nothing here claims otherwise:
+
+- importing the `.mctemplate` through the game's own *Create New > Imported Templates* UI;
+- quitting and rejoining a world made from the template (dynamic-property persistence across a
+  second load);
+- post-ship expansion: `civ:generate_plan` for district 2 against the shipped plan;
+- the old 49x49 `district.physical` prototype world was not opened or generated in during this run.
 
 ## 10. Known limitations
 
-- **No template has been built or imported.** Steps 3-5 of section 5 still need Minecraft; step 2 has been
-  walked in game, but only for districts 1-2 and only in a development save.
+- **The template has been built, but not imported through the game UI.** The archive exists, passes
+  every offline check, and its staged contents were opened as a world and verified in game (section 9);
+  step 8 of section 5 is the one part of the workflow still unperformed.
 - Offline tooling cannot read simulation state out of `db/`; the receipt is a signed human step, not a
   cryptographic guarantee.
-- Districts 1 and 2 have now been placed in a world, and the build-time surprises they did hit are
+- All five districts have now been placed in a world, and the build-time surprises they hit are
   recorded in `docs/PROGRESS.md`: a ticking-area chunk hold needs the player standing near the tile that
   is loading, and trees whose neighbours included melon, cocoa or bamboo were left standing on built lots.
-  Districts 3-5 have still never been placed, so rivers, cliffs and unloaded chunks at the survey edge
-  stay open risks there.
+  Blocks between the built districts and the survey edge (rivers, cliffs) were only inspected where the
+  districts reached; the packaged world is the evidence of what shipped.
 - `world_resource_packs.json` is copied if present, but this pack ships no resource pack, so that path
   is untested.
 - The wipe list is one-colon prefixes on purpose, so the plan store's quarantine copy (the bounded

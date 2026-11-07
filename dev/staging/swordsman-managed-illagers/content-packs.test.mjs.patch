@@ -1,0 +1,13 @@
+--- dev\test\content-packs.test.mjs
++++ dev\test\content-packs.test.mjs
+@@ -31,7 +31,9 @@
+     const activeDefinition=JSON.parse(readFileSync(join(f.bp,"entities/swordsman.json")));
+     assert.ok(activeDefinition["minecraft:entity"].components["minecraft:behavior.hurt_by_target"],"active guard adds reviewed filtered self-defense");
+     delete activeDefinition["minecraft:entity"].components["minecraft:behavior.hurt_by_target"];
+-    assert.deepEqual(activeDefinition,JSON.parse(readFileSync(join(project,"dev/prototypes/swordsman/BP/entities/swordsman.json"))),"every other entity field preserves the historical prototype; self-defense semantics have dedicated tests");
++    const historicalDefinition=JSON.parse(readFileSync(join(project,"dev/prototypes/swordsman/BP/entities/swordsman.json")));
++    activeDefinition["minecraft:entity"].components["minecraft:behavior.nearest_attackable_target"].entity_types[0].filters.all_of[0]=structuredClone(historicalDefinition["minecraft:entity"].components["minecraft:behavior.nearest_attackable_target"].entity_types[0].filters.all_of[0]);
++    assert.deepEqual(activeDefinition,historicalDefinition,"every other entity field preserves the historical prototype; exactly reviewed self-defense and proactive family predicates have dedicated tests");
+     assert.notEqual(JSON.parse(readFileSync(join(f.rp,"manifest.json"))).header.uuid,JSON.parse(readFileSync(join(project,"dev/prototypes/swordsman/RP/manifest.json"))).header.uuid);
+     for(const [path,corrections]of [["entity/swordsman.entity.json",1],["animations/swordsman.animation.json",2]]){
+         const historical=readFileSync(join(project,"dev/prototypes/swordsman/RP",path),"utf8");

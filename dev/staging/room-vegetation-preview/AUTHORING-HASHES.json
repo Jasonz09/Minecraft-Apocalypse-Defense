@@ -1,0 +1,23 @@
+{
+  "scope": "AUTHORING ONLY;UNRUN;no active edits",
+  "baselineCommandSha256": "71CE4E760852794956E417FA279838ABB08C8920FDB9274FC48CBA979D8CFA5C",
+  "cadenceCandidatePins": "dev/staging/civilian-travel-cadence/PROMOTION-HASHES.json",
+  "files": [
+    {
+      "source": "dev/staging/room-vegetation-preview/proposed/CivilizationApocalypse_BP/scripts/civ/roomVegetationPreview.js",
+      "target": "CivilizationApocalypse_BP/scripts/civ/roomVegetationPreview.js",
+      "sha256": "7EE85691D0AC3B27715F82B10CFE8292FC395222427179E8620E7C915BEDB146"
+    },
+    {
+      "source": "dev/staging/room-vegetation-preview/proposed/CivilizationApocalypse_BP/scripts/commands/civ.js",
+      "target": "CivilizationApocalypse_BP/scripts/commands/civ.js",
+      "sha256": "1AF50D3DF4BF52F65AE48BD94A7CDB00A506754E8BECC50CCA1B718A9C64B91A"
+    },
+    {
+      "source": "dev/staging/room-vegetation-preview/proposed-dev/test/room-vegetation-preview.test.mjs",
+      "target": "dev/test/room-vegetation-preview.test.mjs",
+      "sha256": "E0C52BEDBC921422ADDCBB8E60EE49A3ADE03FAA303BF8097EE03DEADC7C4611"
+    }
+  ],
+  "execution": "NO tests/TSC/planner/native run; await root closed/light window"
+}

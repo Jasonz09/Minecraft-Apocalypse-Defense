@@ -319,6 +319,44 @@ export function clearTrees(x0, z0, x1, z1) {
 }
 
 /**
+ * Ground height of one column in the fixture terrain, so a test can say where the forest floor is instead of
+ * re-deriving it from the mob it placed.
+ *
+ * @param {number} x
+ * @param {number} z
+ * @returns {number}
+ */
+export function groundYAt(x, z) {
+    return groundCell(x, z)?.g ?? BASE_Y;
+}
+
+/**
+ * Environment: a jungle crown over a rectangle - a solid leaf roof with an air gap beneath it, no trunk. This is
+ * the live failure in miniature: every column's topmost block is leaves, `getTopmostBlock` never answers the
+ * ground, and a probe that stops at the first air block under the crown reads the whole approach as unstandable.
+ * The leaves start at ground + 5 and are four deep, which stays inside the fake `getTopmostBlock` scan start
+ * (ground + 7) for every relief height the fixture produces.
+ *
+ * @param {number} x0
+ * @param {number} z0
+ * @param {number} x1
+ * @param {number} z1
+ * @param {{ gap?: number, thickness?: number } } [options]
+ */
+export function canopyOver(x0, z0, x1, z1, options = {}) {
+    const gap = Math.max(0, Math.floor(options.gap ?? 4));
+    const thickness = Math.max(1, Math.floor(options.thickness ?? 4));
+    for (let x = x0; x <= x1; x += 1) {
+        for (let z = z0; z <= z1; z += 1) {
+            const g = groundCell(x, z)?.g ?? BASE_Y;
+            for (let y = g + 1 + gap; y < g + 1 + gap + thickness; y += 1) {
+                mc.placed.set(key(x, y, z), "minecraft:jungle_leaves");
+            }
+        }
+    }
+}
+
+/**
  * Environment: stand a wall ring on the outline, out of the masonry the pack actually lays, so "outside the
  * wall" in a test is a statement about blocks that exist rather than about numbers.
  *

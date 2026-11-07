@@ -1,0 +1,51 @@
+{
+  "utc": "2026-11-06T15:41:00.889062+00:00",
+  "scope": "Staged only; no active production/central-test edits. Only two family predicates changed; native target acquisition/managed damage unaccepted.",
+  "focused": {
+    "pass": 18,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 476.5211,
+    "oneSequentialNodeInvocation": true,
+    "log": "dev\\staging\\swordsman-managed-illagers\\focused.log"
+  },
+  "files": [
+    {
+      "source": "dev\\staging\\swordsman-managed-illagers\\proposed-swordsman.json",
+      "target": "CivilizationApocalypse_BP/entities/swordsman.json",
+      "beforeSha256": "C0AB66464976DF1EF0ADE7685C0C5800AB96D4EE0BA8A8AEDAED462098958D82",
+      "proposedSha256": "774943076D553408FD2A997559159B7F430ADEF39702DAB3ACF854017FF6DEF0"
+    },
+    {
+      "source": "dev\\staging\\swordsman-managed-illagers\\proposed-dev\\test\\swordsman-managed-illagers.test.mjs",
+      "target": "dev\\test\\swordsman-managed-illagers.test.mjs",
+      "beforeSha256": null,
+      "proposedSha256": "7F9C70FAE037102A9B4456FEF6F7932DB05318EDC2AD54460C0262154BBDF802"
+    },
+    {
+      "source": "dev\\staging\\swordsman-managed-illagers\\proposed-dev\\test\\swordsman-self-defense.test.mjs",
+      "target": "dev\\test\\swordsman-self-defense.test.mjs",
+      "beforeSha256": "EFE67DBE87E996FE32EC4941D3367284C30A14BB9D51D56DBFE59BC24D8E282E",
+      "proposedSha256": "BA61E936B2AD7849691FA3389A828738F7850FA4C7F146EBDDC920E316ABEB70"
+    },
+    {
+      "source": "dev\\staging\\swordsman-managed-illagers\\proposed-dev\\test\\content-packs.test.mjs",
+      "target": "dev\\test\\content-packs.test.mjs",
+      "beforeSha256": "B15F10A0532B4C5815AD254BD0D76E831A871B4511BD38096CE1698BA82FB6A7",
+      "proposedSha256": "143504E7592B4984BB3D093BC55E09EAD96FEB45E9632EC35DBE7D2F4B117CD5"
+    },
+    {
+      "source": "dev\\staging\\swordsman-managed-illagers\\proposed-dev\\fixtures\\swordsman-before-managed-illagers.json",
+      "target": "dev\\fixtures\\swordsman-before-managed-illagers.json",
+      "beforeSha256": null,
+      "proposedSha256": "C0AB66464976DF1EF0ADE7685C0C5800AB96D4EE0BA8A8AEDAED462098958D82"
+    },
+    {
+      "source": "dev\\staging\\swordsman-managed-illagers\\proposed-dev\\fixtures\\swordsman-managed-illager-families.json",
+      "target": "dev\\fixtures\\swordsman-managed-illager-families.json",
+      "beforeSha256": null,
+      "proposedSha256": "042628D1371A78356A6872DA5082B8FB3F58DA01F05EFAF1CB03F090A40C380F"
+    }
+  ]
+}

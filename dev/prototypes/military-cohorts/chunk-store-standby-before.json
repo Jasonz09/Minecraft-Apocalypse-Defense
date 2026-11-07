@@ -1,0 +1,26 @@
+{
+  "scope": "Isolated pre-fix evidence-preservation reproduction; no active pack/world changes",
+  "sourceSha256": "b43b9dbc18ab54fe5f02d2f4572b254e5c6660c7be87a119693c4b03d159ed18",
+  "cases": [
+    {
+      "case": "foreign standby before publish",
+      "ok": true,
+      "status": "committed",
+      "evidencePreserved": false
+    },
+    {
+      "case": "foreign standby after journal-only crash",
+      "ok": true,
+      "status": "rolled-back-unpublished",
+      "evidencePreserved": false,
+      "oldHeadUnchanged": true
+    },
+    {
+      "case": "future standby after journal-only crash",
+      "ok": true,
+      "status": "rolled-back-unpublished",
+      "evidencePreserved": false,
+      "oldHeadUnchanged": true
+    }
+  ]
+}

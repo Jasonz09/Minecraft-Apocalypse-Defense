@@ -24,7 +24,7 @@ import { classifyTerrainCell } from "../structures/terrain.js";
  * @typedef {{ blocks: PlannedBlock[], half: number, bounds: { max: { y: number } } }} Plan
  */
 
-/** @typedef {{ kind: string, jobId: number | undefined, cancelled: boolean }} Job */
+/** @typedef {{ kind: string, jobId: number | undefined, cancelled: boolean, cancelJob?: () => void }} Job */
 
 /** @type {Job | undefined} */
 let active;
@@ -71,6 +71,7 @@ export function cancelActiveJob() {
         return false;
     }
     active.cancelled = true;
+    active.cancelJob?.();
     if (active.jobId !== undefined) {
         try {
             system.clearJob(active.jobId);

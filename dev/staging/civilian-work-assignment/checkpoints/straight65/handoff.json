@@ -1,0 +1,49 @@
+{
+  "utc": "2026-11-06T14:07:11.313239+00:00",
+  "scope": "STAGING ONLY; isolated overlay prepared and tested with MC closed; no active/installed/coretest changes",
+  "status": "65focusedPASS +strict overlay TSC PASS; review/integration/full/native pending",
+  "productionFiles": [
+    {
+      "path": "proposed/CivilizationApocalypse_BP/scripts/main.js",
+      "sha256": "9F14D2AFB0F16C9EB8772181AA25E55AB637029BE17E3D212FBA1CE94EBE8C4E"
+    },
+    {
+      "path": "proposed/CivilizationApocalypse_BP/scripts/commands/people.js",
+      "sha256": "25273F0C7134661F0177890CF085647E3D68034C1D21770A7CF47EC8D371FEE5"
+    },
+    {
+      "path": "proposed/CivilizationApocalypse_BP/scripts/integration/civilianDestinations.js",
+      "sha256": "26D5CD2A2EB699FB5771FB14F0D99114D898D6DB5C20DC55B3E409727A752D63"
+    },
+    {
+      "path": "proposed/CivilizationApocalypse_BP/scripts/integration/civilianTravel.js",
+      "sha256": "C4BFF668B6AE09BBFC7A21F2EFF0A6F68D189C2C2F427BA3B42ABF6BA08CD700"
+    },
+    {
+      "path": "proposed/CivilizationApocalypse_BP/scripts/people/workAssignment.js",
+      "sha256": "19FAFA94B6AF8F4B309630B3A81C9D82C7961FE3C61E706EDE87C16C2BF822D1"
+    }
+  ],
+  "newTimers": 0,
+  "newEntityOwners": 0,
+  "populationOrProductionCredit": false,
+  "commandsWiredInProposalOnly": [
+    "civ:people travel work district=N group=G home=BUILDING_ID farm=BUILDING_ID"
+  ],
+  "focused": {
+    "tests": 65,
+    "pass": 65,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 2100.1987,
+    "log": "dist/civilian-work-assignment-focused-20261106.log"
+  },
+  "typecheck": {
+    "pass": true,
+    "log": "dist/civilian-work-assignment-typecheck-20261106.log",
+    "initialErrors": "Three annotation/context errors; fixed only JSDoc placement; no functional change after focused run."
+  },
+  "actualPinnedD1": "No supported saved home/farm pair for flatstraight1\u201324 primitive; default-production source/provenance checks pass, but actual daily-work positive gate requires verified-road route extension.",
+  "positiveSimulationLimit": "Positive out/return tests use explicit tiny synthetic op-stream admission seam; separate pinned source test has default imports."
+}

@@ -1,7 +1,7 @@
 import { world as runtimeWorld } from "@minecraft/server";
 import { protectedRects } from "../commands/civ.js";
 import { BEARINGS } from "../sim/invasion/composition.js";
-import { invasionThreatOf } from "../sim/invasion/director.js";
+import { invasionThreatOf, waveInFieldOf } from "../sim/invasion/director.js";
 import { hourOf } from "../sim/clock.js";
 import { peopleGateOn } from "../people/gate.js";
 import { assignCommanders, commandProblems, commandersFor } from "../people/command.js";
@@ -9,6 +9,10 @@ import { PATROL_RULES, planPatrols } from "../people/patrols.js";
 import { loadMasterPlan } from "./civBuilder.js";
 import { surfaceAtOf } from "../people/columns.js";
 import { BEARING_VECTORS, SIEGE_DEFAULTS, bearingOf, columnAt, physicalCentreOf } from "./siegeMobs.js";
+import { militarySelectionPolicy } from "../population/militarySelection.js";
+import { buildGroupTable } from "../population/groups.js";
+import { POP_SYNC_DEFAULTS } from "../population/settings.js";
+import { classifyTags, isCanonicalFor } from "../population/identity.js";
 
 /**
  * The command layer: once an in-game hour, a district's EXISTING levy entities are put on wall duty, rotated
@@ -31,8 +35,8 @@ import { BEARING_VECTORS, SIEGE_DEFAULTS, bearingOf, columnAt, physicalCentreOf 
  *    here would let the orders and the simulation disagree;
  *  - it writes no block, runs no command and saves nothing. No `kingdomStore`, no new dynamic property: an hour
  *    of orders leaves the save byte-identical;
- *  - it is not a movement system. @minecraft/server 2.7.0 has no pathfinding, no navigation and no velocity API,
- *    so a levy is placed ON its post with `teleport()` and told which way to look, and nothing more.
+ *  - this orders driver assigns posts with `teleport()` and facing; continuous levy travel is not implemented.
+ *    Stable 2.7.0 exposes velocity/impulse methods, but no navigation/pathfinding service is used here.
  *
  * The promises it carries through from the pure modules:
  *  - `people/patrols.js`: "Every `rotationSteps` steps the groups move on to the next sector ... so no soldier is
@@ -634,13 +638,15 @@ function standingY(district, centre, surfaceAt) {
  * @param {string[]} notes
  * @param {((x: number, z: number) => number | undefined) | null} surfaceAt
  * @returns {LevyRow[]}
+ * @param {{policy:ReturnType<typeof militarySelectionPolicy>,admitted:Set<string>,stationary:string[]}|null} [trial]
  */
-function levyOf(dimension, district, centre, reach, config, notes, surfaceAt) {
+function levyOf(dimension, district, centre, reach, config, notes, surfaceAt,trial=null) {
     const districtId = String(district?.id);
     /** @type {LevyRow[]} */
     const rows = [];
     /** @type {Set<string>} */
     const seen = new Set();
+    const trialSeen=new Set();
     /** @type {any[]} */
     let found = [];
     const radius = Math.max(toInt(config.observeRadius), Math.ceil((toInt(reach) * 3) / 2) + 8);
@@ -655,7 +661,9 @@ function levyOf(dimension, district, centre, reach, config, notes, surfaceAt) {
     const query = { location: { x: centre.x, y: level, z: centre.z }, maxDistance: radius };
     try {
         found = /** @type {any[]} */ (dimension.getEntities(query));
+        if(trial&&!Array.isArray(found))throw new Error("military Orders query is unreadable");
     } catch (error) {
+        if(trial)throw new Error(`military Orders query failed: ${String(error)}`);
         notes.push(`${districtId}: its levy could not be read: ${String(error)}`);
         return rows;
     }
@@ -664,20 +672,33 @@ function levyOf(dimension, district, centre, reach, config, notes, surfaceAt) {
             if (handle === null || handle === undefined || handle.isValid === false) {
                 continue;
             }
-            if (String(handle.typeId) !== LEVY_TYPE) {
+            if (!trial&&String(handle.typeId) !== LEVY_TYPE) {
                 continue;
             }
             const identity = levyIdentityOf(handle.getTags());
             if (identity === null || identity.districtId !== districtId) {
                 continue;
             }
-            const id = String(handle.id);
+            if(trial) {
+                const tags=classifyTags(handle.getTags());
+                if(!trial.admitted.has(identity.groupId))continue;
+                if(!isCanonicalFor(tags.ownTags,identity.groupId))throw new Error("military Orders canonical identity conflict");
+                if(trialSeen.has(identity.groupId))throw new Error("military Orders duplicate conflict");
+                trialSeen.add(identity.groupId);
+                const wanted=trial.policy.typeForGroup({id:identity.groupId,district:districtId,kind:"sol",index:identity.index,headcount:0});
+                if(String(handle.typeId)!==wanted)throw new Error("military Orders admitted type conflict");
+                if(trial.policy.selection?.groupId===identity.groupId){trial.stationary.push(identity.groupId);continue;}
+            }
+            // The identity tag, not `handle.id`: 2.7.0 answers an entity id wider than a double, so a live golem
+            // printed as `-94489280508` in this hour's notes and no operator could tell one levy from another.
+            const id = identity.groupId;
             if (seen.has(id)) {
                 continue;
             }
             seen.add(id);
             rows.push({ handle, id, index: identity.index, groupId: identity.groupId, districtId });
         } catch (_error) {
+            if(trial)throw _error;
             // A handle that no longer answers is not in view this hour: never a reason to move a guess.
         }
     }
@@ -706,6 +727,9 @@ function levyOf(dimension, district, centre, reach, config, notes, surfaceAt) {
  *   readPlan?: () => any,
  *   probe?: (dimension: any, x: number, z: number, config: any) => any,
  *   surfaceAt?: (x: number, z: number) => number | undefined,
+ *   readMilitarySelection?:()=>import("../population/militarySelection.js").MilitarySelectionRead,
+ *   admittedGroups?:(world:any)=>string[],
+ *   populationConfig?:Partial<import("../population/settings.js").PopSyncConfig>,
  * }} [deps]
  * @returns {{ id: "orders", onHour: (ctx: any) => number, status: () => Record<string, any>, config: any }}
  */
@@ -718,7 +742,7 @@ export function createOrdersDriver(deps = {}) {
     const readPlan = typeof deps.readPlan === "function" ? deps.readPlan : () => loadMasterPlan().plan;
     const probeColumn = typeof deps.probe === "function" ? deps.probe : columnAt;
 
-    /** @type {{ hours: number, moved: number, titled: number, failedMoves: number, refused: string | null, districts: any[], notes: string[] }} */
+    /** @type {{ hours: number, moved: number, titled: number, failedMoves: number, refused: string | null, districts: any[], notes: string[],stationaryTrial:string[] }} */
     const done = {
         hours: 0,
         moved: 0,
@@ -727,6 +751,7 @@ export function createOrdersDriver(deps = {}) {
         refused: null,
         districts: [],
         notes: [],
+        stationaryTrial:/** @type {string[]} */([]),
     };
 
     /**
@@ -769,9 +794,10 @@ export function createOrdersDriver(deps = {}) {
      * @param {any} budget the hour's shared move and title allowance
      * @param {string[]} notes
      * @param {DimensionLike} dimension
+     * @param {((row:LevyRow)=>void)|undefined} [beforeWrite]
      * @returns {{ districtId: string, posted: number, moved: number, titled: number, failed: number, probes: number, reason: string, rows: any[] }}
      */
-    function postDistrict(district, rows, wall, hour, assaulted, wave, budget, notes, dimension) {
+    function postDistrict(district, rows, wall, hour, assaulted, wave, budget, notes, dimension,beforeWrite) {
         const districtId = String(district.id);
         const districtName = String(district.name ?? districtId);
         /** @type {any[]} */
@@ -885,6 +911,7 @@ export function createOrdersDriver(deps = {}) {
                 break;
             }
             try {
+                beforeWrite?.(row);
                 row.handle.teleport(destination, { facingLocation: { x: facing.x, y: destination.y, z: facing.z } });
                 budget.moves += 1;
                 result.moved += 1;
@@ -908,6 +935,7 @@ export function createOrdersDriver(deps = {}) {
                 if (handle.isValid === false || handle.nameTag === label) {
                     continue;
                 }
+                beforeWrite?.(rows[index]);
                 handle.nameTag = label;
                 result.titled += 1;
                 budget.titles -= 1;
@@ -932,6 +960,7 @@ export function createOrdersDriver(deps = {}) {
         /** @type {string[]} */
         const notes = [];
         done.hours += 1;
+        done.stationaryTrial=[];
         const dimension = ctx?.dimension;
         const kingdom = ctx?.kingdom;
         const world = ctx?.world ?? runtimeWorld;
@@ -958,6 +987,22 @@ export function createOrdersDriver(deps = {}) {
             return 0;
         }
         done.refused = null;
+        /** @type {{policy:ReturnType<typeof militarySelectionPolicy>,admitted:Set<string>,stationary:string[]}|null} */
+        let trial=null;
+        /** @type {ReturnType<typeof militarySelectionPolicy>|null} */
+        let militarySnapshot=null;
+        if(typeof deps.readMilitarySelection==="function") {
+            try {
+                const policy=militarySelectionPolicy(deps.readMilitarySelection(),buildGroupTable(kingdom,{...POP_SYNC_DEFAULTS,...deps.populationConfig}).groups,String(dimension.id));
+                militarySnapshot=policy;
+                if(policy.selection) {
+                    if(typeof deps.admittedGroups!=="function")throw new Error("military Orders requires the streets admitted census");
+                    const admitted=deps.admittedGroups(world);
+                    if(!Array.isArray(admitted))throw new Error("military admitted census is unreadable");
+                    trial={policy,admitted:new Set(admitted),stationary:done.stationaryTrial};
+                }
+            }catch(error){done.refused=String(error);done.districts=[];done.notes=[done.refused];return 0;}
+        }
 
         const hour = rotationHour(ctx);
         const footprint = footprints(kingdom, notes);
@@ -977,7 +1022,12 @@ export function createOrdersDriver(deps = {}) {
         }
         /** @type {Set<string>} */
         const assaulted = new Set(Array.isArray(threat?.districtIds) ? threat.districtIds.map(String) : []);
-        const wave = isObject(kingdom.invasion) && kingdom.invasion.enabled === true ? kingdom.invasion.wave : null;
+        // The wave is the same reading the siege driver stands its attackers on: a district the director still has
+        // a band against is one this district's levy face, even in the hours after the war step resolved the numbers.
+        const wave = waveInFieldOf(kingdom.invasion);
+        if (isObject(wave) && wave.districtId !== undefined) {
+            assaulted.add(String(wave.districtId));
+        }
 
         const budget = { moves: 0, titles: toInt(config.titlesTotal) };
         /** @type {any[]} */
@@ -1014,7 +1064,10 @@ export function createOrdersDriver(deps = {}) {
             // The wall line first, because it sizes the window the levy are looked for in: a district whose circuit
             // reaches further than the streets driver's observation radius must still see its own posted troops.
             const wall = wallOf(footprint.areas, districtId, centre, config, footprint.cap);
-            const found = levyOf(dimension, district, centre, wall === null ? null : wall.half, config, notes, surfaceAt).filter((/** @type {LevyRow} */ row) => {
+            let candidates;
+            try {candidates=levyOf(dimension, district, centre, wall === null ? null : wall.half, config, notes, surfaceAt,trial);}
+            catch(error){done.refused=String(error);done.notes=[done.refused];done.districts=districts;return moved+titled;}
+            const found = candidates.filter((/** @type {LevyRow} */ row) => {
                 if (claimed.has(row.id)) {
                     return false;
                 }
@@ -1027,7 +1080,21 @@ export function createOrdersDriver(deps = {}) {
                 notes.push(`${districtId}: no levy of this district stands within view (wall line ${wall === null ? "unreadable" : `${String(wall.half)} blocks`}), so nobody was posted`);
                 continue;
             }
-            const result = postDistrict(district, found, wall, hour, assaulted.has(districtId), wave, budget, notes, dimension);
+            const selectedPolicy=militarySnapshot;
+            /** @type {((row:LevyRow)=>void)|undefined} */
+            const beforeWrite=selectedPolicy===null?undefined:(row)=>{
+                const fresh=militarySelectionPolicy(/** @type {NonNullable<typeof deps.readMilitarySelection>} */(deps.readMilitarySelection)(),buildGroupTable(kingdom,{...POP_SYNC_DEFAULTS,...deps.populationConfig}).groups,String(dimension.id));
+                if(fresh.stamp!==selectedPolicy.stamp)throw new Error("military Orders selection changed before write");
+                if(selectedPolicy.selection===null)return;
+                const admitted=/** @type {NonNullable<typeof deps.admittedGroups>} */(deps.admittedGroups)(world);
+                if(fresh.stamp!==selectedPolicy.stamp||fresh.selection?.groupId===row.groupId||!Array.isArray(admitted)||!admitted.includes(row.groupId))throw new Error("military Orders selection/admission changed before write");
+                const read=classifyTags(row.handle.getTags());
+                const wanted=fresh.typeForGroup({id:row.groupId,district:row.districtId,kind:"sol",index:row.index,headcount:0});
+                if(!isCanonicalFor(read.ownTags,row.groupId)||String(row.handle.typeId)!==wanted)throw new Error("military Orders identity/type changed before write");
+                const matches=dimension.getEntities({tags:[`civpop:v1:${row.groupId}`]});
+                if(!Array.isArray(matches)||matches.length!==1||String(matches[0].id)!==String(row.handle.id))throw new Error("military Orders representative uniqueness is unverified");
+            };
+            const result = postDistrict(district, found, wall, hour, assaulted.has(districtId), wave, budget, notes, dimension,beforeWrite);
             districts.push(result);
             moved += result.moved;
             titled += result.titled;
@@ -1050,6 +1117,7 @@ export function createOrdersDriver(deps = {}) {
             titled: done.titled,
             failedMoves: done.failedMoves,
             refused: done.refused,
+            stationaryTrial:[...done.stationaryTrial],
             districts: done.districts.map((/** @type {any} */ row) => ({
                 districtId: row.districtId,
                 posted: row.posted,

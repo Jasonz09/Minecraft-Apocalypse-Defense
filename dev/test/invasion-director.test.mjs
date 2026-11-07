@@ -20,7 +20,7 @@ const composition = await loadModule("sim", "invasion", "composition.js");
 const director = await loadModule("sim", "invasion", "director.js");
 const apply = await loadModule("sim", "invasion", "apply.js");
 
-const { COMPOSITIONS, INVASION_LIMITS, UNIT_ORDER, strengthOf, planStrikes, validateCompositions } = composition;
+const { BEARINGS, COMPOSITIONS, INVASION_LIMITS, UNIT_ORDER, strengthOf, planStrikes, validateCompositions } = composition;
 const { INVASION_DEFAULTS, PHASE_EDGES } = director;
 
 /** Six fixed seeds. No Math.random, no clocks: every number below replays exactly. */
@@ -244,6 +244,50 @@ test("the planner never writes to the kingdom or to its input record", () => {
     assert.equal(JSON.stringify(kingdom.invasion), recordBefore, "the input record is untouched");
     assert.deepEqual(first, second, "the same inputs always plan the same step");
     assert.notEqual(first.state, kingdom.invasion, "the result is a new record");
+});
+
+test("a named approach aims the sighting at that wall, and an unknown name is drawn", () => {
+    /** @param {number} seed a record whose next event is due at step 0 */
+    function dueRecord(seed) {
+        const record = director.createInvasionState(seed, true);
+        record.phase = "quiet";
+        record.nextEventStep = 0;
+        return record;
+    }
+
+    for (const seed of SEEDS) {
+        // What this seed sights on its own is deterministic, so the name below is chosen to differ from it.
+        // If the hint were ignored, the assertion would fail rather than echo the draw it happens to match.
+        const bare = dueRecord(seed);
+        const unhinted = director
+            .nextDirectorState(bare, kingdomWithSeed(seed), bare.rngCursor, {})
+            .directives.find((directive) => directive.kind === "scout");
+        assert.ok(unhinted, `seed ${String(seed)}: an invasion is due`);
+        const named = BEARINGS.find((bearing) => bearing !== unhinted.bearing);
+        assert.notEqual(named, unhinted.bearing, `seed ${String(seed)}: there are other walls to name`);
+
+        const aimed = kingdomWithSeed(seed);
+        aimed.step = 0;
+        aimed.invasion = dueRecord(seed);
+        const report = director.stepInvasion(aimed, { approach: { [unhinted.districtId]: named } });
+        const scout = report.directives.find((directive) => directive.kind === "scout");
+        assert.ok(scout, `seed ${String(seed)}: the sighting is applied`);
+        assert.equal(scout.bearing, named, `seed ${String(seed)}: the sighting comes from the named wall`);
+        assert.match(report.events.join("\n"), new RegExp(`massing to the ${String(named)}`), `seed ${String(seed)}: and the announcement says so`);
+    }
+
+    // A name that is not one of the eight is drawn from the stream, not trusted through.
+    const quiet = dueRecord(20261017);
+    const chosen = director
+        .nextDirectorState(quiet, kingdomWithSeed(20261017), quiet.rngCursor, {})
+        .directives.find((directive) => directive.kind === "scout");
+    const again = dueRecord(20261017);
+    const drawn = director.nextDirectorState(again, kingdomWithSeed(20261017), again.rngCursor, {
+        approach: { [chosen.districtId]: "sideways" },
+    });
+    const fallback = drawn.directives.find((directive) => directive.kind === "scout");
+    assert.ok(fallback, "a bearing that is not one of the eight does not stop the sighting");
+    assert.ok(BEARINGS.includes(fallback.bearing), `an unknown name is drawn from BEARINGS, got ${String(fallback.bearing)}`);
 });
 
 test("enableInvasion switches a record on without resetting it", () => {

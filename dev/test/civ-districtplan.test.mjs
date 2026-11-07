@@ -397,7 +397,8 @@ test("a road that meets water gets a bridge, not a fill", () => {
         at(x, z) {
             const cell = river.at(x, z);
             if (Math.abs(z - midZ) <= 2) {
-                return { g: cell.g - 3, k: "water", tree: false };
+                // Water sits below the bank, so the bridge deck at bank level clears the surface.
+                return { g: cell.g - 3, k: "water", tree: false, surface: cell.g - 1 };
             }
             return cell;
         },
@@ -406,12 +407,15 @@ test("a road that meets water gets a bridge, not a fill", () => {
     assert.ok(result.ok, `the bridged site plan failed: ${result.problems.slice(0, 3).join(" | ")}`);
     const deck = /** @type {any[]} */ (result.record.roads).filter((element) => element.kind.startsWith("road-"));
     let bridges = 0;
+    let timber = 0;
     for (let i = 0; i < deck.length; i += 1) {
         for (const op of D.siteOpsFor(result.record, "roads", i)) {
             if (op.kind === "bridge" || op.kind === "support") bridges += 1;
+            if (op.id === "minecraft:oak_planks" || op.id === "minecraft:oak_log") timber += 1;
         }
     }
     assert.ok(bridges > 0, "a road crossing water produced no bridge ops");
+    assert.ok(timber > 0, "the span over the water is timber, not a stone fill");
 });
 
 /* ------------------------------------------------------------------ 5. lots, spacing, overlap */
@@ -1365,6 +1369,42 @@ const FOUND = await load("civ", "foundations.js");
 const WORLD = await load("civ", "worldplan.js");
 const MAX_STRETCH = 25000;
 
+test("survey-aware lots move essential services off blocked ground without changing archived plans", () => {
+    const base = D.planDistrictSite(PLAN, 5, field, { seed: SEED });
+    assert.ok(base.ok, base.problems.join(" | "));
+    const hospital = base.record.lots.find((e) => e.kind === "building-hospital");
+    assert.ok(hospital, "the control terrain has a hospital");
+    const box = hospital.bbox;
+    const blocked = { x0: box.x0 - 5, z0: box.z0 - 5, x1: box.x1 + 5, z1: box.z1 + 5 };
+    const inside = (x, z) => x >= blocked.x0 && x <= blocked.x1 && z >= blocked.z0 && z <= blocked.z1;
+    const obstructed = { ...field, at(x, z) { const c = field.at(x, z); return inside(x, z) ? { ...c, k: "blocked" } : c; } };
+    const legacy = D.planDistrictSite(PLAN, 5, obstructed, { seed: SEED });
+    assert.ok(legacy.ok, legacy.problems.join(" | "));
+    assert.equal(legacy.record.lots.some((e) => e.kind === "building-hospital"), false, "the old coarse proposal loses the hospital at fine-pad validation");
+    const current = D.planDistrictSite(PLAN, 5, obstructed, { seed: SEED, lotTerrain: "survey" });
+    assert.ok(current.ok, current.problems.join(" | "));
+    for (const kind of ["chapel", "school", "hospital"]) {
+        assert.ok(current.record.lots.some((e) => e.kind === `building-${kind}`), `${kind} must keep a usable site`);
+    }
+    for (const e of current.record.lots.filter((e) => e.id.startsWith("building-"))) {
+        for (let z = e.bbox.z0; z <= e.bbox.z1; z++) for (let x = e.bbox.x0; x <= e.bbox.x1; x++) {
+            assert.equal(inside(x, z), false, `${e.id} must avoid the blocked ground`);
+        }
+    }
+    const ground = D.exportSiteInputs(PLAN, 5, obstructed);
+    const restored = D.rehydrateSite(PLAN, 5, ground, D.siteOptionsOf(current.record));
+    assert.ok(restored.ok, restored.problems.join(" | "));
+    assert.equal(restored.record.checksum, current.record.checksum);
+    assert.equal(D.siteOptionsOf(current.record).lotTerrain, "survey");
+    assert.equal(D.siteOptionsOf(legacy.record).lotTerrain, undefined);
+    assert.equal(D.planDistrictSite(PLAN, 5, obstructed, D.siteOptionsOf(legacy.record)).record.checksum, legacy.record.checksum);
+    const balanced = D.planDistrictSite(PLAN,5,obstructed,{seed:SEED,lotTerrain:"survey-balanced"});
+    assert.ok(balanced.ok,balanced.problems.join(" | "));
+    for (const kind of ["chapel","school","hospital"]) assert.ok(balanced.record.lots.some(e=>e.kind===`building-${kind}`));
+    assert.equal(D.rehydrateSite(PLAN,5,ground,D.siteOptionsOf(balanced.record)).record.checksum,balanced.record.checksum);
+    assert.equal(D.rehydrateSite(PLAN,5,ground,D.siteOptionsOf(current.record)).record.checksum,current.record.checksum,"the earlier survey layout remains reproducible");
+});
+
 /** Drive a cooperative generator to the end; report yields. */
 function drive(gen) {
     let yields = 0;
@@ -1453,6 +1493,13 @@ test("cooperative zoning, lots and pads equal their synchronous originals", () =
         const flat = (x) => ({ ...x, roadMask: Array.from(x.roadMask), laneMask: Array.from(x.laneMask) });
         assert.deepEqual(flat(lotsSteps), flat(lots), `${spec.name}: lots differ`);
         assert.ok(lOps.maxRun <= MAX_STRETCH, `lots stretch ${String(lOps.maxRun)}`);
+        const surveyOptions = { seed: spec.seed, attempts: 4, essentialKinds: ["hospital", "well"], essentialOnce:true,
+            buildable: (x, z) => c.field.at(x, z).k === "land" && !(x >= region.hq.x - 12 && x <= region.hq.x + 12 && z >= region.hq.z - 12 && z <= region.hq.z + 12) };
+        const surveyOps = RG.newOps();
+        const surveyed = LOTS.makeLots(region, zones, roads, surveyOptions);
+        const surveyedSteps = drive(LSTEPS.makeLotsSteps(region, zones, roads, surveyOptions, surveyOps)).value;
+        assert.deepEqual(flat(surveyedSteps), flat(surveyed), `${spec.name}: survey-aware lot placement differs`);
+        assert.ok(surveyOps.maxRun <= MAX_STRETCH, `survey-aware lots stretch ${surveyOps.maxRun}`);
     }
     // pads: the cooperative planPad gives the same answer as foundations.planPad on real lots and tight limits
     const c = buildCase(CASES[0]);
@@ -1529,7 +1576,23 @@ test("planWorldSteps chains master plan, validation, Hearthgate and ground in bo
         // identical to the synchronous driver and to the separate steps
         const sync = WORLD.planWorld(c.field, { seed: spec.seed });
         assert.equal(sync.record.checksum, world.record.checksum);
-        assert.equal(world.record.checksum, c.record.checksum, "the world pipeline differs from planning the pieces one by one");
+        const legacyOptions = { seed: spec.seed, lighting: "natural", gateHeight: "surface", gatePassage: "clear", gateRoof: "guarded", roofSupport: "joists", lotTerrain: "survey-balanced" };
+        const natural = D.planDistrictSite(c.plan, 1, c.field, { ...legacyOptions, interiorLights: "anchored-v1", farmLighting: "frontage-v1", waterPiles: "spaced-v1" });
+        assert.equal(world.record.checksum, natural.record.checksum, "the world pipeline differs from planning the same versioned lighting style piece by piece");
+        assert.equal(D.siteOptionsOf(world.record).interiorLights, "anchored-v1", "new world plans persist the attachment version explicitly");
+        assert.equal(D.siteOptionsOf(world.record).farmLighting, "frontage-v1", "new world plans persist sparse farm lighting explicitly");
+        assert.equal(D.siteOptionsOf(world.record).waterPiles, "spaced-v1", "new world plans persist the crop-farm pile version explicitly");
+        // Absence in a saved site must still reproduce the legacy fixture stream;
+        // overriding the new-world default explicitly uses that same old path.
+        const legacy = D.planDistrictSite(c.plan, 1, c.field, legacyOptions);
+        const legacyWorld = WORLD.planWorld(c.field, { seed: spec.seed, site: { interiorLights: undefined, farmLighting: undefined, waterPiles: undefined } });
+        assert.equal(legacyWorld.ok, true);
+        assert.equal(legacyWorld.record.checksum, legacy.record.checksum, "explicit legacy world options match the legacy piece-by-piece planner");
+        assert.equal(Object.hasOwn(D.siteOptionsOf(legacyWorld.record), "interiorLights"), false);
+        assert.equal(Object.hasOwn(D.siteOptionsOf(legacyWorld.record), "farmLighting"), false);
+        assert.equal(Object.hasOwn(D.siteOptionsOf(legacyWorld.record), "waterPiles"), false);
+        const legacyReborn = D.rehydrateSite(legacyWorld.plan, 1, legacyWorld.ground, D.siteOptionsOf(legacyWorld.record));
+        assert.equal(legacyReborn.record.checksum, legacyWorld.record.checksum, "legacy saved options remain reproducible");
     }
     // a field that cannot hold a civilization fails with reasons, not an exception
     const tiny = makeField(5, { size: 120 });
@@ -2147,17 +2210,19 @@ test("all five outlines stay irregular, solid and pairwise non-congruent", () =>
 
 /* ------------------------------------------------------------------ determinism + saved-world compatibility */
 
-/** District-1 checksums captured from `civ/districtplan.js` at baseline 7123c5c, before districts 2-5
- *  were registered. Anyone who already built Hearthgate stores one of these; the five-district
- *  release must not move it. */
+/** District-1 checksums at the current planner baseline. The five-district release did not move the values
+ *  captured at 7123c5c; the wall walkway change (two-wide lit tower passages, stairs on rises, lanterns) did,
+ *  deliberately and everywhere, so this table was re-frozen then - and once more when the tower-passage lantern
+ *  gained its `hanging` state, so it is attached to the roof instead of floating under it. Any further drift
+ *  fails here. */
 const HEARTHGATE_BASELINE = {
-    21: "53c81775",
-    3: "574153b3",
-    7: "35adcecb",
-    42: "d82a02e2",
-    99: "52dd64fb",
-    12: "4fb3d3a3",
-    8: "e76294fd",
+    21: "740703e5",
+    3: "37d2b30b",
+    7: "e511be5a",
+    42: "20219537",
+    99: "5bf9cd32",
+    12: "5826768f",
+    8: "1139023b",
 };
 
 test("district 1's checksum is frozen: the five-district release changes nothing for a saved Hearthgate", () => {

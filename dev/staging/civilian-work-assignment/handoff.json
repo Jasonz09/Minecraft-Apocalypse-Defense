@@ -1,0 +1,126 @@
+{
+  "utc": "2026-11-06T14:07:11.313239+00:00",
+  "scope": "STAGING ONLY; isolated overlay prepared and tested with MC closed; no active/installed/coretest changes",
+  "status": "65focusedPASS +strict overlay TSC PASS; review/integration/full/native pending",
+  "productionFiles": [
+    {
+      "path": "proposed/CivilizationApocalypse_BP/scripts/main.js",
+      "sha256": "83CB000D555A019ED833A3A985DA2CE761CEBA748E77236EC96DCEDDECB2CCC4"
+    },
+    {
+      "path": "proposed/CivilizationApocalypse_BP/scripts/commands/people.js",
+      "sha256": "25273F0C7134661F0177890CF085647E3D68034C1D21770A7CF47EC8D371FEE5"
+    },
+    {
+      "path": "proposed/CivilizationApocalypse_BP/scripts/integration/civilianDestinations.js",
+      "sha256": "8F2BA59B4DB7E00195501E1E5CEA2C0EF0BFB7D7F84709C124D8AC4F34F178A0"
+    },
+    {
+      "path": "proposed/CivilizationApocalypse_BP/scripts/integration/civilianTravel.js",
+      "sha256": "F2A9D1B18912490F0F1A4FDE1FD835CDB2FEA1366ABDC3F5E1AF5931A702D282"
+    },
+    {
+      "path": "proposed/CivilizationApocalypse_BP/scripts/people/walkSafety.js",
+      "sha256": "1EC6C41F9F9B9794E6A2256599F2E8137C6F1247D2BEA89FEE82522560BB6E3A"
+    },
+    {
+      "path": "proposed/CivilizationApocalypse_BP/scripts/people/workAssignment.js",
+      "sha256": "19FAFA94B6AF8F4B309630B3A81C9D82C7961FE3C61E706EDE87C16C2BF822D1"
+    },
+    {
+      "path": "proposed/CivilizationApocalypse_BP/scripts/people/workRoadRoute.js",
+      "sha256": "5F195B285A9E0142229E1DAC77A775E44DD395975EFB45B2B402EC61BC9F16DD"
+    },
+    {
+      "path": "proposed/CivilizationApocalypse_BP/scripts/people/workRoutePreview.js",
+      "sha256": "3FDD4F904A1F6FE2DD68887E0605D7D5CFC5A7A46B2CCC341DBB6C2A2CE3A834"
+    }
+  ],
+  "newTimers": 0,
+  "newEntityOwners": 0,
+  "populationOrProductionCredit": false,
+  "commandsWiredInProposalOnly": [
+    "civ:people travel work district=N group=G home=BUILDING_ID farm=BUILDING_ID"
+  ],
+  "focused": {
+    "tests": 65,
+    "pass": 65,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 2100.1987,
+    "log": "dist/civilian-work-assignment-focused-20261106.log"
+  },
+  "typecheck": {
+    "pass": true,
+    "log": "dist/civilian-work-assignment-typecheck-20261106.log",
+    "initialErrors": "Three annotation/context errors; fixed only JSDoc placement; no functional change after focused run."
+  },
+  "actualPinnedD1": "No supported saved home/farm pair for flatstraight1\u201324 primitive; default-production source/provenance checks pass, but actual daily-work positive gate requires verified-road route extension.",
+  "positiveSimulationLimit": "Positive out/return tests use explicit tiny synthetic op-stream admission seam; separate pinned source test has default imports.",
+  "routeAuthoring": {
+    "utc": "2026-11-06T14:16:48.933253+00:00",
+    "status": "Executed isolated overlay:86/87PASS,actual pinnedD1 positive graph FAIL; strictTSCPASS; NOT promotion-ready",
+    "checkpoint": "dev/staging/civilian-work-assignment/checkpoints/straight65/checkpoint-hashes.json",
+    "newModule": "people/workRoadRoute.js",
+    "newChecks": [
+      "tests/road-route.test.mjs",
+      "tests/actual-road-source.test.mjs"
+    ],
+    "actualPositiveGate": "FAIL: selected pinned D1 exact home/farm endpoints present,4640candidate/4540usable/0ambiguous,169704scannedops,no quota hit; start component10nodes26edges; closest reached goal distance142. Exact disconnection cause and goal-component size not yet established. Retained negative gate, no refusal-as-pass.",
+    "movement": "No controller/driver handoff: token explicitly movementPermission:false, verticalMovementPermission:false; native slope/step/body/floor microgate remains prerequisite.",
+    "memory": "No site record/lazy generator retained in route/token; collector must be aborted on failure and is deleted after route emission.",
+    "movementScope": "Ordinary walking/known-safe off-road ingress uses same FOOTING and fresh loaded body/collision/hazard/identity/read-budget proof, not block-edit ownership. Source-proven home/farm and preferred selected saved roads guide routing.",
+    "focused": {
+      "tests": 87,
+      "pass": 86,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0,
+      "durationMs": 2882.4421,
+      "log": "dist/civilian-work-road-focused-final-20261106.log"
+    },
+    "typecheck": {
+      "pass": true,
+      "log": "dist/civilian-work-road-typecheck-20261106.log"
+    },
+    "artifact": "dist/civilian-work-road-actual-D1-20261106.json"
+  },
+  "loadedRouteAuthoring": {
+    "utc": "2026-11-06T14:59:03.660742+00:00",
+    "status": "AUTHORONLY/UNEXECUTED, no preparation/tests/TSC/native run",
+    "priorCheckpoint": "checkpoints/road87-negative/checkpoint-hashes.json preserves86of87PASS/actualD1FAIL/strictTSCpass and original diagnostic artifact",
+    "newModules": [
+      "people/walkSafety.js",
+      "people/workRoutePreview.js"
+    ],
+    "command": "civ:people travel work route-preview district=N home=BUILDING_ID farm=BUILDING_ID",
+    "reachability": "Existing async commands/people work dispatch\u2192controller.workCommand route-preview branch\u2192selected loadSavedRunSteps\u2192real destination compiler\u2192private endpoint token\u2192road hints\u2192read-only native planner; finally releases exclusive job.",
+    "movementPolicy": "Same unchanged existing FOOTING/AIR predicates shared with driver. No leaf block-edit ownership/prototype/grow/neighbor-historical veto. Road hints are tie-breakers only.",
+    "bounds": {
+      "nodes": 8192,
+      "pathEdges": 256,
+      "directedEdges": 32768,
+      "readsPerSlice": 256,
+      "totalReads": 65536,
+      "cachedCells": 32768,
+      "workPerSlice": 400
+    },
+    "memory": "saved/compiled references cleared before native preview; private endpoint projection has no record/lazy generator",
+    "freshness": "Actual raw source/master/queue guard before loading/across every generator step/yield/native getter and final reporting; player/dimension/cancel/threat guards; active-travel preflight prevents indirect busy stop/steering.",
+    "limits": "Time-distributed read-only observed candidate path, not atomic terrain proof/movement permission/vertical physics/actual farming. Driver still requires fresh full footprint and native step microgate.",
+    "testsAuthored": [
+      "ordinary non-road detour with exact known footing",
+      "shared unchanged predicates",
+      "private token/clone rejection",
+      "endpoint exact material, unknown/crop/flora/door/water/lava refusal",
+      "unloaded/partial truthful reports",
+      "native getter source/player race",
+      "fresh path-only recheck vs stale cache",
+      "finite node/path/native budgets",
+      "reachable command result/catch/finally zero bind/impulses/properties",
+      "active travel preflight and changing district threat"
+    ],
+    "additionalPlannedGraphDiagnostics": "Start/goal component sizes,32bounded boundary samples/categories,nearest gap with explicit65536pair truncation; authored but NOT reflected in old actual artifact until permitted execution."
+  }
+}

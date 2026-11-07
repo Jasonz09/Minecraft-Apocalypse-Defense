@@ -1,0 +1,359 @@
+{
+  "scope": "Independent isolated pure-policy review, no native/sourcegeneration/adapter/writer/production changes",
+  "originalPolicySha256": "AA9356DD19110E4073538C1C5F662F62C13783188498CD307F775B7EE3CCF7CF",
+  "focused": {
+    "pass": 11,
+    "fail": 0,
+    "durationMs": 132.8995,
+    "log": "focused.log"
+  },
+  "strictTsc": {
+    "exitCode": 2,
+    "diagnostics": 38,
+    "codes": {
+      "TS7006": 34,
+      "TS2367": 1,
+      "TS18046": 1,
+      "TS7034": 1,
+      "TS7005": 1
+    },
+    "log": "typecheck.log"
+  },
+  "contractReproducers": {
+    "pass": 3,
+    "durationMs": 69.3629,
+    "log": "contract-repro.log",
+    "meaning": "Reproducer tests confirm current limitations, NOT intended safe positive eligibility"
+  },
+  "findings": [
+    {
+      "id": "subset-contact-states",
+      "finding": "sameClaim compares only declared state subset, allowing extra unreviewed observed structuralstate; exact statelesscontact contract not enforced",
+      "rootAction": "Root authorized staging-only exact-state fix and regression"
+    },
+    {
+      "id": "historical-plant-coverage",
+      "finding": "Historical red_tulip overwrittenbyAIR is not in PLANT regex and can still yieldeligible. Broad historicalplant/decor veto contract needs complete explicit supported familylist/registry or failclosed classification.",
+      "rootAction": "Reported; not changed under present exact-contact/typing scope"
+    },
+    {
+      "id": "same-district-other-interior",
+      "finding": "All sourceIndex==selectedIndex interior protection entries ignored; projection schema has no authenticated selected-building ownership discrimination. Futureadapter must unambiguously exclude selectedroom only, preserving otherroom protection.",
+      "rootAction": "Reported; no adapter/promotion authorized"
+    }
+  ],
+  "nativeEvidence": {
+    "artifact": "dist/native-room-census-161-20261106.json",
+    "sha256": "72722573444738F30CC57A16880B487ABEEB80D4DD34E957E8BC7342360B2E33",
+    "knownLeaves": 10,
+    "knownLogs": 22,
+    "allKnownLeavesAdjacentToObservedLog": true,
+    "neighbors": [
+      {
+        "leaf": {
+          "x": -219,
+          "y": 69,
+          "z": -538
+        },
+        "knownObservedAdjacentLogs": [
+          {
+            "position": {
+              "x": -219,
+              "y": 69,
+              "z": -537
+            },
+            "observedId": "minecraft:jungle_log",
+            "states": {
+              "old_log_type": "jungle",
+              "pillar_axis": "y"
+            }
+          }
+        ],
+        "screen": "Historical partial negative witness only; if logs still present, current narrow policy refuses. Not a fresh27cell classifier result."
+      },
+      {
+        "leaf": {
+          "x": -219,
+          "y": 69,
+          "z": -536
+        },
+        "knownObservedAdjacentLogs": [
+          {
+            "position": {
+              "x": -219,
+              "y": 69,
+              "z": -537
+            },
+            "observedId": "minecraft:jungle_log",
+            "states": {
+              "old_log_type": "jungle",
+              "pillar_axis": "y"
+            }
+          },
+          {
+            "position": {
+              "x": -218,
+              "y": 69,
+              "z": -535
+            },
+            "observedId": "minecraft:oak_log",
+            "states": {
+              "old_log_type": "oak",
+              "pillar_axis": "y"
+            }
+          },
+          {
+            "position": {
+              "x": -218,
+              "y": 70,
+              "z": -535
+            },
+            "observedId": "minecraft:oak_log",
+            "states": {
+              "old_log_type": "oak",
+              "pillar_axis": "y"
+            }
+          }
+        ],
+        "screen": "Historical partial negative witness only; if logs still present, current narrow policy refuses. Not a fresh27cell classifier result."
+      },
+      {
+        "leaf": {
+          "x": -219,
+          "y": 69,
+          "z": -535
+        },
+        "knownObservedAdjacentLogs": [
+          {
+            "position": {
+              "x": -218,
+              "y": 69,
+              "z": -535
+            },
+            "observedId": "minecraft:oak_log",
+            "states": {
+              "old_log_type": "oak",
+              "pillar_axis": "y"
+            }
+          },
+          {
+            "position": {
+              "x": -218,
+              "y": 70,
+              "z": -535
+            },
+            "observedId": "minecraft:oak_log",
+            "states": {
+              "old_log_type": "oak",
+              "pillar_axis": "y"
+            }
+          }
+        ],
+        "screen": "Historical partial negative witness only; if logs still present, current narrow policy refuses. Not a fresh27cell classifier result."
+      },
+      {
+        "leaf": {
+          "x": -218,
+          "y": 69,
+          "z": -538
+        },
+        "knownObservedAdjacentLogs": [
+          {
+            "position": {
+              "x": -219,
+              "y": 69,
+              "z": -537
+            },
+            "observedId": "minecraft:jungle_log",
+            "states": {
+              "old_log_type": "jungle",
+              "pillar_axis": "y"
+            }
+          }
+        ],
+        "screen": "Historical partial negative witness only; if logs still present, current narrow policy refuses. Not a fresh27cell classifier result."
+      },
+      {
+        "leaf": {
+          "x": -218,
+          "y": 69,
+          "z": -537
+        },
+        "knownObservedAdjacentLogs": [
+          {
+            "position": {
+              "x": -219,
+              "y": 69,
+              "z": -537
+            },
+            "observedId": "minecraft:jungle_log",
+            "states": {
+              "old_log_type": "jungle",
+              "pillar_axis": "y"
+            }
+          }
+        ],
+        "screen": "Historical partial negative witness only; if logs still present, current narrow policy refuses. Not a fresh27cell classifier result."
+      },
+      {
+        "leaf": {
+          "x": -218,
+          "y": 69,
+          "z": -536
+        },
+        "knownObservedAdjacentLogs": [
+          {
+            "position": {
+              "x": -219,
+              "y": 69,
+              "z": -537
+            },
+            "observedId": "minecraft:jungle_log",
+            "states": {
+              "old_log_type": "jungle",
+              "pillar_axis": "y"
+            }
+          },
+          {
+            "position": {
+              "x": -218,
+              "y": 69,
+              "z": -535
+            },
+            "observedId": "minecraft:oak_log",
+            "states": {
+              "old_log_type": "oak",
+              "pillar_axis": "y"
+            }
+          },
+          {
+            "position": {
+              "x": -218,
+              "y": 70,
+              "z": -535
+            },
+            "observedId": "minecraft:oak_log",
+            "states": {
+              "old_log_type": "oak",
+              "pillar_axis": "y"
+            }
+          }
+        ],
+        "screen": "Historical partial negative witness only; if logs still present, current narrow policy refuses. Not a fresh27cell classifier result."
+      },
+      {
+        "leaf": {
+          "x": -217,
+          "y": 69,
+          "z": -536
+        },
+        "knownObservedAdjacentLogs": [
+          {
+            "position": {
+              "x": -218,
+              "y": 69,
+              "z": -535
+            },
+            "observedId": "minecraft:oak_log",
+            "states": {
+              "old_log_type": "oak",
+              "pillar_axis": "y"
+            }
+          },
+          {
+            "position": {
+              "x": -218,
+              "y": 70,
+              "z": -535
+            },
+            "observedId": "minecraft:oak_log",
+            "states": {
+              "old_log_type": "oak",
+              "pillar_axis": "y"
+            }
+          }
+        ],
+        "screen": "Historical partial negative witness only; if logs still present, current narrow policy refuses. Not a fresh27cell classifier result."
+      },
+      {
+        "leaf": {
+          "x": -217,
+          "y": 69,
+          "z": -535
+        },
+        "knownObservedAdjacentLogs": [
+          {
+            "position": {
+              "x": -218,
+              "y": 69,
+              "z": -535
+            },
+            "observedId": "minecraft:oak_log",
+            "states": {
+              "old_log_type": "oak",
+              "pillar_axis": "y"
+            }
+          },
+          {
+            "position": {
+              "x": -218,
+              "y": 70,
+              "z": -535
+            },
+            "observedId": "minecraft:oak_log",
+            "states": {
+              "old_log_type": "oak",
+              "pillar_axis": "y"
+            }
+          }
+        ],
+        "screen": "Historical partial negative witness only; if logs still present, current narrow policy refuses. Not a fresh27cell classifier result."
+      },
+      {
+        "leaf": {
+          "x": -219,
+          "y": 70,
+          "z": -538
+        },
+        "knownObservedAdjacentLogs": [
+          {
+            "position": {
+              "x": -219,
+              "y": 69,
+              "z": -537
+            },
+            "observedId": "minecraft:jungle_log",
+            "states": {
+              "old_log_type": "jungle",
+              "pillar_axis": "y"
+            }
+          }
+        ],
+        "screen": "Historical partial negative witness only; if logs still present, current narrow policy refuses. Not a fresh27cell classifier result."
+      },
+      {
+        "leaf": {
+          "x": -219,
+          "y": 70,
+          "z": -537
+        },
+        "knownObservedAdjacentLogs": [
+          {
+            "position": {
+              "x": -219,
+              "y": 69,
+              "z": -537
+            },
+            "observedId": "minecraft:jungle_log",
+            "states": {
+              "old_log_type": "jungle",
+              "pillar_axis": "y"
+            }
+          }
+        ],
+        "screen": "Historical partial negative witness only; if logs still present, current narrow policy refuses. Not a fresh27cell classifier result."
+      }
+    ],
+    "limits": "Native475room census was sequential/historical, not concurrent27cubes. Fullfresh27neighborhood/all5actualsource/protectionproof absent; do not fill unsampled neighbors withAIR or claimpositiveeligibility. All10 are blocked historicalscreens under current no-unclassified-log contract, not cleanupauthority."
+  }
+}

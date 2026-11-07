@@ -1,0 +1,17 @@
+{
+  "scope": "Interrupted staging test run; NOT a pass or native performance proof",
+  "sessionId": 50508,
+  "command": "node --import ./dev/staging/leaf-source-streaming/register-overlay.mjs --test dev/test/wall-leaf-preview.test.mjs dev/staging/leaf-source-streaming/proposed-dev/test/leaf-source-streaming.test.mjs",
+  "startUtc": null,
+  "startUtcLimitation": "Tool outputs did not supply an absolute UTC timestamp. No exact start time is inferred.",
+  "estimatedWallSecondsBeforeInterruption": 15,
+  "estimateLimitation": "Approximate agent observation, not measured CPU duration or an exact native contention interval.",
+  "firstToolWaitSeconds": 10.0071931,
+  "printedGreenSmallTests": 7,
+  "fullPreviewResult": "Not obtained; no full-file pass claim",
+  "interruption": "Ctrl-C sent to session50508; tool returned exit1",
+  "exitCode": 1,
+  "nativeOverlap": "Root reported Minecraft was still verifying source D3. Brief competing Node workload must be disclosed when describing that native elapsed-time interval; no clean-CPU performance claim.",
+  "productionMutation": false,
+  "subsequentPolicy": "All execution stopped at root request until explicit Minecraft-closed notice. Staging authoring/review only."
+}

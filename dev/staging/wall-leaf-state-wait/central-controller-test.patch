@@ -1,0 +1,43 @@
+--- dev/test/wall-leaf-repair.test.mjs
++++ dev/test/wall-leaf-repair.test.mjs
+@@ -22,15 +22,15 @@
+     const allPlan=compileLeafTrim(input),areas=civCommands.protectedRects(saved.kingdom,1,saved.plan,WRITE_PROTECT_GROW,4);
+     for(const p of allPlan.proposals)for(const c of p.contacts)if(c.expected.length&&!blocks.has(key(c.point)))blocks.set(key(c.point),{isValid:true,typeId:c.expected[0],states:{}});
+     for(const row of [...evidence.eligible,...evidence.refused])blocks.set(key(row.position),{isValid:true,typeId:row.actualId,states:{persistent_bit:row.persistent_bit}});
+-    let cancelled=false,reads=0,inSlice=0,maxReads=0;
++    let tick=0,cancelled=false,reads=0,inSlice=0,maxReads=0;
+     const world={getDynamicPropertyIds:()=>[...props.keys()],getDynamicProperty:k=>props.get(k),setDynamicProperty(k,v){propertyWrites.push([k,v]);props.set(k,v);}};
+     const guard=createWallLeafSourceGuard(world,()=>JSON.parse(props.get("civ:kingdom")),()=>cancelled);
+     const ctx={read(p){reads++;inSlice++;maxReads=Math.max(maxReads,inSlice);return structuredClone(blocks.get(key(p))??{isValid:true,typeId:"minecraft:air",states:{}});},
+         isProtected:(x,z)=>protectedColumns.has(`${x},${z}`)||inProtectedArea(areas,x,z),sourcesCurrent:()=>guard.current(),cancelled:()=>cancelled,
+-        write(op){writes.push(structuredClone(op));blocks.set(key(op),{isValid:true,typeId:op.id,states:{}});}};
+-    const f={input,props,blocks,writes,world,ctx,guard,propertyWrites,protectedColumns,cancel(){cancelled=true;},get reads(){return reads;},get maxReads(){return maxReads;},
+-        run(confirm=false){const g=wallLeafRepairSteps(input,ctx,world,{confirm,policy:POLICY});for(;;){inSlice=0;const s=g.next();if(s.done)return s.value;}},
+-        steps(confirm=true){return wallLeafRepairSteps(input,ctx,world,{confirm,policy:POLICY});}};return f;
++        write(op){writes.push(structuredClone(op));blocks.set(key(op),{isValid:true,typeId:op.id,states:{}});f.afterWrite?.(op);}};
++    const f={input,props,blocks,writes,world,ctx,guard,propertyWrites,protectedColumns,afterWrite:null,get tick(){return tick;},set tick(value){tick=value;},cancel(){cancelled=true;},get reads(){return reads;},get maxReads(){return maxReads;},
++        run(confirm=false){const g=wallLeafRepairSteps(input,ctx,world,{confirm,policy:POLICY,readTick:()=>tick});for(;;){inSlice=0;const s=g.next();if(s.done)return s.value;}},
++        steps(confirm=true){return wallLeafRepairSteps(input,ctx,world,{confirm,policy:POLICY,readTick:()=>tick});}};return f;
+ }
+ test("closed authoritative sources rebuild all five complete checksums and compile native candidate materials without guessed provenance",()=>{
+     const s=sources();assert.equal(s.masterHash,"9e5e307e");assert.deepEqual(s.sources.map(s=>s.record.checksum),["07515fcb","e6d55467","6b9f8114","35635162","23a6aeca"]);
+@@ -89,3 +89,19 @@
+     assert.throws(()=>commitOneLeafTrim(plan,key(candidate),{...f.ctx,...adapter},io,{policy:POLICY}),/native setter refused/);assert.equal(setters,1);assert.equal(raw,initial);assert.equal(readLeafTrimReceipt(raw).complete,false);
+     for(let i=0;i<1800;i++)adapter.read({x:i,y:70,z:0});assert.throws(()=>adapter.write(plan.proposals[0].target),/final native handle/);
+ });
++
++test("five-source compiled native-policy controller waits through synthetic80tick updates without changing receipt identity",()=>{
++ const f=fixture();for(const b of f.blocks.values())if(b.typeId.endsWith("_leaves"))b.states={old_leaf_type:b.typeId.slice(10,-7),persistent_bit:false,update_bit:false};
++ let settle=0;f.afterWrite=()=>{for(const b of f.blocks.values())if(b.typeId.endsWith("_leaves"))b.states.update_bit=true;settle=f.tick+80;};
++ const before=new Map(f.props),g=f.steps();let result,initialIdentity;
++ for(let slice=0;slice<100000;slice++){
++  const next=g.next();if(next.done){result=next.value;break;}
++  const journal=[...f.props.keys()].find(k=>k.startsWith(WALL_LEAF_STATE_PREFIX));
++  if(journal){const r=readLeafTrimReceipt(f.props.get(journal)),identity=JSON.stringify({requested:r.requested,entries:r.entries.map(({done,...entry})=>entry),planId:r.planId,policy:r.policy,v:r.v});if(initialIdentity===undefined)initialIdentity=identity;assert.equal(identity,initialIdentity);}
++  f.tick++;if(f.tick>=settle)for(const b of f.blocks.values())if(b.typeId.endsWith("_leaves"))b.states.update_bit=false;
++ }
++ assert.ok(result,"bounded controller completed");assert.equal(result.state,"batch complete");assert.equal(result.verifiedChanges,14);assert.equal(f.writes.length,14);assert.ok(f.tick>200);
++ for(const[k,v]of before)assert.equal(f.props.get(k),v,"original source/queue bytes unchanged");
++ for(const row of evidence.refused)assert.equal(f.blocks.get(key(row.position)).typeId,row.actualId,"three protected candidates remain leaves");
++ assert.equal(f.run(true).writeAttempts,0);
++});

@@ -23,12 +23,13 @@
  * relaxation over the 8-neighbourhood of columns, so every pair of adjacent wall columns differs by at most
  * ONE block in height (a walkable stair-step) and no column is ever lower than ground + WALL.height.
  *
- * @typedef {{ x: number, y: number, z: number, id: string, layer: "footing" | "body" | "walkway" | "parapet" | "tower" | "buttress" }} WallOp
+ * @typedef {{ x: number, y: number, z: number, id: string, layer: "footing" | "body" | "walkway" | "parapet" | "tower" | "buttress",
+ *   dir?: "north" | "south" | "east" | "west", states?: Record<string, string | number | boolean> }} WallOp
  * @typedef {{ index: number, columns: number, ops: WallOp[] }} WallSegment
  * @typedef {{ x: number, z: number, index: number, kind: "corner" | "spacing" | "end" }} WallTower
  * @typedef {{ at: { x: number, z: number }, axis: "x" | "z" }} GateFootprintInput
  * @typedef {{
- *   closed?: boolean, towerSpacing?: number, cornerAngle?: number, buttressSpacing?: number,
+ *   closed?: boolean, towerSpacing?: number, cornerAngle?: number, buttressSpacing?: number, lighting?: string,
  *   gates?: GateFootprintInput[], maxOpsPerSegment?: number, height?: number,
  *   baseFor?: (x: number, z: number) => number | undefined, maxFoundation?: number
  * }} WallOptions
@@ -64,6 +65,10 @@ const ID = Object.freeze({
     cobble: "minecraft:cobblestone",
     mossyCobble: "minecraft:mossy_cobblestone",
     walkway: "minecraft:polished_andesite",
+    /** The walkway block one step below a rise, so the top of the wall can be walked without jumping. */
+    stair: "minecraft:stone_brick_stairs",
+    /** A lantern on every merlon and in every tower passage, so the wall top is lit and nothing spawns on it. */
+    lantern: "minecraft:lantern",
 });
 
 /** Every block id this module can emit (the tests verify them against the installed game data). */
@@ -486,6 +491,18 @@ export function planWall(path, profile, options = {}) {
             const j = /** @type {number} */ (window[w]);
             const [x, z] = /** @type {[number, number]} */ (cells[j]);
             tunnel.set(keyOf(x, z), /** @type {number} */ (top[j]));
+            // Two blocks wide: a second lane across the wall, inside the 5x5 tower. The lane follows the wall's
+            // own direction at this cell, so a bend carries the passage round instead of leaving a blind corner.
+            const previous = /** @type {[number, number]} */ (cells[(j - 1 + n) % n]);
+            const following = /** @type {[number, number]} */ (cells[(j + 1) % n]);
+            const alongX = Math.abs(following[0] - previous[0]) >= Math.abs(following[1] - previous[1]);
+            for (const [lx, lz] of alongX ? [[x, z + 1], [x, z - 1]] : [[x + 1, z], [x - 1, z]]) {
+                if (Math.abs(lx - tower.x) > WALL.towerRadius || Math.abs(lz - tower.z) > WALL.towerRadius) {
+                    continue;
+                }
+                tunnel.set(keyOf(lx, lz), /** @type {number} */ (top[j]));
+                break;
+            }
             const nextJ = window[w + 1];
             if (nextJ !== undefined) {
                 const [nx, nz] = /** @type {[number, number]} */ (cells[nextJ]);
@@ -605,6 +622,46 @@ export function planWall(path, profile, options = {}) {
     const merlonHere = (column) => (((column.x + column.z) % 2) + 2) % 2 === 0;
 
     /**
+     * Where the centreline walkway steps up, the lower cell gets a stair facing the climb. A bare one-block
+     * lip needs a jump (Bedrock auto-step is 0.6), which makes half a wall top unusable without breaking blocks.
+     *
+     * @param {number[]} from @param {number[]} to
+     * @returns {"north" | "south" | "east" | "west" | undefined} undefined for a diagonal step
+     */
+    const faceOf = (from, to) => {
+        const dx = Number(to[0]) - Number(from[0]);
+        const dz = Number(to[1]) - Number(from[1]);
+        if (dx !== 0 && dz !== 0) {
+            return undefined;
+        }
+        return dx > 0 ? "east" : dx < 0 ? "west" : dz > 0 ? "south" : dz < 0 ? "north" : undefined;
+    };
+    /** @type {Map<string, "north" | "south" | "east" | "west">} */
+    const stairAt = new Map();
+    for (let i = 0; i + 1 < n; i += 1) {
+        const here = columns.get(keyOf(/** @type {number} */ (cells[i][0]), /** @type {number} */ (cells[i][1])));
+        const next = columns.get(keyOf(/** @type {number} */ (cells[i + 1][0]), /** @type {number} */ (cells[i + 1][1])));
+        if (here === undefined || next === undefined || here.top === next.top) {
+            continue;
+        }
+        // The walkway column's top is the MAX of its 3-wide band, so the 2-D relaxation can raise it above the
+        // centreline value; the step to cover is the one between the two columns a walker actually stands on.
+        const lower = here.top < next.top ? here : next;
+        const higher = here.top < next.top ? next : here;
+        if (lower.kind !== "wall" || isEdge(lower) || lower.tunnel !== undefined) {
+            continue;
+        }
+        const climb = faceOf([lower.x, lower.z], [higher.x, higher.z]);
+        if (climb === undefined) {
+            continue;
+        }
+        stairAt.set(keyOf(lower.x, lower.z), climb);
+    }
+
+    /** Tower centres get a roof lantern and a lantern in the walkway passage. */
+    const towerCentres = new Set(towers.map((tower) => keyOf(tower.x, tower.z)));
+
+    /**
      * Ops of one column, bottom to top.
      * @param {Column} column
      * @returns {WallOp[]}
@@ -615,15 +672,22 @@ export function planWall(path, profile, options = {}) {
         const { x, z } = column;
         const base = column.base ?? baseOf(column);
         for (let y = base; y <= column.top; y += 1) {
-            if (column.tunnel !== undefined && y > column.tunnel && y <= column.tunnel + 2) {
-                continue; // the 2-high tunnel through a tower along the walkway
+            if (column.tunnel !== undefined && y > column.tunnel && y <= column.tunnel + 3) {
+                // Three blocks of headroom, not two: the passage floor can step up by one at a bend, and a
+                // 2-high tunnel over that step leaves nothing but a crawl the player cannot enter.
+                continue;
             }
             if (y <= column.ground) {
                 ops.push({ x, y, z, id: footingBlock(x, y, z), layer: "footing" });
             } else if (y < column.top) {
                 ops.push({ x, y, z, id: bodyBlock(x, y, z), layer: column.kind === "tower" ? "tower" : column.kind === "buttress" ? "buttress" : "body" });
             } else if (column.kind === "wall" && !isEdge(column)) {
-                ops.push({ x, y, z, id: ID.walkway, layer: "walkway" });
+                const climb = stairAt.get(keyOf(x, z));
+                if (climb === undefined) {
+                    ops.push({ x, y, z, id: ID.walkway, layer: "walkway" });
+                } else {
+                    ops.push({ x, y, z, id: ID.stair, layer: "walkway", dir: climb });
+                }
             } else {
                 ops.push({ x, y, z, id: bodyBlock(x, y, z), layer: column.kind === "tower" ? "tower" : column.kind === "buttress" ? "buttress" : "body" });
             }
@@ -633,6 +697,19 @@ export function planWall(path, profile, options = {}) {
             for (let k = 1; k <= WALL.merlonHeight; k += 1) {
                 ops.push({ x, y: column.top + k, z, id: bodyBlock(x, column.top + k, z), layer: "parapet" });
             }
+            // A lantern on the battlement: the wall top and the ground along its foot stay lit at night, so a
+            // hostile mob has nowhere to spawn on the wall (the tower passage and roof get their own below).
+            if (column.kind === "wall" && (options.lighting !== "natural" || column.first % 18 === 0)) {
+                ops.push({ x, y: column.top + WALL.merlonHeight + 1, z, id: ID.lantern, layer: "parapet" });
+            }
+        }
+        if (column.kind === "tower" && towerCentres.has(keyOf(x, z))) {
+            if (column.tunnel !== undefined) {
+                // Hanging from the roof over the passage (the `hanging` state is part of minecraft:lantern):
+                // a standing lantern at that height would have no block beneath it.
+                ops.push({ x, y: column.tunnel + 3, z, id: ID.lantern, layer: "tower", states: { hanging: true } });
+            }
+            ops.push({ x, y: column.top + 1, z, id: ID.lantern, layer: "tower" });
         }
         return ops;
     };

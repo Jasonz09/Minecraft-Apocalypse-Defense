@@ -1,0 +1,38 @@
+{
+  "scope": "AUTHORING ONLY; UNRUN; no active edits, validation/full/native pending",
+  "files": [
+    {
+      "target": "CivilizationApocalypse_BP/scripts/civ/roomPreviewProgress.js",
+      "source": "dev/staging/room-preview-progress/proposed/CivilizationApocalypse_BP/scripts/civ/roomPreviewProgress.js",
+      "baselineSha256": null,
+      "sha256": "D344952FD2F3D64096336F3BB110011E25424F4E7848D5AE3E0674817A9FE8C4"
+    },
+    {
+      "target": "CivilizationApocalypse_BP/scripts/civ/roomVegetationPreview.js",
+      "source": "dev/staging/room-preview-progress/proposed/CivilizationApocalypse_BP/scripts/civ/roomVegetationPreview.js",
+      "baselineSha256": "77D4DC8AA79D92078E7884EC8716A436A225811C538EDFDBD11A61F7159CF6E3",
+      "sha256": "6CA1FF81158112438520A1695250E8748CBA74F51010089FD91CBE3F415F0FDC"
+    },
+    {
+      "target": "CivilizationApocalypse_BP/scripts/commands/civ.js",
+      "source": "dev/staging/room-preview-progress/proposed/CivilizationApocalypse_BP/scripts/commands/civ.js",
+      "baselineSha256": "A1BDE402FA18963C017F7DF34BC45B8033959B23D67CA3FD6D6E69179E850040",
+      "sha256": "B0E0A19CADC9C39AAF7D0DE453664AE763B37FB6E1AC8310C0295DCAABBA20EE"
+    },
+    {
+      "target": "dev/test/room-preview-progress.test.mjs",
+      "source": "dev/staging/room-preview-progress/proposed-dev/test/room-preview-progress.test.mjs",
+      "baselineSha256": null,
+      "sha256": "90346867E311C0ABBF2C64721BB65CAEC55823D6EC6CBD985EC0381BDA3AF15E"
+    },
+    {
+      "target": "dev/fixtures/room-preview-before-progress.json",
+      "source": "dev/staging/room-preview-progress/proposed-dev/fixtures/room-preview-before-progress.json",
+      "baselineSha256": null,
+      "sha256": "07306F806FE4CC3A81AD5A3D16F09FB08E9DA3950F2865053947A2531DA09CF8"
+    }
+  ],
+  "base": "installed161/1974",
+  "execution": "NO tests/TSC/generators run while Minecraft native is open",
+  "authoredTests": "10 cases authored; UNRUN (including baseline result/native-read parity andprogresssourcefaults)"
+}

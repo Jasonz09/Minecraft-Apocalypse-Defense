@@ -389,6 +389,31 @@ export function fullGateBlocks(spec, state) {
 }
 
 /**
+ * Continuous roof rail between the towers. Raised approaches can otherwise step
+ * through the crenellation gaps above a perfectly closed portcullis. Keep the
+ * stone merlons and the wall walk; only fill their gaps and extend the rail to
+ * the tower eaves. Opt-in at the site-plan level for saved-plan compatibility.
+ * @param {GateSpec} spec
+ * @returns {GateOp[]}
+ */
+export function gateRoofGuardBlocks(spec) {
+    const s = normalizeSpec(spec);
+    const stone = new Set(gatehouseBlocks(spec).map((op) => `${op.x},${op.y},${op.z}`));
+    const ops = [];
+    for (let u = -s.hw; u <= s.hw; u += 1) {
+        for (const v of [-1, 1]) {
+            for (let h = s.wallTop; h < s.towerTop; h += 1) {
+                const w = toWorld(s, u, v, h);
+                if (!stone.has(`${w.x},${w.y},${w.z}`)) {
+                    ops.push({ ...w, id: ID.bars, kind: /** @type {const} */ ("ours"), role: "roof-rail", ownIds: [ID.bars] });
+                }
+            }
+        }
+    }
+    return ops;
+}
+
+/**
  * The box (inclusive block coordinates) that must hold no entity before the gate closes: the whole passage,
  * both wall faces of the seal included, floor to passage top.
  *

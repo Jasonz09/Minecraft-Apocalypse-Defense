@@ -1,0 +1,121 @@
+{
+  "scope": "UNINSTALLED copies only; no live world or database reads; DB/source bytes identical in A/B",
+  "baseline": "dist/backups/swordsman-sol1-peaceful-appearance-baseline-20261106",
+  "baselineLevelSha256": "7B0E743374390D57A63134CDE2997EBB9D4E8EC2DDE6555C8E5BF404FCB2F412",
+  "baselineHashes": {
+    "db/000176.log": "AB44AADB79D03503C8E0B933DDF929C3D348EFFDB9CD5FB57624791CF6D57B80",
+    "db/000178.ldb": "A82E1B78E31C5BDF027B8062B1DD3A33DF070CFDF73CBD8973FC2DCF5D886292",
+    "db/000179.ldb": "54821A67B2146A60E6253D6197A38D98F53793EACA73D930EC023C0E417486B8",
+    "db/000180.ldb": "664B8163C5324D66F6C11FDC187EC12617BEC2E2F369F2FCAA7C6EC0D2350E6C",
+    "db/CURRENT": "C881302D973C7CAC25F989FA6993932B8104B6F5ADFA419C18DDC234DDE456A1",
+    "db/MANIFEST-000160": "9BA5205F3ECD443EE2C0B7A2BDE2A5975FB2F7BF15A8D12965FF745C2FCC95E4",
+    "level.dat": "7B0E743374390D57A63134CDE2997EBB9D4E8EC2DDE6555C8E5BF404FCB2F412",
+    "level.dat_old": "710863EE87A08331C0F6F3A6503EEF5FECC850D172E1E39C06B96C41BBD35753",
+    "levelname.txt": "8D1561D663A92CE8D0821BBAC594D0D9D6A3DDD1ABB6D2261211A5D63E933A66",
+    "world_behavior_pack_history.json": "E278AEB51F6C2BB8123BE7ABB5E62F4A5AF4B2AD0C6EC62F29CE7543EF8E6197",
+    "world_behavior_packs.json": "077B3AB7AFF3F0DF44324397897EA3D31AD40D9020193BB561468534F2C44A50",
+    "world_icon.jpeg": "07D4496C296E445A62CCB9F01D15524DFC7D27A04C663DE5977EF764DD933B29",
+    "world_resource_packs.json": "369934E4A54E66671DC8672C3E53135CEC7F0CDF6D7FDE80794B85AF9416AEAD"
+  },
+  "fixturePackId": "fddde689-c92c-43bd-a68a-3cda9f5203d6",
+  "worlds": [
+    {
+      "arm": "A",
+      "name": "CA Sol1 Path A5 Nov6",
+      "stagedDirectory": "dev/staging/swordsman-combat-fixture/worlds/CA_Sol1_PathA5_Nov6",
+      "worldFolder": "CA_Sol1_PathA5_Nov6",
+      "allFilesCopiedAndVerified": 13,
+      "changedFiles": [
+        "level.dat",
+        "levelname.txt",
+        "world_behavior_packs.json"
+      ],
+      "behaviorBindings": [
+        {
+          "pack_id": "fddde689-c92c-43bd-a68a-3cda9f5203d6",
+          "version": [
+            0,
+            0,
+            3
+          ]
+        },
+        {
+          "pack_id": "fd04cb50-dddc-4ebe-83fc-5b5375819bcb",
+          "version": [
+            1,
+            0,
+            0
+          ]
+        }
+      ],
+      "hashes": {
+        "db/000176.log": "AB44AADB79D03503C8E0B933DDF929C3D348EFFDB9CD5FB57624791CF6D57B80",
+        "db/000178.ldb": "A82E1B78E31C5BDF027B8062B1DD3A33DF070CFDF73CBD8973FC2DCF5D886292",
+        "db/000179.ldb": "54821A67B2146A60E6253D6197A38D98F53793EACA73D930EC023C0E417486B8",
+        "db/000180.ldb": "664B8163C5324D66F6C11FDC187EC12617BEC2E2F369F2FCAA7C6EC0D2350E6C",
+        "db/CURRENT": "C881302D973C7CAC25F989FA6993932B8104B6F5ADFA419C18DDC234DDE456A1",
+        "db/MANIFEST-000160": "9BA5205F3ECD443EE2C0B7A2BDE2A5975FB2F7BF15A8D12965FF745C2FCC95E4",
+        "level.dat": "5D3E0E593EDFB9AF9FEEC103A5B46FF9268614F257EBAF57D0C8254EEEA07973",
+        "level.dat_old": "710863EE87A08331C0F6F3A6503EEF5FECC850D172E1E39C06B96C41BBD35753",
+        "levelname.txt": "E0641E2577C67DE05272D40DA4AAA490811D5AF7C53A4ADA35E8D63C17FDEA17",
+        "world_behavior_pack_history.json": "E278AEB51F6C2BB8123BE7ABB5E62F4A5AF4B2AD0C6EC62F29CE7543EF8E6197",
+        "world_behavior_packs.json": "225C3134A0BD5DF958ABC7D29E7E440478B8B6E25A31332A78576654B6623802",
+        "world_icon.jpeg": "07D4496C296E445A62CCB9F01D15524DFC7D27A04C663DE5977EF764DD933B29",
+        "world_resource_packs.json": "369934E4A54E66671DC8672C3E53135CEC7F0CDF6D7FDE80794B85AF9416AEAD"
+      }
+    },
+    {
+      "arm": "B",
+      "name": "CA Sol1 Path B5 Nov6",
+      "stagedDirectory": "dev/staging/swordsman-combat-fixture/worlds/CA_Sol1_PathB5_Nov6",
+      "worldFolder": "CA_Sol1_PathB5_Nov6",
+      "allFilesCopiedAndVerified": 13,
+      "changedFiles": [
+        "level.dat",
+        "levelname.txt",
+        "world_behavior_packs.json"
+      ],
+      "behaviorBindings": [
+        {
+          "pack_id": "c8644dda-e2b4-46cc-b2cb-5b72f5d972c9",
+          "version": [
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "pack_id": "fddde689-c92c-43bd-a68a-3cda9f5203d6",
+          "version": [
+            0,
+            0,
+            3
+          ]
+        },
+        {
+          "pack_id": "fd04cb50-dddc-4ebe-83fc-5b5375819bcb",
+          "version": [
+            1,
+            0,
+            0
+          ]
+        }
+      ],
+      "hashes": {
+        "db/000176.log": "AB44AADB79D03503C8E0B933DDF929C3D348EFFDB9CD5FB57624791CF6D57B80",
+        "db/000178.ldb": "A82E1B78E31C5BDF027B8062B1DD3A33DF070CFDF73CBD8973FC2DCF5D886292",
+        "db/000179.ldb": "54821A67B2146A60E6253D6197A38D98F53793EACA73D930EC023C0E417486B8",
+        "db/000180.ldb": "664B8163C5324D66F6C11FDC187EC12617BEC2E2F369F2FCAA7C6EC0D2350E6C",
+        "db/CURRENT": "C881302D973C7CAC25F989FA6993932B8104B6F5ADFA419C18DDC234DDE456A1",
+        "db/MANIFEST-000160": "9BA5205F3ECD443EE2C0B7A2BDE2A5975FB2F7BF15A8D12965FF745C2FCC95E4",
+        "level.dat": "F896C197579383866A03573879E1B5F81178D7DEDB3572CE5A94E330EF85BFC8",
+        "level.dat_old": "710863EE87A08331C0F6F3A6503EEF5FECC850D172E1E39C06B96C41BBD35753",
+        "levelname.txt": "930860E35CD80EECFE9CA7ABD74D80645417D576677B3DF5C952841B47E60521",
+        "world_behavior_pack_history.json": "E278AEB51F6C2BB8123BE7ABB5E62F4A5AF4B2AD0C6EC62F29CE7543EF8E6197",
+        "world_behavior_packs.json": "3D8B44F8BB9EBEEED65C4DE24C43549A502B36D77BD9A71192A32FBF58D0DC78",
+        "world_icon.jpeg": "07D4496C296E445A62CCB9F01D15524DFC7D27A04C663DE5977EF764DD933B29",
+        "world_resource_packs.json": "369934E4A54E66671DC8672C3E53135CEC7F0CDF6D7FDE80794B85AF9416AEAD"
+      }
+    }
+  ]
+}

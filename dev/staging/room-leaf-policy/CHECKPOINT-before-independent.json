@@ -1,0 +1,45 @@
+{
+  "utc": "2026-11-07T00:52:17.822759+00:00",
+  "scope": "ISOLATED pure preview spike only; no runtime adapter, writer, promotion, install, native proof or fullsuite",
+  "files": [
+    {
+      "path": "dev\\staging\\room-leaf-policy\\policy.mjs",
+      "sha256": "AA9356DD19110E4073538C1C5F662F62C13783188498CD307F775B7EE3CCF7CF"
+    },
+    {
+      "path": "dev\\staging\\room-leaf-policy\\policy.test.mjs",
+      "sha256": "CD4046928C75D1B10C4E88EC2526C2AD4EE66E0F5FF932D26A2EBD06BB26F741"
+    }
+  ],
+  "focused": {
+    "tests": 11,
+    "pass": 11,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 136.4659,
+    "log": "dev\\staging\\room-leaf-policy\\focused-final.log"
+  },
+  "active161FreezeUnchanged": true,
+  "activeFreeze": "dist\\cadence-room-preview-pack-hashes-20261106.json",
+  "activeFreezeSha256": "EE82BF01B41B5691E9866B2BE4E63449F7849A3C95D3923D0941AC823CB7506B",
+  "limits": {
+    "targets": 8,
+    "allBoundSources": 5,
+    "neighborsEach": 27,
+    "retainedRelevantCellsMax": 216,
+    "sourceOps": 2000000,
+    "opsPerYield": 400
+  },
+  "historicalFailures": [
+    "focused-initial.log: positive with explicitly plannedAIR rejected by blanketclaim mismatch",
+    "focused-before-center-AIR.log: centerknownleaf incorrectlytreatedasplannedneighborleaf. Both fixedunderNEWexplicitgeometryintent, notoldAIRauthority."
+  ],
+  "pending": [
+    "Root policy/source review",
+    "Fresh all5verifiedrecord+protection projection adapter",
+    "Native full27snapshot perrequestedcell and immutable rawsourcelease",
+    "Crosssourcepreview of actual10knownleaves/7untranscribeddiscrepancies",
+    "Separatewriter/journal/CAS/rejoin design and approval; NONEpresent"
+  ]
+}

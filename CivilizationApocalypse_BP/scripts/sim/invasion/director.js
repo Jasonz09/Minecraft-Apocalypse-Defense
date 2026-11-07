@@ -167,6 +167,36 @@ export function invasionThreatOf(kingdom) {
 }
 
 /**
+ * The band the director still has in the field, or null.
+ *
+ * A spent wave keeps its record until the stage machine goes quiet again (`cooldown` clears it), so "in the
+ * field" is a wave with neither a verdict nor an end step. The physical layers read this, not the raw record:
+ * a wave the simulation has already finished must not keep attackers standing at a wall nobody is fighting over.
+ *
+ * This is deliberately narrower than the rule `armInvasionDirector` uses to refuse a stand-down, which waits for
+ * `phase` to leave every stage: standing the director down mid-stage would strand a half-delivered wave record.
+ *
+ * @param {InvasionState} state `kingdom.invasion`
+ * @returns {any | null}
+ */
+export function waveInFieldOf(state) {
+    if (!isInvasionEnabled(state)) {
+        return null;
+    }
+    const wave = state.wave;
+    if (!isPlainObject(wave)) {
+        return null;
+    }
+    if (wave.outcome !== null && wave.outcome !== undefined) {
+        return null;
+    }
+    if (wave.endedStep !== null && wave.endedStep !== undefined) {
+        return null;
+    }
+    return wave;
+}
+
+/**
  * The autonomous gate: the simulation arms its own invasion director from its own war state, so the director
  * is reachable with no player command at all.
  *
@@ -590,8 +620,9 @@ function finishWave(next, step, outcome, district, directives, events) {
  * @param {Record<string, any>} tuning
  * @param {any[]} directives
  * @param {string[]} events
+ * @param {Record<string, string> | undefined} approach a named bearing per district id
  */
-function startInvasion(next, kingdom, step, draw, tuning, directives, events) {
+function startInvasion(next, kingdom, step, draw, tuning, directives, events, approach) {
     next.majorSteps = next.majorSteps.filter((/** @type {number} */ at) => at > step - tuning.majorWindowSteps);
     const majorAllowed =
         (next.lastMajorStep === null || step - next.lastMajorStep >= tuning.majorGapMin) && next.majorSteps.length < tuning.maxMajorsPerWindow;
@@ -607,7 +638,11 @@ function startInvasion(next, kingdom, step, draw, tuning, directives, events) {
     const kind = wantMajor ? "major" : "raid";
     const composition = draw.pick(COMPOSITIONS.filter((candidate) => candidate.kind === kind));
     const district = draw.pick(open);
-    const bearing = draw.pick(BEARINGS);
+    // A named approach aims the sighting at a chosen wall; the same bearing is what the levy posts toward and
+    // what the physical band stands along, so naming it is the only lever that puts the fight where it is seen.
+    // It replaces the draw rather than reordering it: nothing else in this step moves.
+    const named = approach !== null && typeof approach === "object" ? approach[String(district.id)] : undefined;
+    const bearing = BEARINGS.includes(String(named)) ? String(named) : draw.pick(BEARINGS);
     const gateIds = (Array.isArray(district.gates) ? district.gates : []).map((/** @type {any} */ gate) => String(gate.id));
     const target =
         gateIds.length > 0 && draw.chance(0.5)
@@ -826,12 +861,16 @@ function advanceWave(next, kingdom, step, draw, tuning, proximity, directives, e
  *   returned in `state.rngCursor`.
  * - `options.proximity` maps a district id to the distance in blocks from the nearest player, or
  *   null when no player is within the loaded area. Missing entries count as far away.
+ * - `options.approach` maps a district id to the bearing a sighting should come from. The caller names it
+ *   (the runtime names the wall that faces the player); a district with no entry, or an entry that is not one
+ *   of `BEARINGS`, is drawn from the seeded stream as before. A named bearing consumes no draw, so the rest of
+ *   that session's stream differs from an unnamed one - the sighting itself is the only thing it changes.
  * - `options.tuning` overrides INVASION_DEFAULTS.
  *
  * @param {InvasionState} state
  * @param {Kingdom} kingdom
  * @param {number} rng
- * @param {{ proximity?: Record<string, number | null>, tuning?: Record<string, number> }} [options]
+ * @param {{ proximity?: Record<string, number | null>, approach?: Record<string, string>, tuning?: Record<string, number> }} [options]
  * @returns {{ state: InvasionState, directives: any[], events: string[] }}
  */
 export function nextDirectorState(state, kingdom, rng, options = {}) {
@@ -848,6 +887,7 @@ export function nextDirectorState(state, kingdom, rng, options = {}) {
 
     const tuning = tuningOf(options);
     const proximity = options?.proximity ?? {};
+    const approach = options?.approach;
     const step = toInt(kingdom.step);
     /** @type {InvasionState} */
     const next = JSON.parse(JSON.stringify(state));
@@ -862,7 +902,7 @@ export function nextDirectorState(state, kingdom, rng, options = {}) {
             next.nextEventStep = step + draw.int(tuning.raidGapMin, tuning.raidGapMax);
         }
         if (step >= next.nextEventStep) {
-            startInvasion(next, kingdom, step, draw, tuning, directives, events);
+            startInvasion(next, kingdom, step, draw, tuning, directives, events, approach);
         }
     } else {
         advanceWave(next, kingdom, step, draw, tuning, proximity, directives, events);
@@ -877,7 +917,7 @@ export function nextDirectorState(state, kingdom, rng, options = {}) {
  * Returns everything it did, for tests and tooling.
  *
  * @param {Kingdom} kingdom
- * @param {{ proximity?: Record<string, number | null>, tuning?: Record<string, number> }} [options]
+ * @param {{ proximity?: Record<string, number | null>, approach?: Record<string, string>, tuning?: Record<string, number> }} [options]
  * @returns {{ events: string[], directives: any[], results: any[] }}
  */
 export function stepInvasion(kingdom, options = {}) {
@@ -912,7 +952,7 @@ export function stepInvasion(kingdom, options = {}) {
  * Does nothing at all when `kingdom.invasion` is absent or disabled.
  *
  * @param {Kingdom} kingdom
- * @param {{ proximity?: Record<string, number | null>, tuning?: Record<string, number> }} [options]
+ * @param {{ proximity?: Record<string, number | null>, approach?: Record<string, string>, tuning?: Record<string, number> }} [options]
  * @returns {string[]}
  */
 export function runInvasionDirectorStep(kingdom, options = {}) {

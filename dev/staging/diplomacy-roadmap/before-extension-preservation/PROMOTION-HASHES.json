@@ -1,0 +1,175 @@
+{
+  "utc": "2026-11-07T02:00:54.818911+00:00",
+  "scope": "STAGING ONLY; schema3/distantdiplomacy+Ledger candidate. No main/deploy/native changes.",
+  "files": [
+    {
+      "source": "dev/staging/diplomacy-roadmap/proposed/CivilizationApocalypse_BP/scripts/config.js",
+      "target": "CivilizationApocalypse_BP/scripts/config.js",
+      "sha256": "5B6E5325C3EB32B6C41EB3456E39AB529FC96C11B69A62BCF4DC8080C6F8D816",
+      "baselineSha256": "7FD8D2F1258609602B0DB03A3B76F2787F2258EE891A752A16414BC52C742D50",
+      "bytes": 11971
+    },
+    {
+      "source": "dev/staging/diplomacy-roadmap/proposed/CivilizationApocalypse_BP/scripts/kingdom/migrations.js",
+      "target": "CivilizationApocalypse_BP/scripts/kingdom/migrations.js",
+      "sha256": "7DF74F7EF9D9A258F8619D79C4249C59AD266A49D79932A970B91AAA1A104794",
+      "baselineSha256": "666E1FC1BD512449568377F9B4F6F25253F341A571AE06F4EA12F8D41FB75E31",
+      "bytes": 3384
+    },
+    {
+      "source": "dev/staging/diplomacy-roadmap/proposed/CivilizationApocalypse_BP/scripts/kingdom/state.js",
+      "target": "CivilizationApocalypse_BP/scripts/kingdom/state.js",
+      "sha256": "D86F68AE94D64A41437096E9FFB569E63148001B5F72A5FCA8603330F21F4ABD",
+      "baselineSha256": "F757E2EF72354542E7E4F4B0435AC77A9D8131EEE9B34C91CC1B5D56C14F481E",
+      "bytes": 22985
+    },
+    {
+      "source": "dev/staging/diplomacy-roadmap/proposed/CivilizationApocalypse_BP/scripts/kingdom/store.js",
+      "target": "CivilizationApocalypse_BP/scripts/kingdom/store.js",
+      "sha256": "BD3BF6D957628DABFC9F7F30C84ECE502FA04F408AB26B63FAA0D4A78642E5A4",
+      "baselineSha256": "8C49CCAC4D7A905E0D831A9D7BFAA2354E10484B67FEDB122B8D022B9DC193F5",
+      "bytes": 7008
+    },
+    {
+      "source": "dev/staging/diplomacy-roadmap/proposed/CivilizationApocalypse_BP/scripts/ledger/actions.js",
+      "target": "CivilizationApocalypse_BP/scripts/ledger/actions.js",
+      "sha256": "A73ABE7D79AC2EC4BC7056801D78B855EAE0700F4298B58A41BC86F74EE889A6",
+      "baselineSha256": "3098588C18FD4DD0F89D61AB805640D622CB800761C3E023F97008FE02FFE57D",
+      "bytes": 23868
+    },
+    {
+      "source": "dev/staging/diplomacy-roadmap/proposed/CivilizationApocalypse_BP/scripts/ledger/menus-kingdom.js",
+      "target": "CivilizationApocalypse_BP/scripts/ledger/menus-kingdom.js",
+      "sha256": "7C1679DE6237DA82A99799365EF153B40E556AD6F93DB449321BFC1FC84A6D11",
+      "baselineSha256": "1B2859C8FBEF4BFE19EC9EEEA338652B3C9CC64DE5879B788C666E7E718A5528",
+      "bytes": 14125
+    },
+    {
+      "source": "dev/staging/diplomacy-roadmap/proposed/CivilizationApocalypse_BP/scripts/ledger/menus.js",
+      "target": "CivilizationApocalypse_BP/scripts/ledger/menus.js",
+      "sha256": "C9565EEE15E07CB39D66CEB3F564A0B8F28BF5C47BBB26006B2CE6694D0E1725",
+      "baselineSha256": "6601EBAA1C65A3D8D48B19D9C2DC6320B1E405AB52806357E673C2521D293141",
+      "bytes": 4913
+    },
+    {
+      "source": "dev/staging/diplomacy-roadmap/proposed/CivilizationApocalypse_BP/scripts/sim/diplomacy.js",
+      "target": "CivilizationApocalypse_BP/scripts/sim/diplomacy.js",
+      "sha256": "FA6EC2F3418AB653E4898E07D4C322FAD13D0BEC7C4C20E0B6E0D1351488997E",
+      "baselineSha256": null,
+      "bytes": 7582
+    },
+    {
+      "source": "dev/staging/diplomacy-roadmap/proposed/CivilizationApocalypse_BP/scripts/sim/tick.js",
+      "target": "CivilizationApocalypse_BP/scripts/sim/tick.js",
+      "sha256": "4E14AB1A0F739A1F783D363BC6FEF6285DAAB1B8EC0FDA7A792DBAB5ABAFB3C9",
+      "baselineSha256": "860FB5209ED6E7E625738860C23AF87C8C46BA203EE2F3C86D2E256CD12FF18B",
+      "bytes": 8669
+    },
+    {
+      "source": "dev/staging/diplomacy-roadmap/proposed-dev/test/core-v2.test.mjs",
+      "target": "dev/test/core-v2.test.mjs",
+      "sha256": "8390AAE809812DB04F1DDF8E9525E975B75A507D79E43E8CED3778878A378C5B",
+      "baselineSha256": "04A904E5297EB7AA36099E862FB987956E7B123506487A9C27478C8D259A7F11",
+      "bytes": 10938
+    },
+    {
+      "source": "dev/staging/diplomacy-roadmap/proposed-dev/test/diplomacy-roadmap.test.mjs",
+      "target": "dev/test/diplomacy-roadmap.test.mjs",
+      "sha256": "24F5B73FC8E0471FA2B61290023C7C1D9595714E78A6DC3CAFAEE5BFDE66D5E7",
+      "baselineSha256": null,
+      "bytes": 12889
+    },
+    {
+      "source": "dev/staging/diplomacy-roadmap/proposed-dev/test/kingdom.test.mjs",
+      "target": "dev/test/kingdom.test.mjs",
+      "sha256": "4BF1A54464D62879515E22653F7454C50090FEC4CA104BE181C897AF1D40DC54",
+      "baselineSha256": "CB45A2FC84B55B3CBEE3929462D5CB6F273E4C56E5AF3C867E82D6B43209FCFE",
+      "bytes": 10972
+    },
+    {
+      "source": "dev/staging/diplomacy-roadmap/proposed-dev/test/ledger-presenters.test.mjs",
+      "target": "dev/test/ledger-presenters.test.mjs",
+      "sha256": "8F9E831D13DABE31B32CB8C55AF3504167DECC8E1993E7C5F732B6DA041E2EB7",
+      "baselineSha256": "A4593B5B0B05652B8E2BBCAD2D1944B529B550FFB90030617B8980E11F43B105",
+      "bytes": 40133
+    }
+  ],
+  "tests": {
+    "newFocused": 30,
+    "compatibilityTotal": 222,
+    "compatibilityExisting": 192,
+    "compatibilityPass": 222,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "compatibilityDurationMs": 835.823,
+    "compatibilityLog": "compatibility-final.log",
+    "strictCopiedRuntimeTSC": {
+      "exitCode": 0,
+      "log": "typecheck-final.log",
+      "config": "runtime/tsconfig.json",
+      "configSha256": "88E9EB627FEDE797D779D243C67BAA39B2207F4D719CBFBFC44329BACD645EB3"
+    },
+    "newFocusedDurationMs": 162.5836,
+    "newFocusedLog": "focused-final.log"
+  },
+  "logs": {
+    "compatibility-final.log": "0F80D382F1DC4245ED43EDF0B411FBBF4A03BA2EE66511CD791180BBB0C2C2F2",
+    "compatibility-initial.log": "51A248A8997A8A03B8A2E2A446F55FCCD4AF5DA431E4F84A7D4EA68349AD357B",
+    "focused-final.log": "8D030483BFD938E6A0DCA8AEDBED12F701D68C55089544ACBFEC3565FA96C0BB",
+    "focused-initial.log": "76417773A27E94CD68D833D329D1F96AD84885415C1D44DBE72C2C7A48EE4989",
+    "focused-second.log": "C2E3A839CDBA0593D873C1B5C98E3F240356AC6367D95AA2AA00BC095F678132",
+    "focused-third.log": "9EF742BA28E6166C45003973006B6D0FEC7E37F88EECBA23E3B74EBD7A4D4215",
+    "typecheck-final.log": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+    "typecheck-initial.log": "E1EA05669DEAFE31DD6AA137AACD65E74182A4A98BDD0DBFA6D70EB309D283E6",
+    "typecheck-second.log": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+    "typecheck-third.log": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+  },
+  "baselineProof": "All existing promotion targets retain exact BEFORE.json bytes; no source/rootfiles edited by this agent",
+  "schema": {
+    "old": 2,
+    "proposed": 3,
+    "paths": [
+      1,
+      2,
+      3
+    ],
+    "legacyExtension": "Any existing diplomacy key in legacy schema refuses explicit migration, future nested/schema preserved by load/ensure/save",
+    "oldFieldPreservation": "Spread v2 record, retain districts/civ/physical/starter/unknown fields; add empty bounded diplomacy only"
+  },
+  "limits": {
+    "realms": 3,
+    "missions": 1,
+    "diplomacySerializedBytesMeasuredMaxUnder": 3000
+  },
+  "defaults": {
+    "names": [
+      "Alderwatch",
+      "Sunmere",
+      "Stonehaven"
+    ],
+    "bearings": [
+      "north",
+      "southeast",
+      "west"
+    ],
+    "food": 6,
+    "supplies": 2,
+    "scoutHours": 12,
+    "envoyHours": 18,
+    "allianceHours": 24,
+    "relations": "neutral0,+25perreturnedenvoy,alliance>=50+safeatarrival"
+  },
+  "pending": [
+    "Root independent review",
+    "Central full5gates/release-template checks",
+    "Closed backup/deploy",
+    "Native Ledger/mission/rejoin and multiplayer acceptance",
+    "Physical settlement placement/discovery, spacing, trade/route/visibleallyassistance, territorywar/recovery"
+  ],
+  "reviewFiles": {
+    "README.md": "22ECA545342EDF282CBF848FC3110C16F866D66A2430F9F643335CCE4E7210C7",
+    "BEFORE.json": "331F6D6BE260C8A1C468757EA994D1F8D06239C3674B86A771B60184934EA5E2",
+    "proposed.patch": "8CBE4222664D58B6864E6738F75BA117473394BE05983988CC42B0D62A9ADA4E"
+  }
+}

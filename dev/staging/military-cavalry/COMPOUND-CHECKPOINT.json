@@ -1,0 +1,36 @@
+{
+  "scope": "isolated real compound metadata increment; no owner/native integration",
+  "focused": {
+    "testsExecuted": 18,
+    "pass": 18,
+    "uniqueCases": 16,
+    "independentRegressionsRepeated": 2,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 652.0059,
+    "log": "compound-focused-reviewed.log"
+  },
+  "strictTypecheck": {
+    "exitCode": 0,
+    "config": "tsconfig.json",
+    "log": "compound-typecheck-reviewed.log"
+  },
+  "files": {
+    "compoundBindings.mjs": "5BD32F4062C1472CFA43A1550403BDF4FFCADD2EE6CA04ED50B14519D5E231D1",
+    "compoundBindings.test.mjs": "0E9FD5E0A6FADFFAEC1543D60A558440F48A403AD9B5C6A4EBA9BC0A9FE24209",
+    "compound-focused-initial.log": "0D62FFA6D39B6EF3FAA07F0BBEA4025D156462BED93E42B7D2187A43C093F6CC",
+    "compound-focused-final.log": "CF22D07756E29512D34039212C1B88B407480C06D3DD5CB4DE7A0F9103BF5841",
+    "compound-typecheck.log": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+    "STORE-IMPLEMENTATION.md": "E8A73190492778D337FBA3A7A6E503B0FB0FE066F570EFFCB5509BF6F0494513",
+    "tsconfig.json": "8783465687B5A9CEAC7982FE27B5B7683451DE1C9B6702A3BD12AF5C3C2B0521",
+    "compound-focused-reviewed.log": "9C8367E5ACF5FA6C3EB049B4F58351053E155593760F59555A98ACD8DF645689",
+    "compound-typecheck-reviewed.log": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+  },
+  "historicalPlan9": "plan9-frozen/CHECKPOINT.json",
+  "productionChanges": false,
+  "nativeCalls": false,
+  "migration": "v2 refuses; explicit combined single/compound migration missing",
+  "authorityLimit": "Privileged caller must supply positive native proof; no aggregate casualty or native acceptance claim",
+  "historical14": "before-review-fixes/COMPOUND-CHECKPOINT.json"
+}

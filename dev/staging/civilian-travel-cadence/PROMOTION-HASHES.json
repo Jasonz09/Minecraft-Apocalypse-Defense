@@ -1,0 +1,65 @@
+{
+  "utc": "2026-11-06T18:44:39.192640+00:00",
+  "scope": "STAGING ONLY against installed1917, no active files/testglob/native/deploy changes",
+  "files": [
+    {
+      "target": "CivilizationApocalypse_BP/scripts/integration/civilianTravel.js",
+      "source": "dev/staging/civilian-travel-cadence/proposed/CivilizationApocalypse_BP/scripts/integration/civilianTravel.js",
+      "baselineSha256": "92F139BB1EA58599A2019460DDF4F4DB0FEBE1831997B0DDBB19CE660D944EAA",
+      "sha256": "514D1F8D4AEAE51954194FF4F0BB75F82512F0E19A762E483828F1D2F0FF7DF7"
+    },
+    {
+      "target": "CivilizationApocalypse_BP/scripts/people/travel.js",
+      "source": "dev/staging/civilian-travel-cadence/proposed/CivilizationApocalypse_BP/scripts/people/travel.js",
+      "baselineSha256": "392388FFAF528CFC6F4211D9138D0BB4B1A5EE95BC62D448203611A6F0780E0B",
+      "sha256": "BA1963B4F31EA33E998D0D1875AAC8F4CBD4542CEED44C5C3A9F557391561034"
+    },
+    {
+      "target": "CivilizationApocalypse_BP/scripts/main.js",
+      "source": "dev/staging/civilian-travel-cadence/proposed/CivilizationApocalypse_BP/scripts/main.js",
+      "baselineSha256": "50E67723B7C4A867F98BEE07D27D3109865A4AE5EE51AC0E0BA7C49B33AF34B4",
+      "sha256": "417E9C7181F9792CCAB013ED2BC48CA66AA05F169A8E8DF141A919554998AF62"
+    },
+    {
+      "target": "dev/test/civilian-travel-cadence.test.mjs",
+      "source": "dev/staging/civilian-travel-cadence/proposed-dev/test/civilian-travel-cadence.test.mjs",
+      "baselineSha256": null,
+      "sha256": "0EFD81EFA291810DBA8BF53F8C8DFF0B9B81156B62B59CDCA0FDDB7023891648"
+    },
+    {
+      "target": "dev/fixtures/civilian-travel-before-cadence.json",
+      "source": "dev/staging/civilian-travel-cadence/proposed-dev/fixtures/civilian-travel-before-cadence.json",
+      "baselineSha256": null,
+      "sha256": "B4C6583E92CA47ED6765C29500D3359C9414E7E1D57A7C561164A0ED15D1C20C"
+    }
+  ],
+  "focused": {
+    "tests": 23,
+    "pass": 23,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 473.8199,
+    "log": "dev\\staging\\civilian-travel-cadence\\focused-final.log"
+  },
+  "strictIsolatedTsc": {
+    "exitCode": 0,
+    "log": "dev\\staging\\civilian-travel-cadence\\typecheck-final.log"
+  },
+  "historicalInitialTsc": "Literal4 inference rejected assignment1; explicit1|4 annotation fixes typing only, retained typecheck-initial.log",
+  "contracts": [
+    "One existing main timer scheduled1; driverdefaultthrottle4",
+    "Only exact trailing cadence=1 on start-near opts in, sessiononly",
+    "TRAVEL_LIMITS.interval4 remains brakinghorizon;speed.04/maxImpulse.3/arrival.15/offRoute.75 unchanged",
+    "Default valid commands/status/trace and exactnativecontrolsequence parity",
+    "No new native queries per productive callback;fullFOOTING/twoAIR/shared256/pin/finalbarriers retained",
+    "Stop/rejoin/defaultsetup restores4; optintrace labels cadence1/horizon4"
+  ],
+  "pending": [
+    "Root independent review",
+    "Central focused/typecheck/full",
+    "Closed deployment",
+    "NativeWORK-hour shorttrial exactactortrace/overshoot/stop/unload/closedlog; possible4xactiveprobe/censuswork",
+    "Actualreturn/production/pathfinding notpartofthisslice"
+  ]
+}

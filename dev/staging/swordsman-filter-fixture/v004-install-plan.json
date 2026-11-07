@@ -1,0 +1,161 @@
+{
+  "state": "READ-ONLY PLAN; no install or world writes",
+  "productionFreeze": "E:\\CivilizationApocalypse\\dist\\civilian-travel-trace-pack-hashes-20261106.json",
+  "baseline": "E:\\CivilizationApocalypse\\dist\\backups\\swordsman-sol1-peaceful-appearance-baseline-20261106",
+  "baselineHashes": {
+    "db/000176.log": "AB44AADB79D03503C8E0B933DDF929C3D348EFFDB9CD5FB57624791CF6D57B80",
+    "db/000178.ldb": "A82E1B78E31C5BDF027B8062B1DD3A33DF070CFDF73CBD8973FC2DCF5D886292",
+    "db/000179.ldb": "54821A67B2146A60E6253D6197A38D98F53793EACA73D930EC023C0E417486B8",
+    "db/000180.ldb": "664B8163C5324D66F6C11FDC187EC12617BEC2E2F369F2FCAA7C6EC0D2350E6C",
+    "db/CURRENT": "C881302D973C7CAC25F989FA6993932B8104B6F5ADFA419C18DDC234DDE456A1",
+    "db/MANIFEST-000160": "9BA5205F3ECD443EE2C0B7A2BDE2A5975FB2F7BF15A8D12965FF745C2FCC95E4",
+    "level.dat": "7B0E743374390D57A63134CDE2997EBB9D4E8EC2DDE6555C8E5BF404FCB2F412",
+    "level.dat_old": "710863EE87A08331C0F6F3A6503EEF5FECC850D172E1E39C06B96C41BBD35753",
+    "levelname.txt": "8D1561D663A92CE8D0821BBAC594D0D9D6A3DDD1ABB6D2261211A5D63E933A66",
+    "world_behavior_pack_history.json": "E278AEB51F6C2BB8123BE7ABB5E62F4A5AF4B2AD0C6EC62F29CE7543EF8E6197",
+    "world_behavior_packs.json": "077B3AB7AFF3F0DF44324397897EA3D31AD40D9020193BB561468534F2C44A50",
+    "world_icon.jpeg": "07D4496C296E445A62CCB9F01D15524DFC7D27A04C663DE5977EF764DD933B29",
+    "world_resource_packs.json": "369934E4A54E66671DC8672C3E53135CEC7F0CDF6D7FDE80794B85AF9416AEAD"
+  },
+  "baselineFiles": 13,
+  "existingFixtureVersion": [
+    0,
+    0,
+    3
+  ],
+  "proposedFixtureVersion": [
+    0,
+    0,
+    4
+  ],
+  "fixtureUUID": "fddde689-c92c-43bd-a68a-3cda9f5203d6",
+  "sameUUIDUpgrade": true,
+  "newPackHashes": {
+    "functions/ca_combat_fixture/clear_gear.mcfunction": "1666B00AF84645B9D454A640743BAA868BDA376F55E55D6DB7E1D054402CF5BD",
+    "functions/ca_combat_fixture/engage.mcfunction": "375AF5F159C4A54A93F0599D25DE62E9BFE7E7057A96A58D2769DD31BC6949B3",
+    "functions/ca_combat_fixture/internal/clear_gear_body.mcfunction": "5C617CC9CA2FD3F3DBB68A901E75A21A6054FD262DC8E27833CDF6C57831998B",
+    "functions/ca_combat_fixture/internal/engage_body.mcfunction": "32DB0C03873FDF9DB4B6059F6BB52AD1F9E41DBFDFE0CAF950A066475067FE34",
+    "functions/ca_combat_fixture/internal/prepare_body.mcfunction": "048AB1E5A13361F2C3528ABF5F8CF9414F2A0CDBDBE8C879AC7B391880C4DABF",
+    "functions/ca_combat_fixture/pillager/clear_gear.mcfunction": "CC55E3349BDBE355D82FD4E2F2721935195406EE232F785F8FCF6A2E45A683B4",
+    "functions/ca_combat_fixture/pillager/engage.mcfunction": "1281987384665B240F59B89CF22B90577AC208D275209E23770DE6A2A9500BAB",
+    "functions/ca_combat_fixture/pillager/internal/clear_gear_body.mcfunction": "25D9817193D2948B2BEF79359BA496A8141989449DEEE0D47694405C370CFCC6",
+    "functions/ca_combat_fixture/pillager/internal/engage_body.mcfunction": "712135204C841942DEC83267350ECA6C1C83C71130F7BC33E955B83E4E0A11DA",
+    "functions/ca_combat_fixture/pillager/internal/return_body.mcfunction": "81D0DA4FBB326B4338B5C6F9FE4EE3BB9D332AFB571FADF1EDB104CD615CC91C",
+    "functions/ca_combat_fixture/pillager/return.mcfunction": "7F02EDA170FA20ADCAF26856E91E1AA9267A6903C66FD3D384C96E8CE7ABB0C1",
+    "functions/ca_combat_fixture/pillager/spawn_caged.mcfunction": "D3944D9FE4FAB0CFDDD630D4A0D886BC762D2AF44571B99F1FBA191E613D6685",
+    "functions/ca_combat_fixture/prepare.mcfunction": "B18CFDD5A349AADC93646804CEC8A3A723E0AD2FE70718C6F09C00CEDC4697D9",
+    "functions/ca_combat_fixture/spawn.mcfunction": "D5E8C703E4C33D95971521531F282143CB141456EB2818C39FEC415CB4E2879B",
+    "functions/ca_combat_fixture/spawn_caged.mcfunction": "D79A0AC6DD8919B7C7E08C2B02028F0D607A4DAC87CD6EA964813AF7DD9588DE",
+    "functions/ca_combat_fixture/view_cage.mcfunction": "0D7ABED43D910C39CF12063F402CCB4AEEC87D4DD56AE035B7EFE494FF8A2B6D",
+    "functions/ca_combat_fixture/view_guard.mcfunction": "3E9CE8235B2A5B9BFAB04903A0C2C11A830FE329DB5BDAA5E07DB0060BC81EFE",
+    "functions/ca_combat_fixture/vindicator/clear_gear.mcfunction": "13F8F38F14E6B959E3591954CB4AFF82D7A03984FAED99C0D411E340299AC7B7",
+    "functions/ca_combat_fixture/vindicator/engage.mcfunction": "EE5BC7F9D0181004257426711D6339F51FEEC52EF51E9CC1E2A92E8B955CA322",
+    "functions/ca_combat_fixture/vindicator/internal/clear_gear_body.mcfunction": "081AD70A44A57C2883BC242C7110F2AA9CDB3F8494E640D9327D8E323D76D546",
+    "functions/ca_combat_fixture/vindicator/internal/engage_body.mcfunction": "A83625365AAAC37170E6D3BC304F2B3C78E641E4E4FB4BD5F831CA0B28E9BB00",
+    "functions/ca_combat_fixture/vindicator/internal/return_body.mcfunction": "D360FE844AF8B42F33736A3FCFCF153F93D1818DBDF85CFC628E5E91937C6EFA",
+    "functions/ca_combat_fixture/vindicator/return.mcfunction": "7A3125BB83168361DA326BB13860371DAB788DC08B6746E0BBFA2CB27D9B02A0",
+    "functions/ca_combat_fixture/vindicator/spawn_caged.mcfunction": "76AB3C94C9DE17D589EBCD4575F77746CD3CD1230DA9E1B54F974AD182EA6C5C",
+    "manifest.json": "C5942399E01A498418B66C2F250C6C6CA1007477E941C7AD022742F7C128F958",
+    "scripts/fixtureInspection.js": "9A2318440999AE41E333DE3C45390400DC3BC9D7A88AD5A7812CA49B4AE8E80F",
+    "scripts/main.js": "9CDD869A9BFD0440A0F086CCADC3E83D0DCC6A2704DA4B8DD7C34E61CAA93926"
+  },
+  "oldFixtureMustBeRetainedOutsideScans": true,
+  "worlds": [
+    {
+      "profile": "pillager",
+      "name": "CA Pillager Filter Nov6",
+      "destination": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\16044254735791270272\\games\\com.mojang\\minecraftWorlds\\CA_PillagerFilter_Nov6",
+      "folder": "CA_PillagerFilter_Nov6",
+      "changedFiles": [
+        "level.dat",
+        "levelname.txt",
+        "world_behavior_packs.json"
+      ],
+      "hashes": {
+        "db/000176.log": "AB44AADB79D03503C8E0B933DDF929C3D348EFFDB9CD5FB57624791CF6D57B80",
+        "db/000178.ldb": "A82E1B78E31C5BDF027B8062B1DD3A33DF070CFDF73CBD8973FC2DCF5D886292",
+        "db/000179.ldb": "54821A67B2146A60E6253D6197A38D98F53793EACA73D930EC023C0E417486B8",
+        "db/000180.ldb": "664B8163C5324D66F6C11FDC187EC12617BEC2E2F369F2FCAA7C6EC0D2350E6C",
+        "db/CURRENT": "C881302D973C7CAC25F989FA6993932B8104B6F5ADFA419C18DDC234DDE456A1",
+        "db/MANIFEST-000160": "9BA5205F3ECD443EE2C0B7A2BDE2A5975FB2F7BF15A8D12965FF745C2FCC95E4",
+        "level.dat": "360D2930DC0B6D69732E81649F2867C326ED9C455A1807840AE646E3BEDE9DE6",
+        "level.dat_old": "710863EE87A08331C0F6F3A6503EEF5FECC850D172E1E39C06B96C41BBD35753",
+        "levelname.txt": "0F1799F596170BB186A202856B23D52C45728F3EDF57DF0987F517DCEC519B6C",
+        "world_behavior_pack_history.json": "E278AEB51F6C2BB8123BE7ABB5E62F4A5AF4B2AD0C6EC62F29CE7543EF8E6197",
+        "world_behavior_packs.json": "4C29251A5E285D08948546F51132097B2FADD51F8778FEA95BAF7C5C1EA588D0",
+        "world_icon.jpeg": "07D4496C296E445A62CCB9F01D15524DFC7D27A04C663DE5977EF764DD933B29",
+        "world_resource_packs.json": "369934E4A54E66671DC8672C3E53135CEC7F0CDF6D7FDE80794B85AF9416AEAD"
+      },
+      "bindings": [
+        {
+          "pack_id": "fddde689-c92c-43bd-a68a-3cda9f5203d6",
+          "version": [
+            0,
+            0,
+            4
+          ]
+        },
+        {
+          "pack_id": "fd04cb50-dddc-4ebe-83fc-5b5375819bcb",
+          "version": [
+            1,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "profile": "vindicator",
+      "name": "CA Vindicator Filter Nov6",
+      "destination": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\16044254735791270272\\games\\com.mojang\\minecraftWorlds\\CA_VindicatorFilter_Nov6",
+      "folder": "CA_VindicatorFilter_Nov6",
+      "changedFiles": [
+        "level.dat",
+        "levelname.txt",
+        "world_behavior_packs.json"
+      ],
+      "hashes": {
+        "db/000176.log": "AB44AADB79D03503C8E0B933DDF929C3D348EFFDB9CD5FB57624791CF6D57B80",
+        "db/000178.ldb": "A82E1B78E31C5BDF027B8062B1DD3A33DF070CFDF73CBD8973FC2DCF5D886292",
+        "db/000179.ldb": "54821A67B2146A60E6253D6197A38D98F53793EACA73D930EC023C0E417486B8",
+        "db/000180.ldb": "664B8163C5324D66F6C11FDC187EC12617BEC2E2F369F2FCAA7C6EC0D2350E6C",
+        "db/CURRENT": "C881302D973C7CAC25F989FA6993932B8104B6F5ADFA419C18DDC234DDE456A1",
+        "db/MANIFEST-000160": "9BA5205F3ECD443EE2C0B7A2BDE2A5975FB2F7BF15A8D12965FF745C2FCC95E4",
+        "level.dat": "76E5C3B717AF34837C3C047BCB3D9895009B4E64B5C8C81E2006B411B00D4833",
+        "level.dat_old": "710863EE87A08331C0F6F3A6503EEF5FECC850D172E1E39C06B96C41BBD35753",
+        "levelname.txt": "726F52D613DCDAA12B257FD74EA550CC76C8144B73BF259158915C22787CED5E",
+        "world_behavior_pack_history.json": "E278AEB51F6C2BB8123BE7ABB5E62F4A5AF4B2AD0C6EC62F29CE7543EF8E6197",
+        "world_behavior_packs.json": "4C29251A5E285D08948546F51132097B2FADD51F8778FEA95BAF7C5C1EA588D0",
+        "world_icon.jpeg": "07D4496C296E445A62CCB9F01D15524DFC7D27A04C663DE5977EF764DD933B29",
+        "world_resource_packs.json": "369934E4A54E66671DC8672C3E53135CEC7F0CDF6D7FDE80794B85AF9416AEAD"
+      },
+      "bindings": [
+        {
+          "pack_id": "fddde689-c92c-43bd-a68a-3cda9f5203d6",
+          "version": [
+            0,
+            0,
+            4
+          ]
+        },
+        {
+          "pack_id": "fd04cb50-dddc-4ebe-83fc-5b5375819bcb",
+          "version": [
+            1,
+            0,
+            0
+          ]
+        }
+      ]
+    }
+  ],
+  "oldA5B5Bindings": {
+    "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\16044254735791270272\\games\\com.mojang\\minecraftWorlds\\CA_Sol1_PathA5_Nov6\\world_behavior_packs.json": "772901C591E3EC36A088692F574B2C2E5FC8C40E6E6D196B14BB6C5610860C6C",
+    "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\16044254735791270272\\games\\com.mojang\\minecraftWorlds\\CA_Sol1_PathA5_Nov6\\world_resource_packs.json": "369934E4A54E66671DC8672C3E53135CEC7F0CDF6D7FDE80794B85AF9416AEAD",
+    "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\16044254735791270272\\games\\com.mojang\\minecraftWorlds\\CA_Sol1_PathB5_Nov6\\world_behavior_packs.json": "607B347A6BA9D8F331982D1FC20F945C0073B00D3BBFD0A39A0CE03E07570ECD",
+    "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\16044254735791270272\\games\\com.mojang\\minecraftWorlds\\CA_Sol1_PathB5_Nov6\\world_resource_packs.json": "369934E4A54E66671DC8672C3E53135CEC7F0CDF6D7FDE80794B85AF9416AEAD"
+  },
+  "healthLimit": "Baseline is the exact previously observed full-HP30 original guard source. File identity alone does not verify current entity health; native original-ID/HP30/canonical1-type1-tag1 checks are mandatory before each trial. No heal, summon or guard teleport.",
+  "scope": "Controlled namespace-tag FILTER fixture only, not real siege-owner or casualty acceptance. Owner-window chronology remains mandatory."
+}

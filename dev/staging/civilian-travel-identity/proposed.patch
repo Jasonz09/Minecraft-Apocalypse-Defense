@@ -1,0 +1,120 @@
+--- CivilizationApocalypse_BP\scripts\integration\civilianTravel.js
++++ CivilizationApocalypse_BP\scripts\integration\civilianTravel.js
+@@ -11,9 +11,10 @@
+ export function createCivilianTravel(deps) {
+     const world=deps.world??runtimeWorld;
+     /** @type {import("../people/travel.js").TravelRoute|undefined} */ let route;
++    /** @type {string|undefined} */ let boundActorId;
+     let state="off",lastTick=-TRAVEL_LIMITS.interval,impulses=0,arrivals=0,reads=0,lastDestination="";
+     const pointText=(/** @type {{x:number,y:number,z:number}} */ p)=>[p.x,p.y,p.z].map(n=>Number(n.toFixed(3))).join(",");
+-    const statusLines=()=>[`Civilian travel trial: ${state}.`,...(route?[`Group ${route.groupId}; one representative, no extra population or production.`,`Trial endpoints ${pointText(route.home)} -> ${pointText(route.farm)} (routine labels only, not physical farming).`,`Impulses ${impulses}; arrivals ${arrivals}; last probes ${reads}/${TRAVEL_LIMITS.maxReads}.`]:[])];
++    const statusLines=()=>[`Civilian travel trial: ${state}.`,...(route?[`Group ${route.groupId}; bound actor ${boundActorId??"unavailable"}; one representative, no extra population or production.`,`Replacement requires another explicit start/start-near setup; no automatic identity rebinding.`,`Trial endpoints ${pointText(route.home)} -> ${pointText(route.farm)} (routine labels only, not physical farming).`,`Impulses ${impulses}; arrivals ${arrivals}; last probes ${reads}/${TRAVEL_LIMITS.maxReads}.`]:[])];
+     /** An ambiguous duplicate is reconciler work, never permission to move both.
+      * @param {{groupId:string}} wanted */
+     function actor(wanted) {
+@@ -48,30 +49,46 @@
+         }
+         return undefined;
+     }
+-    /** @param {any} entity @param {{x:number,z:number}} desired */
+-    function steer(entity,desired) {
+-        const impulse=travelImpulse(entity.getVelocity(),desired);
++    /** @param {any} entity @returns {string|undefined} */
++    function actorId(entity){const id=entity?.id;return typeof id==="string"&&id.length>0&&id.length<=128?id:undefined;}
++    /** @param {any} a @param {any} b */
++    const sameFeet=(a,b)=>a&&b&&[a.x,a.y,a.z,b.x,b.y,b.z].every(Number.isFinite)&&Math.abs(a.x-b.x)<=0.000001&&Math.abs(a.y-b.y)<=0.000001&&Math.abs(a.z-b.z)<=0.000001;
++    /** The velocity/method getters happen BEFORE the final identity/feet guard.
++     * No block is read here; the caller's freshly probed position must still match.
++     * @param {{entity:any,dimension:any}} a @param {import("../people/travel.js").TravelRoute} wanted @param {{x:number,y:number,z:number}} position @param {{x:number,z:number}} desired */
++    function steer(a,wanted,position,desired) {
++        const expectedId=boundActorId;
++        if(route!==wanted||!expectedId||actorId(a.entity)!==expectedId)throw new Error("bound representative changed; explicit setup required");
++        const apply=a.entity.applyImpulse.bind(a.entity),impulse=travelImpulse(a.entity.getVelocity(),desired);
+         if(!impulse)throw new Error("unreadable velocity");
+-        if(Math.hypot(impulse.x,impulse.z)>0.0001){entity.applyImpulse(impulse);impulses++;}
++        if(route!==wanted||boundActorId!==expectedId||!deps.isGateOn()||deps.isBusy())throw new Error("travel binding, gate or maintenance changed before impulse");
++        const final=actor(wanted);
++        if(!final||actorId(final.entity)!==expectedId)throw new Error("bound representative unavailable, unadmitted, ambiguous or changed; explicit setup required for replacement");
++        const feet={...final.entity.location};
++        if(route!==wanted||boundActorId!==expectedId)throw new Error("travel binding changed during final identity proof");
++        if(!sameFeet(feet,position)||!nearTravelRoute(wanted,feet))throw new Error("bound representative feet changed after corridor/velocity read");
++        if(!deps.isGateOn()||deps.isBusy()||route!==wanted||boundActorId!==expectedId)throw new Error("travel gate, maintenance or binding changed at final impulse barrier");
++        if(Math.hypot(impulse.x,impulse.z)>0.0001){apply(impulse);impulses++;}
+     }
+     /** A remote unloaded cell must not prevent braking a still-loaded actor.
+      * @param {{entity:any,dimension:any}} a @param {import("../people/travel.js").TravelRoute} wanted @param {boolean} [reset] */
+     function brakeLocal(a,wanted,reset=false) {
+-        const p=a.entity.location;
++        if(!boundActorId||actorId(a.entity)!==boundActorId)return;
++        const p={...a.entity.location};
+         const point={x:p.x,y:wanted.home.y,z:p.z};
+-        if(!corridor(a.dimension,{...wanted,home:point,farm:point},p,reset))steer(a.entity,{x:0,z:0});
++        if(!corridor(a.dimension,{...wanted,home:point,farm:point},p,reset))steer(a,wanted,p,{x:0,z:0});
+     }
+     function stop(reset=true) {
+         // Cancellation releases only steering. Unloaded/foreign/ambiguous entities
+         // are left alone; streets remains responsible for every population change.
+-        try{if(route){const a=actor(route);if(a&&nearTravelRoute(route,a.entity.location))brakeLocal(a,route,reset);}}catch(_error){}
+-        route=undefined;state="off";lastDestination="";
++        try{if(route){const a=actor(route);if(a&&actorId(a.entity)===boundActorId&&nearTravelRoute(route,a.entity.location))brakeLocal(a,route,reset);}}catch(_error){}
++        route=undefined;boundActorId=undefined;state="off";lastDestination="";
+     }
+     /** @param {string} message */
+     function command(message) {
+         const text=message.trim();
+         if(text==="stop"){stop();return statusLines();}
+-        if(text==="status"||text==="")return [...statusLines(),...(route?inspect(route.groupId):[]),`Admitted civilian groups: ${deps.admittedGroups().filter(id=>/^district-[1-5]:civ:\d+$/.test(id)).slice(0,8).join(", ")||"none"}.`,`Session-only; rejoin starts off. Use civ:people travel stop to cancel.`];
++        if(text==="status"||text==="")return [...statusLines(),...(route?inspect(route.groupId):[]),`Admitted group intents (not a fresh loaded-actor census): ${deps.admittedGroups().filter(id=>/^district-[1-5]:civ:\d+$/.test(id)).slice(0,8).join(", ")||"none"}.`,`Session-only; rejoin starts off. Use civ:people travel stop to cancel.`];
+         const near=/^(?:inspect|start-near)(?:\s|$)/.test(text)?parseTravelNear(text):undefined;
+         if(near?.error)return [near.error];
+         if(near?.kind==="inspect"&&near.groupId)return inspect(near.groupId);
+@@ -80,6 +97,7 @@
+         if(!deps.isGateOn())return ["Travel needs the existing people gate on; no entities were created."];
+         if(deps.isBusy())return ["Travel cannot start during construction or maintenance."];
+         let selected=parsed?.route;
++        /** @type {string|undefined} */ let selectedId;
+         try{const groupId=near?.groupId??selected?.groupId;
+             if(!groupId)return ["Invalid travel group."];
+             const a=actor({groupId});if(!a)return ["That group has no unique admitted civilian representative; wait for streets reconciliation."];
+@@ -112,9 +130,10 @@
+             if(!final||final.entity.id!==fresh.entity.id||!feet||Math.abs(feet.x-position.x)>0.000001||Math.abs(feet.y-position.y)>0.000001||Math.abs(feet.z-position.z)>0.000001)
+                 return ["The representative changed while probing the corridor; nothing moved."];
+             if(!deps.isGateOn()||deps.isBusy())return ["Travel setup was interrupted; nothing moved."];
++            selectedId=actorId(final.entity);if(!selectedId)return ["The representative ID is unreadable; nothing moved."];
+         }catch(_error){return ["Travel could not safely read this representative; nothing moved."];}
+-        if(route&&JSON.stringify(route)===JSON.stringify(selected))return statusLines();
+-        stop(false);route=selected;state="ready";lastTick=-TRAVEL_LIMITS.interval;lastDestination="";return statusLines();
++        if(route&&boundActorId===selectedId&&JSON.stringify(route)===JSON.stringify(selected))return statusLines();
++        stop(false);route=selected;boundActorId=selectedId;state="ready";lastTick=-TRAVEL_LIMITS.interval;lastDestination="";return statusLines();
+     }
+     /** Read-only; neither block probes nor steering are needed to locate a unique actor.
+      * @param {string} groupId */
+@@ -133,20 +152,21 @@
+             if(!deps.isGateOn()){stop();return;}
+             if(deps.isBusy()){stop();state="off (construction or maintenance)";return;}
+             const kingdom=deps.readKingdom(),district=kingdom?.districts?.find((/** @type {any} */ d)=>d.id===route?.groupId.split(":")[0]);
+-            const a=actor(route);if(!a){state="waiting for existing representative";return;}
+-            const position=a.entity.location;
++            const a=actor(route);if(!a){state="paused: bound representative unavailable, unadmitted or ambiguous";return;}
++            if(!boundActorId||actorId(a.entity)!==boundActorId){state="paused: bound representative changed; explicit setup required";return;}
++            const position={...a.entity.location};
+             if(!nearTravelRoute(route,position)){state="paused: outside flat corridor";return;}
+             const unsafe=corridor(a.dimension,route,position);
+             if(unsafe){state=`paused: ${unsafe}`;brakeLocal(a,route);return;}
+-            if(!district||district.civ?.status!=="complete"||!(assignOccupations(district,{withRoster:false}).roles.farmer>0)) {state="paused: no completed farming district";steer(a.entity,{x:0,z:0});return;}
++            if(!district||district.civ?.status!=="complete"||!(assignOccupations(district,{withRoster:false}).roles.farmer>0)) {state="paused: no completed farming district";steer(a,route,position,{x:0,z:0});return;}
+             const intent=locationAt({step:kingdom.step,role:"farmer",security:district.security});
+-            if(intent.location!=="farm"&&intent.location!=="home"){state=`paused: routine ${intent.location??"inactive"}`;steer(a.entity,{x:0,z:0});return;}
++            if(intent.location!=="farm"&&intent.location!=="home"){state=`paused: routine ${intent.location??"inactive"}`;steer(a,route,position,{x:0,z:0});return;}
+             const destination=route[intent.location],dx=destination.x-position.x,dz=destination.z-position.z,distance=Math.hypot(dx,dz);
+-            if(distance<=TRAVEL_LIMITS.arrival){if(lastDestination!==intent.location)arrivals++;lastDestination=intent.location;state=`at ${intent.location}`;steer(a.entity,{x:0,z:0});return;}
++            if(distance<=TRAVEL_LIMITS.arrival){steer(a,route,position,{x:0,z:0});if(lastDestination!==intent.location)arrivals++;lastDestination=intent.location;state=`at ${intent.location}`;return;}
+             lastDestination="";state=`traveling to ${intent.location}`;
+             const speed=Math.min(TRAVEL_LIMITS.speed,distance/TRAVEL_LIMITS.interval);
+-            steer(a.entity,{x:dx/distance*speed,z:dz/distance*speed});
+-        }catch(_error){state="paused: entity or world became unreadable";}
++            steer(a,route,position,{x:dx/distance*speed,z:dz/distance*speed});
++        }catch(error){state=route?"paused: "+String(error instanceof Error?error.message:"entity or world became unreadable"):"off";}
+     }
+     return {command,onTick,stop,statusLines,isActive:()=>route!==undefined};
+ }

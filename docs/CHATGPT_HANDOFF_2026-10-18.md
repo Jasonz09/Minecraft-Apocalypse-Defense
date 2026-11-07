@@ -11,7 +11,8 @@
 - The actual five-district world does **not** exist. The repository marks only Hearthgate as built
   for the template; layouts for districts 2–5 still need physical implementation and testing.
   *(Superseded 2026-10-26: all five enlarged layouts are registered, and districts 1 and 2 have been built
-  and verified in a development save. The starter template still marks none of the five as built.)*
+  and verified in a development save. Superseded again 2026-10-29/30: districts 3-5 were built, and all five
+  are marked built, armed, exported and packaged as `dist/templates/civapoc-starter.mctemplate`.)*
 
 ## Added in this handoff
 
@@ -33,7 +34,8 @@
 - `npm run template:validate`: PASS (four unfinished districts explicitly reported).
 - `npm run e2e`: PASS (52/52 stages).
 - `npm run template:release-check`: intentionally exits nonzero because districts 2–5 are not
-  built and no final build receipt exists.
+  built and no final build receipt exists. *(2026-10-30: all five are built, receipted and packaged;
+  the same command exits 0.)*
 - A full `npm run verify` was attempted but exceeded the current execution time limit during
   synthetic world geometry tests; this is **not** evidence of a failure or an all-green run.
 - No Minecraft client tests, world import, world modification, or Git commits were performed.
@@ -70,8 +72,8 @@ Two claims in the note above are wrong and were corrected rather than carried:
   line 3, `docs/PROGRESS.md`, `docs/QWEN_HANDOFF.md` and `docs/ENLARGED_HEARTHGATE.md` all recorded that
   **nothing had ever run inside Minecraft** - the 49x49 prototype was verified against a fake world only.
   `docs/STARTER_WORLD.md` stated that plainly. (Superseded on 2026-10-26, when districts 1 and 2 were built
-  and verified in a development save - `docs/PROGRESS.md`. The 49x49 prototype still has not been built in
-  game, and no district has been built in the packaged starter template.)
+  and verified in a development save - `docs/PROGRESS.md`; on 2026-10-29/30 districts 3-5 followed and the
+  five-district world was armed, exported and packaged. The 49x49 prototype still has not been built in game.)
 - "npm run verify … exceeded the current execution time limit … not evidence of failure". Correct, and
   it has since been run here: all five gates pass.
 

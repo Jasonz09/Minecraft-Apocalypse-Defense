@@ -1,3 +1,4 @@
+import { diplomaticReadiness } from "../sim/diplomacy.js";
 import { POPULATION_DEFAULTS } from "../config.js";
 import { computeTotals, districtById, districtHeadroom } from "../kingdom/state.js";
 import { formatGameTime } from "../sim/clock.js";
@@ -226,21 +227,19 @@ export function reportsMenu(frame, kingdom) {
     return assemble(frame, { title: "Reports", lines, content: [notImplemented("forecast", "Invasion forecasts")] });
 }
 
-/**
- * @param {Frame} frame
- */
-export function diplomacyMenu(frame) {
-    return assemble(frame, {
-        title: "Diplomacy",
-        lines: [
-            "No other kingdom is known to this one.",
-            "Every diplomatic feature is shown disabled until a second kingdom exists.",
-        ],
-        content: [
-            notImplemented("envoy", "Send an envoy"),
-            notImplemented("trade", "Open trade"),
-            notImplemented("alliance", "Propose an alliance"),
-            notImplemented("ultimatum", "Send an ultimatum"),
-        ],
-    });
+/** @param {Frame} frame @param {any} kingdom */
+export function diplomacyMenu(frame,kingdom) {
+    const d=kingdom.diplomacy,now=Number(kingdom.step),lines=["Foreign reports; settlement sites and travel routes are not yet surveyed."],content=[];
+    if(!d||d.v!==1)return assemble(frame,{title:"Diplomacy",lines:["Diplomatic records are unavailable; no expedition was sent."],content:[]});
+    if(d.mission)lines.push(`Expedition travelling; report due in ${Math.max(0,d.mission.dueAt-now)} kingdom hours.`);
+    if(!d.realms.length)lines.push("No other kingdom has been reported. Send scouts to seek contact.");
+    const add=(/** @type {string} */kind,/** @type {string} */text,/** @type {string|null} */realmId=null)=>{const p={kind,...(realmId?{realmId}:{})},ready=diplomaticReadiness(kingdom,kind,realmId),id=`${kind}:${realmId??"region"}`;content.push(ready.ok?enabledButton(id,text,{id:"diplomacy.mission",params:p}):disabledButton(id,text,ready.reason??"Unavailable"));};
+    add("scout","Send scouts");
+    for(const r of d.realms){
+        lines.push(`${r.name} (${r.bearing}): ${r.treaty}; relations ${r.relation}.`);
+        lines.push(`Report ${now-r.report.at} hours old: people ${r.report.population}, soldiers ${r.report.soldiers}, defenses ${r.report.integrity}%.`);
+        add("envoy",`Send envoy to ${r.name}`,r.id);add("alliance",`Propose alliance with ${r.name}`,r.id);
+    }
+    content.push(notImplemented("trade","Open trade"),notImplemented("assistance","Request routed assistance"));
+    return assemble(frame,{title:"Diplomacy",lines,content});
 }

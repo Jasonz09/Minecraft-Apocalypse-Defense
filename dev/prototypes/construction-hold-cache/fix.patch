@@ -1,0 +1,9 @@
+--- a/CivilizationApocalypse_BP/scripts/integration/civBuilder.js
++++ b/CivilizationApocalypse_BP/scripts/integration/civBuilder.js
+@@
+                     jobs.markProgress(s.queue,item.element,i);
+                     persistProgress(s);
++                    // A tree hold replaces the normal window's physical lease.
++                    // Do not reuse its stale already-requested cache afterward.
++                    s.lastHoldBox = undefined;
+                     return {status:"need-hold",box:s.treeHold,apron:17};

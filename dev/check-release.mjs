@@ -3,6 +3,8 @@ import { createHash } from "node:crypto";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { RELEASE_DISTRICT_IDS, fullReleaseProblems, starterConfigProblems } from "./lib/release-readiness.mjs";
+import { archivePackProblems } from "./lib/pack-parity.mjs";
+import { contentPackProblems } from "./lib/content-packs.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const spec = JSON.parse(readFileSync(join(root, "starter", "template.json"), "utf8"));
@@ -11,7 +13,7 @@ const { STARTER } = await import(pathToFileURL(join(root, "CivilizationApocalyps
 const ix = process.argv.indexOf("--receipt");
 const receiptPath = ix >= 0 ? process.argv[ix + 1] : join(root, "starter", "build-receipt.json");
 if (!receiptPath || receiptPath.startsWith("--")) {
-    console.error("Usage: node dev/check-release.mjs [--receipt <build receipt JSON>]");
+    console.error("Usage: node dev/check-release.mjs [--receipt <build receipt JSON>] [--artifact <template archive>]");
     process.exit(2);
 }
 let receipt = null;
@@ -35,33 +37,51 @@ for (const id of RELEASE_DISTRICT_IDS) {
     const d = districts.find((entry) => entry.id === id);
     console.log(`- ${d?.name ?? id}: ${marked.includes(id) ? "marked built" : "NOT release-ready"}`);
 }
-const problems = [...fullReleaseProblems(spec, receipt), ...starterConfigProblems(spec, STARTER)];
+const problems = [...fullReleaseProblems(spec, receipt), ...starterConfigProblems(spec, STARTER),
+    ...contentPackProblems((spec.packs??[]).map(p=>({root:join(root,p.source),kind:p.kind})))];
 
 /**
  * A `.mctemplate` that is already sitting in dist/ is not evidence of anything: this gate only
  * guards the tooling's own `--zip` path, so list whatever is there and say what it is.
  */
 const templateDir = join(root, "dist", "templates");
-const artifacts = existsSync(templateDir)
+const artifactIndex = process.argv.indexOf("--artifact");
+const selectedArtifact = artifactIndex >= 0 ? process.argv[artifactIndex + 1] : undefined;
+if (artifactIndex >= 0 && (!selectedArtifact || selectedArtifact.startsWith("--"))) {
+    console.error("--artifact needs a template archive path");
+    process.exit(2);
+}
+const artifacts = selectedArtifact ? [resolve(selectedArtifact)] : existsSync(templateDir)
     ? readdirSync(templateDir, { recursive: true }).filter((name) => String(name).endsWith(`.${spec.packageExtension}`))
     : [];
 for (const name of artifacts) {
-    const file = join(templateDir, String(name));
+    const file = selectedArtifact ? String(name) : join(templateDir, String(name));
+    if (!existsSync(file)) {
+        problems.push(`template archive does not exist: ${file}`);
+        continue;
+    }
     const bytes = readFileSync(file);
     console.log(`- Found ${String(name)} (${String(bytes.length)} bytes, ${statSync(file).mtime.toISOString()}, sha256 ${createHash("sha256").update(bytes).digest("hex").slice(0, 16)}...)`);
+    try {
+        const parity = archivePackProblems(file, spec, root, {requireBindings:true});
+        problems.push(...parity);
+        console.log(`- Pack contents: ${parity.length === 0 ? "match current source" : `${parity.length} mismatch(es) - this archive must be rebuilt`}`);
+    } catch (error) {
+        problems.push(`archive cannot be checked: ${String(error)}`);
+    }
 }
 
 if (problems.length > 0) {
     console.log("Release BLOCKED:");
     for (const problem of problems) console.log(`- ${problem}`);
     if (artifacts.length > 0) {
-        console.log(`- ${String(artifacts.length)} archived template(s) exist in dist/templates; they were built by other means or from an earlier spec and MUST NOT be distributed as the starting kingdom.`);
+        console.log(`- ${String(artifacts.length)} selected template archive(s) failed release checks and MUST NOT be distributed as the starting kingdom.`);
     }
     console.log("Development staging remains available with dev/build-template.mjs without --zip.");
     process.exitCode = 1;
 } else {
     if (artifacts.length > 0) {
-        console.log(`- ${String(artifacts.length)} template archive(s) already in dist/templates: rebuild and compare sha256 rather than shipping an older file.`);
+        console.log(`- ${String(artifacts.length)} template archive(s) checked against current pack source.`);
     }
     console.log("Release metadata: READY FOR PACKAGING CHECK (Minecraft import and saved-world verification still required).");
 }

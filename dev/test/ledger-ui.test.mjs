@@ -52,6 +52,10 @@ function pick(label, misses = []) {
 const CLOSED = { canceled: true, cancelationReason: "UserClosed" };
 const BUSY = { canceled: true, cancelationReason: "UserBusy" };
 
+test("stackable vanilla books cannot carry the Ledger marker", () => {
+    assert.throws(() => new FakeItemStack("minecraft:book").setDynamicProperty("ca:ledger", true), /stackable/);
+});
+
 /** Opens the Ledger for a player with the item in hand, then lets the deferred show run. */
 async function openFor(h, player) {
     h.world.emitItemUse({ source: player, itemStack: makeMarkerStack() });
@@ -501,7 +505,7 @@ test("resume runs through the service with the district index", async () => {
     ui.register();
     const alex = h.player("Alex");
     const misses = [];
-    h.forms.script.push(pick("Construction", misses), pick("Resume district-2", misses), pick("Resume", misses), "pending");
+    h.forms.script.push(pick("Construction", misses), pick("Resume Ironquarry", misses), pick("Resume", misses), "pending");
     await openFor(h, alex);
     for (let step = 0; step < 4; step += 1) {
         await h.advance(1);
@@ -522,7 +526,7 @@ test("recovery gives one Ledger to a player without one, and is idempotent", () 
     assert.equal(first.status, "granted");
     assert.equal(markerCount(alex), 1);
     const stack = alex.container.getItem(first.slot);
-    assert.equal(stack.typeId, "minecraft:book");
+    assert.equal(stack.typeId, "civapoc:ledger");
     assert.equal(stack.nameTag, "Commander's Ledger");
     assert.equal(stack.lockMode, "inventory");
     assert.equal(stack.keepOnDeath, true);
@@ -554,13 +558,28 @@ test("a full inventory drops the Ledger at the player's feet", () => {
     assert.match(alex.messages.at(-1), /dropped at your feet/);
 });
 
+test("automatic delivery waits for inventory room instead of dropping copies at every join", () => {
+    const h = createLedgerHarness({ kingdom: kingdomStates().fresh() });
+    const ui = createLedgerUi(h.deps);
+    const player = h.player("Full", { slots: 1 });
+    player.container.setItem(0, new FakeItemStack("minecraft:stone", 64));
+    assert.equal(ui.ensureForPlayer(player).status, "inventory-full");
+    assert.equal(ui.ensureForPlayer(player).status, "inventory-full");
+    assert.equal(player.spawned.length, 0);
+    assert.equal(player.container.getItem(0).typeId, "minecraft:stone");
+    player.container.setItem(0, undefined);
+    assert.equal(ui.ensureForPlayer(player).status, "granted");
+    assert.equal(ui.ensureForPlayer(player).status, "already-held");
+    assert.equal(markerCount(player), 1);
+});
+
 test("grantLedger reports a missing inventory honestly", () => {
     const player = { getComponent: () => undefined, dimension: { spawnItem: () => undefined }, location: {} };
     const outcome = grantLedger(player, { ItemStack: FakeItemStack, ItemLockMode: FakeItemLockMode });
     assert.equal(outcome.status, "no-inventory");
 });
 
-test("the Ledger is never handed out on join: a join creates no item", () => {
+test("the pure UI runtime grants nothing without its template join binding", () => {
     const h = createLedgerHarness({ kingdom: kingdomStates().fresh() });
     const ui = createLedgerUi(h.deps);
     ui.register();

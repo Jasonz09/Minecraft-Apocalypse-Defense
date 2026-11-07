@@ -1,0 +1,15 @@
+## Validated isolated checkpoint
+
+10/10 actual frozen/proposed checks PASS2,001.9073ms and strict isolated TypeScript passes. The normal-path eventual central test also passes10/10 via explicit isolated overlay,1,973.506ms. It imports production paths and a compact frozen baseline observations/read-trace fixture under dev/fixtures, with no staging/dist runtime dependency. PROMOTION-HASHES.json pins one production proposal, one new central test and one reference fixture. Production remains unchanged; root owns promotion/full proof/native diagnostics.
+
+An initial endpoint diagnostic assertion revealed source-operation metadata was copied into sample.point; the proposal was tightened to retain only x/y/z. A baseline-capture helper initially tried deleting a frozen field; corrected by cloning before stripping diagnostics. Those failed helper runs are not pass claims. All checks above passed after corrections. Earlier authoring-only notes below are historical.
+
+# Loaded route rejection diagnostics — unexecuted staging
+
+Current production160 remains frozen. This proposal modifies only diagnostics in people/workRoutePreview.js. No test, Node, typecheck, native or installation execution has been performed for this stage while the game is active.
+
+Existing rejection counts retain their original meaning and increments: unknownFooting, body, unloaded and rise headroom. The formatter now shows them as overlapping search observations, not independent blockers or a causal explanation for the whole no-path result. Existing already-read IDs/points produce at most8 stored samples, at most2 per reason, deduplicated by reason+coordinate. Unsafe footing, feet/head AIR, rise headroom and unreadable cells are included. Exact saved material mismatch also reports its already-read observed/expected pair. Endpoint refusals retain diagnostics instead of dropping them.
+
+The proposal makes no additional native call, changes no graph/order/cache/yield/budget/safety predicate, accepts no flora, and grants no movement permission. The rise check is factored into a local variable solely to report the value from its existing conditional read. Formatter output remains bounded and keeps the existing read-only/vertical-microgate disclaimer. A sampled obstruction can be an ordinary rejected candidate height rather than the decisive reason no route was found; no unloaded-cause claim is made.
+
+The staged test file executes actual frozen/proposed algorithms with privately compiled source-backed endpoints through the existing explicit synthetic source fixture seam. It compares all prior result fields, exact native-read trace order, slice counts/max reads, unchanged limits and permission flags across safe/body/unloaded/rise/endpoint/source-fault cases. Additional checks cover exact short-grass/fern/lantern/material coordinates and required conditions, per-reason/global caps and bounded chat. These tests are AUTHORED NOT RUN. Source-pin and proposed.patch identify the exact single-file change. Root should review, permit a closed window, run focused/typecheck checks and freeze before any promotion.

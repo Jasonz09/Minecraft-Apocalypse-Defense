@@ -1,0 +1,37 @@
+--- a/CivilizationApocalypse_BP/scripts/commands/civ.js
++++ b/CivilizationApocalypse_BP/scripts/commands/civ.js
+@@ -8,6 +8,7 @@
+ import {createRoomPreviewProgress} from "../civ/roomPreviewProgress.js";
+ import { formatWallLeafPreview, previewWallLeavesSteps } from "../civ/wallleafpreview.js";
+ import { POLICY as LEAF_TRIM_POLICY, LEAF_TRIM_MASONRY_IDS } from "../civ/wallLeafTrim.js";
++import {createRoomKingdomReader} from "../integration/roomKingdomReader.js";
+ import { createWallLeafSourceGuard, wallLeafRepairSteps, createWallLeafBlockAdapter } from "../civ/wallLeafRepair.js";
+ import {prepareLeafSourceBatchSteps} from "../civ/leafSourceStreaming.js";
+ import { retainedRoofColumnsSteps, roofFixtureAlternates } from "../civ/roofcolumns.js";
+@@ -1293,7 +1294,8 @@
+  const token=reserveJob("civ-room-preview");if(!token){reply([runningPhrase()],event);return;}
+  try{
+   /** @type {any} */let latestKingdom;
+-  const guard=createWallLeafSourceGuard(world,()=>{latestKingdom=kingdomStore.load().kingdom;return latestKingdom;});
++  const readRoomKingdom=createRoomKingdomReader(world);
++  const guard=createWallLeafSourceGuard(world,()=>{latestKingdom=readRoomKingdom().kingdom;return latestKingdom;});
+   const selectedCurrent=()=>{const districts=latestKingdom?.districts?.filter((/** @type {any} */d)=>d.id===districtIdFor(index));return districts?.length===1&&JSON.stringify(districts[0].civ)===selectedStamp;};
+   const fastCurrent=()=>!token.cancelled&&activeToken()===token&&devGateOn()&&player.isValid&&player.id===identity&&player.dimension.id===dimensionId&&!token.cancelled&&activeToken()===token;
+   const current=()=>{try{return fastCurrent()&&guard.current()&&selectedCurrent()&&fastCurrent()&&guard.current()&&selectedCurrent()&&fastCurrent();}catch(_error){return false;}};
+--- a/dev/test/room-vegetation-preview.test.mjs
++++ b/dev/test/room-vegetation-preview.test.mjs
+@@ -49,10 +49,12 @@
+ 
+ const adapterSource=readFileSync(new URL('../../CivilizationApocalypse_BP/scripts/commands/civ.js',import.meta.url),'utf8').replace(/\r\n/g,'\n');
+ const adapterStart=adapterSource.indexOf('async function inspectSavedRoom('),adapterEnd=adapterSource.indexOf('\n}\n',adapterStart)+2;
++// Existing34 cases isolate command guard behavior with an explicit reader-factory stand-in.
++// Full real-store/serialized-reader integration is covered in room-kingdom-reader-cache.test.mjs.
+ function adapter(f){
+  const token={cancelled:false},events=[],civ={status:'complete',checksum:f.record.checksum,dimension:'minecraft:overworld'},dimension={id:'minecraft:overworld',getBlock:p=>f.ctx.getBlock(p)},player={id:'p1',isValid:true,dimension},kingdom={districts:[{id:'district-5',civ}]};let active=token,finished=0,rawCurrent=true,rawAudits=0,loaderCalls=0;
+- const names=['playerOf','districtById','districtIdFor','reserveJob','runningPhrase','reply','createWallLeafSourceGuard','world','activeToken','devGateOn','runJobAsync','loadSavedRunSteps','newOps','roomVegetationPreviewSteps','formatRoomVegetationPreview','finishJob','formatErrorLines','createRoomPreviewProgress','system'];
+- const values=[()=>player,(k,id)=>k.districts.find(d=>d.id===id),n=>'district-'+n,()=>{f.state.onReserve?.(civ,kingdom);return token;},()=>'(busy)',lines=>events.push(lines),(_w,readKingdom)=>{readKingdom();return{current(){readKingdom();rawAudits++;f.state.onRaw?.(rawAudits);return rawCurrent;}};},{},()=>active,()=>true,async(_t,g)=>{for(;;){const n=g.next();if(n.done)return n.value;}},function*(){loaderCalls++;return{ok:true,queue:{state:'complete'},record:f.record};},()=>({}),function*(r,b,c){return yield* roomVegetationPreviewSteps(r,b,{...c,opsFor:f.ctx.opsFor});},formatRoomVegetationPreview,t=>{if(active===t){active=undefined;finished++;}},(title,lines)=>[title,...lines],createRoomPreviewProgress,{currentTick:0}];
++ const names=['playerOf','districtById','districtIdFor','reserveJob','runningPhrase','reply','createWallLeafSourceGuard','world','activeToken','devGateOn','runJobAsync','loadSavedRunSteps','newOps','roomVegetationPreviewSteps','formatRoomVegetationPreview','finishJob','formatErrorLines','createRoomPreviewProgress','system','createRoomKingdomReader'];
++ const values=[()=>player,(k,id)=>k.districts.find(d=>d.id===id),n=>'district-'+n,()=>{f.state.onReserve?.(civ,kingdom);return token;},()=>'(busy)',lines=>events.push(lines),(_w,readKingdom)=>{readKingdom();return{current(){readKingdom();rawAudits++;f.state.onRaw?.(rawAudits);return rawCurrent;}};},{},()=>active,()=>true,async(_t,g)=>{for(;;){const n=g.next();if(n.done)return n.value;}},function*(){loaderCalls++;return{ok:true,queue:{state:'complete'},record:f.record};},()=>({}),function*(r,b,c){return yield* roomVegetationPreviewSteps(r,b,{...c,opsFor:f.ctx.opsFor});},formatRoomVegetationPreview,t=>{if(active===t){active=undefined;finished++;}},(title,lines)=>[title,...lines],createRoomPreviewProgress,{currentTick:0},()=>()=>({kingdom})];
+  const invoke=Function(...names,adapterSource.slice(adapterStart,adapterEnd)+';return inspectSavedRoom;')(...values);
+  return{run:()=>invoke({load:()=>({kingdom})},{},5,f.element.id,1),events,player,token,get finished(){return finished;},get rawAudits(){return rawAudits;},get loaderCalls(){return loaderCalls;},setRaw(v){rawCurrent=v;}};
+ }

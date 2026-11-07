@@ -592,7 +592,7 @@ test("cursor: round-trips, a newer version is refused, corruption starts from em
     process.stdout.write(`  population cursor: worst case ${String(bytes)} bytes of ${String(POP_CURSOR_MAX_BYTES)} allowed\n`);
 });
 
-test("cursor: losing the cursor entirely does not change what is planned for the world", () => {
+test("cursor: losing the cursor preserves admission and existing actors; fairness position may reset", () => {
     const kingdom = createInitialKingdom();
     const m = model(allSpotChunks(kingdom));
     const anchors = [NEAR_D1];
@@ -600,7 +600,15 @@ test("cursor: losing the cursor entirely does not change what is planned for the
     applyToModel(m, first.actions);
     const withCursor = reconcile(first.state, observeModel(m, kingdom, anchors), 11, {});
     const withoutCursor = reconcile(emptyCursor(), observeModel(m, kingdom, anchors), 11, {});
-    assert.deepEqual(withoutCursor.actions, withCursor.actions, "the world, not the cursor, decides");
+    assert.deepEqual(withoutCursor.state.physical, withCursor.state.physical, "the world determines admission independently of fairness history");
+    assert.deepEqual(withoutCursor.report.groups, withCursor.report.groups);
+    assert.deepEqual(withoutCursor.report.budget, withCursor.report.budget);
+    const existing = new Set(first.actions.filter(a => a.op === "spawn").map(a => a.groupId));
+    for (const plan of [withCursor, withoutCursor]) {
+        assert.equal(plan.actions.length, 2);
+        assert.ok(plan.actions.every(a => a.op === "spawn" && !existing.has(a.groupId)), "losing history cannot recreate an observed representative");
+    }
+    assert.notDeepEqual(withoutCursor.actions, withCursor.actions, "only pending attempt ordering may reset with the lost persisted fairness count");
 });
 
 test("cursor key: the population cursor has its own key, distinct from the kingdom and plan keys", () => {

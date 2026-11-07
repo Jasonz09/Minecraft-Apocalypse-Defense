@@ -1,0 +1,7 @@
+{
+  "extends": "../../../tsconfig.json",
+  "include": [
+    "runtime/CivilizationApocalypse_BP/scripts/**/*.js"
+  ],
+  "exclude": []
+}

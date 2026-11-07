@@ -1,0 +1,74 @@
+--- a/CivilizationApocalypse_BP/scripts/integration/civilianTravel.js
++++ b/CivilizationApocalypse_BP/scripts/integration/civilianTravel.js
+@@ -5,7 +5,7 @@
+ // Ownership remains exclusively streets/popSync. This driver only reads an admitted
+ // canonical representative and applies horizontal impulses; it never creates a life.
+ export const TRAVEL_IDENTITY=Object.freeze({prefix:"civpop:v1:",type:"minecraft:villager_v2"});
+-import {isKnownTravelFooting,isTravelBodyAir} from "../people/walkSafety.js";
++import {isKnownTravelFooting,isTravelBodyClear} from "../people/walkSafety.js";
+ 
+ /** @param {{world?:any,readKingdom:()=>any,admittedGroups:()=>readonly string[],isGateOn:()=>boolean,isBusy:()=>boolean}} deps */
+ export function createCivilianTravel(deps) {
+@@ -74,7 +74,7 @@
+                 id=block&&block.isValid!==false?block.typeId:undefined;cache?.set(at,id);
+             }
+             if(id===undefined)return `corridor unloaded at ${at}`;
+-            if(dy===-1?!isKnownTravelFooting(id):!isTravelBodyAir(id))return `corridor obstructed or unsafe at ${at} (${id}; ${dy===-1?"footing":"body clearance"})`;
++            if(dy===-1?!isKnownTravelFooting(id):!isTravelBodyClear(id))return `corridor obstructed or unsafe at ${at} (${id}; ${dy===-1?"footing":"body clearance"})`;
+         }
+         return undefined;
+     }
+--- a/CivilizationApocalypse_BP/scripts/people/walkSafety.js
++++ b/CivilizationApocalypse_BP/scripts/people/walkSafety.js
+@@ -1,6 +1,10 @@
+-// Exact existing civilianTravel footing/AIR predicates; no new flora or unknown fallback.
++// Exact known footing; body clearance accepts AIR and vanilla short grass only.
++// No broad plant/replaceable/isSolid fallback; short grass is never valid footing.
+ const FOOTING=/^minecraft:(?:grass_block|grass_path|dirt|coarse_dirt|stone|stone_bricks|mossy_stone_bricks|cracked_stone_bricks|cobblestone|polished_andesite|andesite|(?:oak|spruce|birch|jungle|acacia|dark_oak|mangrove|cherry|pale_oak)_planks)$/;
+ /** @param {unknown} id */
+ export const isKnownTravelFooting=id=>typeof id==='string'&&FOOTING.test(id);
+ /** @param {unknown} id */
+ export const isTravelBodyAir=id=>id==='minecraft:air';
++
++/** Narrow noncolliding-body policy; native passage still requires acceptance. @param {unknown} id */
++export const isTravelBodyClear=id=>id==='minecraft:air'||id==='minecraft:short_grass';
+--- a/CivilizationApocalypse_BP/scripts/people/workRoutePreview.js
++++ b/CivilizationApocalypse_BP/scripts/people/workRoutePreview.js
+@@ -1,5 +1,5 @@
+ import {destinationProofIsCurrent} from './destinations.js';
+-import {isKnownTravelFooting,isTravelBodyAir} from './walkSafety.js';
++import {isKnownTravelFooting,isTravelBodyClear} from './walkSafety.js';
+ import {isLiveSite,siteOpSlices} from '../civ/districtplan.js';
+ import {MinHeap} from '../civ/geom.js';
+ 
+@@ -82,8 +82,8 @@
+   if(p.y< -64||p.y>317)return undefined;
+   const floor=yield* read(p);if(!isKnownTravelFooting(floor)){reasons.unknownFooting++;sample('unknownFooting',p,floor,'known travel footing (existing policy)');return undefined;}
+   const feet=yield* read({...p,y:p.y+1}),head=yield* read({...p,y:p.y+2});
+-  if(!isTravelBodyAir(feet)||!isTravelBodyAir(head)){reasons.body++;if(!isTravelBodyAir(feet))sample('body',{...p,y:p.y+1},feet,'minecraft:air at feet');if(!isTravelBodyAir(head))sample('body',{...p,y:p.y+2},head,'minecraft:air at head');return undefined;}
+-  return{x:p.x,y:p.y,z:p.z,id:floor};
++  if(!isTravelBodyClear(feet)||!isTravelBodyClear(head)){reasons.body++;if(!isTravelBodyClear(feet))sample('body',{...p,y:p.y+1},feet,'AIR or short grass at feet');if(!isTravelBodyClear(head))sample('body',{...p,y:p.y+2},head,'AIR or short grass at head');return undefined;}
++  return{x:p.x,y:p.y,z:p.z,id:floor,feetId:feet,headId:head};
+  }
+  /** @param {any} a @param {any} b */
+  function distance(a,b){return Math.max(Math.abs(a.x-b.x)+Math.abs(a.z-b.z),Math.abs(a.y-b.y));}
+@@ -108,7 +108,7 @@
+    if(at===key(goal)){goalIndex=index;break;}if(p.g>=L.pathEdges)continue;
+    for(const[dx,dz]of order){let selected;
+     for(const dy of height){const candidate=yield* stand({x:p.x+dx,y:p.y+dy,z:p.z+dz});if(!candidate)continue;
+-     if(dy===1){const overhead=yield* read({x:p.x,y:p.y+3,z:p.z});if(!isTravelBodyAir(overhead)){reasons.headroom++;sample('headroom',{x:p.x,y:p.y+3,z:p.z},overhead,'minecraft:air above rising actor');continue;}}
++     if(dy===1){const overhead=yield* read({x:p.x,y:p.y+3,z:p.z});if(!isTravelBodyClear(overhead)){reasons.headroom++;sample('headroom',{x:p.x,y:p.y+3,z:p.z},overhead,'AIR or short grass above rising actor');continue;}candidate.riseFromHead=overhead;}
+      selected=candidate;break;
+     }
+     if(!selected)continue;if(++directed>L.directedEdges)fail('native route edge budget exceeded');push(selected,p.g+1,index);yield* pace();
+@@ -122,8 +122,8 @@
+   // Reads span slices: this remains a time-distributed PREVIEW, not atomic or
+   // future movement permission. Driver would fresh-prove every actual segment.
+   for(let pathIndex=0;pathIndex<path.length;pathIndex++){const p=path[pathIndex];
+-   for(let dy=0;dy<=2;dy++){const observed=yield* read({x:p.x,y:p.y+dy,z:p.z},true),expected=dy===0?p.id:'minecraft:air';if(observed!==expected)fail('path changed/unloaded during fresh loaded preview');}
+-   const next=path[pathIndex+1];if(next&&next.y===p.y+1&&!isTravelBodyAir(yield* read({x:p.x,y:p.y+3,z:p.z},true)))fail('rise headroom changed/unloaded during fresh preview');
++   for(let dy=0;dy<=2;dy++){const observed=yield* read({x:p.x,y:p.y+dy,z:p.z},true),expected=dy===0?p.id:dy===1?p.feetId:p.headId;if(observed!==expected)fail('path changed/unloaded during fresh loaded preview');}
++   const next=path[pathIndex+1];if(next&&next.y===p.y+1&&(yield* read({x:p.x,y:p.y+3,z:p.z},true))!==next.riseFromHead)fail('rise headroom changed/unloaded during fresh preview');
+   }
+   current();maxReads=Math.max(maxReads,inSlice);
+   return freeze({state:'OBSERVED_LOADED_PATH',index:endpoints.index,checksum:endpoints.checksum,home:endpoints.home,farm:endpoints.farm,

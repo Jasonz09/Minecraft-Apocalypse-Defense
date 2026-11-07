@@ -1,0 +1,103 @@
+{
+  "scope": "Independent readonly review of frozen13case creationbinding stage; no authorfile edits, main changes, deploy/native/fullchecks",
+  "decision": "BLOCK PROMOTION",
+  "files": [
+    {
+      "path": "dev\\staging\\population-creation-binding\\bindings.mjs",
+      "sha256": "7972BE0789E9187EDE2969645851D7C27850D8772971616220CC4253FC61FFB3"
+    },
+    {
+      "path": "dev\\staging\\population-creation-binding\\proposed-popSync.js",
+      "sha256": "E7AAEDCC51B09087D900127ED0259346AEDD0EAEB7146F4FC5633948D245D202"
+    },
+    {
+      "path": "dev\\staging\\population-creation-binding\\binding.test.mjs",
+      "sha256": "DE5AA90A17563706654AECBFD456D5BFD0D80FA85EF519A5E741162213510E6D"
+    },
+    {
+      "path": "dev\\staging\\population-creation-binding\\owner.patch",
+      "sha256": "C0C50FADE34F1C4AAEC77F4707C2425EED415A69BF40C7CD83084A83EC77A1EB"
+    },
+    {
+      "path": "dev\\staging\\population-creation-binding\\frozen-popSync.js",
+      "sha256": "9C0CF7C87FA092DA024EEB8F087C389CCC50013579E05AA772FE45737E0378A6"
+    }
+  ],
+  "activeOwner": {
+    "path": "CivilizationApocalypse_BP/scripts/integration/popSync.js",
+    "sha256": "4F658ABC6153DB289F73C3E987CE20C9FFE86EBA07C9F78F096783BD7EB86443",
+    "textEqualsFrozenBaseline": true,
+    "frozenBytesMayDifferByLineEndings": true
+  },
+  "ordinaryFocused": {
+    "pass": 13,
+    "fail": 0,
+    "durationMs": 2077.748,
+    "log": "independent-review/focused.log",
+    "meaning": "Normal modeledcases only, not a complete safety/promotion pass"
+  },
+  "blockerReproducers": {
+    "pass": 3,
+    "durationMs": 1240.1242,
+    "log": "independent-review/blockers.log",
+    "meaning": "PASS means unsafe currentbehavior independently reproduced; NOT desiredprotocolacceptance"
+  },
+  "strictIsolatedTsc": {
+    "exitCode": 2,
+    "diagnostics": 49,
+    "codes": {
+      "TS7006": 45,
+      "TS7031": 3,
+      "TS2339": 1
+    },
+    "log": "independent-review/typecheck.log",
+    "config": "independent-review/tsconfig.json",
+    "relaxedFlags": false
+  },
+  "blockers": [
+    {
+      "id": "lost-issued-record",
+      "severity": "unsafe birth authority",
+      "reproduction": "ACTUALproposedowner+exacttestfixture: freshmeta remains, issuedgroupDP deleted withcanonicalactorunloaded; canBirth==true, anotheractor born generation1, total2living; reload givesduplicatehold preservingboth",
+      "needed": "Durable independent issuanceinventory/count/commitphase must distinguish known-neverissued from missingpreviouslyissuedrecord; index/record mismatchrefuses; crashphase andreadbackloss tests; no loadedabsence heuristic",
+      "nativeCauseClaim": false
+    },
+    {
+      "id": "stale-removal-ticket",
+      "severity": "journal CAS authority",
+      "reproduction": "Mintprivate removal ticket under epoch1; swapmeta+sameactor/generation removingrecord toepoch2; commitRemoved(oldticket) retires epoch2",
+      "needed": "Private removal ticket bound to originalmeta/rawrecord/epoch/type/group/generation/actor, fullfreshCAS before terminal; staleepoch/type/rawphase/refcounts refuse"
+    },
+    {
+      "id": "future-namespace-existing-record",
+      "severity": "unsupported schema guard",
+      "reproduction": "Unknown civ:pop_bind:v2:meta present; existingretiredrecord canBirth/prepare still issuesgeneration2 becausecapacity/globalnamespace check runs onlynewkeywrites",
+      "needed": "Unsupportedbindingnamespaces/corruptactiveinventory must refuse allissuancepaths, not onlynewrecordcapacity scans"
+    }
+  ],
+  "positiveContractsObserved": [
+    "Pending preparation precedes actualspawn; unsafe standing defers before issue",
+    "Alive issuedrecord blocks replacement on ordinaryloadedabsence; unloaded case passes normaltest whenrecordintact",
+    "OwnLODremoval rechecksunique canonicalID/tags/type/chunk andisValid=false before terminal",
+    "Birth/removal sessiontickets private/frozen, copiedtickets not accepted; exposedgap is epoch/rawscope not objectcopy",
+    "Legacyunknown births/removal/retag held, duplicates preserved; generation0death grantsnorebirth",
+    "Fresh entityDie requires actualfreshID/type/canonicalgenerationtags; stale/unreadable event holds; no entityRemove deathinference",
+    "No aggregatecasualty/economy debit or newtimer/spawner; originalsoleowner performsactualentitywrites"
+  ],
+  "api27": {
+    "primary": "node_modules/@minecraft/server/index.d.ts",
+    "sha256": "09349A6F6325AEB2B692656686AF52B498D45DEDC7E554A1BD11A877F946D4AF",
+    "entityDieSubscription": "EntityDieAfterEventSignal.subscribe supports earlyexecution andEntityEventOptions.entityTypes",
+    "identity": "Entity.id/typeId documentedaccessible eveninvalid; getTags maythrow andcodeholds ratherthanprior-bindingfallback",
+    "nativeUnverified": "Actualdeadtagavailability, positivepostremoveisValidreadback and eventdelivery need nativegate"
+  },
+  "remainingIntegration": [
+    "verifyFreshWorld is acknowledgedprivilegedTESTcallback, not real privatefresh-fixture capability; notpromotionready",
+    "No main/peopleStreets/startup/activation/status/starter/export/templatebinding initialization; missingledger cannot fall back legacybirth",
+    "Legacy/unloadedworldambiguity remains explicitlyheld; no genericconversion/destructivecleanup permitted",
+    "48row/2048record/4096key/1024ASCIIrecordcaps finite. LegacyobserveLoaded can perform repeatedcapacitykeycensuses synchronously; no newnativeperformanceproof. Futurelarge-worldchunking required.",
+    "Misseddeath or removalterminal-savefailure conservativelyholds issuedgroup; livenessrecovery notautomatic",
+    "SingleJSowner/no atomic multiwriterDPtransaction or arbitrarywholemetadata-rollback guarantee established"
+  ],
+  "parentNotice": "All3blockers sentroot+author; author confirmed stagefrozen andno promotion. No fixes made by reviewer."
+}

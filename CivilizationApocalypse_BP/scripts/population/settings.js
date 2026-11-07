@@ -53,6 +53,22 @@ export const POP_SPOTS = Object.freeze({
 });
 
 /**
+ * Where a district's people are posted, as offsets from its home: a three-by-three lattice across the core.
+ *
+ * The plaza comes first, because that is where a player arrives and where the garrison has to be seen, and the
+ * other eight posts stand 40 blocks out from it. One post per district is what made a 238-block district read as
+ * empty a few dozen blocks from its square: every group was pinned to the same spot, so leaving the plaza left the
+ * population behind. The offsets stay well inside the smallest district's wall, so nobody is posted outside the
+ * district that owns them, and a post whose ground cannot be read is dropped - a district always keeps its plaza.
+ */
+export const POP_POSTS = Object.freeze({
+    /** Blocks between neighbouring posts of the lattice. */
+    spacing: 40,
+    /** Open ground is searched this far from a ring post before that post is dropped for the hour. */
+    probeRadius: 12,
+});
+
+/**
  * @typedef {{
  *   enabled: boolean,
  *   groupSize: { civ: number, sol: number },

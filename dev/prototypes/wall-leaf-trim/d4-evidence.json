@@ -1,0 +1,15 @@
+{
+  "kind": "recorded-native-counts-only",
+  "nativePreviewComplete": false,
+  "district": 4,
+  "checksum": "35635162",
+  "masterEnvelope": "9e5e307e",
+  "centre": {"x": -368, "z": -554},
+  "recordedTreeTargets": 17,
+  "recordedOtherOccupied": 52,
+  "recordedOrdinaryRepairRestored": 0,
+  "candidateCoordinates": null,
+  "eligible": null,
+  "reason": "Full coordinates, current persistent_bit states and fresh local contact/protection observations are not available in this isolated prototype. Exact real eligibility is unknown.",
+  "source": "docs/PROGRESS.md, Nov 5 Saltmere audit and guarded maintenance checkpoint"
+}

@@ -2,8 +2,9 @@
 //
 // Every district 1..5 is planned by the same planner (civ/districtplan.js) from the same master plan, and every
 // claim below is measured on the records that planner returns (their regenerated op streams), not on the
-// planner's own statistics. District 1 (Hearthgate) is additionally pinned to a golden snapshot recorded at HEAD
-// before the five-district change (dev/test/golden/hearthgate-golden.json): any change to its output fails here.
+// planner's own statistics. District 1 (Hearthgate) is additionally pinned to a golden snapshot
+// (dev/test/golden/hearthgate-golden.json), last regenerated for the wall walkway and lighting change: any
+// change to its output fails here.
 //
 // The priority rule is checked with the PRODUCTION write path (the guard in civ/civBuilder.js and the live-block
 // classifier classifyCivOp), not with a copy of it, and each cross-cutting check has a mutation that must fail it.
@@ -302,7 +303,7 @@ function rehydratedOf(fixture, index) {
 
 // ---------------------------------------------------------------------------------------------- tests
 
-test("golden: district 1 (Hearthgate) output is unchanged from the snapshot recorded at HEAD 143afa9", { timeout: 900000 }, () => {
+test("golden: district 1 (Hearthgate) output is unchanged from the recorded snapshot", { timeout: 900000 }, () => {
     const golden = JSON.parse(readFileSync(join(projectRoot, "dev", "test", "golden", "hearthgate-golden.json"), "utf8"));
     assert.equal(Object.keys(golden.cases).length, GOLD.GOLDEN_CASES.length, "the golden file covers every golden case");
     assert.equal(golden.layoutId, D.ENLARGED_LAYOUTS[1], "district 1 keeps its layout id");
@@ -545,12 +546,12 @@ test("devgate: building districts 2-5 is refused with the gate off; district=all
     await flush();
     assert.match(text(build), /district=all is read-only/);
     assert.equal(mc.writes, 0, "a refusal writes nothing");
-    // the gate is off: the generation commands are not registered, so nothing answers and nothing is built
+    // the gate is off: the command is heard (never silence) and refused by name, and nothing is built
     send(CIV_EVENT_IDS.devgate, "off", makePlayer());
     const off = makePlayer();
     send(CIV_EVENT_IDS.generate, "district=2", off);
     await flush();
-    assert.equal(text(off), "", "with the gate off the generation command is not answered at all");
+    assert.match(text(off), /development gate is off .* civ:generate does nothing/, "a gate-off command is refused loudly, not left unanswered");
     assert.equal(mc.writes, 0, "a refusal writes nothing");
     assert.equal(mc.reads, 0, "a refusal reads nothing from the world");
 
@@ -566,8 +567,8 @@ test("devgate: building districts 2-5 is refused with the gate off; district=all
     const resumeOff = makePlayer();
     send(CIV_EVENT_IDS.resume, "district=2", resumeOff);
     await flush();
-    // the gate is still off here: resume is a generation command, so it is not registered and not answered
-    assert.equal(text(resumeOff), "", "with the gate off resume is not answered at all");
+    // the gate is still off here: resume is a generation command, so it is refused by name, not left unanswered
+    assert.match(text(resumeOff), /development gate is off .* civ:generate_resume does nothing/, "a gate-off resume is refused loudly, not left unanswered");
     // with the gate on the same command gets past the gate
     send(CIV_EVENT_IDS.devgate, "on", makePlayer());
     await flush();
@@ -585,7 +586,7 @@ test("devgate: building districts 2-5 is refused with the gate off; district=all
 
 test("the golden file and the canonical helper agree on the case list (regenerating the golden is a deliberate act)", () => {
     const golden = JSON.parse(readFileSync(join(projectRoot, "dev", "test", "golden", "hearthgate-golden.json"), "utf8"));
-    assert.equal(golden.head, "143afa9");
+    assert.equal(golden.head, "f9a150c");
     assert.deepEqual(Object.keys(golden.cases).sort(), GOLD.GOLDEN_CASES.map((spec) => spec.name).sort());
     assert.equal(typeof GOLD.sha256("x"), "string");
     assert.equal(typeof V.labelComponents, "function");

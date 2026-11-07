@@ -28,7 +28,14 @@ function finished() {
 }
 
 test("a planner-ready spec is STILL not a releasable five-district template", () => {
-    const problems = fullReleaseProblems(current, example);
+    // The shipped spec now records all five districts as built, so construct the "spec written
+    // before the build" state here: the rule must refuse it regardless of the repository's file.
+    const planned = copy(current);
+    for (const district of planned.districts) {
+        district.starterWorld = true;
+        district.status = "planner-ready";
+    }
+    const problems = fullReleaseProblems(planned, example);
     const text = problems.join(" | ");
     // All five layouts are registered and marked starter districts, and the example receipt lists all
     // five - yet nothing has been built in Minecraft, so "status: planner-ready" must keep it red.
@@ -110,6 +117,7 @@ test("the release gate refuses when the game would arm fewer districts than the 
         ["the pack would arm only Hearthgate", (starter) => { starter.builtRequired = ["district-1"]; }, /builtRequired .*does not match template\.json/],
         ["keep list drifted", (starter) => { starter.keepKeyPrefixes = ["civ:kingdom"]; }, /keepKeyPrefixes drifted/],
         ["wipe list drifted", (starter) => { starter.wipeKeyPrefixes = ["civ:jobs"]; }, /wipeKeyPrefixes drifted/],
+        ["exact cleanup keys drifted", (starter) => { starter.wipeKeys = []; }, /wipeKeys drifted/],
         ["template id differs", (starter) => { starter.templateId = "something-else"; }, /templateId .*!= template\.json/],
         ["version differs", (starter) => { starter.templateVersion = [9, 9, 9]; }, /templateVersion must equal/],
     ];
@@ -129,6 +137,7 @@ test("the release gate refuses when the game would arm fewer districts than the 
 test("a blocked release still stages, and the staged folder carries its own warning", () => {
     const source = join(root, "dist", "preview-source");
     const out = join(root, "dist", "preview-out");
+    const receiptFile = join(root, "dist", "preview-receipt.json");
     const builder = join(root, "dev", "build-template.mjs");
     try {
         mkdirSync(join(source, "db"), { recursive: true });
@@ -140,14 +149,25 @@ test("a blocked release still stages, and the staged folder carries its own warn
             Name: nbt.string("CIVBUILD-preview"), Generator: nbt.int(1),
             SpawnX: nbt.int(0), SpawnY: nbt.int(70), SpawnZ: nbt.int(0), RandomSeed: nbt.long(7),
             GameType: nbt.int(1), SizeSuitableForWorldVersion: nbt.int(1) }) }));
+        // With the spec recording all five districts as built, a receipt that omits one is caught by
+        // the builder's receipt gate before staging: name the district it lost, and stop.
+        const shortReceipt = copy(example);
+        shortReceipt.verifiedBy = "Verified in a fresh Bedrock test world, 2026-10-18";
+        shortReceipt.builtDistricts = RELEASE_DISTRICT_IDS.filter((id) => id !== "district-2");
+        writeFileSync(receiptFile, JSON.stringify(shortReceipt, null, 4));
+        const refused = spawnSync(process.execPath, [builder, "--world", source, "--out", out, "--receipt", receiptFile], { encoding: "utf8" });
+        assert.notEqual(refused.status, 0, "a receipt missing a district must not stage");
+        assert.match(`${refused.stdout}${refused.stderr}`, /does not report district-2 as physically complete/);
 
+        // The example receipt is complete but records no real verification, so the build stages as a
+        // warning-carrying preview whose marker names the blocker; --zip stays refused.
         const staged = spawnSync(process.execPath, [builder, "--world", source, "--out", out, "--receipt", join(root, "starter", "build-receipt.example.json")], { encoding: "utf8" });
         assert.equal(staged.status, 0, `${staged.stdout}\n${staged.stderr}`);
         assert.match(staged.stdout, /staged as DEVELOPMENT PREVIEW/);
         const marker = join(out, current.templateId, "DEVELOPMENT-PREVIEW.txt");
         assert.ok(existsSync(marker), "a preview that cannot be released must say so from inside the folder");
         assert.match(readFileSync(marker, "utf8"), /THIS IS NOT A RELEASE/);
-        assert.match(readFileSync(marker, "utf8"), /district-2/, "the marker must name the missing districts, not just warn");
+        assert.match(readFileSync(marker, "utf8"), /verifiedBy must record actual in-game verification/, "the marker must name the blocker, not just warn");
 
         const zipped = spawnSync(process.execPath, [builder, "--world", source, "--out", out, "--receipt", join(root, "starter", "build-receipt.example.json"), "--zip"], { encoding: "utf8" });
         assert.notEqual(zipped.status, 0, "--zip is the shipping route and must stay refused");
@@ -155,6 +175,7 @@ test("a blocked release still stages, and the staged folder carries its own warn
     } finally {
         rmSync(source, { recursive: true, force: true });
         rmSync(out, { recursive: true, force: true });
+        rmSync(receiptFile, { force: true });
     }
 });
 

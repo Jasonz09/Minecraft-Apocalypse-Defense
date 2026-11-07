@@ -1,0 +1,45 @@
+{
+  "scope": "isolated complete bound gate-off/runtime wiring proposal; fresh activation adapter remains pending real blank fixture",
+  "focused": {
+    "tests": 12,
+    "pass": 12,
+    "fail": 0,
+    "durationMs": 250.916
+  },
+  "strictTypecheck": {
+    "exitCode": 0,
+    "scope": "entire copied production script tree plus all proposed wiring/core; original strict root options"
+  },
+  "files": {
+    "focused.log": "FCA4D1F135BB630E04AA55CBA61614162B540BACAD0A9F855E2F878DBE7F00EE",
+    "proposed.patch": "39E39398BBAC2AC2DC96870C605674A0ACAAE3E0D6EA3325F94C37C70939C271",
+    "README.md": "39F7C47C658B88B7CEFD024DA53552ECAD312800C768A0A9208E3764F5AD9E92",
+    "runtime.mjs": "3C4A08DC89C9E5E9F3F618424A23417701273AF015E0F5F7E0B3D422B0029F60",
+    "runtime.test.mjs": "2AD8AADDE9A1CD16388D5207C5E8DE12791B520E6F418C1A7F7B27BEE41F7D50",
+    "teardown.test.mjs": "BD882826B547D5F7622BEF3543135E5B9EE0D5A7549621A37CBBF94BACAD1082",
+    "tsconfig.json": "8CCB374668FD064679269C925215B8DE12EADC12D687E7892578E7A0F7545558",
+    "typecheck.log": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+    "baseline\\main.js": "417E9C7181F9792CCAB013ED2BC48CA66AA05F169A8E8DF141A919554998AF62",
+    "proposed\\main.js": "4FDAC60B916527A7E0575F7F141E014A09313FD85C0F765844677EA8772BFBA2",
+    "baseline\\commands\\people.js": "61DBB52AF4C27D2DB75E0F6AD22296E150C88709C70610BB9F663EEC0387F559",
+    "baseline\\integration\\peopleStreets.js": "FB3AAE2AD293B902E53A6DC87BEEA8E4EA17BEA6BCD0419927229CA5468D526E",
+    "baseline\\integration\\popSync.js": "4F658ABC6153DB289F73C3E987CE20C9FFE86EBA07C9F78F096783BD7EB86443",
+    "baseline\\sim\\starter.js": "C343B6629D04C2121D2E13BF31A5941F5EFEE4C9459D5AC7C5D12A8E0FEA95E6",
+    "proposed\\commands\\people.js": "5AED36291ED5FC7F6649B4084A41C1954FBB4ED759B9E7204CBC845FA0792A9F",
+    "proposed\\integration\\creationBindings.js": "F334676FB356CA7532567FAA8D9BB5B1FE093CA594CCE725CC46036553A3FB52",
+    "proposed\\integration\\creationRuntime.js": "DF140DEF26668AAEB4619741875D494DE46C50B0E5B79DC14714153663F71553",
+    "proposed\\integration\\peopleStreets.js": "B0E2F279198203E015817104818FC4A7D52C30EADF96350C5B4CB58B67C180D0",
+    "proposed\\integration\\popSync.js": "ED93FC892FC19CC44DF865F98BF954058B7C5314D5961BDF36F0F13A767D58A7",
+    "proposed\\sim\\starter.js": "A9F3AB4DD36661E58DE9F8A89DD35627540D382056AAD442D556F4384EC8F532"
+  },
+  "productionPaths": [
+    "main.js",
+    "commands/people.js",
+    "integration/creationBindings.js",
+    "integration/creationRuntime.js",
+    "integration/peopleStreets.js",
+    "integration/popSync.js",
+    "sim/starter.js"
+  ],
+  "nativeAcceptance": false
+}

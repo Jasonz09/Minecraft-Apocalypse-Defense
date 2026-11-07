@@ -1,0 +1,49 @@
+/** Explicit completed-wall leaf-only policy. No old repair permission is reused.
+ * @param {KingdomStore} kingdomStore @param {ScriptEvent} event @param {number} index @param {boolean} confirm */
+async function repairSavedWallLeaves(kingdomStore,event,index,confirm){
+    const player=playerOf(event),loaded=kingdomStore.load(),civ=loaded.kingdom&&districtById(loaded.kingdom,districtIdFor(index))?.civ;
+    if(!player||player.dimension.id!=="minecraft:overworld"||civ?.status!=="complete"||civ.dimension!==player.dimension.id){reply(["Leaf-only wall repair needs a completed Overworld source and an Overworld player. Nothing changed."],event);return;}
+    const token=reserveJob("civ-wall-leaf-repair");if(!token){reply([runningPhrase()],event);return;}
+    try{
+        const cancelled=()=>token.cancelled||activeToken()!==token||player.isValid===false||player.dimension.id!=="minecraft:overworld";
+        const guard=createWallLeafSourceGuard(world,()=>kingdomStore.load().kingdom,cancelled);
+        /** @param {Generator<void,any,void>} generator @returns {Generator<void,any,void>} */
+        function* checked(generator){for(;;){guard.assert();const step=generator.next();guard.assert();if(step.done)return step.value;yield;}}
+        const sources=[];let master,record;
+        const districts=/** @type {any[]} */(loaded.kingdom.districts).filter(d=>d.civ!==undefined);
+        if(districts.length<1||districts.length>5)throw new Error("Unsupported source set; every existing civilization must be verified.");
+        for(const n of DISTRICT_INDEXES){
+            const metaKey=n===1?"civ:jobs:meta":`civ:jobs:d${n}:meta`;
+            if(world.getDynamicProperty(metaKey)!==undefined&&!districts.some(d=>d.id===districtIdFor(n)))throw new Error("An original saved queue has no completed kingdom source; preserve it.");
+        }
+        for(const district of districts){
+            const n=Number(String(district.id).replace(/^district-/,""));
+            if(!DISTRICT_INDEXES.includes(n)||district.id!==districtIdFor(n)||district.civ?.status!=="complete"||district.civ.dimension!==player.dimension.id)throw new Error("All existing neighboring city sources must be completed in this dimension.");
+            reply([`Verifying ${districtTitle(n)}'s original source for leaf-only wall repair (read-only)...`],event);
+            const saved=await runJobAsync(token,checked(loadSavedRunSteps(district.civ,newOps(),n)));
+            if(cancelled()||!saved)return;
+            if(!saved.ok||saved.queue.state!=="complete")throw new Error(saved.ok?"An original source queue is incomplete.":saved.reasons.join("; "));
+            const serial=JSON.stringify(saved.plan);if(master&&JSON.stringify(master)!==serial)throw new Error("Neighbor belongs to a different master plan.");
+            master=saved.plan;if(n===index)record=saved.record;
+            sources.push({record:saved.record,civ:district.civ});
+        }
+        guard.assert();if(!record||!master)throw new Error("Selected verified source is absent.");
+        const meta=JSON.parse(String(world.getDynamicProperty("civ:plan:meta")));
+        if(!/^[a-f0-9]{8}$/.test(String(meta.hash)))throw new Error("Verified master envelope hash is absent.");
+        const areas=protectedRects(kingdomStore.load().kingdom,1,master,WRITE_PROTECT_GROW,index);
+        const permutations=new Map(LEAF_TRIM_MASONRY_IDS.map(id=>[id,BlockPermutation.resolve(id)]));
+        const native=createWallLeafBlockAdapter(player.dimension,permutations);
+        const input={candidates:[],index,checksum:civ.checksum,masterHash:meta.hash,dimension:player.dimension.id,sources:sources.map(s=>({...s,masterHash:meta.hash}))};
+        const context={...native,isProtected:(/** @type {number} */x,/** @type {number} */z)=>inProtectedArea(areas,x,z),sourcesCurrent:()=>guard.current(),cancelled};
+        const result=await runJobAsync(token,wallLeafRepairSteps(input,context,world,{confirm,policy:LEAF_TRIM_POLICY}));
+        if(!result)return;
+        reply([`Leaf-only wall batch: ${result.state}; verified replacements ${result.verifiedChanges}, write attempts ${result.writeAttempts}.`,
+            `Admitted/inspected batch targets ${result.rows.length}; retained receipt ${result.journalKey??"none"}. Source city completion and ordinary queues are unchanged.`,
+            ...(result.globalSurvey?[`Loaded survey only: ${result.globalSurvey.surveyed}/${result.globalSurvey.targets}; unreadable walls ${result.globalSurvey.unloaded}; refused observed tree targets ${result.globalSurvey.refused}. This is not a complete wall audit.`]:[]),
+            ...result.rows.slice(0,24).map((/** @type {any} */r)=>`${r.target.x},${r.target.y},${r.target.z}: ${r.state}${r.reason?" - "+r.reason:""}`),
+            ...(result.rows.length>24?[`Showing24/${result.rows.length} batch rows; use read-only leafpreview pages for the observed candidate list.`]:[]),
+            confirm?"Only exact proven leaf-to-wall replacements were attempted; refused/unreadable cells and unknown receipts remain untouched.":"Read-only preview: no block, property or chunk-hold changes. Append confirm to recheck and repair a fresh safe batch."] ,event);
+    }catch(error){if(!token.cancelled)reply(formatErrorLines("Leaf-only wall repair held",[String(error)]),event);}
+    finally{finishJob(token);}
+}
+

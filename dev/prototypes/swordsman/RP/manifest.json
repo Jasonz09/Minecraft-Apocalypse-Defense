@@ -1,0 +1,29 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "CA Swordsman - Isolated Trial RP",
+    "description": "Original human guard model, sword and pixel texture.",
+    "uuid": "bb302c84-023f-43e8-bef8-87349accc27e",
+    "version": [
+      0,
+      1,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      26,
+      20
+    ]
+  },
+  "modules": [
+    {
+      "type": "resources",
+      "uuid": "4ddac28a-99ea-458c-a615-fcb7bbd64386",
+      "version": [
+        0,
+        1,
+        0
+      ]
+    }
+  ]
+}

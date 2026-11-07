@@ -1,7 +1,6 @@
 /**
- * The Commander's Ledger item: a VANILLA book, renamed and given lore, identified by a marker
- * dynamic property. A custom item would need a resource pack for its texture and name, so the
- * Ledger avoids one (see docs/LEDGER_PLAN.md).
+ * The Commander's Ledger item: a custom nonstackable book, renamed and given lore, identified by a marker
+ * dynamic property. It uses the vanilla book icon and a literal display name, so no resource pack is required.
  *
  * This module takes the ItemStack class and the lock-mode enum as arguments, so it never imports
  * `@minecraft/server` and runs offline. The runtime passes the real classes in.
@@ -10,7 +9,8 @@
 import { LEDGER_TEXT, sanitize } from "./text.js";
 
 export const LEDGER_ITEM = Object.freeze({
-    typeId: "minecraft:book",
+    // Dynamic properties require a nonstackable item, even when a stack contains only one item.
+    typeId: "civapoc:ledger",
     /** Dynamic property that marks a stack as the Ledger. Identity is typeId plus this marker. */
     marker: "ca:ledger",
     nameTag: "Commander's Ledger",

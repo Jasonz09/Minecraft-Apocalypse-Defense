@@ -873,6 +873,50 @@ test("even a kingdom that loses every district keeps every district record and e
     }
 });
 
+test("the hour's report names the attack it resolved, at the numbers the fight began with", async () => {
+    const { advanceKingdomStep } = await loadModule("sim", "tick.js");
+    const kingdom = kingdomAt(SEED);
+    const district = districtById(kingdom, "district-1");
+    district.assault = 26;
+    district.security = "alert";
+
+    const report = advanceKingdomStep(kingdom);
+    assert.deepEqual(report.problems, [], "the step was accepted");
+
+    const attack = report.attacks.find((entry) => entry.districtId === "district-1");
+    assert.ok(attack, "a district that fought this hour is named in the report");
+    assert.equal(attack.name, district.name, "the report carries the name as well as the id");
+    assert.ok(attack.assault >= 26, `the reported assault is the fight's opening strength, got ${String(attack.assault)}`);
+
+    const saved = districtById(kingdom, "district-1");
+    assert.ok(saved.assault < attack.assault, "the saved state has already resolved the fight down to survivors, which is why the report is needed");
+
+    // The same step read from the save alone says "nothing is happening": this is the reading that starved the
+    // physical siege layer for the whole 2026-10-29/30 session.
+    const alone = war.runWarStep(kingdomAt(SEED), []);
+    assert.ok(Array.isArray(alone), "runWarStep still returns plain event strings to every existing caller");
+});
+
+test("advanceKingdom carries the hour's attacks up, because that is the report the drivers are handed", async () => {
+    // The step-level report was proven above, but `advanceKingdom` is what `simulationLoop.js` calls, and it
+    // aggregated `events` while dropping `attacks` - so every physical driver was told there was no fight.
+    const { advanceKingdom } = await loadModule("sim", "tick.js");
+    const kingdom = kingdomAt(SEED);
+    const district = districtById(kingdom, "district-1");
+    district.assault = 26;
+    district.security = "alert";
+
+    const report = advanceKingdom(kingdom, 1);
+    assert.equal(report.ran, 1, "the hour was accepted");
+    assert.ok(Array.isArray(report.attacks), "the report always carries an attacks list");
+    const attack = report.attacks.find((entry) => entry.districtId === "district-1");
+    assert.ok(attack, "the district that fought is named in the runtime's own report");
+    assert.ok(attack.assault >= 26, `the opening strength is carried, got ${String(attack.assault)}`);
+
+    const quiet = advanceKingdom(kingdomAt(SEED), 0);
+    assert.deepEqual(quiet.attacks, [], "no step ran, so nothing was fought and the field is still a list");
+});
+
 test("sim/war.js and sim/evacuation.js import nothing from the Minecraft runtime", () => {
     const runtimeImport = /(^|\n)\s*import\s[^;\n]*from\s*["']@minecraft\/server["']|(?:^|\n)\s*import\s*["']@minecraft\/server["']/;
     for (const relativePath of ["sim/war.js", "sim/evacuation.js"]) {

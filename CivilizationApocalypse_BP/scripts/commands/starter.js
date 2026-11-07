@@ -2,6 +2,8 @@ import { STARTER, STARTER_EVENT_IDS, SCRIPT_EVENT_NAMESPACE } from "../config.js
 import { system, world } from "@minecraft/server";
 import { createJobStore, JOB_PREFIX } from "../civ/jobs.js";
 import { createPlanStore, PLAN_PREFIX } from "../civ/planstore.js";
+import { decodeFarmLightingJournal, farmLightingReleaseReadiness, FARM_LIGHT_STATE_PREFIX } from "../civ/farmfixtures.js";
+import { unitsOfGate, validateGateLinks } from "../civ/gatelink.js";
 import { GATE_RUNTIME, readGateRecord } from "../integration/gateAdapter.js";
 import { activeKind, isBusy } from "../integration/districtBuilder.js";
 import { getProgress } from "../integration/civProgress.js";
@@ -28,7 +30,8 @@ let registered = false;
  *   kingdom: any,
  *   kingdomReason: any,
  *   keys: string[],
- *   gates: { status: string, units: number, overrides: string[], moving: string[] },
+ *   keysReadable: boolean,
+ *   gates: { status: string, units: number, overrides: string[], moving: string[], linksMissing: string[] },
  *   job: { present: boolean, pending: number, total: number, state: string, status: string },
  *   planPresent: boolean,
  *   planStoredKeys: boolean,
@@ -36,15 +39,35 @@ let registered = false;
  *   planningRunning: boolean,
  *   planningDescription: string | undefined,
  *   builtRequired: string[],
+ *   farmLighting: { ready: boolean, reasons: string[] },
  * }} StarterState
  */
 
 function allKeys() {
     try {
-        return typeof world.getDynamicPropertyIds === "function" ? [...world.getDynamicPropertyIds()] : [];
+        return typeof world.getDynamicPropertyIds === "function" ? [...world.getDynamicPropertyIds()] : undefined;
     } catch (error) {
-        return [];
+        return undefined;
     }
+}
+
+/** Read retained fixture journals without discarding incomplete or unknown state.
+ * @param {string[] | undefined} keys @param {any} kingdom */
+function farmLightingReport(keys,kingdom) {
+    const reasons=[];
+    for(const key of keys??[]) {
+        if(!key.startsWith(FARM_LIGHT_STATE_PREFIX))continue;
+        const index=Number(key.slice(FARM_LIGHT_STATE_PREFIX.length));
+        if(!/^[1-5]$/.test(key.slice(FARM_LIGHT_STATE_PREFIX.length))){reasons.push("unknown farm-lighting journal key");continue;}
+        try {
+            const raw=world.getDynamicProperty(key),decoded=decodeFarmLightingJournal(raw),ready=farmLightingReleaseReadiness(raw);
+            if(decoded.status!=="ok"||decoded.journal?.index!==index||!ready.ready)reasons.push(`district ${index}: ${ready.reason??decoded.reason??"farm-lighting journal does not match its district"}`);
+            const districts=kingdom?.districts?.filter((/** @type {any} */ district)=>district.id===`district-${index}`)??[];
+            const civ=districts.length===1?districts[0].civ:undefined;
+            if(civ?.status!=="complete"||!decoded.journal||civ.checksum!==decoded.journal.checksum||civ.dimension!==decoded.journal.dimension)reasons.push(`district ${index}: farm-lighting journal does not match its completed source plan and dimension`);
+        }catch(_error){reasons.push(`district ${index}: farm-lighting journal is unreadable`);}
+    }
+    return {ready:reasons.length===0,reasons};
 }
 
 /**
@@ -54,8 +77,8 @@ function allKeys() {
  * registry as an empty one - and "no gates" looks exactly like a clean, shippable world. An
  * unreadable registry must be a refusal, not an absence.
  */
-function gateReport() {
-    const empty = { status: "absent", units: 0, overrides: [], moving: [] };
+function gateReport(/** @type {any} */ kingdom) {
+    const empty = { status: "absent", units: 0, overrides: [], moving: [], linksMissing: [] };
     let raw;
     try {
         raw = world.getDynamicProperty(GATE_RUNTIME.registryKey);
@@ -79,8 +102,13 @@ function gateReport() {
     }
     const overrides = [];
     const moving = [];
+    const linksMissing = validateGateLinks(kingdom ?? { districts: [] });
+    const units = /** @type {any[]} */ (kingdom?.districts ?? []).flatMap((district) => /** @type {any[]} */ (district.gates ?? []).flatMap(unitsOfGate));
     for (const gate of parsed.gates) {
         const id = String(gate?.id ?? "?");
+        if ((gate?.role === "primary" || gate?.role === "companion") && !units.some((unit) => unit.planId === id && unit.spec !== undefined)) {
+            linksMissing.push(`${id} has no matching physical link in the kingdom`);
+        }
         if (gate?.mode !== undefined && gate.mode !== "auto") {
             overrides.push(`${id} (mode '${String(gate.mode)}')`);
         }
@@ -91,7 +119,7 @@ function gateReport() {
             moving.push(`${id} -> ${String(record.to)}`);
         }
     }
-    return { status: "ok", units: parsed.gates.length, overrides, moving };
+    return { status: "ok", units: parsed.gates.length, overrides, moving, linksMissing };
 }
 
 /** A planning, survey or build session still holds the job slot - or owns the progress display. */
@@ -120,11 +148,11 @@ function jobSummary() {
 }
 
 /** The plan is only 'present' when it can actually be read: a corrupt blob ships an unplanned city. */
-function planSummary() {
+function planSummary(/** @type {string[] | undefined} */ keys) {
     const loaded = createPlanStore(world, { prefix: PLAN_PREFIX }).loadPlan();
     return {
         readable: loaded.status === "ok",
-        storedKeys: allKeys().some((key) => key.startsWith(`${PLAN_PREFIX}:`)),
+        storedKeys: (keys ?? []).some((key) => key.startsWith(`${PLAN_PREFIX}:`)),
         status: String(loaded.status),
     };
 }
@@ -136,13 +164,14 @@ function planSummary() {
 function gather(kingdomStore) {
     const loaded = kingdomStore.load();
     const keys = allKeys();
-    const plan = planSummary();
+    const plan = planSummary(keys);
     const session = sessionReport();
     return {
         kingdom: loaded.kingdom,
         kingdomReason: loaded.reason,
-        keys,
-        gates: gateReport(),
+        keys: keys ?? [],
+        keysReadable: keys !== undefined,
+        gates: gateReport(loaded.kingdom),
         job: jobSummary(),
         planPresent: plan.readable,
         planStoredKeys: plan.storedKeys,
@@ -150,6 +179,7 @@ function gather(kingdomStore) {
         planningRunning: session.running,
         planningDescription: session.description,
         builtRequired: STARTER.builtRequired,
+        farmLighting: farmLightingReport(keys,loaded.kingdom),
     };
 }
 
@@ -177,9 +207,12 @@ function statusLines(state) {
 /** @param {StarterState} state */
 function verifyLines(state) {
     const described = describeStarterState(state);
-    const problems = starterArmProblems(state);
+    const problems = starterArmProblems({ ...state, allowArmed: true });
     const expected = STARTER_EXPECTED_POPULATION;
     const fresh = described.civilians === expected.civilians && described.soldiers === expected.soldiers;
+    if (described.armed === null) problems.push("the world is not armed");
+    if (!fresh) problems.push("the population has drifted from the published baseline");
+    if (described.wipeKeys.length > 0) problems.push("development state remains; do not export this world");
     return [
         "=== Starter verify ===",
         described.armed === null
@@ -238,7 +271,6 @@ export function registerStarterCommands(kingdomStore) {
 
         const notes = /** @type {string[]} */ ([]);
         const baseline = buildStarterBaseline({ current: state.kingdom, armedAtStep: 0, notes });
-        kingdomStore.save(baseline);
 
         let wiped = 0;
         const classified = describeStarterState(state);
@@ -247,8 +279,20 @@ export function registerStarterCommands(kingdomStore) {
                 world.setDynamicProperty(key, undefined);
                 wiped += 1;
             } catch (error) {
-                notes.push(`could not wipe ${key}: ${String(error)}`);
+                reply([`Arming stopped: could not wipe ${key}: ${String(error)}`, "The kingdom has not been reset or armed. Fix storage access and retry; do not export."], event);
+                return;
             }
+        }
+        const remaining = allKeys();
+        if (remaining === undefined || describeStarterState({ keys: remaining }).wipeKeys.length > 0) {
+            reply(["Arming stopped: development state cleanup could not be verified.", "The kingdom has not been reset or armed. Retry after fixing storage; do not export."], event);
+            return;
+        }
+        try {
+            kingdomStore.save(baseline);
+        } catch (error) {
+            reply([`Arming stopped: could not save the baseline: ${String(error)}`, "Do not export. Development state was cleaned; fix storage and retry."], event);
+            return;
         }
 
         reply(

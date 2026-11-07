@@ -1,0 +1,14 @@
+{
+  "scope": "Read-only localcode/installedprimarytypes/historicalnativeevidence; no current161movementresult inferred",
+  "pins": {
+    "CivilizationApocalypse_BP/scripts/integration/civilianTravel.js": "514D1F8D4AEAE51954194FF4F0BB75F82512F0E19A762E483828F1D2F0FF7DF7",
+    "CivilizationApocalypse_BP/scripts/people/travel.js": "BA1963B4F31EA33E998D0D1875AAC8F4CBD4542CEED44C5C3A9F557391561034",
+    "CivilizationApocalypse_BP/scripts/main.js": "417E9C7181F9792CCAB013ED2BC48CA66AA05F169A8E8DF141A919554998AF62",
+    "node_modules/@minecraft/server/index.d.ts": "09349A6F6325AEB2B692656686AF52B498D45DEDC7E554A1BD11A877F946D4AF",
+    "node_modules/@minecraft/server/package.json": "0B178BFC2A6564AC487CD86972211B4E13667A3E954E71BD69616C1B1B4DD46F",
+    "dist/native-civilian-WORK-trace-20261106.json": "44A9DC4604370A2DED7FBF7C01BEF4111CFEDE01C0332D196BD95FD4A8FE51B5",
+    "dist/native-civilian-cadence1-HOME-20261106.json": "95510C6C608B014AA4B266836E97E0867B63A71FCAE4F4029397E9269D5C29E6",
+    "dist/native-civilian-DAYTIME-setup-refusals-20261106.json": "D46EC5D08F3B01B1B0BB481D1DEFFFC12589F2ED3F941A581A31B4B5B629A0DA"
+  },
+  "pending": "Cadence1 HOME negative, daytime setup refusals; WORK/return untested. Closed161 whole-session backup/log/source audit verified; no source changes."
+}

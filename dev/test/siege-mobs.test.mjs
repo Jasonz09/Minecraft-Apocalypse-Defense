@@ -8,8 +8,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-    blockState, builder, civCommands, clearTrees, dimension, entityList, fileUrl, freshImport, load, mc, reloadWorld,
-    resetSiegeWorld, savedKingdom, setSurface, siege, siteDistrict, square, store, storeMasterPlan, threaten, withTag,
+    blockState, builder, canopyOver, civCommands, clearTrees, dimension, entityList, fileUrl, freshImport, groundYAt, load, mc,
+    reloadWorld, resetSiegeWorld, savedKingdom, setSurface, siege, siteDistrict, square, store, storeMasterPlan, threaten, withTag,
 } from "../lib/siegefixture.mjs";
 
 const siegeMobs = await load("integration", "siegeMobs.js");
@@ -19,8 +19,8 @@ const tick = await load("sim", "tick.js");
 const kingdomState = await load("kingdom", "state.js");
 const districtBuilder = await load("integration", "districtBuilder.js");
 
-const { createSiegeDriver, SIEGE_TAG, SIEGE_DEFAULTS, SIEGE_REFUSED_TYPES, siegeTagFor, bandFor, spawnableType, attackerTypeFor, physicalCentreOf, columnAt } = siegeMobs;
-const { armInvasionDirector, createInvasionState, invasionThreatOf, isInvasionEnabled } = director;
+const { createSiegeDriver, SIEGE_TAG, SIEGE_DEFAULTS, SIEGE_REFUSED_TYPES, siegeTagFor, bandFor, spawnableType, attackerTypeFor, physicalCentreOf, bearingToward, preferredApproachesOf, columnAt } = siegeMobs;
+const { armInvasionDirector, createInvasionState, invasionThreatOf, isInvasionEnabled, waveInFieldOf } = director;
 
 const HALF = 24;
 const DISTRICT_IDS = ["district-1", "district-2", "district-3", "district-4", "district-5"];
@@ -133,6 +133,36 @@ test("a contested district gets attackers outside its wall, tagged and typed, an
     assert.equal(driver.status().removed, 0);
 });
 
+test("the hour's report is what arms the band: the saved assault is already spent when the driver runs", () => {
+    builtWorld();
+    // The war step fought this hour and resolved it: the save reads peaceful, exactly as the live world did at
+    // every hour boundary of the 2026-10-29/30 session, while the report says what happened.
+    assert.equal(savedKingdom().districts[0].assault, 0, "the saved district is at peace, as the boundary state always is");
+    const driver = createSiegeDriver();
+    const runtime = runtimeWith(driver);
+
+    hour(runtime, { ran: 1, attacks: [{ districtId: "district-1", name: "Hearthgate", assault: 12 }] });
+
+    const band = withTag(SIEGE_TAG);
+    assert.equal(band.length, 3, "assault 12 at four raider-equivalents an attacker is three attackers");
+    assert.ok(band.every((mob) => mob.tags.includes(siegeTagFor("district-1"))), "they belong to the district the report named");
+    assert.equal(savedKingdom().invasion.enabled, true, "the reported attack armed the director, so the next hours keep a wave");
+    assert.equal(savedKingdom().districts[0].assault, 0, "the driver did not write an assault back into the kingdom");
+    assert.match(runtime.statusLines().join("\n"), /siege: 1 hour\(s\), 3 entity change\(s\)/, "the runtime counted the attack");
+});
+
+test("the band is sized by the wave when the books are already at zero, and by nothing at all when neither asks", () => {
+    const district = { id: "district-1", assault: 0 };
+    const wave = { id: "W0007", kind: "raid", districtId: "district-1", strike: 0, strikes: [{ counts: { raider: 4, archer: 2, brute: 0 } }] };
+    const asked = bandFor(district, wave, SIEGE_DEFAULTS);
+    assert.equal(asked.desired, 6, "four raiders and two archers in the strike are six attackers");
+    assert.equal(asked.assault, 0, "and the assault it reports is the one on the books, not the wave's count");
+    assert.equal(bandFor(district, { ...wave, districtId: "district-2" }, SIEGE_DEFAULTS).desired, 0, "another district's wave asks nothing here");
+    assert.equal(bandFor(district, { ...wave, strikes: [] }, SIEGE_DEFAULTS).desired, 0, "an empty strike asks nothing either");
+    assert.equal(bandFor(district, null, SIEGE_DEFAULTS).desired, 0, "peace with no wave is zero, not the clamp's floor of one");
+    assert.equal(bandFor({ id: "district-1", assault: 9 }, null, SIEGE_DEFAULTS).desired, 3, "assault alone still sizes the band");
+});
+
 test("a breached district and a huge force: the caps hold and the brute joins the band", () => {
     const sites = [{ x: 0, z: 0 }, { x: 200, z: 0 }, { x: -200, z: 0 }];
     builtWorld({ sites });
@@ -201,24 +231,70 @@ test("the same number of attackers goes away when the attack is repelled, and th
     assert.match(driver.status().notes.join("\n"), /sent away: no district is under attack/);
 });
 
-test("a withdrawal mid-wave sends the band away and leaves the director armed", () => {
+test("a wave with nothing left in its strikes asks for no band at all", () => {
     builtWorld();
     threaten("district-1", { assault: 9, security: "contested" });
     const driver = createSiegeDriver();
     driver.onHour(context());
     assert.ok(withTag(SIEGE_TAG).length > 0);
 
-    // a wave in progress: the threat on the ground is gone, but the plan is not finished
+    // The band in the field is what asks for attackers, not the wave record: a record with no units in its strikes
+    // must not be read as "at least one" by the clamp that keeps a real band standing.
     const kingdom = savedKingdom();
     kingdom.invasion.phase = "assault";
-    kingdom.invasion.wave = { id: "W0001", kind: "raid", districtId: "district-1" };
+    kingdom.invasion.wave = { id: "W0001", kind: "raid", districtId: "district-1", strike: 0, strikes: [], delivered: {} };
     kingdom.districts[0].assault = 0;
     kingdom.districts[0].security = "alert";
     store.save(kingdom);
 
     driver.onHour(context());
-    assert.equal(withTag(SIEGE_TAG).length, 0, "no raiders on the ground means no attackers standing at the wall");
+    assert.equal(withTag(SIEGE_TAG).length, 0, "a wave that asks for nobody stands nobody at the wall");
     assert.equal(savedKingdom().invasion.enabled, true, "a half-delivered wave is not cancelled by a lull");
+});
+
+test("a wave in the field keeps its band standing after the war step has already spent the assault", () => {
+    builtWorld();
+    threaten("district-1", { assault: 9, security: "contested" });
+    const driver = createSiegeDriver();
+    driver.onHour(context());
+    assert.equal(withTag(SIEGE_TAG).length, 3, "the fight stands three attackers at the wall");
+
+    // The hour boundary the live world always shows: the war step resolved the assault inside the hour, so the save
+    // reads peaceful - while the director's wave still has a strike to spend. The band is the wave's, now.
+    const kingdom = savedKingdom();
+    kingdom.districts[0].assault = 0;
+    kingdom.districts[0].security = "alert";
+    kingdom.invasion.phase = "assault";
+    kingdom.invasion.wave = {
+        id: "W0007",
+        kind: "raid",
+        districtId: "district-1",
+        strike: 0,
+        strikes: [{ counts: { raider: 4, archer: 2, brute: 0 }, strength: 6 }],
+        delivered: { raider: 0, archer: 0, brute: 0 },
+        outcome: null,
+        endedStep: null,
+    };
+    store.save(kingdom);
+
+    driver.onHour(context());
+    const band = withTag(SIEGE_TAG);
+    assert.equal(band.length, 6, "the three already at the wall stay, and the strike's count brings the rest up");
+    assert.equal(new Set(band.map((mob) => `${String(mob.x)},${String(mob.z)}`)).size, 6, "no two share a column");
+    assert.match(driver.status().districts[0].reason, /W0007 is still in the field, with no assault left on the books/,
+        "the hour says why the band is still there");
+    assert.equal(savedKingdom().districts[0].assault, 0, "no assault was invented to keep it: the wave is the threat");
+    assert.equal(savedKingdom().invasion.enabled, true, "and the director stays armed with its band");
+
+    // The wave is spent: a verdict and an end step. Now the band has nothing to stand for.
+    const ended = savedKingdom();
+    ended.invasion.wave.outcome = "repelled";
+    ended.invasion.wave.endedStep = 42;
+    ended.invasion.phase = "aftermath";
+    store.save(ended);
+
+    driver.onHour(context());
+    assert.equal(withTag(SIEGE_TAG).length, 0, "a spent wave takes its attackers with it, in the same hour");
 });
 
 test("an attacker tagged for a district the kingdom no longer has is sent away", () => {
@@ -352,6 +428,66 @@ test("the ground the attack comes across decides the attacker: husks on sand, dr
     assert.equal(inWater.every((mob) => mob.y <= 69), true, "they stand in the water, not on dry ground that is not there");
 });
 
+test("a jungle canopy over the approach does not hide the ground: the band forms up beneath it", () => {
+    // The live failure: every topmost block outside the wall is leaves, so a probe that stops at the air gap
+    // under the crown reads every approach column as unstandable and the siege logs "0 of 6 attackers".
+    builtWorld();
+    canopyOver(-90, -90, 90, 90);
+    threaten("district-1", { assault: 9, security: "contested" });
+    const areas = protectedAreas();
+    const driver = createSiegeDriver();
+    const before = blockState();
+    driver.onHour(context());
+
+    const band = withTag(SIEGE_TAG);
+    assert.equal(band.length, 3, "the whole band stands under the canopy, not none of it");
+    assert.doesNotMatch(driver.status().notes.join("\n"), /no more standable ground/, "the hour does not report an empty approach");
+    for (const mob of band) {
+        assertBesieger(mob, areas, { x: 0, z: 0 }, driver.config);
+        const floor = groundYAt(Math.floor(mob.x), Math.floor(mob.z));
+        assert.equal(mob.y, floor + 1, `${mob.id} stands on the forest floor, not the crown`);
+        assert.ok(mob.y < floor + 5, `${mob.id} is under the leaf line, where a player can see it`);
+    }
+    assert.deepEqual(blockState(), before, "seeing through the canopy still writes no block");
+});
+
+test("columnAt reads the forest floor under a canopy, and refuses when no floor is within the descent budget", () => {
+    /**
+     * @param {number} top highest leaf
+     * @param {number} canopy lowest leaf
+     * @param {number} ground forest floor
+     */
+    const layers = (top, canopy, ground) => ({
+        getTopmostBlock({ x, z }) {
+            return { location: { x, y: top, z }, typeId: "minecraft:jungle_leaves" };
+        },
+        getBlock({ x, y, z }) {
+            if (y > top) return { typeId: "minecraft:air" };
+            if (y >= canopy) return { typeId: "minecraft:jungle_leaves" };
+            if (y > ground) return { typeId: "minecraft:air" };
+            return { typeId: "minecraft:grass_block" };
+        },
+    });
+    // Leaves at 80, twelve blocks below them, floor at 68: the same shape as the caller-level test.
+    assert.deepEqual(
+        columnAt(layers(80, 77, 68), 0, 0, SIEGE_DEFAULTS),
+        { x: 0, y: 69, z: 0, water: false, surface: "minecraft:grass_block", class: "temperate" },
+        "the floor + 1 is the column, not the crown + 1",
+    );
+    // A crown at 200 over a floor at 0 is farther than the budget: no column, and no guessed height.
+    assert.equal(columnAt(layers(200, 200, 0), 0, 0, SIEGE_DEFAULTS), null, "an unreachable floor is a refusal");
+    // A column inside a solid mass has a topmost block but no open headroom above it.
+    const solid = {
+        getTopmostBlock({ x, z }) {
+            return { location: { x, y: 100, z }, typeId: "minecraft:stone" };
+        },
+        getBlock({ x, y, z }) {
+            return { typeId: "minecraft:stone" };
+        },
+    };
+    assert.equal(columnAt(solid, 0, 0, SIEGE_DEFAULTS), null, "no headroom is no column");
+});
+
 test("creeper, enderman and vex can never be selected, whatever a config or a threat asks for", () => {
     assert.deepEqual([...SIEGE_REFUSED_TYPES].sort(), ["minecraft:creeper", "minecraft:enderman", "minecraft:vex"], "the refusal list is in the code, not only in the prose");
     const hostile = createSiegeDriver({
@@ -388,6 +524,27 @@ test("creeper, enderman and vex can never be selected, whatever a config or a th
 /* ------------------------------------------------------------------ *
  * a district with no physical record
  * ------------------------------------------------------------------ */
+
+test("the approach bearing is the wall that faces the player", () => {
+    const centre = { x: 100, z: 100 };
+    assert.equal(bearingToward(centre, { x: 300, z: 100 }), "east");
+    assert.equal(bearingToward(centre, { x: 100, z: -40 }), "north");
+    assert.equal(bearingToward(centre, { x: 160, z: 40 }), "north-east");
+    assert.equal(bearingToward(centre, { x: 0, z: 160 }), "south-west");
+    assert.equal(bearingToward(centre, centre), undefined, "no direction to measure");
+    assert.equal(bearingToward(centre, { x: Number.NaN, z: 1 }), undefined, "a broken anchor is no direction");
+
+    const kingdom = {
+        districts: [
+            { id: "district-1", civ: { status: "complete", centre: { x: 100, z: 100 } } },
+            { id: "district-2", civ: { status: "complete", centre: { x: -500, z: 100 } } },
+            { id: "district-3" },
+        ],
+    };
+    assert.deepEqual(preferredApproachesOf(kingdom, [{ x: 400, z: 100 }]), { "district-1": "east", "district-2": "east" });
+    assert.deepEqual(preferredApproachesOf(kingdom, []), {}, "no player, no aim");
+    assert.deepEqual(preferredApproachesOf(kingdom, [{ x: Number.NaN, z: Number.NaN }]), {}, "a broken anchor aims nothing");
+});
 
 test("a district the pack has never physically built spawns nothing at all", () => {
     builtWorld([{ x: 0, z: 0 }]);
@@ -564,6 +721,25 @@ test("a lull in a wave in progress does not stand the director down; an ending d
     assert.equal(kingdom.invasion.phase, "quiet", "the record is kept, not wiped, so it can be armed again");
 });
 
+test("the wave in the field is the one with no verdict: a spent wave is numbers again", () => {
+    const state = createInvasionState(7, true);
+    assert.equal(waveInFieldOf(state), null, "a director with no wave has no band in the field");
+    assert.equal(waveInFieldOf(createInvasionState(7, false)), null, "and a disabled record never has one");
+
+    state.phase = "assault";
+    state.wave = { id: "W0001", districtId: "district-1", strike: 0, outcome: null, endedStep: null };
+    assert.equal(waveInFieldOf(state), state.wave, "a marching wave is the band in the field");
+
+    state.wave.outcome = "repelled";
+    assert.equal(waveInFieldOf(state), null, "a verdict means it is spent, even while the record waits for quiet");
+
+    state.wave = { id: "W0002", districtId: "district-1", strike: 0, outcome: null, endedStep: 88 };
+    assert.equal(waveInFieldOf(state), null, "an end step is a verdict by another name: nothing is in the field");
+
+    state.wave = { id: "W0003", districtId: "district-1", strike: 0 };
+    assert.equal(waveInFieldOf(state), state.wave, "a wave written without either field is still live, not spent");
+});
+
 test("hours of the real tick arm the director by themselves and it starts planning waves", () => {
     builtWorld({
         sites: [
@@ -617,4 +793,43 @@ test("hours of the real tick arm the director by themselves and it starts planni
     assert.equal(overCap, 0, "the kingdom-wide cap held in every one of those hours");
     assert.equal(entityList().every((one) => one.tags.includes(SIEGE_TAG)), true, "every entity in the world is one we tagged");
     assert.equal(blockState().writes, 0, "and 420 hours of siege wrote not one block");
+});
+
+test("a column the engine has released reads as unreadable ground, not as an hour-ending throw", () => {
+    // In the live world `getTopmostBlock` still answers for a chunk the engine has released; reading the block it
+    // points at throws LocationInUnloadedChunkError. One levy post 80 blocks from the player used to throw out of
+    // the orders driver's hour, and the siege's own probe had the same hole under it.
+    const released = () => {
+        throw new Error("LocationInUnloadedChunkError: Trying to access location (-259.0, 70.0, -585.0) which is not in a chunk currently loaded and ticking");
+    };
+    const topThrows = {
+        getTopmostBlock() {
+            return {
+                get typeId() {
+                    return released();
+                },
+                get location() {
+                    return released();
+                },
+            };
+        },
+        getBlock() {
+            throw new Error("a column whose top cannot be read must not be walked down");
+        },
+    };
+    assert.equal(columnAt(topThrows, -259, -585, SIEGE_DEFAULTS), null, "an unreadable top is no column");
+
+    const belowThrows = {
+        getTopmostBlock() {
+            return { location: { y: 70 }, typeId: "minecraft:oak_leaves" };
+        },
+        getBlock() {
+            return {
+                get typeId() {
+                    return released();
+                },
+            };
+        },
+    };
+    assert.equal(columnAt(belowThrows, -259, -585, SIEGE_DEFAULTS), null, "and so is a clearable top over an unreadable block");
 });

@@ -1,0 +1,38 @@
+{
+  "status": "STAGING ONLY, no promotion during156fullverification",
+  "productionPath": "CivilizationApocalypse_BP/scripts/integration/civilianTravel.js",
+  "baselineSha256": "DB15747CE5C43F6338F3AA11DFEB42C220050C81032727630C0F8889C854A633",
+  "proposalSha256": "B03627C4140AACD26F43059D5C16712D880A4854C540324C5D0F429462C99F3F",
+  "sourceStillMatchesBaseline": true,
+  "functionalScope": "Body-clearance only: air plus exact short_grass/fern/tall_grass/large_fern IDs; footing/readbudget/identity/spawn/food/route rules unchanged",
+  "tests": {
+    "passed": 48,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 3375.6473,
+    "inherited": 17,
+    "new": 31,
+    "log": "dev/staging/civilian-travel-flora/focused.log"
+  },
+  "strictTypecheck": "Deferred while parent156fullrun active, no inherited typecheck claim",
+  "nativeCollisionAcceptance": false,
+  "originalNativeRefusalCauseEstablished": false,
+  "officialSources": [
+    {
+      "url": "https://learn.microsoft.com/en-us/minecraft/creator/reference/content/vanillalistingsreference/blocks?view=minecraft-bedrock-stable",
+      "supports": "Exact vanilla IDs and tall-plant upper_block_bit states, not a per-block collision proof"
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/minecraft/creator/reference/content/blockreference/examples/blockcomponents/minecraftblock_collision_box?view=minecraft-bedrock-stable",
+      "supports": "Collision component semantics only; not proof of built-in flora settings"
+    }
+  ],
+  "remainingGates": [
+    "Parent156full/native acceptance first",
+    "Source review and freshbaseassertions",
+    "Strict proposed-source TSC before integration",
+    "Native unchanged plants + safe footing + actual continuous motion/stop/no populationchanges",
+    "Centralfull and closed deploy if later promoted"
+  ]
+}

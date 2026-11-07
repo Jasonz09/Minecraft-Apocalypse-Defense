@@ -280,15 +280,16 @@ test("the offline core stays free of the Minecraft runtime, and the adapters are
     }
     assert.ok(pureChecked >= 30, `expected the whole pure core to be scanned, only saw ${String(pureChecked)} files`);
 
-    // commands/args.js is pure by design; everything else under the runtime dirs must
-    // genuinely be a runtime file, otherwise it has been mis-placed out of the core.
+    // These explicit boundaries accept runtime capabilities by injection. They must
+    // remain usable without importing the engine; every other runtime file imports it.
+    const injectedBoundaries = new Set(["commands/args.js", "commands/military.js", "integration/militarySelectionStore.js", "integration/militaryLifecycleDiagnostics.js", "integration/civilianDestinations.js", "integration/roomKingdomReader.js"]);
     let runtimeChecked = 0;
     for (const dir of runtimeDirs) {
         for (const file of readdirSync(join(scriptsRoot, dir))) {
             if (!file.endsWith(".js")) continue;
             runtimeChecked += 1;
-            if (file === "args.js") {
-                assert.ok(!runtimeImport.test(readFileSync(join(scriptsRoot, dir, file), "utf8")), "args.js must stay runnable without the runtime");
+            if (injectedBoundaries.has(`${dir}/${file}`)) {
+                assert.ok(!anyMinecraftImport.test(readFileSync(join(scriptsRoot, dir, file), "utf8")), `${dir}/${file} must keep its runtime capabilities injected`);
             } else {
                 assert.ok(runtimeImport.test(readFileSync(join(scriptsRoot, dir, file), "utf8")), `${dir}/${file} should be the boundary that touches @minecraft/server`);
             }

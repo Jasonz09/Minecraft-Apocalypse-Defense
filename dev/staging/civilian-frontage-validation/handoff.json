@@ -1,0 +1,54 @@
+{
+  "status": "Rootapproved and integrated after farm-pad rebase; active157source, installed156unchanged",
+  "proposedFiles": [
+    {
+      "productionPath": "CivilizationApocalypse_BP/scripts/people/destinations.js",
+      "baselineSha256": "077174ADAFBCBCDB11B5EBD00D41F55D8BFAC6FBFBE7FF52FA130863BE60D048",
+      "proposalSha256": "A84A530F8F032EC05A8411BC15EC7B7275D53076152061C77620ACB9508CBF4B"
+    },
+    {
+      "productionPath": "CivilizationApocalypse_BP/scripts/people/frontage.js",
+      "baselineSha256": null,
+      "proposalSha256": "0F6AF03D2050EAF67F35BC80E87BF9650D3AFC487564811543E8FC347D24E4ED"
+    },
+    {
+      "productionPath": "CivilizationApocalypse_BP/scripts/integration/civilianDestinations.js",
+      "baselineSha256": "E3F7C484C6D8629ABAF0CAAB2B061CD8B1810FF0A792153808FF3519C8B9A2FB",
+      "proposalSha256": "13AD5F3A7036901AA6E2C3602A255FD8E5019EEC49A3FA6432F9770F81A604B4"
+    }
+  ],
+  "source156FrozenManifestStillMatches": "Historicalstagingproof only; rootapproved nativefixes/frontage now change source, installed156retained",
+  "command": "/scriptevent civ:people travel destinations inspect district=1 building=BUILDING_ID",
+  "integration": "Existing travel destinations async branch and existingmain factory unchanged;3 proposed files only",
+  "limits": {
+    "nativeGetBlockCalls": 3,
+    "oneCandidate": true,
+    "oneSynchronousSnapshot": true,
+    "noYieldsDuringNativeReads": true,
+    "noWritesEntitiesHoldsTimersSteeringFoodCredit": true
+  },
+  "provenance": "Compiler-ownedWeakMap bound toexactlive record+complete metadata stamp; clones rejected; same building/lot/checksum/height retained; source/player/job checks before+after each nativegetter",
+  "validation": {
+    "focusedTests": 37,
+    "failures": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "log": "dev/staging/civilian-frontage-validation/focused.log",
+    "strictFullOverlayTypecheck": "PASS",
+    "scope": "One smallreal productiongeneratedplan plus injected nativecell/context tests; no Minecraftcontrol"
+  },
+  "remainingGates": [
+    "Parent centralfullverification",
+    "Closed install+hashverification",
+    "Native savedpoint inspection; blocked/unloaded/repeat/rejoin checks",
+    "One existingcivilian shorttrip acceptance before any routebinding/workcredit"
+  ],
+  "testShimsNotForPromotion": [
+    "scripts/civ/districtplan.js",
+    "scripts/structures/blueprints2.js"
+  ],
+  "validationOverlayNotForPromotion": true,
+  "centralIntegrationReceipt": "dist/civilian-frontage-integration-20261106.json",
+  "centralFocusedPassed": 77,
+  "centralStrictTypecheck": "PASS"
+}

@@ -1,3 +1,4 @@
+import { emptyDiplomacy, diplomacyProblems } from "../sim/diplomacy.js";
 import {
     DEFAULT_SEED,
     DISTRICT_DEFAULTS,
@@ -92,8 +93,8 @@ export function makeDistrict(id, name, civilians, soldiers, neighbors, gateTarge
 }
 
 /**
- * Shared constructor for a v2 kingdom. Used both for a brand new world and for
- * upgrading a v1 save, so the two paths can never drift apart.
+ * Shared established-district constructor, retaining its historical v2 export name.
+ * Builds the current save format; registered migrations preserve intermediate versions.
  *
  * @param {{ name?: string, districts?: { id: string, name: string, civilians: number, soldiers: number }[], seed?: number }} input
  */
@@ -142,6 +143,7 @@ export function createV2Kingdom(input) {
             garrisonRequirement: 20 + index * 5,
             surveyProgress: 0,
         })),
+        diplomacy: emptyDiplomacy(),
         battles: [],
         log: [],
     };
@@ -504,6 +506,7 @@ export function findValidationProblems(value) {
         }
     }
 
+    problems.push(...diplomacyProblems(value.diplomacy,value.step,districtIds));
     return problems;
 }
 

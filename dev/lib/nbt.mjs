@@ -41,6 +41,23 @@ function readString(view, cursor) {
     return text;
 }
 
+/**
+ * A 64-bit integer, exactly. Values that fit a safe integer come back as `number`; larger ones
+ * come back as `BigInt`. Throwing instead would refuse the whole file over one field - a real
+ * 1.26 world seed is -5939671584205120000, and that must not hide the spawn and generator next
+ * to it - while a rounded Number would silently misreport it.
+ * @param {number} low unsigned low 32 bits
+ * @param {number} high signed high 32 bits
+ * @returns {number | bigint}
+ */
+function longValue(low, high) {
+    const approximate = high * 4294967296 + low;
+    if (Number.isSafeInteger(approximate)) {
+        return approximate;
+    }
+    return BigInt(high) * 4294967296n + BigInt(low);
+}
+
 /** Scalar payloads. Arrays are decoded in readValue, where their length prefix is consumed. */
 function readPayload(view, cursor, type) {
     switch (type) {
@@ -60,12 +77,7 @@ function readPayload(view, cursor, type) {
             const low = view.getUint32(cursor.value, true);
             const high = view.getInt32(cursor.value + 4, true);
             cursor.value += 8;
-            // Level heights, seeds and times fit comfortably; anything beyond 2^53 is flagged.
-            const value = high * 4294967296 + low;
-            if (!Number.isSafeInteger(value)) {
-                throw new Error(`64-bit value ${String(value)} is outside JavaScript's safe integer range`);
-            }
-            return value;
+            return longValue(low, high);
         }
         case TAG.float: {
             const value = view.getFloat32(cursor.value, true);
@@ -116,7 +128,7 @@ function readValue(view, cursor, type) {
         if (count < 0 || cursor.value + count * stride > view.byteLength) {
             throw new Error(`array of ${String(count)} elements overruns the buffer`);
         }
-        /** @type {number[]} */
+        /** @type {(number | bigint)[]} */
         const out = [];
         for (let i = 0; i < count; i += 1) {
             if (type === TAG.byteArray) {
@@ -126,11 +138,7 @@ function readValue(view, cursor, type) {
             } else {
                 const low = view.getUint32(cursor.value, true);
                 const high = view.getInt32(cursor.value + 4, true);
-                const value = high * 4294967296 + low;
-                if (!Number.isSafeInteger(value)) {
-                    throw new Error(`64-bit array element ${String(value)} is outside JavaScript's safe integer range`);
-                }
-                out.push(value);
+                out.push(longValue(low, high));
             }
             cursor.value += stride;
         }
@@ -192,8 +200,10 @@ function encodeInt(value) {
 }
 
 function encodeLong(value) {
-    const low = value >>> 0;
-    const high = Math.floor(value / 4294967296) | 0;
+    // BigInt keeps a test fixture's beyond-2^53 seed exact; the Number path stays bit-for-bit as before.
+    const exact = typeof value === "bigint" ? value : BigInt(Math.trunc(value));
+    const low = Number(exact & 0xffffffffn);
+    const high = Number((exact >> 32n) & 0xffffffffn);
     return [...encodeInt(low), ...encodeInt(high)];
 }
 

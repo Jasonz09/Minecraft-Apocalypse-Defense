@@ -1,0 +1,58 @@
+{
+  "utc": "2026-11-07T02:08:27.675711+00:00",
+  "scope": "Independent source/pin review +tinybaseline +actual proposed schema3/store tests; no main/deploy/UI/full/heavy tests",
+  "result": "No blocker found in cache helper/proposed adapter delta",
+  "candidateManifestSha256": "052CE3C101CEE2516FCA2D348F22F9F90C74A28797E523F15E3CF2537D52B210",
+  "candidateFiles": [
+    {
+      "source": "dev/staging/room-kingdom-reader-cache/proposed/CivilizationApocalypse_BP/scripts/commands/civ.js",
+      "target": "CivilizationApocalypse_BP/scripts/commands/civ.js",
+      "sha256": "6850D8FC7935D8BE691B8EE5FE2C1CF57E87DA33AAB25AA67329629C210D6063",
+      "baselineSha256": "B0E0A19CADC9C39AAF7D0DE453664AE763B37FB6E1AC8310C0295DCAABBA20EE"
+    },
+    {
+      "source": "dev/staging/room-kingdom-reader-cache/proposed/CivilizationApocalypse_BP/scripts/integration/roomKingdomReader.js",
+      "target": "CivilizationApocalypse_BP/scripts/integration/roomKingdomReader.js",
+      "sha256": "8A1F1A9BDD4CBF88858859F47058E0B4EFD18542FE98E0E6DFE719209E8721D1",
+      "baselineSha256": null
+    }
+  ],
+  "baselineFocused": {
+    "tests": 9,
+    "pass": 9,
+    "fail": 0,
+    "durationMs": 586.0935,
+    "log": "focused-baseline.log",
+    "logSha256": "50EBFC7981A49A2194BFFD6965A51C01C62ED1ED701F0923E517D261EFEA1A87"
+  },
+  "schema3Focused": {
+    "tests": 11,
+    "pass": 11,
+    "fail": 0,
+    "durationMs": 94.4283,
+    "log": "schema3-extension-fixed.log",
+    "logSha256": "8468B082FE17A376BAC59DB51D882297C9A199E11350A7E9EDB0F41281CBDE15",
+    "testSha256": "1758DD9D7B81A4BFBECF5FCD48BCCF7CE51451E7BB16246F15523A595EBA0950",
+    "dependencies": {
+      "dev\\staging\\diplomacy-roadmap\\runtime\\CivilizationApocalypse_BP\\scripts\\kingdom\\store.js": "2A899E946C031AFE8A1C753730EE97018ADD920FE9A9D5F98D20242B9EDDE20A",
+      "dev\\staging\\diplomacy-roadmap\\runtime\\CivilizationApocalypse_BP\\scripts\\kingdom\\state.js": "D86F68AE94D64A41437096E9FFB569E63148001B5F72A5FCA8603330F21F4ABD",
+      "dev\\staging\\diplomacy-roadmap\\runtime\\CivilizationApocalypse_BP\\scripts\\config.js": "5B6E5325C3EB32B6C41EB3456E39AB529FC96C11B69A62BCF4DC8080C6F8D816",
+      "dev\\staging\\diplomacy-roadmap\\runtime\\CivilizationApocalypse_BP\\scripts\\sim\\diplomacy.js": "FA6EC2F3418AB653E4898E07D4C322FAD13D0BEC7C4C20E0B6E0D1351488997E"
+    }
+  },
+  "review": [
+    "Every read executes fresh native kingdom getter before cache branch; exact raw string equality only; getter failure cannot return prior cached authority",
+    "Decoder is existing createKingdomStore.load through private exact-raw/read-key-only shim, no save/ensureInitial exposure or invocation",
+    "Only statusOK cached; every changed/rawtype/migrated/refused result redecodes; schema1/2 migrateeachcall underproposed3 withoutwrite",
+    "Iterativefreeze allplainJSON ownobject/arrayvalues including14000depth and__proto__data; no nativehandles/globalmutableauthority",
+    "Nativegetter reentry preserves raw/decode pairing; laterfreshbarrier seeschangedworldlikeoriginalstore",
+    "Exactadapterdiff onlyimport+commandlocalreader+readKingdom callback. Bothcurrent rawguards/selected/player/dimension/token/cancel/yields/getter/finalbarriers retained",
+    "Author baseline test covers475result/guardcount/nativepoints/fullrawcallsequence and samefirstcellcorruptionrefusal; independently rerun9PASS"
+  ],
+  "remaining": [
+    "Rootintegrationmust adapt extractedcommandharness dependencies and actually run itsroomcases; stagedtwofile proposal doesnotcontaintestharnessadaptation",
+    "No nativeperformance/memory/speed/cleanup acceptance claimed",
+    "Schema3crossproof boundsto above stageddependencyhashes; updateifproposalchanges"
+  ],
+  "rootFilesEdited": false
+}

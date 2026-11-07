@@ -1,0 +1,11 @@
+--- CivilizationApocalypse_BP\scripts\commands\civ.js
++++ CivilizationApocalypse_BP\scripts\commands\civ.js
+@@ -1438,7 +1438,7 @@
+         const native=createWallLeafBlockAdapter(player.dimension,permutations);
+         const input={candidates:[],index,checksum:civ.checksum,masterHash:meta.hash,dimension:player.dimension.id,sources:sources.map(s=>({...s,masterHash:meta.hash}))};
+         const context={...native,isProtected:(/** @type {number} */x,/** @type {number} */z)=>inProtectedArea(areas,x,z),sourcesCurrent:()=>guard.current(),cancelled};
+-        const result=await runJobAsync(token,wallLeafRepairSteps(input,context,world,{confirm,policy:LEAF_TRIM_POLICY}));
++        const result=await runJobAsync(token,wallLeafRepairSteps(input,context,world,{confirm,policy:LEAF_TRIM_POLICY,readTick:()=>system.currentTick}));
+         if(!result)return;
+         reply([`Leaf-only wall batch: ${result.state}; verified replacements ${result.verifiedChanges}, write attempts ${result.writeAttempts}.`,
+             `Admitted/inspected batch targets ${result.rows.length}; batch receipt key ${result.journalKey??"none"}. Source city completion and ordinary queues are unchanged.`,

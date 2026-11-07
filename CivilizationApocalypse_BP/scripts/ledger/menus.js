@@ -40,7 +40,7 @@ export function buildMenu(frame, kingdom, live = undefined) {
         case "expansion":
             return expansionMenu(frame, kingdom);
         case "diplomacy":
-            return diplomacyMenu(frame);
+            return diplomacyMenu(frame,kingdom);
         case "reports":
             return reportsMenu(frame, kingdom);
         case "policies":

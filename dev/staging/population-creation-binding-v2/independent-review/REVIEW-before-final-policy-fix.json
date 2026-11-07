@@ -1,0 +1,49 @@
+{
+  "utc": "2026-11-07T02:02:26.730619+00:00",
+  "decision": "BLOCK PROMOTION pending final current military policy guard after metadata proof; production activation/wiring also unreviewed",
+  "scope": "Independent read-only review and tiny actual-owner regressions; author frozen source untouched; no main edits/native/full suite",
+  "checkpointSha256": "B0E269D322D658C4A8EB7F39551B7D2D8B0B7016933808BD4D10A2ED26408097",
+  "allAuthorPinsMatch": true,
+  "pins": {
+    "bindings.mjs": "F334676FB356CA7532567FAA8D9BB5B1FE093CA594CCE725CC46036553A3FB52",
+    "proposed-popSync.js": "5C4BB8C05F6F22AB45CC16358B420D55969EBD228CC6EB40D676E3294BFC94A5",
+    "binding.test.mjs": "B094C4D3319D72C023547D0AF95866898A2F42F1080210D8C2E3C6A01E72F54C"
+  },
+  "normalFocused": {
+    "tests": 21,
+    "pass": 21,
+    "fail": 0,
+    "durationMs": 178.0012,
+    "log": "focused-final21.log"
+  },
+  "strictIsolatedTypecheck": {
+    "exitCode": 0,
+    "log": "typecheck-final21.log"
+  },
+  "oldBlockers": {
+    "missingIssuedRecord": "Fixed by exact indexed group membership, committed chunk count/hash and exact FAMILY keyset; missing/substituted keys refuse even with actor unloaded",
+    "staleRemovalTicket": "Fixed by WeakMap private one-use ticket binding exact header/raw/epoch/type/actor/generation/phase; epoch rewrite/changed phase/type refuse",
+    "futureNamespaceExistingIssuance": "Fixed by snapshot global namespace checks for every operation including retired-group issuance"
+  },
+  "fourWriteRecovery": "Header intent precedes chunk then pending record then final header. Recovery only accepts exact old/new chunk and exact provisional record. Never returns new birth ticket for recovered pending group. Crash/save/readback faults can conservatively strand but do not infer actor death. Foreign standby is preserved.",
+  "newBlocker": {
+    "area": "removeOne missing final beforeWrite after creationBindings.assertOwned",
+    "description": "Metadata getter inside assertOwned may change military selection after earlier beforeWrite. Native frames still match same actor, so removal occurs under stale policy; final action stamp catches only after deletion.",
+    "reproducer": "late-policy-race.test.mjs",
+    "log": "late-policy-race.log",
+    "actual": "selected actor removed after selection became absent; preservation safety assertion FAILS",
+    "required": "Repeat existing beforeWrite after all binding metadata, before final native frames/loaded proof. Preserve no binding reads after final proof and do not weaken native checks."
+  },
+  "remainingGates": [
+    "Fresh activation still uses privileged test callback; real private source-authenticated native verifier/main/streets/starter/export wiring absent in this reviewed stage.",
+    "Exact inventory scans every issued record on each snapshot; bounded2048records/4096keys but synchronous native API cost near cap is unmeasured. Does not establish native watchdog/performance acceptance.",
+    "Native invalid-handle readback may safely hold removal; no loaded-absence or missed-event rescue and no aggregate casualty debit.",
+    "No native/final production/full pipeline acceptance from these offline cases."
+  ],
+  "nativeIdentityFix": {
+    "ownerSha256": "439A0D795F37CDA3FB3F8BE06E960ABB9DAA267E70672D68D6DFB6DC6E57088F",
+    "originalReproducer": "late-removal-race-after-fix.log",
+    "passed": true,
+    "review": "All binding metadata work precedes repeated fresh native frames around final loaded-column proof. One-shot identity/tag/location changes refuse."
+  }
+}

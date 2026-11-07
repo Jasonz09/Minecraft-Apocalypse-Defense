@@ -36,7 +36,7 @@ const { POP_CURSOR_KEY, POP_SYNC_DEFAULTS, POP_CURSOR_MAX_BYTES } = await load("
 const { tagFor, classifyTags } = await load("population", "identity.js");
 const { groupIdOf, spotFor, parseGroupId } = await load("population", "groups.js");
 const poptharness = await import(pathToFileURL(join(projectRoot, "dev", "lib", "poptharness.mjs")).href);
-const { createPopWorld, chunkKeyOf } = poptharness;
+const { createPopWorld, chunkKeyOf, GROUND_Y } = poptharness;
 
 const HOMES = {
     "district-1": { x: 0, y: 70, z: 0 },
@@ -139,6 +139,25 @@ test("default: only the gated people driver may reach the population sync", () =
     };
     walk(scriptsRoot);
     const offenders = [];
+    // Selection/status consumers inspect pure group data; none may import the
+    // reconciliation entry point or population adapter. Permit exact named reads,
+    // not a blanket second population-creation door.
+    const readOnlyImports = {
+        "integration/militaryLifecycleDiagnostics.js": {
+            "identity.js": ["classifyTags", "isCanonicalFor"], "militarySelection.js": ["SWORDSMAN_TYPE"],
+        },
+        "commands/military.js": {
+            "identity.js": ["classifyTags"], "settings.js": ["POP_CURSOR_KEY"], "militarySelection.js": ["SWORDSMAN_TYPE"],
+        },
+        "integration/militarySelectionStore.js": {
+            "groups.js": ["buildGroupTable", "parseGroupId"], "reconcile.js": ["resolveConfig"],
+            "militarySelection.js": ["MILITARY_SELECTION_KEY", "SWORDSMAN_TYPE", "decodeMilitarySelection", "encodeMilitarySelection"],
+        },
+        "integration/peopleOrders.js": {
+            "groups.js": ["buildGroupTable"], "settings.js": ["POP_SYNC_DEFAULTS"],
+            "identity.js": ["classifyTags", "isCanonicalFor"], "militarySelection.js": ["militarySelectionPolicy"],
+        },
+    };
     for (const file of runtimeFiles) {
         const rel = file.slice(scriptsRoot.length + 1).split("\\").join("/");
         if (rel === "integration/popSync.js" || rel.startsWith("population/")) {
@@ -148,7 +167,16 @@ test("default: only the gated people driver may reach the population sync", () =
         // An import, not a mention: config.js and the runtime both *describe* the sync in a comment, and a
         // guarantee that turns on prose breaks the first time anyone documents it.
         if (IMPORTS_SYNC.test(source)) {
-            offenders.push(rel);
+            if(Object.hasOwn(readOnlyImports,rel)) {
+                assert.ok(!/import[^;]*from\s+["'][^"']*popSync[^"']*["']/.test(source),`${rel} must never import the population owner`);
+                const imports=[...source.matchAll(/import\s*\{([^}]+)\}\s*from\s*["'][^"']*population\/([^"']+)["']/g)];
+                assert.ok(imports.length>0,`${rel} must use explicit named pure imports`);
+                for(const [,bindings,module] of imports) {
+                    const allowed=readOnlyImports[rel][module];
+                    assert.ok(allowed,`${rel}: unreviewed population module ${module}`);
+                    for(const name of bindings.split(",").map(n=>n.trim().split(/\s+as\s+/)[0]))assert.ok(allowed.includes(name),`${rel}: ${name} must be reviewed as read-only`);
+                }
+            } else offenders.push(rel);
         }
     }
     // The old guarantee was "nothing imports it, so nothing runs". The sync is reachable now, so the guarantee has
@@ -296,6 +324,60 @@ test("a tag write refused by the engine rolls the just-created unit back, so no 
 });
 
 // ---- identity and the observation window -----------------------------------------------------------------------------
+
+test("a spawn reads the standing height at its own column, not the height of the post it offsets from", () => {
+    // The soldier band is twenty blocks along z from its post and carries the post's Y with it. On a shelf that
+    // is wrong by whatever the terrain gains in those twenty blocks (the live district is terraced), and a unit
+    // spawned at a stale height stands in a wall or in mid-air. The adapter must ask the world at the column it
+    // is about to use.
+    const pop = scenario({ kingdom: onlyDistrictOne(0, 10) });
+    const shelf = GROUND_Y + 6;
+    /** @param {{ x: number, z: number }} location */
+    const groundAt = (location) => (location.z >= 20 ? shelf : GROUND_Y);
+    const sloped = {
+        ...pop.dimension,
+        getTopmostBlock(/** @type {{ x: number, z: number }} */ location) {
+            return { typeId: "minecraft:grass_block", isValid: true, location: { x: location.x, y: groundAt(location), z: location.z } };
+        },
+        getBlock(/** @type {{ x: number, y: number, z: number }} */ location) {
+            return { typeId: Number(location.y) > groundAt(location) ? "minecraft:air" : "minecraft:grass_block", isValid: true };
+        },
+    };
+    const sync = createPopSync({ world: pop.world, dimension: sloped, homes: () => HOMES, enabled: true });
+    for (let tick = 1; tick <= 6; tick += 1) {
+        sync.reconcileOnce(tick);
+    }
+    const soldier = pop.snapshot().entities.find((entity) => entity.tags.includes(tagFor("district-1:sol:0")));
+    assert.ok(soldier, "the first garrison group has a representative");
+    assert.equal(soldier.y, shelf + 1, `the levy stands on its own column, got y=${String(soldier.y)} (planned ${String(GROUND_Y + 1)})`);
+    assert.ok(soldier.z >= 20, "and still on the soldier band it was planned for");
+});
+
+for (const obstruction of ["minecraft:water", "minecraft:stone", undefined]) {
+    test(`spawn guard: no measured standing spot (${String(obstruction)}) defers spawning and retries safely`, () => {
+        const pop = scenario({ kingdom: onlyDistrictOne(10, 0) });
+        const kingdomBefore = pop.storedKingdom();
+        let unsafe = true;
+        const dimension = {
+            ...pop.dimension,
+            getBlock(location) {
+                if (unsafe && location.y > GROUND_Y) {
+                    return obstruction === undefined ? undefined : { typeId: obstruction, isValid: true };
+                }
+                return pop.dimension.getBlock(location);
+            },
+        };
+        const sync = createPopSync({ world: pop.world, dimension, homes: () => HOMES, enabled: true, isChunkLoaded: () => true });
+        const refused = sync.reconcileOnce(1);
+        assert.ok(refused.actions.some((action) => action.op === "spawn"), "the reducer requested representatives");
+        assert.equal(pop.liveCount(), 0, "unverified positions never reach spawnEntity");
+        assert.ok(refused.skipped.filter((entry) => entry.action.op === "spawn").every((entry) => entry.reason === "no-safe-standing-spot"));
+        unsafe = false;
+        sync.reconcileOnce(2);
+        assert.ok(pop.liveCount({ ours: true }) > 0, "the same adapter retries when dry ground becomes readable");
+        assert.deepEqual(pop.storedKingdom(), kingdomBefore, "waiting does not consume population");
+    });
+}
 
 test("spawn guard: a representative that wandered outside the observation window is adopted, not duplicated", () => {
     const pop = scenario();

@@ -1,0 +1,42 @@
+{
+  "scope": "isolated schema-next creation binding; no production promotion",
+  "createdUtc": "2026-11-07T01:58:38.576040+00:00",
+  "focused": {
+    "tests": 21,
+    "pass": 21,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 177.0496
+  },
+  "strictTypecheck": {
+    "exitCode": 0,
+    "command": "npx.cmd tsc -p dev/staging/population-creation-binding-v2/tsconfig.json --noEmit"
+  },
+  "files": {
+    "bindings.mjs": "F334676FB356CA7532567FAA8D9BB5B1FE093CA594CCE725CC46036553A3FB52",
+    "proposed-popSync.js": "439A0D795F37CDA3FB3F8BE06E960ABB9DAA267E70672D68D6DFB6DC6E57088F",
+    "frozen-popSync.js": "9C0CF7C87FA092DA024EEB8F087C389CCC50013579E05AA772FE45737E0378A6",
+    "binding.test.mjs": "83FD7B7F20D238815626D5A0E80238BCC1B02F9BED9649A23BD2D6FB3C324697",
+    "owner.patch": "B29AEAFA026AFC4F5CC63B782347FBB9AE29EAC11EFB74CA23FF0235AA1C1F33",
+    "tsconfig.json": "7A50F7429D415B8BA4BECDED94C09FFB931C8F305582368A4EE251FE9C0D76F8",
+    "README.md": "1B4FB2EB3C4C370E91158DB464B629463C4991A7B04511A120003F8950B0E421",
+    "focused-final.log": "C786E3FB5FD4E116AAA5FEB0F935A77D262C884104FB4BCCF46DD44DBD84C033",
+    "typecheck-final.log": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+    "focused-late-native.log": "D75B2A480647B0EBCF1C80E9A4533AECB3EF13EAA3CAED72A3AC8AFC8710A8D0"
+  },
+  "productionBaseline": {
+    "path": "CivilizationApocalypse_BP/scripts/integration/popSync.js",
+    "sha256": "4F658ABC6153DB289F73C3E987CE20C9FFE86EBA07C9F78F096783BD7EB86443",
+    "matchesFrozen": false,
+    "normalizedTextMatchesFrozen": true,
+    "difference": "line endings only: stage copy LF, active source CRLF; no functional source difference"
+  },
+  "remaining": [
+    "Privileged fresh-world contract requires actual native source-authenticated activation adapter before promotion",
+    "No native acceptance; no aggregate casualty debit; no lossless death capture",
+    "Legacy unknowns and interrupted pending births hold; no automatic duplicate repair",
+    "Bounded lifetime issuance inventory has explicit 2048 capacity; no silent identity retirement"
+  ],
+  "historicalCheckpoint": "checkpoint19-before-late-native-fix/CHECKPOINT.json"
+}

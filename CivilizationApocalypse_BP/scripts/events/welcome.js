@@ -24,10 +24,10 @@ export function registerWelcomeOnJoin(kingdomStore) {
         const player = event.player;
 
         if (result.kingdom === undefined) {
-            player.sendMessage(result.refused ? formatRefusedKingdomLines(result.reason) : formatMissingKingdomLines(result.reason));
+            player.sendMessage((result.refused ? formatRefusedKingdomLines(result.reason) : formatMissingKingdomLines(result.reason)).join("\n"));
             return;
         }
 
-        player.sendMessage(formatWelcomeLines(result.kingdom, result.seeded, player.name));
+        player.sendMessage(formatWelcomeLines(result.kingdom, result.seeded, player.name).join("\n"));
     });
 }

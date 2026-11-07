@@ -1,0 +1,82 @@
+{
+  "scope": "STAGING ONLY guard.current CPU/API benchmark, actual closed fixture + real store.load validation on fake properties, no loader/native execution or acceptance.",
+  "fixtureSha256": "E08AD7B53DFABA1C6C551BF519471EDB527FF0ED4CB20BDBB523B01D9019B5F4",
+  "results": {
+    "actualFixture": {
+      "before": {
+        "calls": 1000,
+        "rawSourceBytes": 267989,
+        "sourceKeys": 27,
+        "totalMs": 1347.7174,
+        "meanMs": 1.3477174,
+        "p95Ms": 2.6420000000000528,
+        "maxMs": 7.388400000000047,
+        "apiCounts": {
+          "census": 1000,
+          "rawReads": 28000,
+          "kingdomLoads": 1000,
+          "cancel": 1000,
+          "writes": 0
+        }
+      },
+      "after": {
+        "calls": 1000,
+        "rawSourceBytes": 267989,
+        "sourceKeys": 27,
+        "totalMs": 220.0721000000001,
+        "meanMs": 0.2200721000000001,
+        "p95Ms": 0.28909999999996217,
+        "maxMs": 4.430599999999913,
+        "apiCounts": {
+          "census": 1000,
+          "rawReads": 28000,
+          "kingdomLoads": 1000,
+          "cancel": 1000,
+          "writes": 0
+        }
+      },
+      "desktopSpeedup": 6.123981186165804
+    },
+    "syntheticMax1500000Bytes": {
+      "before": {
+        "calls": 1000,
+        "rawSourceBytes": 1500000,
+        "sourceKeys": 28,
+        "totalMs": 8245.890500000001,
+        "meanMs": 8.245890500000002,
+        "p95Ms": 12.373599999999897,
+        "maxMs": 16.702900000000227,
+        "apiCounts": {
+          "census": 1000,
+          "rawReads": 29000,
+          "kingdomLoads": 1000,
+          "cancel": 1000,
+          "writes": 0
+        }
+      },
+      "after": {
+        "calls": 1000,
+        "rawSourceBytes": 1500000,
+        "sourceKeys": 28,
+        "totalMs": 290.5174999999999,
+        "meanMs": 0.29051749999999993,
+        "p95Ms": 0.3693999999995867,
+        "maxMs": 4.452400000000125,
+        "apiCounts": {
+          "census": 1000,
+          "rawReads": 29000,
+          "kingdomLoads": 1000,
+          "cancel": 1000,
+          "writes": 0
+        }
+      },
+      "desktopSpeedup": 28.383455385648038
+    }
+  },
+  "limits": [
+    "Loader yield counts and scheduler unchanged",
+    "No promised native speedup/watchdog/safety/repair acceptance",
+    "Identical unchanged-path API counts; changed snapshots still refuse immediately",
+    "No production integration, actor/property writes, timers or real world/DB access"
+  ]
+}

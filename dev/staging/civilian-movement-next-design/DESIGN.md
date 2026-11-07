@@ -1,0 +1,67 @@
+# Existing-driver next movement decision — READONLY DESIGN / awaiting161 native
+
+No code, source promotion, test, fullcheck, fixture entity, native action, timer or owner added. Root currently runs roompreview/native161 (1974automatedpass). Cadence1 now has a root-observed negative HOME-hold trial (details below). WORK/return remain untested; no AI cause is established.
+
+## Evidence before another change
+
+Final native artifact is dist/native-civilian-WORK-trace-20261106.json (the earlier draft is historical). Same civ19 actor-103079215055, WORK at steps705/706 (hours9/10), source1917. Four tick samples720414→418→422→426 show eastward approach, oneat-farm sample, continuedpositiveX overshoot despite negative returned corrections, then outside-corridor hold with no apply. LastsampleX-36.2756 vsfarmX-37.0706 is outside0.75 tolerance. The outside frame returns without steering. Route remains armed until explicit stop; a later same-actor reentry could resume steering, so do not generalize that one paused frame into permanent disarm. It established a short at-farm instant, not sustainedarrival/return/credit or native AI cause. Closedbackup/log/source checks are independently recorded by root; this design does not rerun them.
+
+Installed161 changes ONLY correction cadence when explicit start-near cadence=1. Normal trials default4; one main timer invokesdriver1 andinternal throttlechooses1/4. Brakinghorizon remains4: desiredspeed=min(.04,distance/4), notdistance/1; maxhorizontalimpulse.3,arrival.15,offroute.75 unchanged. travelImpulse computes desired-current horizontalvelocity then clamps magnitude. Existing exactgetVelocity expression and final pinnedID/admission/uniqueactor/feet/gate/maintenance barriers remain. Fullflat sweptfooting+2AIR proven each productivecallback with256readcap. No vanillaAI goals disabled.
+
+No source-confirmed control arithmetic mistake follows from the1917 trace. Its shown correctionmagnitudes~.15-.20 are below.3, so the oldfirst three shownsamples do not demonstrate saturation as their cause. Returnedapply indicates APIreturned, not durable movementvelocity. Existingtrace intentionally marks actualvelocity unavailable; do not silently reconstruct an enginegoal from it. If n<cap and supplied desired/impulse are exact, desired-impulse algebraically reflects the alreadyreadhorizontal input, but does not establish later physics/AI order and is NOT additional native sampling.
+
+## Bounded next native gate, before any tuning/design promotion
+
+On the existing backed-up validationcopy/currentoriginalBP+RP, retain solepopulationowner. No villagerteleport/spawn/heal/effect/speedcommand, no Bsoldieroverride. Recordactualadmittedcanonical/type/tag1/1/1, ID/feet androutine hour. A naturallystanding flat length1 start-near setup must complete freshguardedvalidation; failures arepreserved, not terrain edits. Prefer calm actualWORKhour16 iffeasible, so the next normal acceptedhour17 permits same-routehome return without resetting thetrial. Hour12market is a separatehold, not farmtravel. Do not set savedclock/security just to fabricate thisphase.
+
+Use existing commands: people travel inspect district=N group=G; people inspect group=district-N:civ:G; then people travel start-near district=N group=G length=1 cadence=1. Recordready endpoints/pinnedID/cadence1 horizon4. Only observermoves forview; no inputs duringdocumentedmovement. Readexisting travel trace promptly onfirsthold orafterarrival; itretains15recent+firstoutside/stop up to16. Atcadence1 this is a short~0.75second prehold window, not16seconds. Recordexacttickstates/desired/corrections/applyreturned andactualfeet.
+
+Finite evaluation: within~2400simulationticks overall ifthe requiredroutinephaseoccurs, require sameID, actualflatmovement, a runof sampled at-farm/nearendpoint frames without latchedoutside, laterindependent stableposition, then actualhomeintent and sampledphysicalreturn to originalhome whennormalhour17 arrives. Do not call a cumulativearrivalscounter alone a completedjourney. Ifphase doesnotoccur, recordpartial ratherthanwaiting indefinitely. Onfirstoutside/unsafe/identityhold, save trace and stop; stop outsideintentionally doesnotsteer. Preserveclosedcopy/log afterscope. A secondnaturallyvalidated retry may test repeatability, but differentsourcefeet/AI state means not a controlled causalA/B.
+
+Ifcadence1 passes thisshortgate, keep vanilla-driver approach fornextboundedturn/stepfeature underexistingauthority; broadrealhome→farmrouting/rolecredit stillneeds separate proof. Ifcadence1 still overshoots (now observed for HOME-hold, not WORK), do not keepraisingforce ordraggingNPCback: preserve exactsameactor trace, no tuningpromotion. The nextdiscriminator is a deliberate per-actor nativegoal-control experiment, notanothercohortowner.
+
+## Stable installed @minecraft/server2.7.0 actually supports
+
+Local node_modules/@minecraft/server/package.json says2.7.0. index.d.ts Entity.applyImpulse docs say it addsimpulse tocurrentvelocity (around8518/8547). Entity.clearVelocity setswholevelocityzero (around8594/8619); thereis no horizontal-only setter. EntityMovementComponent extendsEntityAttributeComponent (11114); currentValue/defaultValue/effectiveMin/effectiveMax are readonly; setCurrentValue(number):boolean andresetToDefault/Max/Min areavailablemutating methods (9472–9548). EntityNavigationComponent (11229 onward) exposesreadonlypath-capability flags, not publicmoveTo/pathTarget/stop-navigation operations. Readonlytarget declarations nearby17163/17228 belong to playerinteractionevents, not an Entity.target AIquery. This is installedprimarytypesevidence, not a promise of nativegoal ordering.
+
+Choices and limits:
+
+- Morefrequent horizontalimpulse: alreadyunder161test; bounded .3/y0/samecorridor. No evidencejustifies changinghorizon/force concurrently withcadence.
+- clearVelocity or knockback: publicAPI, but changesphysics/verticalmotion andknockbacksemantics; not an AIstop or compatible drop-in gravitypreservingfix. Do not substitute it blindly.
+- Movementattribute0: publicperactorwrite MAY reduce vanilla locomotion while y0impulse moves actor. It is NOT a documented goalcancel/guarantee; ambientmultipliers/panic/events andhowzeroaffectsscriptimpulse requireactualnativeproof. effectiveMinmayreject0; false/throw meansrefuse, notassumeapplied. This would be newmovementcomponentauthority, notmerelysampling.
+- Vanilla event/AIoverride: triggerEvent methodpresence doesnotprove a safeuniversalvanillapause/resumeevent. Changingvillager_v2 JSON globally changes unrelatedNPCs; notsmall. Slownesseffect is notdocumentedexclusive navigationcontrol andcanoverwriteuser effects; not minimal restoration.
+
+## If a later movementattribute trial is chosen, minimum reversible contract
+
+Do NOT implement it in this task. Extend SAMEdriver, SAMEpinnedactor, SAMEsolepopowner onlyafter reviewed source/central/nativeplan. CaptureactualmovementcomponentcurrentValue plusvalidity/effectivebounds andexactactorID/type/group/dimension BEFORE anywrite; defaultValue is NOT the restorationvalue. Verifyexplicitfiniteoriginalvalue, exactlysupportedcomponent and0withinbounds. Persist a smallseparate recoverable lease BEFOREmutating, containing exactactorID/originalvalue/intendedownedvalue/phase; writeonlyafter allcurrentadmission/source/feet/gate guards. setCurrentValue mustreturntrue andreadbackexact0 beforeimpulsesbegin. No newactor, timer, teleport orbroadercorridor.
+
+Restore originalcurrentValue on ordinary stop, source/gaterevocation, maintenance, blockedroute, selectedactorchange, exception andworldrejoin. Actorreplacement getsNO restore/movementwrite; it is a differentlife. Ifsameactorunloads whileat0, a session-only closurecannot restoreit: rejoin-off would leavea persisted frozenvillager. Need pending restoration journal +startup/ownerpath integration that remains until exactoriginalsameactorisfreshloadedandcanonical. Neverblindlywrite stalevalue if currentattribute is not the exactours-owned0: classifyforeignchange/conflict andpreserve. Originalattribute itselfcanbe legitimately modifiedbyvanilla/components/anotherpack; zeroownership equality is a necessarycondition, not an exclusivecauseproof. Readback/setterfailure/savefailure mustnotloselease. No peractorbroadresetToDefault/Max, no restoration onto newID, no deletingpendinglease via starter/export. Successfulrestore/readback precedes releasingleasereceipt. Ifthis cannotbefullyowned/recovered underexistingowner lifecycle, do NOT useattributecontrol forrelease.
+
+That is a meaningful amountof lifecyclework, so it is not the nextimmediatechange beforecadence1evidence. Even successfulattr0 fixturemovement doesnotprove nativeAIcause or generalnav; it onlytests that controlledattributeprofile supports thisdriver'sshortphysicaljourney. Unload/rejoin/conflict/cleanup are requiredreleasegates, notoptionalcleanup.
+
+## Does release require customcivilianentity?
+
+Not established. MissingScriptAPI moveTo doesnotprove vanillaimpulsecannotwork;161nativegate comesfirst. A deliberate customworker dataentity can define itsownminimalgoals/movementcomponentgroups andexplicitenter/exitcontrolevents without globalvanillavillageroverride. That would improve controlsurface ownership inprinciple, but stableAPIstillprovidesnoarbitrarynativepath-targetsetter andit doesnotautomaticallysolve waypoints/collisions/doors/±1steps.
+
+Ifvanilla cadence/ownedattribute paths cannot meet actualarrival+restore/rejoingates, then a customcivilian becomes a productionentity/soleownerintegrationdecision: canonicaltype mapping/admission/duplicates, friendly/hostilefamilytargets, render/assets, spawn/teardown/rejoin, schedules/jobcredit, old-worldmigration andsameowner invariants allneedproof. It must replace onlyanexplicit selectedrepresentative through existingpopulationowner; no newprobe spawner/cohortchain. Do not migrate vanilla NPCs or claim customentitynecessary before thatdecisionevidence. Prefer the leastcomplex authority that actuallypasses nativework/homearrival andcleanup; no codeprototype is created here.
+
+
+## New native161 cadence1 HOME evidence (root, backup/log pending)
+
+See dist/native-civilian-cadence1-HOME-20261106.json. Same civ19 actor-103079215055; fresh canonical/type/tag1/1/1, villager_v2 HP20. Setup aroundsteps1079/1080 explicitly reportedHOME, home(8.24511432647705,77,-634.755126953125), farm(7.245114326477051,77,-634.755126953125),37/256reads,cadence1/horizon4. First observed trace was already16/16 rollingrecent+outside (ticks1094434..1094449); only last6rows transcribed. Do NOT call these first16since setup.
+
+Ticks1094444..1094448 each show positiveX/positiveZ desiredHOME correction and positive returnedX/Z impulse, while observedfeet continuednegativeX/negativeZ. Tick1094449 at(7.488123893737793,77,-635.51171875) was outsideflatcorridor, noapply, routine/desired not reached. Explicitstop thenUIOFF around1081. Observerunchanged(-47.8,73,-628.8); actor far/trees, so trace is actualgetters rather than continuousvisualwalking. SustainedHOMEholdFAILED; WORK/physicalreturn nottested, no NPCteleport/spawn/heal, resourcecredit orAIcause. Closedbackup/logpending.
+
+OriginalUIreview corrected ambiguous desiredpointformat: x,-,POSITIVEz, with middle'-' unavailableY. Source dz=destination.z-position.z is correct; firstsampledesiredZ +0.028271763444041715 matches. No arithmetic/vector sourcefix warranted. Do not promote algebraically inferred prevelocity to nativegetter evidence (footer explicitlyunavailable). No new movement tuning/code was applied.
+
+This weakens the hope that cadencealone yields stable arrival holding; it does not demonstrate WORKfailure ornecessity ofcustomcivilian. Preserve original161 and freshcopy for anynextreviewedexperiment. Before productionattribute0 trial, solve sameID restore/unload/rejoin lease design described above; session-only freezing cannotbeaccepted. Actual sourceoutsidebranch is per-callbackhold, notautomaticdisarm; explicitstop is required when ending a failedtrial.
+
+
+## Separate daytime setup refusals (NO new movement trial)
+
+See dist/native-civilian-DAYTIME-setup-refusals-20261106.json, deliberately separate from HOME evidence. Observer-only near/back positions at1088/1090 did not produce a unique admittedciv19; starts1089/1091 refused. Fresh19 inspection: admittedNO,0/0/0, noactualID,26/240reads; owner1105937/current1106889 age952. This is not deathproof or globalunloadedabsence. Status othergroupintents are not individualfreshactorproof.
+
+Freshciv13 separately1/1/1,admittedYES,HP20/sameID-38654705573, feet(-67.52446746826172,63,-616.3678588867188), owner1108937/current1109255 age318,26/240reads. Its1095 startrefused oakfencebody(-68,63,-618); civ22 at1096 refusedoakfencebody(-67,63,-619); civ24 around1096/1097 refusedAIRfooting(-70,63,-672). Lastattempt may straddleWORK16/home17. No successfulsetup, newtrialimpulse, newactor, NPCteleport or terrainchange. ExistingHOMEtrace correctlyretained because failedsetup doesnotcleartrace. WORKmovement remains UNTESTED, not anothercadencefailure. Closedbackup/logpending; no attribute/entitycontrol implemented.
+
+
+Closed161 session proof is now linked in both distinct movementartifacts: independent15-file backup/logSHA/inventory verification, zero whole-session warnings/errors/highmemory/exceptions, original14-wallreceiptRAW/35source-jobRAW unchanged viaCRC383540. This adds no new movement/actor/death/cleanup or isolatedperformance acceptance. Earlierpendingtext is historical.

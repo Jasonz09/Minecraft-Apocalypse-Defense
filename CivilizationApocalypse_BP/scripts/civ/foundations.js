@@ -1,3 +1,6 @@
+import { newOps, runSync } from "./regions.js";
+import { pace } from "./siteprofile.js";
+
 /**
  * Terrain-aware construction primitives. Pure planning (no Minecraft imports): every function
  * takes ground heights in WORLD/LOCAL block coordinates (whatever the caller uses, consistently)
@@ -28,7 +31,19 @@ export const IDS = Object.freeze({
     wall: "minecraft:stone_bricks",
     deck: "minecraft:stone_bricks",
     rail: "minecraft:stone_brick_wall",
+    /**
+     * A deck, pile or rail standing over water is timber, not masonry: a pier and the bridges to it read as
+     * a boardwalk, and stone is kept for the land it meets. These are separate ids on purpose, so the stone
+     * `deck`/`rail`/`footTop` still serve every land pad and slope deck.
+     */
+    deckWood: "minecraft:oak_planks",
+    pile: "minecraft:oak_log",
+    pileTop: "minecraft:oak_log",
+    railWood: "minecraft:oak_fence",
     road: "minecraft:grass_path",
+    /** Shared materials for pathside lanterns and legacy fixtures. Density is owned by the site planner. */
+    lampPost: "minecraft:oak_fence",
+    lamp: "minecraft:lantern",
 });
 
 /**
@@ -193,10 +208,19 @@ export function planPad(profile, rect, limits = {}) {
  * entrance stays open.
  *
  * @param {Profile} profile @param {Rect} rect
- * @param {{ baseY?: number, maxCut?: number, pillarEvery?: number, maxDepth?: number }} [limits]
+ * @param {{ baseY?: number, maxCut?: number, pillarEvery?: number, maxDepth?: number, waterPiles?: string }} [limits]
  * @returns {{ ok: boolean, baseY: number, ops: Op[], counts: { cut: number, fill: number, top: number, retain: number, stair: number, deck: number, pillar: number, rail: number }, problems: string[], touched: Rect }}
  */
 export function planDeck(profile, rect, limits = {}) {
+    return runSync(planDeckGenerationSteps(profile, rect, limits));
+}
+
+/** Cooperative deck planner; only explicit reviewed farm callers select spaced-v1.
+ * @param {Profile} profile @param {Rect} rect
+ * @param {{ baseY?: number, maxCut?: number, pillarEvery?: number, maxDepth?: number, waterPiles?: string }} [limits]
+ * @param {import("./regions.js").Ops} [meter]
+ */
+export function* planDeckGenerationSteps(profile, rect, limits = {}, meter = newOps()) {
     const maxCut = limits.maxCut ?? 2;
     const pillarEvery = limits.pillarEvery ?? 3;
     const maxDepth = limits.maxDepth ?? 64;
@@ -204,25 +228,40 @@ export function planDeck(profile, rect, limits = {}) {
     const counts = { cut: 0, fill: 0, top: 0, retain: 0, stair: 0, deck: 0, pillar: 0, rail: 0 };
     /** @param {string} problem */
     const fail = (problem) => ({ ok: false, baseY: 0, ops: [], counts, problems: [problem], touched });
+    const sparse = limits.waterPiles === "spaced-v1";
+    if (limits.waterPiles !== undefined && !sparse) return fail("unknown water-pile version");
     if (![rect.x0, rect.z0, rect.x1, rect.z1].every(Number.isInteger) || rect.x1 < rect.x0 || rect.z1 < rect.z0) return fail("deck rectangle is invalid");
+    if (sparse && (![rect.x0, rect.z0, rect.x1, rect.z1].every(n => Number.isSafeInteger(n) && Math.abs(n) <= 29999000)
+        || rect.x1 - rect.x0 > 24 || rect.z1 - rect.z0 > 24 || pillarEvery !== 3
+        || !Number.isInteger(maxDepth) || maxDepth < 0 || maxDepth > 64
+        || !Number.isInteger(maxCut) || maxCut < 0 || maxCut > 16
+        || (limits.baseY !== undefined && (!Number.isInteger(limits.baseY) || limits.baseY < -60 || limits.baseY > 310)))) return fail("spaced farm footprint/depth/cut/height exceeds reviewed bounds");
     if (!Number.isInteger(pillarEvery) || pillarEvery < 1) return fail("pillarEvery must be a positive integer");
     /** @type {{ x: number, z: number, g: number, water: number | undefined }[]} */
     const inner = [];
     /** @type {{ x: number, z: number, g: number, water: number | undefined }[]} */
     const apron = [];
+    let highestSurface = -Infinity;
     for (let z = touched.z0; z <= touched.z1; z += 1) {
         for (let x = touched.x0; x <= touched.x1; x += 1) {
+            yield* pace(meter, 12);
             const p = profileAt(profile, x, z);
             if (p === null) return fail(`ground profile does not cover (${String(x)}, ${String(z)}) (deck + 1 block apron)`);
             if (p.hollow) return fail(`hollow ground at (${String(x)}, ${String(z)}): nothing solid to carry a pillar`);
+            if (sparse && (!Number.isInteger(p.g) || p.g < -64 || p.g > 319
+                || (p.water !== undefined && (!Number.isInteger(p.water) || p.water < -64 || p.water > 319 || p.water <= p.g))))
+                return fail("spaced farm bearing or water height is outside Bedrock bounds or inconsistent");
             const cell = { x, z, g: p.g, water: p.water };
             const isInner = x >= rect.x0 && x <= rect.x1 && z >= rect.z0 && z <= rect.z1;
+            if (isInner) highestSurface = Math.max(highestSurface, cell.water !== undefined ? cell.water : cell.g);
             (isInner ? inner : apron).push(cell);
         }
     }
-    const surface = (/** @type {{ g: number, water: number | undefined }} */ c) => (c.water !== undefined ? c.water : c.g);
-    const baseY = limits.baseY ?? Math.max(...inner.map(surface));
+    const baseY = limits.baseY ?? highestSurface;
+    if (sparse && (!Number.isInteger(baseY) || baseY < -60 || baseY > 310)) return fail("spaced farm deck height exceeds reviewed bounds");
+    const supported = new Set();
     for (const c of inner) {
+        yield* pace(meter, 80);
         if (c.water !== undefined && baseY < c.water) return fail(`deck at y=${String(baseY)} would be under the water surface (y=${String(c.water)}) at (${String(c.x)}, ${String(c.z)})`);
         if (c.g - baseY > maxCut) return fail(`ground at (${String(c.x)}, ${String(c.z)}) stands ${String(c.g - baseY)} above the deck (max cut ${String(maxCut)}): build the deck higher or move it`);
     }
@@ -239,20 +278,33 @@ export function planDeck(profile, rect, limits = {}) {
     /** @type {Op[]} */
     const slabs = [];
     for (const c of inner) {
-        if (c.g > baseY) for (let y = c.g; y > baseY; y -= 1) cuts.push({ x: c.x, y, z: c.z, id: IDS.air, kind: "cut" });
-        decks.push({ x: c.x, y: baseY, z: c.z, id: IDS.deck, kind: "deck" });
+        yield* pace(meter, 80);
+        if (c.g > baseY) for (let y = c.g; y > baseY; y -= 1) { yield* pace(meter, 8); cuts.push({ x: c.x, y, z: c.z, id: IDS.air, kind: "cut" }); }
+        const overWater = c.water !== undefined;
+        decks.push({ x: c.x, y: baseY, z: c.z, id: overWater ? IDS.deckWood : IDS.deck, kind: "deck" });
         const onEdge = c.x === rect.x0 || c.x === rect.x1 || c.z === rect.z0 || c.z === rect.z1;
         const onGrid = (c.x - rect.x0) % pillarEvery === 0 && (c.z - rect.z0) % pillarEvery === 0;
+        if (c.g >= baseY - 1) supported.add(`${c.x},${c.z}`);
         if (!onEdge && !onGrid) continue;
         const depth = baseY - 1 - c.g;
         if (depth <= 0) continue;
         if (depth > maxDepth) return fail(`pillar at (${String(c.x)}, ${String(c.z)}) would be ${String(depth)} deep (max ${String(maxDepth)}): no sea floor within reach`);
-        for (let y = c.g + 1; y < baseY; y += 1) pillars.push({ x: c.x, y, z: c.z, id: y === baseY - 1 ? IDS.footTop : IDS.footDeep, kind: "pillar" });
+        // Thin only WATER edge columns. All land masonry and the interior grid survive.
+        if (sparse && overWater && onEdge
+            && !((c.x === rect.x0 || c.x === rect.x1) && ((c.z - rect.z0) % pillarEvery === 0 || c.z === rect.z1))
+            && !((c.z === rect.z0 || c.z === rect.z1) && ((c.x - rect.x0) % pillarEvery === 0 || c.x === rect.x1))) continue;
+        supported.add(`${c.x},${c.z}`);
+        for (let y = c.g + 1; y < baseY; y += 1) {
+            yield* pace(meter, 8);
+            const top = y === baseY - 1;
+            pillars.push({ x: c.x, y, z: c.z, id: overWater ? (top ? IDS.pileTop : IDS.pile) : (top ? IDS.footTop : IDS.footDeep), kind: "pillar" });
+        }
     }
     for (const c of apron) {
+        yield* pace(meter, 16);
         const diff = c.g - baseY;
         if (diff <= -2 || c.water !== undefined) {
-            rails.push({ x: c.x, y: baseY + 1, z: c.z, id: IDS.rail, kind: "rail" });
+            rails.push({ x: c.x, y: baseY + 1, z: c.z, id: c.water !== undefined ? IDS.railWood : IDS.rail, kind: "rail" });
             continue;
         }
         const edgeX = c.x >= rect.x0 && c.x <= rect.x1;
@@ -262,13 +314,24 @@ export function planDeck(profile, rect, limits = {}) {
         if (diff === -1) slabs.push({ x: c.x, y: baseY, z: c.z, id: IDS.slab, kind: "stair" });
         else if (diff === 1) stairs.push({ x: c.x, y: c.g, z: c.z, id: IDS.stair, kind: "stair", dir: away });
     }
-    cuts.sort((a, b) => b.y - a.y || a.x - b.x || a.z - b.z);
-    pillars.sort((a, b) => a.y - b.y || a.x - b.x || a.z - b.z);
-    decks.sort((a, b) => a.x - b.x || a.z - b.z);
-    rails.sort((a, b) => a.x - b.x || a.z - b.z);
-    stairs.sort((a, b) => a.x - b.x || a.z - b.z);
-    slabs.sort((a, b) => a.x - b.x || a.z - b.z);
-    const ops = [...cuts, ...pillars, ...decks, ...rails, ...stairs, ...slabs];
+    if (sparse) {
+        // Independent local reach check, bounded to at most 625 cells and 13 probes each.
+        for (const c of inner) {
+            yield* pace(meter, 80);
+            let carried = false;
+            for (let dx = -2; dx <= 2; dx++) for (let dz = -2; dz <= 2; dz++)
+                if (Math.abs(dx) + Math.abs(dz) <= 2 && supported.has(`${c.x + dx},${c.z + dz}`)) carried = true;
+            if (!carried) return fail("farm deck cell exceeds two-cell support reach");
+        }
+        for (const [x,z] of [[rect.x0,rect.z0],[rect.x1,rect.z0],[rect.x0,rect.z1],[rect.x1,rect.z1]])
+            if (!supported.has(`${x},${z}`)) return fail("farm deck corner is unsupported");
+    }
+    yield* deckSortSteps(cuts, (a, b) => b.y - a.y || a.x - b.x || a.z - b.z, meter);
+    yield* deckSortSteps(pillars, (a, b) => a.y - b.y || a.x - b.x || a.z - b.z, meter);
+    for (const list of [decks, rails, stairs, slabs]) yield* deckSortSteps(list, (a,b) => a.x-b.x || a.z-b.z, meter);
+    /** @type {Op[]} */
+    const ops = [];
+    for (const list of [cuts, pillars, decks, rails, stairs, slabs]) for (const op of list) { yield* pace(meter, 2); ops.push(op); }
     return {
         ok: true,
         baseY,
@@ -277,6 +340,22 @@ export function planDeck(profile, rect, limits = {}) {
         problems: [],
         touched,
     };
+}
+
+/** Stable bounded-work merge ordering, matching Array.sort without a synchronous full-op pass.
+ * @param {Op[]} list @param {(a:Op,b:Op)=>number} compare @param {import("./regions.js").Ops} meter
+ */
+function* deckSortSteps(list, compare, meter) {
+    /** @type {Op[]} */
+    const scratch = [];
+    for (let width=1; width<list.length; width*=2) {
+        for (let lo=0; lo<list.length; lo+=width*2) {
+            const mid=Math.min(lo+width,list.length),end=Math.min(lo+width*2,list.length);
+            let a=lo,b=mid;
+            for(let k=lo;k<end;k++) { yield* pace(meter, 6); scratch[k]=a<mid&&(b>=end||compare(list[a],list[b])<=0)?list[a++]:list[b++]; }
+        }
+        for(let k=0;k<list.length;k++) { yield* pace(meter, 2); list[k]=scratch[k]; }
+    }
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -505,13 +584,20 @@ export function planBridge(span, options = {}) {
     /** @type {Op[]} */
     const ops = [];
     for (let i = 0; i < n; i += 1) {
-        const c = /** @type {{ x: number, z: number, g: number }} */ (span[i]);
+        const c = /** @type {{ x: number, z: number, g: number, water?: number }} */ (span[i]);
         const isBank = i === 0 || i === n - 1;
-        for (const o of offsets) ops.push({ x: c.x + lx * o, y: deckY, z: c.z + lz * o, id: IDS.deck, kind: "deck" });
+        // A span cell over water is timber; a bank cell keeps the land's stone.
+        const overWater = c.water !== undefined;
+        for (const o of offsets) ops.push({ x: c.x + lx * o, y: deckY, z: c.z + lz * o, id: overWater ? IDS.deckWood : IDS.deck, kind: "deck" });
         if (pillars.includes(i) || (isBank && c.g < deckY - 1)) {
-            for (const o of outer) for (let y = c.g + 1; y < deckY; y += 1) ops.push({ x: c.x + lx * o, y, z: c.z + lz * o, id: IDS.footTop, kind: "pillar" });
+            for (const o of outer) {
+                for (let y = c.g + 1; y < deckY; y += 1) {
+                    const top = y === deckY - 1;
+                    ops.push({ x: c.x + lx * o, y, z: c.z + lz * o, id: overWater ? (top ? IDS.pileTop : IDS.pile) : IDS.footTop, kind: "pillar" });
+                }
+            }
         }
-        if (options.railings !== false && !isBank) for (const o of outer) ops.push({ x: c.x + lx * o, y: deckY + 1, z: c.z + lz * o, id: IDS.rail, kind: "rail" });
+        if (options.railings !== false && !isBank) for (const o of outer) ops.push({ x: c.x + lx * o, y: deckY + 1, z: c.z + lz * o, id: overWater ? IDS.railWood : IDS.rail, kind: "rail" });
     }
     return { ok: true, deckY, ops, pillars, counts: { deck: countKind(ops, "deck"), pillar: countKind(ops, "pillar"), rail: countKind(ops, "rail") }, problems: [] };
 }

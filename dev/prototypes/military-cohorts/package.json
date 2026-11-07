@@ -1,0 +1,6 @@
+{
+  "name": "civ-isolated-military-cohort-spike",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test *.test.mjs" }
+}

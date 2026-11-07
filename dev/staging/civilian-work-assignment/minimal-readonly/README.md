@@ -1,0 +1,19 @@
+## Reservation-boundary review fix — validated
+
+Selected-civ signature is captured before job reservation and compared throughout the new route context; an explicit guard check precedes loader construction. The regression changes civ checksum inside reserveJob and proves0loader calls/0native reads plus cleanup. Exact minimal composition now **31/31 focused PASS**,0failed/cancelled/skipped,2394.3679ms and strict TSC PASS. Promotion hashes refreshed. Existing formatted preview block remains byte-identical; no movement policy or active files changed. Earlier30-case result below is historical.
+
+## Exact minimal composition validation — PASS
+
+Guarded isolated default-path overlay now passes **30/30 focused tests**,0failed/cancelled/skipped,2,279.8887ms (`dist/civilian-route-preview-minimal-focused-20261106.log`) and strict production TSC (`dist/civilian-route-preview-minimal-typecheck-20261106.log`). This supersedes the earlier unvalidated-composition note below. `promotion-manifest.json` binds the exact six source proposals, four existing-file baseline hashes, three default-import central tests and one helper. Existing driver body restores byte-for-byte when reversing only shared-predicate extraction/isActive; existing formatted destination command body is byte-identical.
+
+Root review, central integration/full checks, closed deployment and actual native loaded-D1 path gate remain pending. This is read-only preview only: no actor assignment, travel binding, additional timer or impulse entry is included. The separately failing planned-road actual-D1 test/diagnostics remain preserved, not converted to a pass.
+
+# Minimal read-only route preview promotion proposal
+
+Six production files only: NEW people/walkSafety.js + people/workRoutePreview.js; MODIFIED integration/civilianTravel.js (exact predicate extraction +isActive getter only), integration/civilianDestinations.js (existing formatting +readonly route method), commands/people.js (async preview branch), main.js (readonly factory wiring). No workAssignment, failed planned graph, household/person association, binding, new timer or actor action is promoted.
+
+Public command: `/scriptevent civ:people travel route-preview district=1 home=BUILDING_ID farm=BUILDING_ID`. Source IDs must come from verified saved destination output. The command handles an actual selected completed source/queue/master, private endpoints and loaded safe-footing A* with unchanged existing AIR/footing predicates. It reports observations, including missing loading and bounds; never grants impulses/vertical motion/work credits. Heavy source references are dropped before native search. Active travel is refused before reservation.
+
+Shared new core passes26/26focused checks (1,838.422ms) and full staging strict TSC. This smaller composition and its adapted central-ready tests were AUTHORED after releasing the exclusive execution window; they still need their own focused/TSC/independent review before promotion. Do not infer that composition validation from shared-core proof. Root may build an isolated overlay from current158 +these six files, then copy tests/dev paths into that overlay; tests import default production modules, existing dev/lib +dev/fixtures only. No staging/dist/runtime fallback or unusable assignment source is required.
+
+Three proposed central tests plus one helper: core/native-fault/controller26cases, async command/main3cases, actual pinned D1 selected-source1case. The helper has an explicitly labeled synthetic op-stream seam for controller collision faults; actual-source test uses default production compiler/slices. Existing pinned source fixture is reused, not a build-output dependency. Actual loaded native D1 route, step/body physics and future walking remain pending. The saved-road actual-D1 failure remains preserved separately, with start component10/goal7 and14missing-road-column boundary cuts; no expectation was changed to make that failure pass.

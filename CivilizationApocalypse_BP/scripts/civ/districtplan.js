@@ -1,5 +1,6 @@
+import { anchoredInteriorLightsSteps } from "./interiorlights.js";
 import { CIV_LIMITS } from "./budget.js";
-import { IDS, planBridge, planDeck, planPad, planRoadProfile, profileAt } from "./foundations.js";
+import { IDS, planBridge, planDeck, planDeckGenerationSteps, planPad, planRoadProfile, profileAt } from "./foundations.js";
 import { MinHeap, labelAt as planLabelAt, rasterizePath } from "./geom.js";
 import { fnv1a, utf8Length } from "./planstore.js";
 import { planWall, wallOpSegments, WALL } from "./walls.js";
@@ -7,8 +8,9 @@ import { regionFromPlan } from "./zoning.js";
 import { zoneDistrictSteps } from "./zonesteps.js";
 import { HOUSE_KINDS, rectGap, requiredGap } from "./lots.js";
 import { makeLotsSteps } from "./lotsteps.js";
+import { DEFINING } from "./facilities.js";
 import { WORK_LIMIT, markYield, newOps, runSync } from "./regions.js";
-import { cellsToToggle, fullGateBlocks, gatehouseBlocks, normalizeSpec } from "./gates.js";
+import { cellsToToggle, fullGateBlocks, gateBlocks, gatehouseBlocks, gateRoofGuardBlocks, normalizeSpec } from "./gates.js";
 import { BLUEPRINTS2, expandBlueprint, rotateInBox, rotatedSize } from "../structures/blueprints2.js";
 import { encodeFacing, rotateDir } from "../structures/facing.js";
 import { normalizeOps, opSignature } from "./opnorm.js";
@@ -123,8 +125,20 @@ const CHUNK_MASK = CHUNK - 1;
 /** Nodes the stair path search may visit per candidate length. */
 const STAIR_SEARCH_BUDGET = 1200;
 
+/**
+ * Legacy outdoor lighting, retained only to reproduce existing saved plan checksums.
+ * Production callers persist lighting="natural": sparse short pathside lights, leaving open land darker.
+ * In the legacy layout, a lantern 4 blocks over the ground is block light 15;
+ * light falls by one per block of MANHATTAN distance, so a ground cell is dark only past 11 blocks. A 5-block grid
+ * puts every column within 2 of a grid point in each axis (Manhattan <= 4), and relocating a lamp by at most 2
+ * adds 4 more: worst case 8, i.e. light 3 on level ground. That is enough: a hostile mob needs block light 0 to
+ * spawn, so the town ground stays spawn-proof at night. Indoors, the room lantern and the blueprint's own lights
+ * do the same job; on the walls, civ/walls.js lights every merlon and tower.
+ */
+const LIGHT = Object.freeze({ spacing: 5, relocate: 2, post: 3 });
+
 /** Lot kinds that are not buildings people enter: no door is required of them. */
-const OPEN_AIR_KINDS = new Set(["well", "pen", "garden", "market_stall", "market_square", "drill_ground", "customs_yard", "quarry_yard", "orchard", "farm_wheat", "farm_veg", "farm_irrigated", "farm_kitchen", "farm_allot"]);
+export const OPEN_AIR_KINDS = new Set(["well", "pen", "garden", "market_stall", "market_square", "drill_ground", "customs_yard", "quarry_yard", "orchard", "farm_wheat", "farm_veg", "farm_irrigated", "farm_kitchen", "farm_allot"]);
 const MILITARY_KINDS = new Set(["barracks", "armoury", "guard_post", "watchtower", "hq_citadel", "command_hall", "drill_ground"]);
 
 /** @type {WeakMap<object, Map<string, () => any[]>>} */
@@ -252,6 +266,9 @@ function* snapshotGroundSteps(clipped, region, ops, allowWater = false) {
     const t = new Uint8Array(w * h);
     /** Water surface y per column (0 = not recorded: the water is one block above its bed). */
     const surf = new Int16Array(w * h);
+    /** The first water column whose surface was never recorded, if any. */
+    /** @type {{ x: number, z: number } | undefined} */
+    let missingSurface;
     for (let z = 0; z < h; z += 1) {
         yield* pace(ops, w * 8);
         for (let x = 0; x < w; x += 1) {
@@ -262,6 +279,9 @@ function* snapshotGroundSteps(clipped, region, ops, allowWater = false) {
             g[i] = code === 0 ? 0 : cell.g;
             t[i] = cell.tree === true ? 1 : 0;
             surf[i] = Number.isFinite(cell.surface) ? Math.round(/** @type {number} */ (cell.surface)) : 0;
+            if (code === KC.water && surf[i] <= 0 && missingSurface === undefined) {
+                missingSurface = { x: region.x0 + x, z: region.z0 + z };
+            }
         }
     }
     /** @param {number} x @param {number} z */
@@ -316,6 +336,16 @@ function* snapshotGroundSteps(clipped, region, ops, allowWater = false) {
             const i = idx(x, z);
             return i >= 0 && (k[i] === KC.land || (allowWater && k[i] === KC.water));
         },
+        /**
+         * A water column whose surface was not stored cannot be planned from. The old fallback assumed the water
+         * was one block deep (`g + 1`), which in a bay put the wall top under the waterline: the exact "wall
+         * sunk in the bay" the user sees. Refuse the district instead of guessing.
+         *
+         * @type {string | undefined}
+         */
+        problem: missingSurface === undefined
+            ? undefined
+            : `the stored ground has no water surface at (${String(missingSurface.x)}, ${String(missingSurface.z)}); a wall or deck planned from its bed would stand under the water, so this district is not planned from this data`,
     };
 }
 
@@ -384,6 +414,7 @@ function isRingPair(a, b) {
  * @param {any} options
  */
 function persistedOptions(options) {
+    checkFarmVersions(options);
     /** @type {Record<string, any>} */
     const out = {
         seed: options.seed === undefined ? null : options.seed | 0,
@@ -396,6 +427,15 @@ function persistedOptions(options) {
     // checksum and stored bytes are unchanged and plans saved before the policy existed still rehydrate.
     const policy = normalisePolicy(options.policy);
     if (policy !== null && (policy.allowWater || policy.adaptive || policy.maxRelief !== 8)) out["policy"] = policy;
+    if (options.lighting === "natural") out["lighting"] = "natural";
+    if (options.gateHeight === "surface") out["gateHeight"] = "surface";
+    if (options.gatePassage === "clear") out["gatePassage"] = "clear";
+    if (options.gateRoof === "guarded") out["gateRoof"] = "guarded";
+    if (options.roofSupport === "joists") out["roofSupport"] = "joists";
+    if (options.interiorLights === "anchored-v1") out["interiorLights"] = "anchored-v1";
+    if (options.farmLighting !== undefined) out["farmLighting"] = options.farmLighting;
+    if (options.waterPiles !== undefined) out["waterPiles"] = options.waterPiles;
+    if (options.lotTerrain === "survey" || options.lotTerrain === "survey-balanced") out["lotTerrain"] = options.lotTerrain;
     return out;
 }
 
@@ -415,6 +455,7 @@ function normalisePolicy(policy) {
  */
 export function siteOptionsOf(record) {
     const stored = record?.options ?? {};
+    checkFarmVersions(stored);
     /** @type {Record<string, any>} */
     const out = {};
     if (stored.seed !== null && stored.seed !== undefined) out["seed"] = stored.seed;
@@ -423,8 +464,25 @@ export function siteOptionsOf(record) {
     if (stored.attempts !== null && stored.attempts !== undefined) out["attempts"] = stored.attempts;
     if (Array.isArray(stored.excludeFootprints) && stored.excludeFootprints.length > 0) out["excludeFootprints"] = stored.excludeFootprints;
     if (stored.policy !== null && stored.policy !== undefined) out["policy"] = stored.policy;
+    if (stored.lighting === "natural") out["lighting"] = "natural";
+    if (stored.gateHeight === "surface") out["gateHeight"] = "surface";
+    if (stored.gatePassage === "clear") out["gatePassage"] = "clear";
+    if (stored.gateRoof === "guarded") out["gateRoof"] = "guarded";
+    if (stored.roofSupport === "joists") out["roofSupport"] = "joists";
+    if (stored.interiorLights === "anchored-v1") out["interiorLights"] = "anchored-v1";
+    if (stored.farmLighting !== undefined) out["farmLighting"] = stored.farmLighting;
+    if (stored.waterPiles !== undefined) out["waterPiles"] = stored.waterPiles;
+    if (stored.lotTerrain === "survey" || stored.lotTerrain === "survey-balanced") out["lotTerrain"] = stored.lotTerrain;
     return out;
 }
+
+/** @param {any} options */
+function checkFarmVersions(options) {
+    if (options.farmLighting !== undefined && options.farmLighting !== "frontage-v1") throw new Error("unknown farm lighting version");
+    if (options.waterPiles !== undefined && options.waterPiles !== "spaced-v1") throw new Error("unknown water-pile version");
+}
+
+const CROP_FARMS = new Set(["farm_allot_v2", "farm_kitchen_v2", "farm_veg_v2", "farm_wheat_v2", "farm_irrigated_v2"]);
 
 /**
  * Freeze the ground this plan needs. Persist `(plan, ground, options)`; nothing else is required.
@@ -447,7 +505,7 @@ export function exportSiteInputs(plan, index, field) {
  * @param {any} plan
  * @param {number} index
  * @param {import("./siteprofile.js").SiteGroundJSON | string} groundJSON
- * @param {{ seed?: number, wallHeight?: number, streetWidth?: number, attempts?: number, excludeFootprints?: any[], policy?: any, expectChecksum?: string, ops?: Ops }} [options]
+ * @param {{ seed?: number, wallHeight?: number, streetWidth?: number, attempts?: number, excludeFootprints?: any[], policy?: any, lighting?: string, gateHeight?: string, gatePassage?: string, gateRoof?: string, roofSupport?: string, interiorLights?: string, farmLighting?: string, waterPiles?: string, lotTerrain?: string, expectChecksum?: string, ops?: Ops }} [options]
  * @returns {Generator<void, { ok: boolean, record: any, problems: string[], notes: string[] }, void>}
  */
 export function* rehydrateSiteSteps(plan, index, groundJSON, options = {}) {
@@ -523,6 +581,12 @@ export function isLiveSite(record) {
  *   excludeFootprints?: { x0: number, z0: number, x1: number, z1: number }[],
  *   attempts?: number,
  *   wallHeight?: number,
+ *   lighting?: string,
+ *   gateHeight?: string,
+ *   gatePassage?: string,
+ *   gateRoof?: string,
+ *   roofSupport?: string, interiorLights?: string, farmLighting?: string, waterPiles?: string,
+ *   lotTerrain?: string,
  *   streetWidth?: number,
  *   policy?: { allowWater?: boolean, adaptive?: boolean, maxRelief?: number } | null,
  *   expectChecksum?: string,
@@ -535,6 +599,8 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
     const ops = options.ops ?? newOps();
     const /** @type {string[]} */ problems = [];
     const /** @type {string[]} */ notes = [];
+    try { checkFarmVersions(options); }
+    catch (error) { return { ok: false, problems: [String(error)], notes, record: null }; }
 
     if (!inputProblems(plan, index, problems)) {
         return { ok: false, problems, notes, record: null };
@@ -561,6 +627,9 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
     /** Lots over a drop or water stand on a deck and pillars instead of being levelled. */
     const adaptive = policy?.adaptive === true;
     const G = yield* snapshotGroundSteps(clipped, region, ops, allowWater);
+    if (G.problem !== undefined) {
+        return { ok: false, problems: [G.problem], notes, record: null };
+    }
     const { ground, sampler, vegetated, unusable } = G;
     const district = /** @type {any[]} */ (plan.districts).find((entry) => entry?.index === index);
     const protectedRects = /** @type {any[]} */ (options.excludeFootprints ?? []);
@@ -912,6 +981,7 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
                 gates: gatesOnWall.map((gate) => ({ at: gate.at, axis: gate.axis })),
                 baseFor: wallBase,
                 maxFoundation: DECK_MAX_DEPTH,
+                lighting: options.lighting,
             });
         } catch (error) {
             problems.push(`wall ${String(wall.id)} cannot be planned against this terrain: ${String(error)}`);
@@ -993,7 +1063,10 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
     /** @type {number[]} */
     const closureClaims = [];
     for (const gate of districtGates) {
-        const g = ground(gate.at.x, gate.at.z);
+        const wet = sampler(gate.at.x, gate.at.z).water;
+        // Versioned in saved options: old plans retain their checksum; new
+        // coastal gates put the floor above water, level with the pier roads.
+        const g = options.gateHeight === "surface" && wet !== undefined ? wet + 1 : ground(gate.at.x, gate.at.z);
         if (g === undefined) {
             problems.push(`gate ${String(gate.id)} sits on unloaded or invalid ground`);
             continue;
@@ -1019,8 +1092,27 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
         /** @type {() => any[]} */
         const produce = () => {
             const house = gatehouseBlocks(spec);
-            const passage = fullGateBlocks(spec, "open");
-            return [...house, ...(Array.isArray(passage) ? passage : (/** @type {any} */ (passage)).ops ?? [])].map((op) => ({ ...op }));
+            if (options.gateRoof === "guarded") house.push(...gateRoofGuardBlocks(spec));
+            // fullGateBlocks omits air for static geometry proofs. Initial
+            // construction must explicitly clear the moving gate's opening.
+            // Persist the choice so older saved plans keep their checksums.
+            const passage = options.gatePassage === "clear" ? gateBlocks(spec, "open").ops : fullGateBlocks(spec, "open");
+            const blocks = [...house, ...(Array.isArray(passage) ? passage : (/** @type {any} */ (passage)).ops ?? [])].map((op) => ({ ...op }));
+            if (options.gateHeight === "surface") {
+                const bottoms = new Map();
+                for (const op of blocks) {
+                    if (op.id === "minecraft:air") continue;
+                    const key = `${op.x},${op.z}`, old = bottoms.get(key);
+                    if (!old || op.y < old.y) bottoms.set(key, op);
+                }
+                for (const bottom of bottoms.values()) {
+                    const sample = sampler(bottom.x, bottom.z);
+                    if (sample.water === undefined) continue;
+                    if (bottom.y - sample.g > DECK_MAX_DEPTH) throw new Error("coastal gate foundation exceeds the depth limit");
+                    for (let y = sample.g + 1; y < bottom.y; y += 1) blocks.push({ x: bottom.x, y, z: bottom.z, id: "minecraft:cobblestone", kind: "footing" });
+                }
+            }
+            return blocks;
         };
         let gateOps;
         try {
@@ -1067,7 +1159,13 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
         gates: districtGates,
         streetWidth: Number(options.streetWidth ?? SITE_RULES.streetWidth),
     }, ops);
-    const lots = yield* makeLotsSteps(zoneRegion, zones, planRoads, { seed, attempts: options.attempts ?? 4 }, ops);
+    const terrainSiting = options.lotTerrain === "survey" || options.lotTerrain === "survey-balanced" ? {
+        buildable: (/** @type {number} */ x, /** @type {number} */ z) => G.isBuildable(x, z) && mineAt(x, z)
+            && !protectedRects.some((r) => x >= r.x0 && x <= r.x1 && z >= r.z0 && z <= r.z1),
+        essentialKinds: [...(DEFINING[String(district.role)] ?? []), "hospital"],
+        essentialOnce: options.lotTerrain === "survey-balanced",
+    } : {};
+    const lots = yield* makeLotsSteps(zoneRegion, zones, planRoads, { seed, attempts: options.attempts ?? 4, ...terrainSiting }, ops);
     if (lots.composition?.ok !== true) {
         notes.push(`zoning composition incomplete: ${(/** @type {string[]} */ (lots.composition?.missing ?? [])).join(", ")}`);
     }
@@ -1125,7 +1223,7 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
                 if (unusable(sx, sz)) continue;
                 const side = sampler(sx, sz);
                 if (side.hollow || side.g > deckY) continue;
-                made.push({ x: sx, y: deckY, z: sz, id: IDS.deck, kind: "deck" });
+                made.push({ x: sx, y: deckY, z: sz, id: side.water !== undefined ? IDS.deckWood : IDS.deck, kind: "deck" });
             }
             const atPier = i === 0 || i === span.length - 1 || i % 6 === 0;
             if (atPier) {
@@ -1136,7 +1234,11 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
                     if (unusable(sx, sz)) continue;
                     const side = sampler(sx, sz);
                     if (side.hollow || side.g >= deckY) continue;
-                    for (let y = side.g + 1; y < deckY; y += 1) made.push({ x: sx, y, z: sz, id: y === deckY - 1 ? IDS.footTop : IDS.footDeep, kind: "pillar" });
+                    const wet = side.water !== undefined;
+                    for (let y = side.g + 1; y < deckY; y += 1) {
+                        const top = y === deckY - 1;
+                        made.push({ x: sx, y, z: sz, id: wet ? (top ? IDS.pileTop : IDS.pile) : (top ? IDS.footTop : IDS.footDeep), kind: "pillar" });
+                    }
                 }
             }
             if (laterals.length === 0) continue;
@@ -1145,7 +1247,8 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
                 const sz = z + oz;
                 if (clip && !mineAt(sx, sz)) continue;
                 if (unusable(sx, sz)) continue;
-                made.push({ x: sx, y: deckY + 1, z: sz, id: IDS.rail, kind: "rail" });
+                const outerCell = sampler(sx, sz);
+                made.push({ x: sx, y: deckY + 1, z: sz, id: outerCell.water !== undefined ? IDS.railWood : IDS.rail, kind: "rail" });
             }
         }
         return made;
@@ -1849,6 +1952,10 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
     const lotList = /** @type {any[]} */ (lots.lots ?? []);
     /** @type {{ kind: string, x0: number, z0: number, x1: number, z1: number }[]} */
     const placedRects = [];
+    /** @type {any[]} */
+    const roomLampOps = [];
+    /** @type {[number, number][]} lamp columns, cleared of vegetation with the road band before anything is built */
+    const lampClears = [];
     let relocated = 0;
     let rotated = 0;
     let placedLots = 0;
@@ -1938,7 +2045,7 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
         for (let tierIndex = 0; tierIndex < tiers.length; tierIndex += 1) {
             const limit = /** @type {number} */ (tiers[tierIndex]);
             for (const { c, geo, lane } of viable) {
-                const result = yield* tryPadAt(geo, lane, limit);
+                const result = yield* tryPadAt(geo, lane, limit, CROP_FARMS.has(lot.blueprint));
                 if (result.ok === false) {
                     if (reason === "") reason = result.reason;
                     continue;
@@ -1995,7 +2102,7 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
      * @param {any} geo @param {{ frontage: [number, number], approach: [number, number][], fy: number }} lane @param {number} limit
      * @returns {Generator<void, { ok: true, pad: any, profile: any, baseY: number, ys: number[] } | { ok: false, reason: string }, void>}
      */
-    function* tryPadAt(geo, lane, limit) {
+    function* tryPadAt(geo, lane, limit, cropFarm = false) {
         const r = geo.rect;
         let lo = -Infinity;
         let hi = Infinity;
@@ -2051,7 +2158,7 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
             }
             for (const baseY of levels) {
                 if (!reachable(baseY)) continue;
-                const deck = yield* planDeckSteps(profile, r, { baseY, maxCut: DECK_MAX_CUT, pillarEvery: DECK_PILLAR_EVERY, maxDepth: DECK_MAX_DEPTH }, ops);
+                const deck = yield* planDeckSteps(profile, r, { baseY, maxCut: DECK_MAX_CUT, pillarEvery: DECK_PILLAR_EVERY, maxDepth: DECK_MAX_DEPTH, ...(cropFarm && options.waterPiles === "spaced-v1" ? {waterPiles: "spaced-v1"} : {}) }, ops);
                 if (deck.ok !== true) {
                     if (reason === "") reason = deck.problems[0] ?? "no deck";
                     continue;
@@ -2147,7 +2254,7 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
             ...(pad.counts.pillar === undefined ? {} : { padDeck: pad.counts.deck, padPillars: pad.counts.pillar, padRail: pad.counts.rail }),
         }, RANK.pad, { rawSteps: padDual.rawSteps });
 
-        const buildingDual = dual((o) => buildingOpsSteps(lot, bp, c.rot, c.x, c.z, baseY, geo, o));
+        const buildingDual = dual((o) => buildingOpsSteps(lot, bp, c.rot, c.x, c.z, baseY, geo, o, options.roofSupport === "joists", options.interiorLights === "anchored-v1", options.farmLighting === "frontage-v1" && CROP_FARMS.has(lot.blueprint)));
         const buildingEl = yield* addElement("lots", `building-${String(lot.kind)}`, `building-${String(lot.id)}`, r, buildingDual.produce, {
             blueprint: bp.id,
             rot: c.rot,
@@ -2160,6 +2267,21 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
             moved: c.moved,
         }, RANK.structure, { rawSteps: buildingDual.rawSteps });
         if (buildingEl === null) problems.push(`lot ${String(lot.id)} produced no building blocks`);
+
+        // One lantern standing on the floor in the middle of an enclosed building. Blueprints already place their
+        // own interior lights; this covers the ones that do not, so a room cannot stay at light level 0 and spawn
+        // a mob while the town outside is lit. It sits on the floor (baseY is the pad top / blueprint floor), not
+        // hanging in mid-air, so it is attached to the building like any other block. An open-air lot has no
+        // interior to light.
+        if (!OPEN_AIR_KINDS.has(lot.kind) && options.interiorLights !== "anchored-v1") {
+            roomLampOps.push({
+                x: Math.floor((r.x0 + r.x1) / 2),
+                y: baseY + 1,
+                z: Math.floor((r.z0 + r.z1) / 2),
+                id: IDS.lamp,
+                kind: "dress",
+            });
+        }
 
         // door-to-street path, explicitly laid
         if (lane.approach.length > 0) {
@@ -2183,6 +2305,94 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
         yield* addElement("clear", "lot-plot", `clear-${String(lot.id)}`, r, plotDual.produce, { cells: plot.length }, RANK.clear, { rawSteps: plotDual.rawSteps });
         yield* resolve();
         yield* rebuildSurface();
+    }
+
+    // ---------------------------------------------------------------- 10a. lighting
+    // New production plans use sparse pathside fixtures. The old grid remains reproducible for safe cleanup/resume.
+    {
+        /** @type {any[]} */
+        const lampOps = [];
+        const seen = new Set();
+        const bbox = zoneRegion.bbox;
+        const natural = options.lighting === "natural";
+        const spacing = natural ? 18 : LIGHT.spacing;
+        /** @param {number} x @param {number} z @returns {number | undefined} the y of the surface a post stands on */
+        const standY = (x, z) => {
+            if (!mineAt(x, z)) return undefined;
+            for (const rect of protectedRects) {
+                if (x >= rect.x0 && x <= rect.x1 && z >= rect.z0 && z <= rect.z1) return undefined;
+            }
+            const i = G.idx(x, z);
+            if (i < 0) return undefined;
+            if (surfY[i] !== NOT_SURF) return undefined; // a road owns this column; dressing never builds there
+            if ((/** @type {number} */ (rsv[i]) & (F_WALL | F_GATE | F_STAIR)) !== 0) return undefined;
+            if (G.unusable(x, z)) return undefined;
+            const sample = sampler(x, z);
+            if (sample.hollow === true) return undefined;
+            if (natural) {
+                if (sample.water !== undefined || vegetated(x, z) || (rsv[i] & (F_LOT | F_APPR)) !== 0) return undefined;
+                let nearPath = false;
+                for (let dz = -3; dz <= 3; dz += 1) for (let dx = -3; dx <= 3; dx += 1) {
+                    const at = G.idx(x + dx, z + dz);
+                    if (at >= 0 && surfY[at] !== NOT_SURF) nearPath = true;
+                }
+                if (!nearPath) return undefined;
+            }
+            return sample.water !== undefined ? sample.water : sample.g;
+        };
+        for (let gz = bbox.z0; gz <= bbox.z1; gz += spacing) {
+            for (let gx = bbox.x0; gx <= bbox.x1; gx += spacing) {
+                /** @type {{ x: number, z: number, base: number } | undefined} */
+                let spot;
+                for (let radius = 0; radius <= LIGHT.relocate && spot === undefined; radius += 1) {
+                    for (let dz = -radius; dz <= radius && spot === undefined; dz += 1) {
+                        for (let dx = -radius; dx <= radius && spot === undefined; dx += 1) {
+                            if (Math.max(Math.abs(dx), Math.abs(dz)) !== radius) continue;
+                            const x = gx + dx;
+                            const z = gz + dz;
+                            if (x < bbox.x0 || x > bbox.x1 || z < bbox.z0 || z > bbox.z1) continue;
+                            if (seen.has(`${String(x)},${String(z)}`)) continue;
+                            const base = standY(x, z);
+                            if (base !== undefined) spot = { x, z, base };
+                        }
+                    }
+                }
+                if (spot === undefined) continue;
+                seen.add(`${String(spot.x)},${String(spot.z)}`);
+                // The lamp's own column plus any tree within one block of it (a canopy reaches one cell out). The
+                // clear stage then removes the whole tree before the post is placed, so no lantern lands inside
+                // leaves and no tree has to be cut during the dressing stage.
+                for (let dz = -1; dz <= 1; dz += 1) {
+                    for (let dx = -1; dx <= 1; dx += 1) {
+                        const cx = spot.x + dx;
+                        const cz = spot.z + dz;
+                        if (!mineAt(cx, cz)) continue;
+                        if (dx === 0 && dz === 0) lampClears.push([cx, cz]);
+                        else if (vegetated(cx, cz)) lampClears.push([cx, cz]);
+                    }
+                }
+                const lowTorch = natural && seen.size % 3 === 0;
+                const post = natural ? lowTorch ? 1 : 2 : LIGHT.post;
+                for (let k = 1; k <= post; k += 1) {
+                    lampOps.push({ x: spot.x, y: spot.base + k, z: spot.z, id: lowTorch ? "minecraft:mossy_cobblestone" : IDS.lampPost, kind: "dress" });
+                }
+                lampOps.push({ x: spot.x, y: spot.base + post + 1, z: spot.z, id: lowTorch ? "minecraft:torch" : IDS.lamp, kind: "dress" });
+            }
+        }
+        yield* pace(ops, Math.min(23000, lampOps.length * 8 + 400));
+        if (lampOps.length > 0) {
+            yield* addElement("dressing", "lamps", "lamps", bboxOfOps(lampOps), () => lampOps, {
+                lamps: seen.size,
+                spacing,
+                relocate: LIGHT.relocate,
+                post: natural ? 2 : LIGHT.post,
+            }, RANK.dress);
+        }
+        if (roomLampOps.length > 0) {
+            yield* addElement("dressing", "room-lights", "room-lights", bboxOfOps(roomLampOps), () => roomLampOps, {
+                lamps: roomLampOps.length,
+            }, RANK.dress);
+        }
     }
 
     // ---------------------------------------------------------------- 10. HQ plaza (lowest priority dressing)
@@ -2222,7 +2432,8 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
     yield* rebuildSurface();
     yield* connectNetwork(40);
 
-    // vegetation on every surfaced road column
+    // vegetation on every surfaced road column and under every lamp: a tree that keeps its canopy over a lamp
+    // column is not cleared by the lamp's own place-only ops, so the tree would stand through the lantern.
     {
         /** @type {[number, number][]} */
         const cols = [];
@@ -2237,6 +2448,13 @@ export function* planDistrictSiteSteps(plan, index, field, options = {}) {
                     seen.add(key);
                     cols.push([op.x, op.z]);
                 }
+            }
+        }
+        for (const [lx, lz] of lampClears) {
+            const key = `${String(lx)},${String(lz)}`;
+            if (!seen.has(key)) {
+                seen.add(key);
+                cols.push([lx, lz]);
             }
         }
         yield* pace(ops, Math.min(23000, cols.length * Math.ceil(Math.log2(cols.length + 2)) * 3));
@@ -2532,11 +2750,12 @@ export function* planPadSteps(profile, rect, limits, ops) {
  * before and after; the work per call is bounded by the lot footprint and the pillar depth).
  *
  * @param {import("./foundations.js").Profile} profile @param {{ x0: number, z0: number, x1: number, z1: number }} rect
- * @param {{ baseY?: number, maxCut?: number, pillarEvery?: number, maxDepth?: number }} limits
+ * @param {{ baseY?: number, maxCut?: number, pillarEvery?: number, maxDepth?: number, waterPiles?: string }} limits
  * @param {Ops} ops
  * @returns {Generator<void, ReturnType<typeof planDeck>, void>}
  */
 export function* planDeckSteps(profile, rect, limits, ops) {
+    if (limits.waterPiles !== undefined) return yield* planDeckGenerationSteps(profile, rect, limits, ops);
     const cells = (rect.x1 - rect.x0 + 3) * (rect.z1 - rect.z0 + 3);
     yield* pace(ops, Math.min(23000, cells * 16 + 400));
     const made = planDeck(profile, rect, limits);
@@ -2667,10 +2886,10 @@ function stairOps(cells, dirs, G) {
 /**
  * Building blocks (canonical-ready) with a guaranteed door and no floating pieces.
  * @param {any} lot @param {any} bp @param {number} rot @param {number} ox @param {number} oz
- * @param {number} baseY @param {any} geo @param {Ops} o
+ * @param {number} baseY @param {any} geo @param {Ops} o @param {boolean} [joists] @param {boolean} [anchoredLights] @param {boolean} [farmFrontage]
  * @returns {Generator<void, any[], void>}
  */
-function* buildingOpsSteps(lot, bp, rot, ox, oz, baseY, geo, o) {
+function* buildingOpsSteps(lot, bp, rot, ox, oz, baseY, geo, o, joists = false, anchoredLights = false, farmFrontage = false) {
     /** @type {any[]} */
     const out = [];
     yield* pace(o, Math.min(23000, bp.size[0] * bp.size[1] * bp.size[2] * 3 + 200));
@@ -2685,12 +2904,62 @@ function* buildingOpsSteps(lot, bp, rot, ox, oz, baseY, geo, o) {
         }
         yield* pace(o, (stop - s) * 6);
     }
+    if (farmFrontage) {
+        const draft=yield* farmFrontageFixturesSteps(bp,rot,ox,oz,baseY,out,o);
+        const removed=new Set(draft.remove.map(fixtureKey));
+        // Remove the full source coordinate, so raw duplicate writes cannot reappear.
+        let write=0;
+        for (let k=0;k<out.length;k++) { yield* pace(o,8); if(!removed.has(fixtureKey(out[k]))) out[write++]=out[k]; }
+        out.length=write;
+        for(const lamp of draft.add) out.push(lamp);
+    }
     if (!hasDoor && !OPEN_AIR_KINDS.has(lot.kind) && bp.entrances[0] !== undefined) {
         for (const door of doorOps(geo, baseY)) out.push(door);
     }
-    const posts = yield* supportOpsSteps(out, baseY, geo.rect, o);
+    // New fixture plans never grow a stone pillar just to prop up an unanchored
+    // decorative lantern. Attach it to the completed structure afterward instead.
+    const supportBlocks=anchoredLights&&!OPEN_AIR_KINDS.has(lot.kind)
+        ? out.filter(op=>String(op.id).replace(/^minecraft:/,"")!=="lantern") : out;
+    const posts = yield* supportOpsSteps(supportBlocks, baseY, geo.rect, o, joists);
     for (let k = 0; k < posts.length; k += 1) out.push(posts[k]);
-    return out;
+    if(anchoredLights&&!OPEN_AIR_KINDS.has(lot.kind)&&!out.some(op=>String(op.id).replace(/^minecraft:/,"")==="lantern"))
+        out.push({x:Math.floor((geo.rect.x0+geo.rect.x1)/2),y:baseY+1,z:Math.floor((geo.rect.z0+geo.rect.z1)/2),id:"minecraft:lantern",kind:"building",name:"lantern"});
+    return anchoredLights && !OPEN_AIR_KINDS.has(lot.kind) ? (yield* anchoredInteriorLightsSteps(out,baseY,geo,o)).ops : out;
+}
+
+/** @param {{x:number,y:number,z:number}} op */
+const fixtureKey=op=>`${op.x},${op.y},${op.z}`;
+
+/** Small geometric draft only; caller must separately prove saved final ownership before migration.
+ * @param {any} bp @param {number} rot @param {number} ox @param {number} oz @param {number} baseY
+ * @param {any[]} original @param {Ops} [meter]
+ * @returns {Generator<void,{remove:any[],add:any[],anchors:any[],gate:any},void>}
+ */
+export function* farmFrontageFixturesSteps(bp,rot,ox,oz,baseY,original,meter=newOps()) {
+    if(![...CROP_FARMS].some(id=>BLUEPRINTS2[id]===bp)) throw new Error("unreviewed farm blueprint");
+    if(![rot,ox,oz,baseY].every(Number.isSafeInteger)||rot<0||rot>3||Math.abs(ox)>29999000||Math.abs(oz)>29999000||baseY< -60||baseY>310) throw new Error("farm fixture coordinates exceed reviewed bounds");
+    /** @type {Map<string,any>} */
+    const lights=new Map();
+    for(const op of original) { yield* pace(meter,8); if(/^(minecraft:)?lantern$/.test(op.id)) lights.set(fixtureKey(op),op); }
+    if(lights.size!==4) throw new Error("reviewed farm must have exactly four original lanterns");
+    const offsets=bp.size[0]<=13?[-1]:[-1,1];
+    const add=offsets.map(offset=>{
+        const [x,z]=rotateInBox(Math.floor(bp.size[0]/2)+offset,bp.size[2]-1,bp.size[0],bp.size[2],rot);
+        return {x:ox+x,y:baseY+2,z:oz+z,id:"minecraft:lantern",name:"lantern",kind:"building",states:{hanging:false}};
+    });
+    const [gx,gz]=rotateInBox(bp.entrances[0].at[0],bp.entrances[0].at[2],bp.size[0],bp.size[2],rot);
+    const gatePos={x:ox+gx,y:baseY+1,z:oz+gz};
+    const wanted=new Set([...lights.keys(),fixtureKey(gatePos),...add.flatMap(op=>[fixtureKey(op),fixtureKey({...op,y:op.y-1})])]);
+    /** @type {Map<string,any>} */
+    const at=new Map();
+    for(const op of original) { yield* pace(meter,8); if(wanted.has(fixtureKey(op))) at.set(fixtureKey(op),op); }
+    const gate=at.get(fixtureKey(gatePos));
+    if(!gate?.id.endsWith("fence_gate")) throw new Error("original farm entrance gate is missing");
+    const remove=[...lights.keys()].map(key=>at.get(key));
+    if(remove.some(op=>!/^(minecraft:)?lantern$/.test(op?.id))) throw new Error("original farm lantern was overwritten");
+    const anchors=add.map(op=>at.get(fixtureKey({...op,y:op.y-1})));
+    for(let i=0;i<add.length;i++) if(!anchors[i]?.id.endsWith("_fence")||at.has(fixtureKey(add[i]))) throw new Error("farm frontage target lacks an empty cell above an existing fence anchor");
+    return {remove:remove.map(op=>({...op,states:{hanging:false,...op.states}})),add,anchors,gate};
 }
 
 /**
@@ -2707,10 +2976,10 @@ function doorOps(geo, baseY) {
 /**
  * Posts under any building block that is not 6-connected to the pad (floating pieces).
  * @param {any[]} blocks @param {number} baseY
- * @param {{ x0: number, z0: number, x1: number, z1: number }} rect @param {Ops} o
+ * @param {{ x0: number, z0: number, x1: number, z1: number }} rect @param {Ops} o @param {boolean} [joists]
  * @returns {Generator<void, any[], void>}
  */
-function* supportOpsSteps(blocks, baseY, rect, o) {
+function* supportOpsSteps(blocks, baseY, rect, o, joists = false) {
     /** @type {Map<number, any>} */
     const at = new Map();
     for (let s = 0; s < blocks.length; s += CHUNK) {
@@ -2747,6 +3016,29 @@ function* supportOpsSteps(blocks, baseY, rect, o) {
     }
     /** @type {any[]} */
     const out = [];
+    if (joists) {
+        // Inset hip-roof courses touch diagonally. Connect each course to the grounded
+        // course below with a short timber joist, above the two-block walking space.
+        // The old fallback dropped a stone pillar under EVERY roof block, filling rooms.
+        const sides = [[1,0],[-1,0],[0,1],[0,-1]];
+        const roof = blocks.filter(op=>!seen.has(k3(op)) && op.y>=baseY+4).sort((a,b)=>a.y-b.y || a.x-b.x || a.z-b.z);
+        for (const op of roof) {
+            if (seen.has(k3(op))) continue;
+            const under={x:op.x,y:op.y-1,z:op.z};
+            if (at.has(k3(under)) || !sides.some(([dx,dz])=>seen.has(k3({x:under.x+dx,y:under.y,z:under.z+dz})))) continue;
+            const beam={...under,id:"minecraft:oak_planks",kind:"support"};
+            at.set(k3(beam),beam); out.push(beam); seen.add(k3(beam));
+            const connected=[op]; seen.add(k3(op));
+            while (connected.length) {
+                const c=connected.pop();
+                for (const [dx,dy,dz] of [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]]) {
+                    const next=at.get(k3({x:c.x+dx,y:c.y+dy,z:c.z+dz}));
+                    if (next!==undefined && !seen.has(k3(next))) { seen.add(k3(next)); connected.push(next); }
+                }
+                yield* pace(o,120);
+            }
+        }
+    }
     const floating = blocks.filter((op) => !seen.has(k3(op))).sort((a, b) => a.y - b.y || a.x - b.x || a.z - b.z);
     yield* pace(o, Math.min(23000, floating.length * 12 + blocks.length * 2));
     for (const op of floating) {
@@ -2767,6 +3059,99 @@ function* supportOpsSteps(blocks, baseY, rect, o) {
         for (const p of post) out.push(p);
     }
     return out;
+}
+
+/** Exact support-only revision of saved schools, without moving lots or changing saved plans.
+ * Input must be a verified, rehydrated record. Old structure/furniture/doors are never removals.
+ * @param {any} record @param {Ops} [ops]
+ * @returns {Generator<void, {element:any,changes:any[]}[], void>}
+ */
+export function* schoolRoofRevisionSteps(record, ops = newOps()) {
+    return yield* buildingRoofRevisionSteps(record,ops,"school");
+}
+
+/** Same guarded support revision for enclosed buildings in a verified saved record.
+ * @param {any} record @param {Ops} [ops] @param {string} [onlyKind] @param {boolean} [includeGeometry]
+ * @returns {Generator<void, {element:any,changes:any[],original?:any[],revised?:any[]}[], void>}
+ */
+export function* buildingRoofRevisionSteps(record, ops = newOps(), onlyKind = undefined, includeGeometry = false) {
+    /** @type {{element:any,changes:any[],original?:any[],revised?:any[]}[]} */
+    const groups=[];
+    if (record.options?.roofSupport === "joists") return groups;
+    for (let i=0;i<record.lots.length;i++) {
+        const e=record.lots[i];
+        if (!String(e.kind).startsWith("building-")) continue;
+        const kind=String(e.kind).slice("building-".length);
+        if (OPEN_AIR_KINDS.has(kind) || (onlyKind!==undefined && kind!==onlyKind)) continue;
+        const bp=BLUEPRINTS2[e.blueprint];
+        if (!bp || !e.bbox || !Number.isInteger(e.baseY)) throw new Error("Invalid saved school geometry");
+        const old=siteOpsFor(record,"lots",i),before=new Map(old.map(op=>[k3(op),op]));
+        const revised=normalizeOps(yield* buildingOpsSteps({kind},bp,e.rot,e.bbox.x0,e.bbox.z0,e.baseY,{rect:e.bbox,door:e.door,facing:e.facing},ops,true));
+        const after=new Map(revised.map(op=>[k3(op),op]));
+        const changes=[];
+        for (const op of old) {
+            if (op.kind!=="support") continue;
+            const desired=after.get(k3(op));
+            if (desired?.id===op.id) continue;
+            if (desired && desired.kind!=="support") throw new Error("Support revision would alter the school structure");
+            changes.push({...op,before:op.id,id:desired?.id ?? "minecraft:air"});
+        }
+        for (const op of revised) {
+            if (op.kind!=="support" || before.has(k3(op))) continue;
+            changes.push({...op,before:"minecraft:air"});
+        }
+        // Install roof joists before taking away obsolete pillars. Repetition after a
+        // partial run accepts the desired blocks and performs no duplicate writes.
+        changes.sort((a,b)=>(a.id==="minecraft:air"?1:0)-(b.id==="minecraft:air"?1:0) || b.y-a.y);
+        groups.push({element:e,changes,...(includeGeometry ? {original:old,revised} : {})});
+        yield* pace(ops,old.length*10+revised.length*10);
+    }
+    return groups;
+}
+
+/** Sparse fixture-only migration; the caller must verify saved checksum first.
+ * Uses the joist geometry so a fixture never relies on an obsolete interior pillar.
+ * @param {any} record @param {Ops} [ops]
+ * @returns {Generator<void,{element:any,original:any[],revised:any[],fixtures:{before:any,after:any,anchor:any}[]}[],void>} */
+export function* buildingInteriorLightRevisionSteps(record,ops=newOps()) {
+    const groups=[];
+    const fixtureKey=(/** @type {any} */ p)=>`${p.x},${p.y},${p.z}`;
+    for(let i=0;i<record.lots.length;i++) {
+        const e=record.lots[i];if(!String(e.kind).startsWith("building-"))continue;
+        const kind=String(e.kind).slice(9),bp=BLUEPRINTS2[e.blueprint];
+        if(OPEN_AIR_KINDS.has(kind))continue;
+        if(!bp||!e.bbox||!Number.isInteger(e.baseY))throw new Error("Invalid saved interior-light geometry");
+        const geo={rect:e.bbox,door:e.door,facing:e.facing};
+        const original=siteOpsFor(record,"lots",i);
+        const revised=normalizeOps(yield* buildingOpsSteps({kind},bp,e.rot,e.bbox.x0,e.bbox.z0,e.baseY,geo,ops,true,record.options?.interiorLights==="anchored-v1"));
+        const planned=yield* anchoredInteriorLightsSteps(revised,e.baseY,geo,ops);
+        const own=new Map(original.map(op=>[fixtureKey(op),op]));
+        groups.push({element:e,original,revised:normalizeOps(planned.ops),fixtures:planned.fixtures.filter(f=>own.get(fixtureKey(f.before))?.id==="minecraft:lantern")});
+        yield* pace(ops,original.length*4+revised.length*4);
+    }
+    // Index only candidate coordinates, never retain a full-city operation map.
+    // Final all-stage ownership matters: a blueprint lamp masked by a later
+    // road/building/dressing element is not a fixture this migration may move.
+    const wanted=new Set(),final=new Map();
+    for(const g of groups)for(const f of g.fixtures)for(const p of [f.before,f.after,f.anchor])wanted.add(fixtureKey(p));
+    for(const stage of STAGES)for(let i=0;i<(record[stage]?.length??0);i++) {
+        for(const op of siteOpsFor(record,stage,i)) {
+            const at=fixtureKey(op);if(wanted.has(at))final.set(at,{op,stage,index:i});
+            yield* pace(ops,8);
+        }
+    }
+    for(const g of groups) {
+        const index=record.lots.findIndex((/** @type {any} */ e)=>e.id===g.element.id);
+        const own=(/** @type {any} */ cell)=>cell?.stage==="lots"&&cell.index===index;
+        g.fixtures=g.fixtures.filter(f=>{
+            const source=final.get(fixtureKey(f.before)),target=final.get(fixtureKey(f.after)),anchor=final.get(fixtureKey(f.anchor));
+            if(!own(source)||source.op.id!=="minecraft:lantern")return false;
+            if(fixtureKey(f.before)!==fixtureKey(f.after)&&target&&target.op.id!=="minecraft:air"&&(!own(target)||target.op.kind!=="support"))return false;
+            if(anchor&&anchor.op.id!=="minecraft:air"&&(!own(anchor)||(anchor.op.id!==f.anchor.id&&anchor.op.kind!=="support")))return false;
+            return true;
+        });
+    }
+    return groups;
 }
 
 /**

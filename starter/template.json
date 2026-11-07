@@ -1,7 +1,11 @@
 {
     "_doc": "docs/STARTER_WORLD.md",
     "templateId": "civapoc-starter",
-    "templateVersion": [1, 0, 0],
+    "templateVersion": [
+        1,
+        0,
+        0
+    ],
     "packageExtension": "mctemplate",
     "displayName": "Civilization Apocalypse - The Last Kingdom",
     "description": "Five fortified districts behind permanent walls, roads, homes, farms and barracks, already standing in a normal Minecraft world.",
@@ -9,21 +13,51 @@
         "headerUuid": "ae7094b8-5eb5-423e-a624-036d2a67ca1c",
         "moduleUuid": "050f9602-c172-4b32-a399-9a34136e3d89",
         "moduleType": "world_template",
-        "formatVersion": 2
+        "formatVersion": 2,
+        "lockTemplateOptions": false,
+        "baseGameVersion": [
+            1,
+            26,
+            60
+        ]
     },
-    "languages": ["en_US"],
+    "languages": [
+        "en_US"
+    ],
     "packs": [
         {
             "source": "CivilizationApocalypse_BP",
             "packageDir": "CivApocBP",
             "kind": "behavior_packs",
             "manifest": "CivilizationApocalypse_BP/manifest.json"
+        },
+        {
+            "source": "CivilizationApocalypse_RP",
+            "packageDir": "CivApocRP",
+            "kind": "resource_packs",
+            "manifest": "CivilizationApocalypse_RP/manifest.json"
         }
     ],
     "world": {
-        "requiredFiles": ["level.dat", "levelname.txt", "db/CURRENT"],
-        "optionalFiles": ["level.dat_old", "world_icon.jpeg", "world_behavior_packs.json", "world_resource_packs.json", "world_behavior_pack_history.json", "world_resource_pack_history.json"],
-        "forbiddenFiles": ["world_behavior_packs.json.bak", "level.dat_new", "db/*.tmp", "db/DIM*"],
+        "requiredFiles": [
+            "level.dat",
+            "levelname.txt",
+            "db/CURRENT"
+        ],
+        "optionalFiles": [
+            "level.dat_old",
+            "world_icon.jpeg",
+            "world_behavior_packs.json",
+            "world_resource_packs.json",
+            "world_behavior_pack_history.json",
+            "world_resource_pack_history.json"
+        ],
+        "forbiddenFiles": [
+            "world_behavior_packs.json.bak",
+            "level.dat_new",
+            "db/*.tmp",
+            "db/DIM*"
+        ],
         "generatorMustBe": "infinite",
         "spawnMustBeInsideBuiltDistrict": "district-1",
         "maxWorldBytes": 268435456,
@@ -31,15 +65,80 @@
     },
     "starter": {
         "templateId": "civapoc-starter",
-        "keepKeyPrefixes": ["civ:kingdom", "civ:plan", "civ_gatereg", "civ_gate_"],
-        "wipeKeyPrefixes": ["civ:kingdom-quarantine", "civ:jobs", "civ:debug", "civ:demo-", "civ_devgate", "civ_ledger_dev"],
-        "builtRequired": ["district-1", "district-2", "district-3", "district-4", "district-5"]
+        "keepKeyPrefixes": [
+            "civ:kingdom",
+            "civ:plan",
+            "civ_gatereg",
+            "civ_gate_",
+            "civ:farm_lights:"
+        ],
+        "wipeKeyPrefixes": [
+            "civ:kingdom-quarantine",
+            "civ:jobs",
+            "civ:debug",
+            "civ:demo-",
+            "civ_devgate",
+            "civ_ledger_dev",
+            "civ:people_",
+            "civ:lamps:"
+        ],
+        "wipeKeys": [
+            "civ_people",
+            "civ_pop"
+        ],
+        "builtRequired": [
+            "district-1",
+            "district-2",
+            "district-3",
+            "district-4",
+            "district-5"
+        ]
     },
     "districts": [
-        { "index": 1, "id": "district-1", "name": "Hearthgate", "role": "command", "layoutId": "hearthgate-enlarged", "starterWorld": true, "status": "planner-ready" },
-        { "index": 2, "id": "district-2", "name": "Ironquarry", "role": "industrial", "layoutId": "ironquarry-enlarged", "starterWorld": true, "status": "planner-ready" },
-        { "index": 3, "id": "district-3", "name": "Whitethorn", "role": "agricultural", "layoutId": "whitethorn-enlarged", "starterWorld": true, "status": "planner-ready" },
-        { "index": 4, "id": "district-4", "name": "Saltmere", "role": "commercial", "layoutId": "saltmere-enlarged", "starterWorld": true, "status": "planner-ready" },
-        { "index": 5, "id": "district-5", "name": "Ashfall", "role": "residential", "layoutId": "ashfall-enlarged", "starterWorld": true, "status": "planner-ready" }
+        {
+            "index": 1,
+            "id": "district-1",
+            "name": "Hearthgate",
+            "role": "command",
+            "layoutId": "hearthgate-enlarged",
+            "starterWorld": true,
+            "status": "built"
+        },
+        {
+            "index": 2,
+            "id": "district-2",
+            "name": "Ironquarry",
+            "role": "industrial",
+            "layoutId": "ironquarry-enlarged",
+            "starterWorld": true,
+            "status": "built"
+        },
+        {
+            "index": 3,
+            "id": "district-3",
+            "name": "Whitethorn",
+            "role": "agricultural",
+            "layoutId": "whitethorn-enlarged",
+            "starterWorld": true,
+            "status": "built"
+        },
+        {
+            "index": 4,
+            "id": "district-4",
+            "name": "Saltmere",
+            "role": "commercial",
+            "layoutId": "saltmere-enlarged",
+            "starterWorld": true,
+            "status": "built"
+        },
+        {
+            "index": 5,
+            "id": "district-5",
+            "name": "Ashfall",
+            "role": "residential",
+            "layoutId": "ashfall-enlarged",
+            "starterWorld": true,
+            "status": "built"
+        }
     ]
 }

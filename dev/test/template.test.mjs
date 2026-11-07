@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
+import ts from "typescript";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -54,13 +55,14 @@ function stageWorld(overrides = {}) {
     put("levelname.txt", "CIVBUILD-hearthgate\n");
     put("db/CURRENT", "MANIFEST-000004\n");
     put("db/000012.log", Buffer.from("fake-leveldb-payload"));
-    if (overrides.behaviorPacks !== false) {
-        put("world_behavior_packs.json", JSON.stringify([{ pack_id: JSON.parse(readFileSync(join(projectRoot, SPEC.packs[0].manifest), "utf8")).header.uuid, version: [1, 0, 0] }]));
+    for(const kind of ["behavior_packs","resource_packs"]) {
+        const packs=SPEC.packs.filter(p=>p.kind===kind);
+        if(kind!=="behavior_packs"||overrides.behaviorPacks!==false)put(kind==="behavior_packs"?"world_behavior_packs.json":"world_resource_packs.json",JSON.stringify(packs.map(p=>{
+            const m=JSON.parse(readFileSync(join(projectRoot,p.manifest),"utf8"));return {pack_id:m.header.uuid,version:m.header.version};
+        })));
+        if(overrides.pack!==false)for(const p of packs)cpSync(join(projectRoot,p.source),join(dir,kind,p.packageDir),{recursive:true});
     }
-    if (overrides.pack !== false) {
-        put(`behavior_packs/${SPEC.packs[0].packageDir}/manifest.json`, readFileSync(join(projectRoot, SPEC.packs[0].manifest), "utf8"));
-    }
-    put("manifest.json", JSON.stringify({ header: { name: "pack.name", description: "pack.description", version: [1, 0, 0], uuid: SPEC.manifest.headerUuid }, modules: [{ version: [1, 0, 0], type: "world_template", uuid: SPEC.manifest.moduleUuid }], format_version: 2 }));
+    put("manifest.json", JSON.stringify({ header: { name: "pack.name", description: "pack.description", version: [1, 0, 0], uuid: SPEC.manifest.headerUuid, lock_template_options: SPEC.manifest.lockTemplateOptions, base_game_version: SPEC.manifest.baseGameVersion }, modules: [{ version: [1, 0, 0], type: "world_template", uuid: SPEC.manifest.moduleUuid }], format_version: 2 }));
     put("texts/en_US.lang", `pack.name=${SPEC.displayName}\npack.description=${SPEC.description}\n`);
     put("texts/languages.json", JSON.stringify(SPEC.languages));
     for (const [file, contents] of Object.entries(overrides.extra ?? {})) put(file, contents);
@@ -74,14 +76,19 @@ const receipt = { armed: true, templateId: SPEC.templateId, builtDistricts: ["di
 test("the shipped starter spec validates against the real pack and planner", () => {
     const result = validateTemplateSpec(SPEC, { enlargedLayouts: layouts });
     assert.deepEqual(result.problems, [], result.problems.join(" | "));
-    // Five layouts are registered, so all five may be marked starter districts - but none has been
-    // built in Minecraft yet, and the gate has to say so out loud rather than look green.
-    const unbuilt = result.notes.find((note) => note.includes("planner-ready but not physically built"));
-    assert.ok(unbuilt !== undefined, `the unbuilt starter districts must be reported, not hidden: ${result.notes.join(" | ")}`);
-    for (const name of ["Hearthgate", "Ironquarry", "Whitethorn", "Saltmere", "Ashfall"]) {
-        assert.ok(unbuilt.includes(name), `${name} should be listed as not physically built: ${unbuilt}`);
+    // All five districts were built and verified in Minecraft on 2026-10-30, so the spec must carry
+    // no "not physically built" note. Flipping one back must still be called out, or the note would
+    // have been deleted rather than satisfied.
+    assert.equal(result.notes.find((note) => note.includes("planner-ready but not physically built")), undefined, result.notes.join(" | "));
+    for (const district of SPEC.districts) {
+        assert.equal(district.status, "built", `${district.name} must be recorded as built`);
     }
-    assert.match(unbuilt, /template:release-check must refuse packaging/, "the note must point at the gate that enforces it");
+    const flipped = JSON.parse(JSON.stringify(SPEC));
+    flipped.districts[2].status = "planner-ready";
+    const flippedResult = validateTemplateSpec(flipped, { enlargedLayouts: layouts });
+    const note = flippedResult.notes.find((entry) => entry.includes("planner-ready but not physically built"));
+    assert.ok(note !== undefined && note.includes("Whitethorn"), `a planner-ready district must be called out: ${flippedResult.notes.join(" | ")}`);
+    assert.match(note, /template:release-check must refuse packaging/, "the note must point at the gate that enforces it");
 });
 
 test("the spec gate actually fails on the packaging mistakes that matter", () => {
@@ -93,6 +100,9 @@ test("the spec gate actually fails on the packaging mistakes that matter", () =>
 
     assert.ok(check((s) => (s.packageExtension = "mcworld")).some((p) => p.includes("mctemplate")), "an .mcworld is an imported world, not a template");
     assert.ok(check((s) => (s.manifest.moduleType = "data")).some((p) => p.includes("world_template")));
+    assert.ok(check((s) => delete s.manifest.lockTemplateOptions).some((p) => p.includes("lockTemplateOptions")));
+    assert.ok(check((s) => (s.manifest.lockTemplateOptions = "false")).some((p) => p.includes("lockTemplateOptions")));
+    assert.ok(check((s) => delete s.manifest.baseGameVersion).some((p) => p.includes("baseGameVersion")));
     assert.ok(check((s) => (s.packs[0].packageDir = "CivilizationApocalypse_BP")).some((p) => p.includes("10 characters")), "long pack folder names can fail to load on Xbox");
     assert.ok(check((s) => (s.manifest.headerUuid = s.manifest.moduleUuid)).some((p) => p.includes("must differ")));
     assert.ok(
@@ -122,6 +132,18 @@ test("level.dat round-trips as uncompressed little-endian Bedrock NBT", () => {
     assert.equal(level.RandomSeed, 987654321);
     assert.equal(level.SizeSuitableForWorldVersion, 1);
     assert.deepEqual(level.Version, [1, 2, 3]);
+});
+
+test("a seed beyond 2^53 is read exactly instead of refusing the whole level.dat", () => {
+    // Minecraft 1.26 exports this exact RandomSeed; it used to abort the parse, which made the
+    // release validator report the level.dat as unreadable and skip the spawn-inside-the-city check.
+    const seed = -5939671584205120000n;
+    const level = levelSection(readLevelDat(makeLevelDat({ spawn: { x: -187, y: 56, z: -621 }, seed })).data);
+    assert.equal(typeof level.RandomSeed, "bigint", "an out-of-range 64-bit value must stay a BigInt, not become a rounded Number");
+    assert.strictEqual(level.RandomSeed, seed);
+    assert.equal(String(level.RandomSeed), "-5939671584205120000");
+    assert.deepEqual([level.SpawnX, level.SpawnY, level.SpawnZ], [-187, 56, -621], "the fields beside the seed must still be read");
+    assert.equal(level.Generator, 1);
 });
 
 test("a Java Edition or truncated level.dat is refused, not misread", () => {
@@ -175,6 +197,15 @@ test("missing city data, bad pack bindings and a spawn outside the walls all fai
     rmSync(join(noManifest, "manifest.json"));
     cases.push(["no template manifest.json (an imported world, not a template)", validateTemplateDir(noManifest, SPEC, { receipt }).problems]);
 
+    for (const field of ["lock_template_options", "base_game_version"]) {
+        const missing = stageWorld();
+        const header = JSON.parse(readFileSync(join(missing, "manifest.json"), "utf8"));
+        delete header.header[field];
+        writeFileSync(join(missing, "manifest.json"), JSON.stringify(header));
+        const failures = validateTemplateDir(missing, SPEC, { receipt }).problems;
+        assert.ok(failures.some((p) => p.includes(field)), `missing ${field} must fail before export`);
+    }
+
     const randomSeed = stageWorld();
     const manifest = JSON.parse(readFileSync(join(randomSeed, "manifest.json"), "utf8"));
     manifest.header.allow_random_seed = true;
@@ -206,8 +237,24 @@ test("a real-shaped level.dat (Generator as an Int) passes the packaging gate", 
     }
 });
 
+test("template validation rejects a detached RP and missing client assets",()=>{
+    const dir=stageWorld();
+    try {
+        writeFileSync(join(dir,"world_resource_packs.json"),"[]");
+        assert.match(validateTemplateDir(dir,SPEC,{receipt}).problems.join("\n"),/world_resource_packs.json must bind shipped pack/);
+        const rp=SPEC.packs.find(p=>p.kind==="resource_packs");
+        rmSync(join(dir,"resource_packs",rp.packageDir,"textures/entity/civ_trial/swordsman.png"));
+        assert.match(validateTemplateDir(dir,SPEC,{receipt}).problems.join("\n"),/missing texture/);
+        const noRp=structuredClone(SPEC);noRp.packs=noRp.packs.filter(p=>p.kind!=="resource_packs");
+        assert.match(validateTemplateSpec(noRp,{enlargedLayouts:layouts}).problems.join("\n"),/missing or ambiguous content dependency/);
+    } finally {rmSync(dir,{recursive:true,force:true});}
+});
+
 test("an export without a receipt is refused, and with one the template stages and validates", () => {
     const source = stageWorld({ extra: { "db/LOCK": "", "db/000009.tmp": "stale leveldb junk" } });
+    // Source bindings may be old or omit the RP. The builder must derive both from current source.
+    writeFileSync(join(source,"world_resource_packs.json"),"[]");
+    writeFileSync(join(source,"world_behavior_packs.json"),JSON.stringify([{pack_id:"obsolete-pack",version:[0,0,1]}]));
     const out = join(projectRoot, "dist", "test-templates");
     const builder = join(projectRoot, "dev", "build-template.mjs");
     try {
@@ -224,10 +271,17 @@ test("an export without a receipt is refused, and with one the template stages a
         assert.ok(existsSync(join(staged, "level.dat")), "the authored terrain must ship");
         assert.ok(existsSync(join(staged, "db", "CURRENT")), "the city data lives in db/");
         assert.ok(existsSync(join(staged, "behavior_packs", SPEC.packs[0].packageDir, "manifest.json")), "the pack ships from the repository, current, not the world's stale copy");
+        const rp=SPEC.packs.find(p=>p.kind==="resource_packs");
+        assert.ok(existsSync(join(staged,"resource_packs",rp.packageDir,"textures/entity/civ_trial/swordsman.png")));
+        assert.deepEqual(JSON.parse(readFileSync(join(staged,"world_resource_packs.json"),"utf8")),[{pack_id:JSON.parse(readFileSync(join(projectRoot,rp.manifest),"utf8")).header.uuid,version:[1,0,0]}]);
         assert.ok(existsSync(join(staged, "texts", "languages.json")));
         assert.ok(!existsSync(join(staged, "db", "LOCK")), "LevelDB lock files are not portable");
         assert.ok(!existsSync(join(staged, "db", "000009.tmp")), "the forbidden db/*.tmp residue must not be copied");
         assert.ok(readFileSync(join(staged, "manifest.json"), "utf8").includes("world_template"));
+        const header = JSON.parse(readFileSync(join(staged, "manifest.json"), "utf8")).header;
+        assert.equal(header.lock_template_options, false);
+        assert.deepEqual(header.base_game_version, SPEC.manifest.baseGameVersion);
+        assert.equal(header.allow_random_seed, false);
     } finally {
         rmSync(source, { recursive: true, force: true });
         rmSync(out, { recursive: true, force: true });
@@ -410,6 +464,15 @@ test("key classification keeps the world's truth and wipes development residue",
     assert.equal(STARTER.keepKeyPrefixes.length, starter.classifyStarterKeys ? STARTER.keepKeyPrefixes.length : 0);
 });
 
+test("starter cleanup recognizes people and lamps without claiming similarly named foreign keys", () => {
+    const ours = ["civ_people", "civ_pop", "civ:people_meta", "civ:people_a_0", "civ:people_quarantine", "civ:lamps:1", "civ:lamps:5"];
+    const foreign = ["civ_population_other", "civ_people_other", "civ:peopleOther", "civ:lampsOther", "another_pack:key"];
+    const classified = starter.classifyStarterKeys([...ours, ...foreign]);
+    assert.deepEqual(classified.wipe, [...ours].sort());
+    assert.deepEqual(classified.unknown, [...foreign].sort());
+    assert.deepEqual(classified.keep, []);
+});
+
 test("arming resets the simulation but keeps the records of the built city", async () => {
     const devWorld = {
         name: "Civilization Apocalypse",
@@ -436,6 +499,34 @@ test("arming resets the simulation but keeps the records of the built city", asy
     assert.ok(notes.some((note) => /population reset/.test(note)), notes.join(" | "));
     const { findValidationProblems } = await load("kingdom", "state.js");
     assert.deepEqual(findValidationProblems(baseline), [], "the baseline must be savable");
+});
+
+test("arming preserves physical gate links and positions while resetting gate policy and diagnostics", async () => {
+    const { createInitialKingdom, findValidationProblems } = await load("kingdom", "state.js");
+    const { validateGateRecords } = await load("sim", "gatecontrol.js");
+    const { linkPhysicalGates, validateGateLinks } = await load("civ", "gatelink.js");
+    const current = createInitialKingdom();
+    const specs = [
+        { id: "gate-1", between: [1, 2], purpose: "main", at: { x: 10, z: 20 }, axis: "x", y: 64 },
+        { id: "gate-2", between: [1, 2], purpose: "reinforce", at: { x: 30, z: 40 }, axis: "z", y: 66 },
+    ];
+    linkPhysicalGates(current, specs);
+    const old = current.districts[0].gates.find((gate) => gate.physical);
+    assert.ok(old, "fixture must link an actual gate");
+    old.mode = "forced_closed";
+    old.physical.state = "closed";
+    old.physical.target = "open";
+    old.physical.blocked = "old development diagnostic";
+    const baseline = starter.buildStarterBaseline({ current });
+    const gate = baseline.districts[0].gates.find((entry) => entry.id === old.id);
+    assert.equal(gate.mode, "auto");
+    assert.equal(gate.state, "sealed", "logical state must agree with the actual closed lattice");
+    assert.deepEqual(gate.physical, {
+        state: "closed", spec: old.physical.spec, link: old.physical.link, companions: old.physical.companions,
+    });
+    assert.notEqual(gate.physical.spec, old.physical.spec, "the export baseline owns detached geometry");
+    assert.deepEqual([...findValidationProblems(baseline), ...validateGateRecords(baseline), ...validateGateLinks(baseline)], []);
+    assert.equal(old.mode, "forced_closed", "the pure reset must not mutate its input");
 });
 
 test("arming refuses an unfinished or already-armed world", () => {
@@ -475,6 +566,7 @@ test("the release contract is the same in config.js and starter/template.json", 
     assert.deepEqual(STARTER.templateVersion, SPEC.templateVersion);
     assert.deepEqual(STARTER.keepKeyPrefixes, SPEC.starter.keepKeyPrefixes, "keep lists drifted between config.js and template.json");
     assert.deepEqual(STARTER.wipeKeyPrefixes, SPEC.starter.wipeKeyPrefixes, "wipe lists drifted between config.js and template.json");
+    assert.deepEqual(STARTER.wipeKeys, SPEC.starter.wipeKeys, "exact cleanup keys drifted between config.js and template.json");
     assert.deepEqual(STARTER.builtRequired, SPEC.starter.builtRequired, "which districts must be built before arming drifted");
     assert.equal(STARTER.keepKeyPrefixes.includes("civ:plan"), true, "arming that wipes the master plan would strand districts 2-5 forever");
     assert.equal(STARTER.wipeKeyPrefixes.includes("civ:plan"), false);
@@ -500,14 +592,33 @@ test("the starter read-out agrees with the state it describes", () => {
 
 /* ------------------------------------------------------------------ join-time safety */
 
+function assertJoinSourceContract(welcome,main){
+    const terrain=/civScan|siteprofile|analyzeTerrain|requestChunk|addTickingArea|generateWork|survey|planCivilization|planDistrictSite/i;
+    assert.doesNotMatch(welcome,terrain,"welcome handler must not reach terrain scanning");
+    assert.doesNotMatch(welcome,/planCivilization|planDistrictSite|civ:generate/,"welcome must not plan/build");
+    const capability=/^import \{ runJobAsync \} from "\.\/integration\/civScan\.js";\r?$/m;
+    assert.equal((main.match(new RegExp(capability.source,"gm"))??[]).length,1,"exact deferred executor import expected");
+    assert.doesNotMatch(main.replace(capability,""),terrain,"main contains additional terrain capability/work");
+    const ast=ts.createSourceFile("main.js",main,ts.ScriptTarget.Latest,true,ts.ScriptKind.JS);
+    const visit=node=>{
+        if(ts.isIdentifier(node)&&node.text==="runJobAsync"){
+            const p=node.parent;
+            const imported=ts.isImportSpecifier(p)&&p.name===node;
+            const assigned=ts.isPropertyAssignment(p)&&p.initializer===node&&p.name.getText(ast)==="runJob"
+                &&ts.isObjectLiteralExpression(p.parent)&&ts.isCallExpression(p.parent.parent)
+                &&p.parent.parent.expression.getText(ast)==="createCivilianDestinations"
+                &&p.parent.parent.arguments[0]===p.parent;
+            assert.ok(imported||assigned,"executor capability may only be injected into the deferred destination factory, never called/aliased at import or join");
+        }
+        ts.forEachChild(node,visit);
+    };visit(ast);
+}
+
 test("joining never triggers terrain work or generation", async () => {
     const welcome = readFileSync(join(scriptsRoot, "events", "welcome.js"), "utf8");
     const main = readFileSync(join(scriptsRoot, "main.js"), "utf8");
     const starterCommands = readFileSync(join(scriptsRoot, "commands", "starter.js"), "utf8");
-    for (const source of [welcome, main]) {
-        assert.doesNotMatch(source, /civScan|siteprofile|analyzeTerrain|requestChunk|addTickingArea|generateWork|survey/i, "join path must not reach for terrain scanning");
-    }
-    assert.doesNotMatch(welcome, /planCivilization|planDistrictSite|civ:generate/, "the join handler must not plan or build anything");
+    assertJoinSourceContract(welcome,main);
     assert.match(starterCommands, /civ:starter_arm|STARTER_EVENT_IDS\.arm/);
     assert.match(starterCommands, /args\[0\] !== "confirm"/, "arming must need a second, deliberate argument");
 
@@ -517,4 +628,12 @@ test("joining never triggers terrain work or generation", async () => {
         assert.equal(id.split(":").length, 2, `${id} must have exactly one colon`);
         assert.match(id, /^civ:[a-z_]+$/, `${id} must be a lowercase civ: identifier`);
     }
+});
+
+test("join-source guard rejects direct/deferred join executor calls and terrain work while allowing exact injection",()=>{
+    const welcome=readFileSync(join(scriptsRoot,"events","welcome.js"),"utf8"),main=readFileSync(join(scriptsRoot,"main.js"),"utf8");
+    assert.doesNotThrow(()=>assertJoinSourceContract(welcome,main));
+    for(const extra of ["\nrunJobAsync({}, function*(){});","\nworld.afterEvents.playerSpawn.subscribe(()=>runJobAsync({}, function*(){}));","\nconst hidden=runJobAsync;","\nworld.afterEvents.playerSpawn.subscribe(()=>analyzeTerrain());"])
+        assert.throws(()=>assertJoinSourceContract(welcome,main+extra),/executor|terrain/);
+    assert.throws(()=>assertJoinSourceContract(welcome+"\nrequestChunk();",main),/terrain/);
 });

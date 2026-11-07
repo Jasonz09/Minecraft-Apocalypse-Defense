@@ -1,0 +1,9 @@
+# Reviewed scope ready for root promotion
+
+18/18 checks PASS,zero failures/cancellations/skips,476.5211ms in one sequential Node invocation. Log:focused.log. Exact source/before/proposal SHA256 values are in PROMOTION-HASHES.json. Active production baseline stillC0AB66464976DF1EF0ADE7685C0C5800AB96D4EE0BA8A8AEDAED462098958D82; staged entity774943076D553408FD2A997559159B7F430ADEF39702DAB3ACF854017FF6DEF0.
+
+Promote one production entity, one new central test, two narrowly updated existing content/self-defense contracts and two new central fixtures. Preserve actual production line endings and existing prototype history. No BP manifest, scripts, RP, class/cohort, health, damage, home, movement, priority, complete-path, reach or cooldown changes are included.
+
+The old self-defense contract deliberately forbade all illagers under the original zombie-only scope. Its staged update adds any_of interpretation and hostile illager mixed-friendly cases; original zombie/friendly/path constraints remain. The content-pack inverse still compares the entire historical entity after removing reviewed retaliation and reversing the one reviewed proactive predicate. New direct actual-JSON tests establish oldC0AB negative/defaultillagers, proposed positiveonlymanagedtag, friendly overrides, unrelated monsters/passives and fulltwo-predicate inverse equality. Primary vanilla source bytes remain pinned in stage; central fixture carries exact reviewed family facts and URL/SHA/blob metadata.
+
+All source edits remain STAGING. Root owns promotion, combined strictTSC/focused/full verification and closed deployment. No native goal/acquisition/managed-damage proof follows from logical JSON tests. Existing entityDie/hurt diagnostics remain read-only and do not implement casualty authority. No further execution is running.

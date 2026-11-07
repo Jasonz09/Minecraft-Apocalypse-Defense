@@ -1,0 +1,13 @@
+*** Begin Patch
+*** Update File: CivilizationApocalypse_BP/scripts/population/reconcile.js
+@@
+     let spawned = 0;
+-    for (const op of spawns) {
++    // A failed standing probe still spends an attempt. Rotate the pending queue
++    // using the persisted reconcile count so the same early failures cannot
++    // indefinitely prevent later admitted groups from reaching the sole owner.
++    const spawnOffset = spawns.length === 0 ? 0 : prior.runs % spawns.length;
++    for (let index = 0; index < spawns.length; index += 1) {
++        const op = spawns[(spawnOffset + index) % spawns.length];
+         if (opsLeft > 0 && spawnsLeft > 0) {
+*** End Patch

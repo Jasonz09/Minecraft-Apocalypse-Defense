@@ -4,7 +4,8 @@
 // scanner in the pack, which fills the same shape from getTopmostBlock reads):
 //   field.at(x, z) -> { g: integer ground height (top natural ground block y),
 //                       k: "land" | "water" | "lava" | "blocked" | "unloaded",
-//                       tree: boolean (natural trees stand here, clearable) }
+//                       tree: boolean (natural trees stand here, clearable),
+//                       surface?: integer water surface y when k is "water" }
 //   field.bounds  -> { x0, z0, x1, z1 } inclusive block bounds that `at` answers for
 // Anything outside bounds is "unloaded".
 
@@ -50,7 +51,7 @@ export function makeField(seed, options = {}) {
     const cliffs = options.cliffs ?? [];
     const river = options.river ?? null;
     const bounds = { x0, z0, x1: x0 + size - 1, z1: z0 + size - 1 };
-    /** @type {Map<string, { g: number, k: string, tree: boolean }>} */
+    /** @type {Map<string, { g: number, k: string, tree: boolean, surface?: number }>} */
     const cache = new Map();
     return {
         seed,
@@ -72,7 +73,9 @@ export function makeField(seed, options = {}) {
             for (const lake of lakes) if ((x - lake.x) ** 2 + (z - lake.z) ** 2 <= lake.r ** 2) { k = "water"; g = base - 4; }
             for (const cliff of cliffs) if (x >= cliff.x && z >= cliff.z0 && z <= cliff.z1) g += cliff.drop;
             const tree = k === "land" && valueNoise(x, z, 40, seed + 7) > 1 - forest && hash2(x, z, seed + 9) < 0.08;
-            const value = { g, k, tree };
+            // Water is reported the way the in-game scanner reports it: the bed height plus the surface it
+            // reached. Synthetic water with no surface would plan a wall from the bed, i.e. under the water.
+            const value = k === "water" ? { g, k, tree, surface: base } : { g, k, tree };
             cache.set(key, value);
             return value;
         },

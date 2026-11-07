@@ -34,6 +34,8 @@ export async function resolve(specifier, context, nextResolve) {
 const load = (...parts) => import(pathToFileURL(join(scriptsRoot, ...parts)).href);
 const { createPeopleStreets } = await load("integration", "peopleStreets.js");
 const { POP_CURSOR_KEY, POP_ENTITY_TYPES, POP_SYNC_DEFAULTS, POP_TAG_PREFIX } = await load("population", "settings.js");
+const { postOf, spotFor } = await load("population", "groups.js");
+const { homesFromRecords, postsFromRecords } = await load("integration", "popSync.js");
 const { STORAGE_KEYS } = await load("config.js");
 const { HOMES, NEAR_D1, createStreetWorld, starterKingdom } = await import(pathToFileURL(join(projectRoot, "dev", "lib", "streetsfixture.mjs")).href);
 
@@ -156,6 +158,106 @@ test("hours obey the caps: never more than the per-tick budget, never two per gr
     assert.ok(world.ofKind("civ").length >= POP_SYNC_DEFAULTS.physicalFloorPerKind, "the folk keep their own floor");
     assert.equal(garrison.length + world.ofKind("civ").length, POP_SYNC_DEFAULTS.maxPhysicalPerDistrict,
         "the floor redistributes the district budget, it does not enlarge it");
+});
+
+test("the district home is the plaza, not the headquarters building: a roof is not a street", () => {
+    const record = (civ) => ({ districts: [{ id: "district-1", civ }] });
+    const plaza = homesFromRecords(record({ centre: { x: 10, z: 20 }, hq: { x: -30, z: 2 }, anchor: { x: 0, z: 0 } }), (x, z) => (x === 10 && z === 20 ? 70 : x === -30 && z === 2 ? 84 : undefined));
+    assert.deepEqual(plaza["district-1"], { x: 10, y: 70, z: 20 }, "the centroid's ground wins over the headquarters roof");
+    const hqOnly = homesFromRecords(record({ hq: { x: -30, z: 2 } }), (x, z) => (x === -30 && z === 2 ? 71 : undefined));
+    assert.deepEqual(hqOnly["district-1"], { x: -30, y: 71, z: 2 }, "a record with only an hq still finds a home");
+    const openGround = homesFromRecords(record({ centre: { x: 10, z: 20 } }), undefined, () => ({ x: 16, y: 65, z: 20 }));
+    assert.deepEqual(openGround["district-1"], { x: 16, y: 65, z: 20 }, "a standable search decides the whole spot, not only the height");
+});
+
+test("the levy is reached from the district's plaza even when its posts are past the promotion radius", () => {
+    // The live world's shape: the player stands at the plaza, and the soldier band sits 20 blocks further out
+    // (POP_SPOTS.soldierRowOffset). Measured to each individual post, the levy is beyond physicalRadius and is
+    // never promoted - which is exactly how the packaged starter world reported civ=5 sol=0. A district's people
+    // are a neighbourhood, so the reach is the lesser of the post distance and the district home distance.
+    const home = HOMES["district-1"];
+    const player = { name: "Steve", x: home.x, y: home.y, z: home.z - 30 };
+    const solSpot = spotFor(home, "sol", 0);
+    const fromPlayer = (spot) => Math.hypot(spot.x - player.x, spot.z - player.z);
+    assert.ok(fromPlayer(solSpot) > POP_SYNC_DEFAULTS.physicalRadius, `the soldier post is ${String(fromPlayer(solSpot).toFixed(1))} blocks out, past the ${String(POP_SYNC_DEFAULTS.physicalRadius)}-block radius`);
+    assert.ok(fromPlayer(home) <= POP_SYNC_DEFAULTS.physicalRadius, "the plaza itself is within the radius");
+
+    const kingdom = starterKingdom();
+    const world = createStreetWorld();
+    world.pop.setKingdom(kingdom);
+    world.pop.setPlayers([player]);
+    for (const spot of Object.values(HOMES)) {
+        world.pop.loadArea(spot.x - 32, spot.z - 32, spot.x + 64, spot.z + 64);
+    }
+    world.setGate(true);
+
+    const driver = createPeopleStreets();
+    converge(world, driver, kingdom);
+
+    const garrison = world.ofKind("sol");
+    assert.ok(garrison.length >= POP_SYNC_DEFAULTS.physicalFloorPerKind, `the garrison stands with the town, saw ${String(garrison.length)}`);
+    assert.ok(world.ofKind("civ").length > 0, "and the folk are there too");
+});
+
+test("a district's people are posted across its quarters, and its plaza is still the first post", () => {
+    const record = (civ) => ({ districts: [{ id: "district-1", civ }] });
+    const ground = (x, z) => ({ x, y: 65, z });
+    const posts = postsFromRecords(record({ centre: { x: 10, z: 20 } }), undefined, ground);
+    const list = posts["district-1"];
+    assert.equal(list.length, 9, "the plaza and the eight quarter posts around it");
+    assert.deepEqual(list[0], { x: 10, y: 65, z: 20 }, "the plaza is first: it is what a record with one home always meant");
+    assert.equal(new Set(list.map((post) => `${String(post.x)},${String(post.z)}`)).size, 9, "no two posts stand on the same ground");
+    assert.ok(list.slice(1).every((post) => Math.abs(post.x - 10) <= 40 && Math.abs(post.z - 20) <= 40),
+        "every quarter post is inside the lattice, well within even the smallest district's wall");
+
+    // The plaza, and anything the ground probe cannot read, is what a district keeps: the ring posts are dropped,
+    // never invented at the plaza's height.
+    const plazaOnly = postsFromRecords(record({ centre: { x: 10, z: 20 } }), undefined, (x, z) => (x === 10 && z === 20 ? { x, y: 65, z } : undefined));
+    assert.deepEqual(plazaOnly["district-1"], [{ x: 10, y: 65, z: 20 }], "unreadable ground drops the post rather than piling it on the plaza");
+
+    // A caller with no open-ground probe still gets the quarters, at the same topmost answer the plaza falls back to.
+    const topmost = postsFromRecords(record({ centre: { x: 10, z: 20 } }), () => 64);
+    assert.equal(topmost["district-1"].length, 9, "the ring posts are sited from the world's ground");
+    assert.ok(topmost["district-1"].every((post) => post.y === 64 || post.y === 65), "and stand on that ground, not on a guessed height");
+
+    // A blind open-ground probe - every column under a jungle canopy fails its headroom test - must not cost the
+    // district its home. The live world lost its whole population to exactly this: a home that needed open sky.
+    const blind = postsFromRecords(record({ centre: { x: 10, z: 20 } }), () => 62, () => undefined);
+    assert.equal(blind["district-1"].length, 9, "the plaza and the quarters survive a probe that sees no open ground");
+    assert.deepEqual(blind["district-1"][0], { x: 10, y: 62, z: 20 }, "the plaza still comes off the world's own column");
+});
+
+test("groups are dealt round their district's posts, so no post is a crowd of both kinds", () => {
+    const posts = [{ x: 0, y: 70, z: 0 }, { x: 40, y: 70, z: 0 }, { x: 0, y: 70, z: 40 }];
+    assert.deepEqual(postOf(posts, 0), posts[0], "the first group keeps the plaza");
+    assert.deepEqual(postOf(posts, 1), posts[1], "the next one a quarter post");
+    assert.deepEqual(postOf(posts, 3), posts[0], "and the fourth wraps round to the plaza again");
+    assert.equal(postOf([], 0), null, "no post is no post");
+    assert.equal(postOf(undefined, 0), null, "and a caller that has none gets none, never a guess at the plaza");
+});
+
+test("walking a district keeps its people around the player instead of leaving them at the plaza", () => {
+    const home = HOMES["district-1"];
+    const kingdom = starterKingdom();
+    const world = createStreetWorld();
+    world.pop.setKingdom(kingdom);
+    // Standing on the quarter post 40 blocks east of the plaza - inside the district, nowhere near its square.
+    const player = { name: "Steve", x: home.x + 40, y: home.y, z: home.z };
+    world.pop.setPlayers([player]);
+    for (const spot of Object.values(HOMES)) {
+        world.pop.loadArea(spot.x - 32, spot.z - 32, spot.x + 64, spot.z + 64);
+    }
+    world.setGate(true);
+
+    const driver = createPeopleStreets();
+    converge(world, driver, kingdom);
+
+    const rows = world.census();
+    assert.ok(rows.length > 0, "the district is inhabited at the quarter, not only at its square");
+    assert.ok(rows.every((row) => row.groups[0].startsWith("district-1:")), "the people standing here are this district's");
+    const near = rows.filter((row) => Math.hypot(row.x - player.x, row.z - player.z) <= POP_SYNC_DEFAULTS.physicalRadius);
+    assert.ok(near.length > 0, `someone stands within ${String(POP_SYNC_DEFAULTS.physicalRadius)} blocks of a player who walked away from the plaza`);
+    assert.ok(rows.some((row) => row.x > home.x + 20), "and they are posted in the quarter, not left behind at the plaza");
 });
 
 test("idempotent: a further hour with the same numbers creates nothing, spawns nothing and re-names nothing", () => {

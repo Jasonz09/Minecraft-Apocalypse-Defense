@@ -48,7 +48,7 @@ function makeV1Save() {
 
 test("v2 districts start fully established, not empty", () => {
     const kingdom = createInitialKingdom();
-    assert.equal(kingdom.schemaVersion, 2);
+    assert.equal(kingdom.schemaVersion, config.KINGDOM_SCHEMA_VERSION);
     for (const district of kingdom.districts) {
         assert.equal(district.defensiveIntegrity, 100);
         assert.equal(district.security, "secure");
@@ -100,7 +100,7 @@ test("a v1 save migrates without losing people, walls or names", () => {
     const result = migrateKingdom(JSON.parse(makeV1Save()));
     assert.equal(result.problems, undefined);
     assert.equal(result.fromVersion, 1);
-    assert.equal(result.toVersion, 2);
+    assert.equal(result.toVersion, config.KINGDOM_SCHEMA_VERSION);
     const migrated = result.kingdom;
     assert.deepEqual(findValidationProblems(migrated), []);
     assert.equal(computeTotals(migrated).civilians, 400);
@@ -118,7 +118,7 @@ test("a v1 save migrates without losing people, walls or names", () => {
 });
 
 test("migration refuses newer, older-than-supported and unreadable saves instead of guessing", () => {
-    assert.match(migrateKingdom({ schemaVersion: 3 }).problems.join(" "), /newer than this pack/);
+    assert.match(migrateKingdom({ schemaVersion: config.KINGDOM_SCHEMA_VERSION+1 }).problems.join(" "), /newer than this pack/);
     assert.match(migrateKingdom({ schemaVersion: 0 }).problems.join(" "), /no migration path registered from schema v0/);
     assert.match(migrateKingdom({ name: "no version" }).problems.join(" "), /no schemaVersion/);
     assert.equal(readSchemaVersion({ schemaVersion: "1" }), undefined);
@@ -138,7 +138,7 @@ test("loading a v1 save migrates, quarantines the original and never re-seeds", 
     assert.equal(computeTotals(result.kingdom).civilians, 400);
 
     const storedNow = JSON.parse(world.properties.get(config.STORAGE_KEYS.kingdom));
-    assert.equal(storedNow.schemaVersion, 2);
+    assert.equal(storedNow.schemaVersion, config.KINGDOM_SCHEMA_VERSION);
 
     const kept = JSON.parse(world.properties.get(config.STORAGE_KEYS.quarantine));
     assert.equal(kept.schemaVersion, 1);

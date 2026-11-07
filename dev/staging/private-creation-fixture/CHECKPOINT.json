@@ -1,0 +1,40 @@
+{
+  "utc": "2026-11-07T02:34:53.066350+00:00",
+  "scope": "STAGING ONLY private compiled vanilla-fixture adapter; unconfigured default refuses; genuine root receipt still absent",
+  "status": "REVIEW CANDIDATE not promotion ready; runtime/starter composition and real root evidence required",
+  "focused": {
+    "tests": 36,
+    "pass": 36,
+    "fail": 0,
+    "durationMs": 120.1081,
+    "log": "focused-second.log"
+  },
+  "strictTypecheck": {
+    "exitCode": 0,
+    "log": "typecheck-final.log"
+  },
+  "files": {
+    "fixture.test.mjs": "390C9294F6BDF52AB8D43D56130D0FE9EA02935CFC942258B2038D3705BF0626",
+    "focused-initial.log": "68CC62C9922B5F5D7DFDBB697B3997ED571938220FD15B633198CD8980238423",
+    "focused-second.log": "0ED2C49CEFD8A28123173F08227572EB90CC38B6C52991E99AC83A5512A1538B",
+    "loader-before-fix.mjs": "DF4DD802A709ABE4DC69897477F2A579F8478F072B13ABE4910C5EECDFD09CE1",
+    "loader.mjs": "5D5E00F7226B95747CE8A388C3DCA8E746E78577D8D9B466FE9A0B78D81A10B5",
+    "privateFreshFixture-before-type-fix.js": "5CBFC520287253F0B68B1B5B535388EFCD4E741E63B06AD46BE65F620A0D8017",
+    "proposed/freshFixtureTrust.js": "5914C01773380ED8DF19B8AB7A271251F65E5EA6EDC7128AB0110808ACA7EADF",
+    "proposed/privateFreshFixture.js": "F9F600D6D73151F5D2F1345EAB04440352D49DA76F68432D73A1A803F6AC96D0",
+    "README.md": "1630550A2DCA9DD9EC445FE206FBDC9C24D112715B43C6687149EB5FDABE4E9F",
+    "register.mjs": "38E39EA17DBFC362D6444B2D60EE2AF5FF1D19471D83AFC767767AAA8215ABC7",
+    "synthetic-trust.mjs": "F632A56FF1E900448F2E25FC11F3FF0F1E14BD385EC7A8B09A5CD1E95C327CBA",
+    "tsconfig.json": "02E416EE2D72EF315BCA1A6552B607F71614CCA2DA0E5D871CADA88BE1F80E51",
+    "typecheck/freshFixtureTrust.js": "5914C01773380ED8DF19B8AB7A271251F65E5EA6EDC7128AB0110808ACA7EADF",
+    "typecheck/privateFreshFixture.js": "3CE154738264623F04C5FA76D4630C853E809BEE42BE5164899BB027AAF06E90",
+    "typecheck-final.log": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+    "typecheck-initial.log": "468B8C9F702672A4F250E37113C17D2149A38F327999B7C31B538647A4EDBB2B"
+  },
+  "coreDependencySha256": "F334676FB356CA7532567FAA8D9BB5B1FE093CA594CCE725CC46036553A3FB52",
+  "stateDependencySha256": "D86F68AE94D64A41437096E9FFB569E63148001B5F72A5FCA8603330F21F4ABD",
+  "configDependencySha256": "5B6E5325C3EB32B6C41EB3456E39AB529FC96C11B69A62BCF4DC8080C6F8D816",
+  "actualCompiledDescriptor": null,
+  "nativeAcceptance": false,
+  "postActivationMarkerScope": "status validates durable activation marker+binding registry/header/epoch, not global scoreboard or original initial kingdom after normal play"
+}

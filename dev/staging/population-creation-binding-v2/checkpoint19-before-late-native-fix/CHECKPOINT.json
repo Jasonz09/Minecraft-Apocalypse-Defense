@@ -1,0 +1,40 @@
+{
+  "scope": "isolated schema-next creation binding; no production promotion",
+  "createdUtc": "2026-11-07T01:58:38.576040+00:00",
+  "focused": {
+    "tests": 19,
+    "pass": 19,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 370.7196
+  },
+  "strictTypecheck": {
+    "exitCode": 0,
+    "command": "npx.cmd tsc -p dev/staging/population-creation-binding-v2/tsconfig.json --noEmit"
+  },
+  "files": {
+    "bindings.mjs": "F334676FB356CA7532567FAA8D9BB5B1FE093CA594CCE725CC46036553A3FB52",
+    "proposed-popSync.js": "5C4BB8C05F6F22AB45CC16358B420D55969EBD228CC6EB40D676E3294BFC94A5",
+    "frozen-popSync.js": "9C0CF7C87FA092DA024EEB8F087C389CCC50013579E05AA772FE45737E0378A6",
+    "binding.test.mjs": "B094C4D3319D72C023547D0AF95866898A2F42F1080210D8C2E3C6A01E72F54C",
+    "owner.patch": "07059FE82BC0BBD53C429F8DCA3F16A285E9BD47AF22AC64CAE8B7AFBE673708",
+    "tsconfig.json": "7A50F7429D415B8BA4BECDED94C09FFB931C8F305582368A4EE251FE9C0D76F8",
+    "README.md": "FE8C238FDCE570792FDD4E166414E20A55E08B4710CBF57C274A5AF8E14D2581",
+    "focused-final.log": "C786E3FB5FD4E116AAA5FEB0F935A77D262C884104FB4BCCF46DD44DBD84C033",
+    "typecheck-final.log": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+  },
+  "productionBaseline": {
+    "path": "CivilizationApocalypse_BP/scripts/integration/popSync.js",
+    "sha256": "4F658ABC6153DB289F73C3E987CE20C9FFE86EBA07C9F78F096783BD7EB86443",
+    "matchesFrozen": false,
+    "normalizedTextMatchesFrozen": true,
+    "difference": "line endings only: stage copy LF, active source CRLF; no functional source difference"
+  },
+  "remaining": [
+    "Privileged fresh-world contract requires actual native source-authenticated activation adapter before promotion",
+    "No native acceptance; no aggregate casualty debit; no lossless death capture",
+    "Legacy unknowns and interrupted pending births hold; no automatic duplicate repair",
+    "Bounded lifetime issuance inventory has explicit 2048 capacity; no silent identity retirement"
+  ]
+}

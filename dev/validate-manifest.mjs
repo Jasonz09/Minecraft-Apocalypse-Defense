@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { contentPackProblems } from "./lib/content-packs.mjs";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const packRoot = join(projectRoot, "CivilizationApocalypse_BP");
@@ -189,4 +190,6 @@ function report() {
     console.log("all manifest and packaging checks passed");
 }
 
+const contentSpec=JSON.parse(readFileSync(join(projectRoot,"starter","template.json"),"utf8"));
+for(const problem of contentPackProblems(contentSpec.packs.map(p=>({root:join(projectRoot,p.source),kind:p.kind}))))check(false,"content pack graph",problem);
 report();

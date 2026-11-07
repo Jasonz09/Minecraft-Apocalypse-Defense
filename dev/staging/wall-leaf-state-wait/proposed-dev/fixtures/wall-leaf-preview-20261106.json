@@ -1,0 +1,317 @@
+{
+  "date": "2026-11-06",
+  "scope": "Native read-only D4 leaf preview; no leaf writes or wall restoration",
+  "evidenceSource": "Parent agent native observation report",
+  "installedPack": {
+    "files": 152,
+    "fullChecksPassed": 1657,
+    "hashManifest": "dist/swordsman-combat-render-handoff-hashes.json"
+  },
+  "district": 4,
+  "checksum": "35635162",
+  "observer": {
+    "x": -320.5,
+    "y": 78,
+    "z": -456.5
+  },
+  "simulationHourRange": [
+    489,
+    490
+  ],
+  "status": "INCOMPLETE",
+  "counts": {
+    "targets": 35911,
+    "surveyed": 6758,
+    "unreadableWalls": 29153,
+    "unreadableContacts": 0,
+    "tree": 17,
+    "eligible": 14,
+    "refused": 3,
+    "nowPresent": 0
+  },
+  "pagination": {
+    "page": 1,
+    "pages": 1,
+    "limit": 64,
+    "allObservedCandidatesListed": true
+  },
+  "eligible": [
+    {
+      "position": {
+        "x": -323,
+        "y": 55,
+        "z": -455
+      },
+      "actualId": "minecraft:jungle_leaves",
+      "expectedId": "minecraft:cracked_stone_bricks",
+      "persistent_bit": false,
+      "contactsReadable": 27,
+      "contactsTotal": 27
+    },
+    {
+      "position": {
+        "x": -323,
+        "y": 56,
+        "z": -455
+      },
+      "actualId": "minecraft:jungle_leaves",
+      "expectedId": "minecraft:stone_bricks",
+      "persistent_bit": false,
+      "contactsReadable": 27,
+      "contactsTotal": 27
+    },
+    {
+      "position": {
+        "x": -324,
+        "y": 51,
+        "z": -456
+      },
+      "actualId": "minecraft:oak_leaves",
+      "expectedId": "minecraft:stone_bricks",
+      "persistent_bit": false,
+      "contactsReadable": 27,
+      "contactsTotal": 27
+    },
+    {
+      "position": {
+        "x": -324,
+        "y": 55,
+        "z": -456
+      },
+      "actualId": "minecraft:jungle_leaves",
+      "expectedId": "minecraft:stone_bricks",
+      "persistent_bit": false,
+      "contactsReadable": 27,
+      "contactsTotal": 27
+    },
+    {
+      "position": {
+        "x": -324,
+        "y": 56,
+        "z": -456
+      },
+      "actualId": "minecraft:jungle_leaves",
+      "expectedId": "minecraft:stone_bricks",
+      "persistent_bit": false,
+      "contactsReadable": 27,
+      "contactsTotal": 27
+    },
+    {
+      "position": {
+        "x": -323,
+        "y": 55,
+        "z": -456
+      },
+      "actualId": "minecraft:jungle_leaves",
+      "expectedId": "minecraft:stone_bricks",
+      "persistent_bit": false,
+      "contactsReadable": 27,
+      "contactsTotal": 27
+    },
+    {
+      "position": {
+        "x": -323,
+        "y": 56,
+        "z": -456
+      },
+      "actualId": "minecraft:jungle_leaves",
+      "expectedId": "minecraft:mossy_stone_bricks",
+      "persistent_bit": false,
+      "contactsReadable": 27,
+      "contactsTotal": 27
+    },
+    {
+      "position": {
+        "x": -323,
+        "y": 57,
+        "z": -456
+      },
+      "actualId": "minecraft:jungle_leaves",
+      "expectedId": "minecraft:stone_bricks",
+      "persistent_bit": false,
+      "contactsReadable": 27,
+      "contactsTotal": 27
+    },
+    {
+      "position": {
+        "x": -322,
+        "y": 55,
+        "z": -456
+      },
+      "actualId": "minecraft:jungle_leaves",
+      "expectedId": "minecraft:cracked_stone_bricks",
+      "persistent_bit": false,
+      "contactsReadable": 27,
+      "contactsTotal": 27
+    },
+    {
+      "position": {
+        "x": -322,
+        "y": 56,
+        "z": -456
+      },
+      "actualId": "minecraft:jungle_leaves",
+      "expectedId": "minecraft:mossy_stone_bricks",
+      "persistent_bit": false,
+      "contactsReadable": 27,
+      "contactsTotal": 27
+    },
+    {
+      "position": {
+        "x": -322,
+        "y": 57,
+        "z": -456
+      },
+      "actualId": "minecraft:jungle_leaves",
+      "expectedId": "minecraft:stone_bricks",
+      "persistent_bit": false,
+      "contactsReadable": 27,
+      "contactsTotal": 27
+    },
+    {
+      "position": {
+        "x": -322,
+        "y": 58,
+        "z": -456
+      },
+      "actualId": "minecraft:jungle_leaves",
+      "expectedId": "minecraft:stone_bricks",
+      "persistent_bit": false,
+      "contactsReadable": 27,
+      "contactsTotal": 27
+    },
+    {
+      "position": {
+        "x": -322,
+        "y": 55,
+        "z": -455
+      },
+      "actualId": "minecraft:jungle_leaves",
+      "expectedId": "minecraft:cracked_stone_bricks",
+      "persistent_bit": false,
+      "contactsReadable": 27,
+      "contactsTotal": 27
+    },
+    {
+      "position": {
+        "x": -322,
+        "y": 56,
+        "z": -455
+      },
+      "actualId": "minecraft:jungle_leaves",
+      "expectedId": "minecraft:mossy_stone_bricks",
+      "persistent_bit": false,
+      "contactsReadable": 27,
+      "contactsTotal": 27
+    }
+  ],
+  "refused": [
+    {
+      "position": {
+        "x": -321,
+        "y": 56,
+        "z": -456
+      },
+      "actualId": "minecraft:jungle_leaves",
+      "persistent_bit": false,
+      "contactsReadable": 27,
+      "contactsTotal": 27,
+      "reason": "protected neighbor",
+      "protectedNeighbor": {
+        "x": -320,
+        "y": 55,
+        "z": -457
+      },
+      "expectedId": "minecraft:mossy_stone_bricks",
+      "expectedIdScope": "candidate wall cell, confirmed by native report; protectedNeighbor is refusal reason"
+    },
+    {
+      "position": {
+        "x": -321,
+        "y": 56,
+        "z": -455
+      },
+      "actualId": "minecraft:jungle_leaves",
+      "persistent_bit": false,
+      "contactsReadable": 27,
+      "contactsTotal": 27,
+      "reason": "protected neighbor",
+      "protectedNeighbor": {
+        "x": -320,
+        "y": 55,
+        "z": -456
+      },
+      "expectedId": "minecraft:stone_bricks",
+      "expectedIdScope": "candidate wall cell, confirmed by native report; protectedNeighbor is refusal reason"
+    },
+    {
+      "position": {
+        "x": -320,
+        "y": 56,
+        "z": -456
+      },
+      "actualId": "minecraft:jungle_leaves",
+      "persistent_bit": false,
+      "contactsReadable": 27,
+      "contactsTotal": 27,
+      "reason": "protected neighbor",
+      "protectedNeighbor": {
+        "x": -320,
+        "y": 55,
+        "z": -457
+      },
+      "expectedId": "minecraft:mossy_stone_bricks",
+      "expectedIdScope": "candidate wall cell, confirmed by native report; protectedNeighbor is refusal reason"
+    }
+  ],
+  "unreadableSamples": [
+    {
+      "position": {
+        "x": -222,
+        "y": 70,
+        "z": -586
+      },
+      "reason": "no block returned"
+    },
+    {
+      "position": {
+        "x": -222,
+        "y": 71,
+        "z": -586
+      },
+      "reason": "no block returned"
+    },
+    {
+      "position": {
+        "x": -222,
+        "y": 72,
+        "z": -586
+      },
+      "reason": "no block returned"
+    },
+    {
+      "position": {
+        "x": -222,
+        "y": 73,
+        "z": -586
+      },
+      "reason": "no block returned"
+    }
+  ],
+  "changes": 0,
+  "readOnly": true,
+  "limitations": [
+    "Most wall targets unreadable at this observer position; not a complete wall audit",
+    "Eligibility applies only to14 observed candidates at preview time",
+    "Three boundary candidates refused; preserve them",
+    "Any future mutator must authenticate source plans and repeat fresh protection, identity, persistent-state and contact checks; preview is not a durable write authorization",
+    "No active leaf-trim implementation or native leaf removal accepted by this evidence"
+  ],
+  "closedBackup": {
+    "path": "dist/backups/corrected-d4-leaf-preview14-20261106",
+    "filesIndependentlyShaVerified": 16,
+    "levelDatSha256": "0109A6B32F47536BFB53261DA771ECE8F62E47BF1ABAF1DAFB55AF43E71C1018",
+    "receipt": "dist/corrected-d4-leaf-preview14-backup-hashes.json",
+    "closedBeforeBackup": "Parent observed city Save and Quit, then Minecraft fully closed; Sky showed only Codex"
+  }
+}

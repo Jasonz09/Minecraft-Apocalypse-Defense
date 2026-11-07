@@ -56,7 +56,8 @@ const uniqueKinds = (field, cand, step = STEP) => {
 // ------------------------------------------------------------------------------------ field
 
 test("grid field: memory budget for a 700x700 field is under 3 MB and reads back what was written", () => {
-    const f = F.makeGridField({ x0: -350, z0: -350, w: 700, h: 700 });
+    // `water: true` is what the district ground snapshot uses: a water column keeps the surface it reached.
+    const f = F.makeGridField({ x0: -350, z0: -350, w: 700, h: 700, water: true });
     assert.ok(f.memoryBytes() < 3 * 1024 * 1024, `memory ${String(f.memoryBytes())}`);
     assert.equal(f.at(0, 0).k, "unloaded", "unwritten cells are unloaded");
     assert.equal(f.columnsRead, 0);
@@ -630,6 +631,17 @@ test("bridge: deck flat at the high bank, pillars every N, rails, no long unsupp
     const narrow = B.planBridge(gap(4), { width: 1 });
     assert.ok(narrow.ok && narrow.pillars.length === 0, "short span needs no pillar");
     assert.equal(narrow.counts.deck, 6);
+    // the span over water is a timber bridge; the two bank cells keep the land's stone
+    assert.ok(
+        b.ops.some((o) => o.kind === "deck" && o.id === "minecraft:oak_planks"),
+        "the water span is planks",
+    );
+    assert.ok(
+        b.ops.some((o) => o.kind === "deck" && o.id === "minecraft:stone_bricks"),
+        "the bank cells stay stone",
+    );
+    assert.ok(b.ops.filter((o) => o.kind === "pillar").every((o) => o.id === "minecraft:oak_log"), "the piles are logs");
+    assert.ok(b.ops.filter((o) => o.kind === "rail").every((o) => o.id === "minecraft:oak_fence"), "the rails are fences");
 });
 
 test("bridge refuses: long span, deep pillar, flooded deck, mismatched banks, diagonal, bump above deck", () => {

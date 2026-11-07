@@ -1,0 +1,5202 @@
+{
+  "scope": "OFFLINE all5checksum/master/completequeue verification and exact6stage historical/final claim compilation from CLOSEDCRC383540. No current native state, block write, cleanup eligibility or origin proof.",
+  "closedInput": {
+    "scope": "Hashverified15file CLOSEDbackup WALCRC only; no liveDB/SST/currentphysical read",
+    "sequence": 383540,
+    "backupReceipt": "dist/native161-city-census-cadence1-backup-hashes-20261106.json",
+    "backupReceiptSha256": "06C7E1DAD1B181FBF525B62FA833E178B848E6C70FD2C6006F3B91F4AEC79F4E",
+    "levelDatSha256": "A121C9705F622B21C8DCEF36EE662642BFA3527E38BF602485E34B44212EC25F",
+    "parserSha256": "C4DC2BB4292E4845E308B5ACE3B0982C52BA054A26092A8B0CD95BF36F276257",
+    "helperSha256": "9C752ED1F20EE3423273759315E60C8D75A2E0B893BA16FAB99B7DBE66C24C06"
+  },
+  "closedInputSha256": "779D961FE66BC90223F3494A539B0E72C16A2F4C1001B3473A02111072C0E994",
+  "targetInputSha256": "D20EDA83168B678B6D456BAF8699A2286357FC5F9B2B6AD74EE6D5FBD5E5F6BA",
+  "masterHash": "9e5e307e",
+  "targets": 39,
+  "logTargets": 22,
+  "leafTargets": 17,
+  "uniqueRelevant27Cells": 239,
+  "totalOperations": 435683,
+  "totalYields": 28205,
+  "guardChecks": 60152,
+  "elapsedMs": 16506,
+  "blockWriteDelta": 0,
+  "propertyWriteDelta": 0,
+  "rawPropertiesUnchanged": true,
+  "all5SavedOutlinesEqual": true,
+  "protectionAreasForActive5": [
+    {
+      "x0": -236,
+      "z0": -704,
+      "x1": 71,
+      "z1": -484,
+      "polygon": [
+        [
+          -232,
+          -624
+        ],
+        [
+          -228,
+          -624
+        ],
+        [
+          -228,
+          -640
+        ],
+        [
+          -224,
+          -644
+        ],
+        [
+          -208,
+          -644
+        ],
+        [
+          -197,
+          -657
+        ],
+        [
+          -179,
+          -667
+        ],
+        [
+          -169,
+          -677
+        ],
+        [
+          -156,
+          -700
+        ],
+        [
+          -139,
+          -693
+        ],
+        [
+          -123,
+          -698
+        ],
+        [
+          -116,
+          -696
+        ],
+        [
+          -100,
+          -696
+        ],
+        [
+          -100,
+          -700
+        ],
+        [
+          -76,
+          -700
+        ],
+        [
+          -70,
+          -690
+        ],
+        [
+          -71,
+          -680
+        ],
+        [
+          -69,
+          -675
+        ],
+        [
+          -46,
+          -662
+        ],
+        [
+          -38,
+          -662
+        ],
+        [
+          -29,
+          -677
+        ],
+        [
+          -17,
+          -679
+        ],
+        [
+          13,
+          -661
+        ],
+        [
+          30,
+          -646
+        ],
+        [
+          36,
+          -645
+        ],
+        [
+          44,
+          -648
+        ],
+        [
+          64,
+          -640
+        ],
+        [
+          64,
+          -608
+        ],
+        [
+          58,
+          -601
+        ],
+        [
+          63,
+          -587
+        ],
+        [
+          67,
+          -565
+        ],
+        [
+          56,
+          -544
+        ],
+        [
+          46,
+          -538
+        ],
+        [
+          38,
+          -526
+        ],
+        [
+          38,
+          -502
+        ],
+        [
+          33,
+          -501
+        ],
+        [
+          9,
+          -514
+        ],
+        [
+          -6,
+          -506
+        ],
+        [
+          -15,
+          -505
+        ],
+        [
+          -37,
+          -515
+        ],
+        [
+          -48,
+          -526
+        ],
+        [
+          -51,
+          -523
+        ],
+        [
+          -56,
+          -500
+        ],
+        [
+          -80,
+          -500
+        ],
+        [
+          -84,
+          -488
+        ],
+        [
+          -101,
+          -498
+        ],
+        [
+          -114,
+          -498
+        ],
+        [
+          -124,
+          -512
+        ],
+        [
+          -124,
+          -536
+        ],
+        [
+          -133,
+          -543
+        ],
+        [
+          -139,
+          -557
+        ],
+        [
+          -165,
+          -583
+        ],
+        [
+          -176,
+          -600
+        ],
+        [
+          -196,
+          -600
+        ],
+        [
+          -207,
+          -587
+        ],
+        [
+          -220,
+          -584
+        ],
+        [
+          -220,
+          -600
+        ],
+        [
+          -232,
+          -612
+        ]
+      ],
+      "grow": 4,
+      "districtIndex": 1,
+      "label": "district-1 Hearthgate (complete)"
+    },
+    {
+      "x0": -183,
+      "z0": -888,
+      "x1": 75,
+      "z1": -641,
+      "polygon": [
+        [
+          -172,
+          -840
+        ],
+        [
+          -158,
+          -842
+        ],
+        [
+          -153,
+          -865
+        ],
+        [
+          -128,
+          -884
+        ],
+        [
+          -100,
+          -884
+        ],
+        [
+          -79,
+          -870
+        ],
+        [
+          -44,
+          -883
+        ],
+        [
+          -26,
+          -874
+        ],
+        [
+          9,
+          -849
+        ],
+        [
+          31,
+          -827
+        ],
+        [
+          66,
+          -782
+        ],
+        [
+          71,
+          -772
+        ],
+        [
+          70,
+          -766
+        ],
+        [
+          58,
+          -750
+        ],
+        [
+          50,
+          -746
+        ],
+        [
+          46,
+          -731
+        ],
+        [
+          49,
+          -721
+        ],
+        [
+          55,
+          -707
+        ],
+        [
+          55,
+          -701
+        ],
+        [
+          50,
+          -694
+        ],
+        [
+          38,
+          -697
+        ],
+        [
+          34,
+          -690
+        ],
+        [
+          32,
+          -680
+        ],
+        [
+          60,
+          -680
+        ],
+        [
+          59,
+          -673
+        ],
+        [
+          56,
+          -670
+        ],
+        [
+          47,
+          -675
+        ],
+        [
+          41,
+          -671
+        ],
+        [
+          47,
+          -659
+        ],
+        [
+          44,
+          -648
+        ],
+        [
+          36,
+          -645
+        ],
+        [
+          30,
+          -646
+        ],
+        [
+          13,
+          -661
+        ],
+        [
+          -17,
+          -679
+        ],
+        [
+          -29,
+          -677
+        ],
+        [
+          -38,
+          -662
+        ],
+        [
+          -46,
+          -662
+        ],
+        [
+          -69,
+          -675
+        ],
+        [
+          -71,
+          -680
+        ],
+        [
+          -70,
+          -690
+        ],
+        [
+          -76,
+          -700
+        ],
+        [
+          -100,
+          -700
+        ],
+        [
+          -100,
+          -696
+        ],
+        [
+          -116,
+          -696
+        ],
+        [
+          -123,
+          -698
+        ],
+        [
+          -139,
+          -693
+        ],
+        [
+          -156,
+          -700
+        ],
+        [
+          -158,
+          -706
+        ],
+        [
+          -164,
+          -712
+        ],
+        [
+          -164,
+          -736
+        ],
+        [
+          -175,
+          -757
+        ],
+        [
+          -169,
+          -783
+        ],
+        [
+          -177,
+          -799
+        ],
+        [
+          -179,
+          -807
+        ],
+        [
+          -172,
+          -816
+        ]
+      ],
+      "grow": 4,
+      "districtIndex": 2,
+      "label": "district-2 Ironquarry (complete)"
+    },
+    {
+      "x0": -400,
+      "z0": -852,
+      "x1": -152,
+      "z1": -620,
+      "polygon": [
+        [
+          -396,
+          -656
+        ],
+        [
+          -392,
+          -664
+        ],
+        [
+          -392,
+          -688
+        ],
+        [
+          -382,
+          -702
+        ],
+        [
+          -382,
+          -718
+        ],
+        [
+          -370,
+          -734
+        ],
+        [
+          -354,
+          -774
+        ],
+        [
+          -346,
+          -782
+        ],
+        [
+          -341,
+          -793
+        ],
+        [
+          -319,
+          -807
+        ],
+        [
+          -304,
+          -824
+        ],
+        [
+          -264,
+          -848
+        ],
+        [
+          -176,
+          -848
+        ],
+        [
+          -172,
+          -840
+        ],
+        [
+          -172,
+          -816
+        ],
+        [
+          -179,
+          -807
+        ],
+        [
+          -177,
+          -799
+        ],
+        [
+          -169,
+          -783
+        ],
+        [
+          -175,
+          -757
+        ],
+        [
+          -164,
+          -736
+        ],
+        [
+          -164,
+          -712
+        ],
+        [
+          -158,
+          -706
+        ],
+        [
+          -156,
+          -700
+        ],
+        [
+          -169,
+          -677
+        ],
+        [
+          -179,
+          -667
+        ],
+        [
+          -197,
+          -657
+        ],
+        [
+          -208,
+          -644
+        ],
+        [
+          -224,
+          -644
+        ],
+        [
+          -228,
+          -640
+        ],
+        [
+          -228,
+          -624
+        ],
+        [
+          -232,
+          -624
+        ],
+        [
+          -254,
+          -626
+        ],
+        [
+          -266,
+          -634
+        ],
+        [
+          -298,
+          -642
+        ],
+        [
+          -304,
+          -648
+        ],
+        [
+          -336,
+          -648
+        ],
+        [
+          -345,
+          -641
+        ],
+        [
+          -355,
+          -641
+        ],
+        [
+          -360,
+          -644
+        ],
+        [
+          -384,
+          -644
+        ]
+      ],
+      "grow": 4,
+      "districtIndex": 3,
+      "label": "district-3 Whitethorn (complete)"
+    },
+    {
+      "x0": -492,
+      "z0": -660,
+      "x1": -216,
+      "z1": -410,
+      "polygon": [
+        [
+          -316,
+          -456
+        ],
+        [
+          -326,
+          -454
+        ],
+        [
+          -342,
+          -438
+        ],
+        [
+          -362,
+          -434
+        ],
+        [
+          -394,
+          -414
+        ],
+        [
+          -402,
+          -414
+        ],
+        [
+          -406,
+          -426
+        ],
+        [
+          -418,
+          -430
+        ],
+        [
+          -429,
+          -443
+        ],
+        [
+          -448,
+          -472
+        ],
+        [
+          -470,
+          -522
+        ],
+        [
+          -481,
+          -563
+        ],
+        [
+          -484,
+          -568
+        ],
+        [
+          -484,
+          -596
+        ],
+        [
+          -488,
+          -596
+        ],
+        [
+          -488,
+          -644
+        ],
+        [
+          -473,
+          -647
+        ],
+        [
+          -463,
+          -641
+        ],
+        [
+          -444,
+          -634
+        ],
+        [
+          -417,
+          -653
+        ],
+        [
+          -396,
+          -656
+        ],
+        [
+          -384,
+          -644
+        ],
+        [
+          -360,
+          -644
+        ],
+        [
+          -355,
+          -641
+        ],
+        [
+          -345,
+          -641
+        ],
+        [
+          -336,
+          -648
+        ],
+        [
+          -304,
+          -648
+        ],
+        [
+          -298,
+          -642
+        ],
+        [
+          -266,
+          -634
+        ],
+        [
+          -254,
+          -626
+        ],
+        [
+          -232,
+          -624
+        ],
+        [
+          -232,
+          -612
+        ],
+        [
+          -220,
+          -600
+        ],
+        [
+          -220,
+          -584
+        ],
+        [
+          -227,
+          -575
+        ],
+        [
+          -256,
+          -556
+        ],
+        [
+          -256,
+          -540
+        ],
+        [
+          -268,
+          -528
+        ],
+        [
+          -280,
+          -528
+        ],
+        [
+          -302,
+          -506
+        ],
+        [
+          -319,
+          -471
+        ]
+      ],
+      "grow": 4,
+      "districtIndex": 4,
+      "label": "district-4 Saltmere (complete)"
+    }
+  ],
+  "targetRows": [
+    {
+      "position": {
+        "x": -219,
+        "y": 69,
+        "z": -537
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "saved": "minecraft:air",
+      "observation": "161 page1 /historical non-atomic census",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": {
+            "at": "-219,69,-537",
+            "stage": "clear",
+            "element": "clear-d5-chapel-1",
+            "elementHash": "2cfd719f",
+            "op": {
+              "x": -219,
+              "y": 69,
+              "z": -537,
+              "id": "minecraft:air",
+              "kind": "clear",
+              "states": null
+            }
+          },
+          "historicalTree": [],
+          "allTargetHistory": [
+            {
+              "stage": "clear",
+              "element": "clear-d5-chapel-1",
+              "elementHash": "2cfd719f",
+              "op": {
+                "x": -219,
+                "y": 69,
+                "z": -537,
+                "id": "minecraft:air",
+                "kind": "clear",
+                "states": null
+              }
+            }
+          ]
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -218,
+        "y": 69,
+        "z": -535
+      },
+      "observedId": "minecraft:oak_log",
+      "fullStates": {
+        "old_log_type": "oak",
+        "pillar_axis": "y"
+      },
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "saved": "minecraft:air",
+      "observation": "161 page1 /historical non-atomic census",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": {
+            "at": "-218,69,-535",
+            "stage": "clear",
+            "element": "clear-d5-chapel-1",
+            "elementHash": "2cfd719f",
+            "op": {
+              "x": -218,
+              "y": 69,
+              "z": -535,
+              "id": "minecraft:air",
+              "kind": "clear",
+              "states": null
+            }
+          },
+          "historicalTree": [],
+          "allTargetHistory": [
+            {
+              "stage": "clear",
+              "element": "clear-d5-chapel-1",
+              "elementHash": "2cfd719f",
+              "op": {
+                "x": -218,
+                "y": 69,
+                "z": -535,
+                "id": "minecraft:air",
+                "kind": "clear",
+                "states": null
+              }
+            }
+          ]
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -215,
+        "y": 69,
+        "z": -539
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "saved": "minecraft:air",
+      "observation": "161 page1 /historical non-atomic census",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": {
+            "at": "-215,69,-539",
+            "stage": "clear",
+            "element": "clear-d5-chapel-1",
+            "elementHash": "2cfd719f",
+            "op": {
+              "x": -215,
+              "y": 69,
+              "z": -539,
+              "id": "minecraft:air",
+              "kind": "clear",
+              "states": null
+            }
+          },
+          "historicalTree": [],
+          "allTargetHistory": [
+            {
+              "stage": "clear",
+              "element": "clear-d5-chapel-1",
+              "elementHash": "2cfd719f",
+              "op": {
+                "x": -215,
+                "y": 69,
+                "z": -539,
+                "id": "minecraft:air",
+                "kind": "clear",
+                "states": null
+              }
+            }
+          ]
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -215,
+        "y": 69,
+        "z": -538
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "saved": "minecraft:air",
+      "observation": "161 page1 /historical non-atomic census",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": {
+            "at": "-215,69,-538",
+            "stage": "clear",
+            "element": "clear-d5-chapel-1",
+            "elementHash": "2cfd719f",
+            "op": {
+              "x": -215,
+              "y": 69,
+              "z": -538,
+              "id": "minecraft:air",
+              "kind": "clear",
+              "states": null
+            }
+          },
+          "historicalTree": [],
+          "allTargetHistory": [
+            {
+              "stage": "clear",
+              "element": "clear-d5-chapel-1",
+              "elementHash": "2cfd719f",
+              "op": {
+                "x": -215,
+                "y": 69,
+                "z": -538,
+                "id": "minecraft:air",
+                "kind": "clear",
+                "states": null
+              }
+            }
+          ]
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -214,
+        "y": 69,
+        "z": -539
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "saved": "minecraft:air",
+      "observation": "161 page1 /historical non-atomic census",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": {
+            "at": "-214,69,-539",
+            "stage": "clear",
+            "element": "clear-d5-chapel-1",
+            "elementHash": "2cfd719f",
+            "op": {
+              "x": -214,
+              "y": 69,
+              "z": -539,
+              "id": "minecraft:air",
+              "kind": "clear",
+              "states": null
+            }
+          },
+          "historicalTree": [],
+          "allTargetHistory": [
+            {
+              "stage": "clear",
+              "element": "clear-d5-chapel-1",
+              "elementHash": "2cfd719f",
+              "op": {
+                "x": -214,
+                "y": 69,
+                "z": -539,
+                "id": "minecraft:air",
+                "kind": "clear",
+                "states": null
+              }
+            }
+          ]
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -214,
+        "y": 69,
+        "z": -538
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "saved": "minecraft:air",
+      "observation": "161 page1 /historical non-atomic census",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": {
+            "at": "-214,69,-538",
+            "stage": "clear",
+            "element": "clear-d5-chapel-1",
+            "elementHash": "2cfd719f",
+            "op": {
+              "x": -214,
+              "y": 69,
+              "z": -538,
+              "id": "minecraft:air",
+              "kind": "clear",
+              "states": null
+            }
+          },
+          "historicalTree": [],
+          "allTargetHistory": [
+            {
+              "stage": "clear",
+              "element": "clear-d5-chapel-1",
+              "elementHash": "2cfd719f",
+              "op": {
+                "x": -214,
+                "y": 69,
+                "z": -538,
+                "id": "minecraft:air",
+                "kind": "clear",
+                "states": null
+              }
+            }
+          ]
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -218,
+        "y": 70,
+        "z": -535
+      },
+      "observedId": "minecraft:oak_log",
+      "fullStates": {
+        "old_log_type": "oak",
+        "pillar_axis": "y"
+      },
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -215,
+        "y": 70,
+        "z": -539
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -215,
+        "y": 70,
+        "z": -538
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -214,
+        "y": 70,
+        "z": -539
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -214,
+        "y": 70,
+        "z": -538
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -218,
+        "y": 71,
+        "z": -535
+      },
+      "observedId": "minecraft:oak_log",
+      "fullStates": {
+        "old_log_type": "oak",
+        "pillar_axis": "y"
+      },
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -215,
+        "y": 71,
+        "z": -539
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -215,
+        "y": 71,
+        "z": -538
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -214,
+        "y": 71,
+        "z": -539
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -214,
+        "y": 71,
+        "z": -538
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -218,
+        "y": 72,
+        "z": -536
+      },
+      "observedId": "minecraft:oak_log",
+      "fullStates": {
+        "old_log_type": "oak",
+        "pillar_axis": "z"
+      },
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -218,
+        "y": 72,
+        "z": -535
+      },
+      "observedId": "minecraft:oak_log",
+      "fullStates": {
+        "old_log_type": "oak",
+        "pillar_axis": "y"
+      },
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -215,
+        "y": 72,
+        "z": -539
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -215,
+        "y": 72,
+        "z": -538
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -214,
+        "y": 72,
+        "z": -539
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -214,
+        "y": 72,
+        "z": -538
+      },
+      "observedId": "minecraft:jungle_log",
+      "fullStates": {
+        "old_log_type": "jungle",
+        "pillar_axis": "y"
+      },
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -219,
+        "y": 69,
+        "z": -538
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "saved": "minecraft:air",
+      "observation": "161 page1 /historical non-atomic census",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": {
+            "at": "-219,69,-538",
+            "stage": "clear",
+            "element": "clear-d5-chapel-1",
+            "elementHash": "2cfd719f",
+            "op": {
+              "x": -219,
+              "y": 69,
+              "z": -538,
+              "id": "minecraft:air",
+              "kind": "clear",
+              "states": null
+            }
+          },
+          "historicalTree": [],
+          "allTargetHistory": [
+            {
+              "stage": "clear",
+              "element": "clear-d5-chapel-1",
+              "elementHash": "2cfd719f",
+              "op": {
+                "x": -219,
+                "y": 69,
+                "z": -538,
+                "id": "minecraft:air",
+                "kind": "clear",
+                "states": null
+              }
+            }
+          ]
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -219,
+        "y": 69,
+        "z": -536
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "saved": "minecraft:air",
+      "observation": "161 page1 /historical non-atomic census",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": {
+            "at": "-219,69,-536",
+            "stage": "clear",
+            "element": "clear-d5-chapel-1",
+            "elementHash": "2cfd719f",
+            "op": {
+              "x": -219,
+              "y": 69,
+              "z": -536,
+              "id": "minecraft:air",
+              "kind": "clear",
+              "states": null
+            }
+          },
+          "historicalTree": [],
+          "allTargetHistory": [
+            {
+              "stage": "clear",
+              "element": "clear-d5-chapel-1",
+              "elementHash": "2cfd719f",
+              "op": {
+                "x": -219,
+                "y": 69,
+                "z": -536,
+                "id": "minecraft:air",
+                "kind": "clear",
+                "states": null
+              }
+            }
+          ]
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -219,
+        "y": 69,
+        "z": -535
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "saved": "minecraft:air",
+      "observation": "161 page1 /historical non-atomic census",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": {
+            "at": "-219,69,-535",
+            "stage": "clear",
+            "element": "clear-d5-chapel-1",
+            "elementHash": "2cfd719f",
+            "op": {
+              "x": -219,
+              "y": 69,
+              "z": -535,
+              "id": "minecraft:air",
+              "kind": "clear",
+              "states": null
+            }
+          },
+          "historicalTree": [],
+          "allTargetHistory": [
+            {
+              "stage": "clear",
+              "element": "clear-d5-chapel-1",
+              "elementHash": "2cfd719f",
+              "op": {
+                "x": -219,
+                "y": 69,
+                "z": -535,
+                "id": "minecraft:air",
+                "kind": "clear",
+                "states": null
+              }
+            }
+          ]
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -218,
+        "y": 69,
+        "z": -538
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "saved": "minecraft:air",
+      "observation": "161 page1 /historical non-atomic census",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": {
+            "at": "-218,69,-538",
+            "stage": "clear",
+            "element": "clear-d5-chapel-1",
+            "elementHash": "2cfd719f",
+            "op": {
+              "x": -218,
+              "y": 69,
+              "z": -538,
+              "id": "minecraft:air",
+              "kind": "clear",
+              "states": null
+            }
+          },
+          "historicalTree": [],
+          "allTargetHistory": [
+            {
+              "stage": "clear",
+              "element": "clear-d5-chapel-1",
+              "elementHash": "2cfd719f",
+              "op": {
+                "x": -218,
+                "y": 69,
+                "z": -538,
+                "id": "minecraft:air",
+                "kind": "clear",
+                "states": null
+              }
+            }
+          ]
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -218,
+        "y": 69,
+        "z": -537
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "saved": "minecraft:air",
+      "observation": "161 page1 /historical non-atomic census",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": {
+            "at": "-218,69,-537",
+            "stage": "clear",
+            "element": "clear-d5-chapel-1",
+            "elementHash": "2cfd719f",
+            "op": {
+              "x": -218,
+              "y": 69,
+              "z": -537,
+              "id": "minecraft:air",
+              "kind": "clear",
+              "states": null
+            }
+          },
+          "historicalTree": [],
+          "allTargetHistory": [
+            {
+              "stage": "clear",
+              "element": "clear-d5-chapel-1",
+              "elementHash": "2cfd719f",
+              "op": {
+                "x": -218,
+                "y": 69,
+                "z": -537,
+                "id": "minecraft:air",
+                "kind": "clear",
+                "states": null
+              }
+            }
+          ]
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -218,
+        "y": 69,
+        "z": -536
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "saved": "minecraft:air",
+      "observation": "161 page1 /historical non-atomic census",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": {
+            "at": "-218,69,-536",
+            "stage": "clear",
+            "element": "clear-d5-chapel-1",
+            "elementHash": "2cfd719f",
+            "op": {
+              "x": -218,
+              "y": 69,
+              "z": -536,
+              "id": "minecraft:air",
+              "kind": "clear",
+              "states": null
+            }
+          },
+          "historicalTree": [],
+          "allTargetHistory": [
+            {
+              "stage": "clear",
+              "element": "clear-d5-chapel-1",
+              "elementHash": "2cfd719f",
+              "op": {
+                "x": -218,
+                "y": 69,
+                "z": -536,
+                "id": "minecraft:air",
+                "kind": "clear",
+                "states": null
+              }
+            }
+          ]
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -217,
+        "y": 69,
+        "z": -536
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "saved": "minecraft:air",
+      "observation": "161 page1 /historical non-atomic census",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": {
+            "at": "-217,69,-536",
+            "stage": "clear",
+            "element": "clear-d5-chapel-1",
+            "elementHash": "2cfd719f",
+            "op": {
+              "x": -217,
+              "y": 69,
+              "z": -536,
+              "id": "minecraft:air",
+              "kind": "clear",
+              "states": null
+            }
+          },
+          "historicalTree": [],
+          "allTargetHistory": [
+            {
+              "stage": "clear",
+              "element": "clear-d5-chapel-1",
+              "elementHash": "2cfd719f",
+              "op": {
+                "x": -217,
+                "y": 69,
+                "z": -536,
+                "id": "minecraft:air",
+                "kind": "clear",
+                "states": null
+              }
+            }
+          ]
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -217,
+        "y": 69,
+        "z": -535
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "saved": "minecraft:air",
+      "observation": "161 page1 /historical non-atomic census",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": {
+            "at": "-217,69,-535",
+            "stage": "clear",
+            "element": "clear-d5-chapel-1",
+            "elementHash": "2cfd719f",
+            "op": {
+              "x": -217,
+              "y": 69,
+              "z": -535,
+              "id": "minecraft:air",
+              "kind": "clear",
+              "states": null
+            }
+          },
+          "historicalTree": [],
+          "allTargetHistory": [
+            {
+              "stage": "clear",
+              "element": "clear-d5-chapel-1",
+              "elementHash": "2cfd719f",
+              "op": {
+                "x": -217,
+                "y": 69,
+                "z": -535,
+                "id": "minecraft:air",
+                "kind": "clear",
+                "states": null
+              }
+            }
+          ]
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -219,
+        "y": 70,
+        "z": -538
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -219,
+        "y": 70,
+        "z": -537
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "saved": "no district op",
+      "observation": "161 page1 /historical non-atomic census",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -219,
+        "y": 70,
+        "z": -536
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "saved": "no district op",
+      "observation": "162 page2 /separate later census observed betweenhours1105-1106, parent manualUI transcription",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -218,
+        "y": 70,
+        "z": -538
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "saved": "no district op",
+      "observation": "162 page2 /separate later census observed betweenhours1105-1106, parent manualUI transcription",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -218,
+        "y": 70,
+        "z": -537
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "saved": "no district op",
+      "observation": "162 page2 /separate later census observed betweenhours1105-1106, parent manualUI transcription",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -219,
+        "y": 71,
+        "z": -537
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "saved": "no district op",
+      "observation": "162 page2 /separate later census observed betweenhours1105-1106, parent manualUI transcription",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -219,
+        "y": 72,
+        "z": -537
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "saved": "no district op",
+      "observation": "162 page2 /separate later census observed betweenhours1105-1106, parent manualUI transcription",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -218,
+        "y": 72,
+        "z": -537
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "saved": "no district op",
+      "observation": "162 page2 /separate later census observed betweenhours1105-1106, parent manualUI transcription",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "protectedForActiveD5": []
+    },
+    {
+      "position": {
+        "x": -217,
+        "y": 72,
+        "z": -537
+      },
+      "observedId": "minecraft:oak_leaves",
+      "fullStates": {
+        "old_leaf_type": "oak",
+        "persistent_bit": false,
+        "update_bit": false
+      },
+      "saved": "no district op",
+      "observation": "162 page2 /separate later census observed betweenhours1105-1106, parent manualUI transcription",
+      "claims": [
+        {
+          "district": 1,
+          "checksum": "07515fcb",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 2,
+          "checksum": "e6d55467",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 3,
+          "checksum": "6b9f8114",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 4,
+          "checksum": "35635162",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        },
+        {
+          "district": 5,
+          "checksum": "23a6aeca",
+          "final": null,
+          "historicalTree": [],
+          "allTargetHistory": []
+        }
+      ],
+      "matchingObservedIdPlannedHistory": [],
+      "classification": "NO SOURCE MATCH TO OBSERVED ID at exact coordinate; NOT natural-origin proof",
+      "protectedForActiveD5": []
+    }
+  ],
+  "sources": [
+    {
+      "index": 1,
+      "checksum": "07515fcb",
+      "civStatus": "complete",
+      "dimension": "minecraft:overworld",
+      "queueState": "complete",
+      "queuePlanHash": "07515fcb",
+      "recovered": 0,
+      "loadYields": 4202,
+      "operations": 84852,
+      "operationCheckpoints": 212,
+      "final": [],
+      "historicalTree": [],
+      "targetHistory": []
+    },
+    {
+      "index": 2,
+      "checksum": "e6d55467",
+      "civStatus": "complete",
+      "dimension": "minecraft:overworld",
+      "queueState": "complete",
+      "queuePlanHash": "e6d55467",
+      "recovered": 0,
+      "loadYields": 4063,
+      "operations": 97901,
+      "operationCheckpoints": 244,
+      "final": [],
+      "historicalTree": [],
+      "targetHistory": []
+    },
+    {
+      "index": 3,
+      "checksum": "6b9f8114",
+      "civStatus": "complete",
+      "dimension": "minecraft:overworld",
+      "queueState": "complete",
+      "queuePlanHash": "6b9f8114",
+      "recovered": 0,
+      "loadYields": 6931,
+      "operations": 129033,
+      "operationCheckpoints": 322,
+      "final": [],
+      "historicalTree": [],
+      "targetHistory": []
+    },
+    {
+      "index": 4,
+      "checksum": "35635162",
+      "civStatus": "complete",
+      "dimension": "minecraft:overworld",
+      "queueState": "complete",
+      "queuePlanHash": "35635162",
+      "recovered": 0,
+      "loadYields": 4988,
+      "operations": 71853,
+      "operationCheckpoints": 179,
+      "final": [],
+      "historicalTree": [],
+      "targetHistory": []
+    },
+    {
+      "index": 5,
+      "checksum": "23a6aeca",
+      "civStatus": "complete",
+      "dimension": "minecraft:overworld",
+      "queueState": "complete",
+      "queuePlanHash": "23a6aeca",
+      "recovered": 0,
+      "loadYields": 8021,
+      "operations": 52044,
+      "operationCheckpoints": 130,
+      "final": [
+        {
+          "at": "-215,69,-540",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -215,
+            "y": 69,
+            "z": -540,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-214,69,-540",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -214,
+            "y": 69,
+            "z": -540,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-213,68,-540",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -213,
+            "y": 68,
+            "z": -540,
+            "id": "minecraft:cobblestone",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-220,69,-539",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -220,
+            "y": 69,
+            "z": -539,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-219,69,-539",
+          "stage": "clear",
+          "element": "clear-d5-chapel-1",
+          "elementHash": "2cfd719f",
+          "op": {
+            "x": -219,
+            "y": 69,
+            "z": -539,
+            "id": "minecraft:air",
+            "kind": "clear",
+            "states": null
+          }
+        },
+        {
+          "at": "-218,69,-539",
+          "stage": "clear",
+          "element": "clear-d5-chapel-1",
+          "elementHash": "2cfd719f",
+          "op": {
+            "x": -218,
+            "y": 69,
+            "z": -539,
+            "id": "minecraft:air",
+            "kind": "clear",
+            "states": null
+          }
+        },
+        {
+          "at": "-217,69,-539",
+          "stage": "clear",
+          "element": "clear-d5-chapel-1",
+          "elementHash": "2cfd719f",
+          "op": {
+            "x": -217,
+            "y": 69,
+            "z": -539,
+            "id": "minecraft:air",
+            "kind": "clear",
+            "states": null
+          }
+        },
+        {
+          "at": "-216,69,-539",
+          "stage": "clear",
+          "element": "clear-d5-chapel-1",
+          "elementHash": "2cfd719f",
+          "op": {
+            "x": -216,
+            "y": 69,
+            "z": -539,
+            "id": "minecraft:air",
+            "kind": "clear",
+            "states": null
+          }
+        },
+        {
+          "at": "-215,69,-539",
+          "stage": "clear",
+          "element": "clear-d5-chapel-1",
+          "elementHash": "2cfd719f",
+          "op": {
+            "x": -215,
+            "y": 69,
+            "z": -539,
+            "id": "minecraft:air",
+            "kind": "clear",
+            "states": null
+          }
+        },
+        {
+          "at": "-214,69,-539",
+          "stage": "clear",
+          "element": "clear-d5-chapel-1",
+          "elementHash": "2cfd719f",
+          "op": {
+            "x": -214,
+            "y": 69,
+            "z": -539,
+            "id": "minecraft:air",
+            "kind": "clear",
+            "states": null
+          }
+        },
+        {
+          "at": "-213,68,-539",
+          "stage": "clear",
+          "element": "clear-d5-chapel-1",
+          "elementHash": "2cfd719f",
+          "op": {
+            "x": -213,
+            "y": 68,
+            "z": -539,
+            "id": "minecraft:air",
+            "kind": "clear",
+            "states": null
+          }
+        },
+        {
+          "at": "-220,69,-538",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -220,
+            "y": 69,
+            "z": -538,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-219,69,-538",
+          "stage": "clear",
+          "element": "clear-d5-chapel-1",
+          "elementHash": "2cfd719f",
+          "op": {
+            "x": -219,
+            "y": 69,
+            "z": -538,
+            "id": "minecraft:air",
+            "kind": "clear",
+            "states": null
+          }
+        },
+        {
+          "at": "-218,69,-538",
+          "stage": "clear",
+          "element": "clear-d5-chapel-1",
+          "elementHash": "2cfd719f",
+          "op": {
+            "x": -218,
+            "y": 69,
+            "z": -538,
+            "id": "minecraft:air",
+            "kind": "clear",
+            "states": null
+          }
+        },
+        {
+          "at": "-217,69,-538",
+          "stage": "clear",
+          "element": "clear-d5-chapel-1",
+          "elementHash": "2cfd719f",
+          "op": {
+            "x": -217,
+            "y": 69,
+            "z": -538,
+            "id": "minecraft:air",
+            "kind": "clear",
+            "states": null
+          }
+        },
+        {
+          "at": "-215,69,-538",
+          "stage": "clear",
+          "element": "clear-d5-chapel-1",
+          "elementHash": "2cfd719f",
+          "op": {
+            "x": -215,
+            "y": 69,
+            "z": -538,
+            "id": "minecraft:air",
+            "kind": "clear",
+            "states": null
+          }
+        },
+        {
+          "at": "-214,69,-538",
+          "stage": "clear",
+          "element": "clear-d5-chapel-1",
+          "elementHash": "2cfd719f",
+          "op": {
+            "x": -214,
+            "y": 69,
+            "z": -538,
+            "id": "minecraft:air",
+            "kind": "clear",
+            "states": null
+          }
+        },
+        {
+          "at": "-220,69,-537",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -220,
+            "y": 69,
+            "z": -537,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-219,69,-537",
+          "stage": "clear",
+          "element": "clear-d5-chapel-1",
+          "elementHash": "2cfd719f",
+          "op": {
+            "x": -219,
+            "y": 69,
+            "z": -537,
+            "id": "minecraft:air",
+            "kind": "clear",
+            "states": null
+          }
+        },
+        {
+          "at": "-218,69,-537",
+          "stage": "clear",
+          "element": "clear-d5-chapel-1",
+          "elementHash": "2cfd719f",
+          "op": {
+            "x": -218,
+            "y": 69,
+            "z": -537,
+            "id": "minecraft:air",
+            "kind": "clear",
+            "states": null
+          }
+        },
+        {
+          "at": "-217,69,-537",
+          "stage": "clear",
+          "element": "clear-d5-chapel-1",
+          "elementHash": "2cfd719f",
+          "op": {
+            "x": -217,
+            "y": 69,
+            "z": -537,
+            "id": "minecraft:air",
+            "kind": "clear",
+            "states": null
+          }
+        },
+        {
+          "at": "-215,69,-537",
+          "stage": "clear",
+          "element": "clear-d5-chapel-1",
+          "elementHash": "2cfd719f",
+          "op": {
+            "x": -215,
+            "y": 69,
+            "z": -537,
+            "id": "minecraft:air",
+            "kind": "clear",
+            "states": null
+          }
+        },
+        {
+          "at": "-220,69,-536",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -220,
+            "y": 69,
+            "z": -536,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-219,69,-536",
+          "stage": "clear",
+          "element": "clear-d5-chapel-1",
+          "elementHash": "2cfd719f",
+          "op": {
+            "x": -219,
+            "y": 69,
+            "z": -536,
+            "id": "minecraft:air",
+            "kind": "clear",
+            "states": null
+          }
+        },
+        {
+          "at": "-218,69,-536",
+          "stage": "clear",
+          "element": "clear-d5-chapel-1",
+          "elementHash": "2cfd719f",
+          "op": {
+            "x": -218,
+            "y": 69,
+            "z": -536,
+            "id": "minecraft:air",
+            "kind": "clear",
+            "states": null
+          }
+        },
+        {
+          "at": "-217,69,-536",
+          "stage": "clear",
+          "element": "clear-d5-chapel-1",
+          "elementHash": "2cfd719f",
+          "op": {
+            "x": -217,
+            "y": 69,
+            "z": -536,
+            "id": "minecraft:air",
+            "kind": "clear",
+            "states": null
+          }
+        },
+        {
+          "at": "-220,69,-535",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -220,
+            "y": 69,
+            "z": -535,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-219,69,-535",
+          "stage": "clear",
+          "element": "clear-d5-chapel-1",
+          "elementHash": "2cfd719f",
+          "op": {
+            "x": -219,
+            "y": 69,
+            "z": -535,
+            "id": "minecraft:air",
+            "kind": "clear",
+            "states": null
+          }
+        },
+        {
+          "at": "-218,69,-535",
+          "stage": "clear",
+          "element": "clear-d5-chapel-1",
+          "elementHash": "2cfd719f",
+          "op": {
+            "x": -218,
+            "y": 69,
+            "z": -535,
+            "id": "minecraft:air",
+            "kind": "clear",
+            "states": null
+          }
+        },
+        {
+          "at": "-217,69,-535",
+          "stage": "clear",
+          "element": "clear-d5-chapel-1",
+          "elementHash": "2cfd719f",
+          "op": {
+            "x": -217,
+            "y": 69,
+            "z": -535,
+            "id": "minecraft:air",
+            "kind": "clear",
+            "states": null
+          }
+        },
+        {
+          "at": "-216,69,-535",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -216,
+            "y": 69,
+            "z": -535,
+            "id": "minecraft:lantern",
+            "kind": "structure",
+            "states": {
+              "hanging": false
+            }
+          }
+        },
+        {
+          "at": "-220,69,-534",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -220,
+            "y": 69,
+            "z": -534,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-219,69,-534",
+          "stage": "clear",
+          "element": "clear-d5-chapel-1",
+          "elementHash": "2cfd719f",
+          "op": {
+            "x": -219,
+            "y": 69,
+            "z": -534,
+            "id": "minecraft:air",
+            "kind": "clear",
+            "states": null
+          }
+        },
+        {
+          "at": "-220,68,-539",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -220,
+            "y": 68,
+            "z": -539,
+            "id": "minecraft:cobblestone",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-220,68,-538",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -220,
+            "y": 68,
+            "z": -538,
+            "id": "minecraft:mossy_cobblestone",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-220,68,-537",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -220,
+            "y": 68,
+            "z": -537,
+            "id": "minecraft:mossy_cobblestone",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-220,68,-536",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -220,
+            "y": 68,
+            "z": -536,
+            "id": "minecraft:cobblestone",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-220,68,-535",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -220,
+            "y": 68,
+            "z": -535,
+            "id": "minecraft:mossy_cobblestone",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-220,68,-534",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -220,
+            "y": 68,
+            "z": -534,
+            "id": "minecraft:mossy_cobblestone",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-219,68,-539",
+          "stage": "lots",
+          "element": "pad-d5-chapel-1",
+          "elementHash": "600c11d9",
+          "op": {
+            "x": -219,
+            "y": 68,
+            "z": -539,
+            "id": "minecraft:air",
+            "kind": "cut",
+            "states": null
+          }
+        },
+        {
+          "at": "-219,68,-538",
+          "stage": "lots",
+          "element": "pad-d5-chapel-1",
+          "elementHash": "600c11d9",
+          "op": {
+            "x": -219,
+            "y": 68,
+            "z": -538,
+            "id": "minecraft:air",
+            "kind": "cut",
+            "states": null
+          }
+        },
+        {
+          "at": "-219,68,-537",
+          "stage": "lots",
+          "element": "pad-d5-chapel-1",
+          "elementHash": "600c11d9",
+          "op": {
+            "x": -219,
+            "y": 68,
+            "z": -537,
+            "id": "minecraft:air",
+            "kind": "cut",
+            "states": null
+          }
+        },
+        {
+          "at": "-219,68,-536",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -219,
+            "y": 68,
+            "z": -536,
+            "id": "minecraft:lectern",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-219,68,-535",
+          "stage": "lots",
+          "element": "pad-d5-chapel-1",
+          "elementHash": "600c11d9",
+          "op": {
+            "x": -219,
+            "y": 68,
+            "z": -535,
+            "id": "minecraft:air",
+            "kind": "cut",
+            "states": null
+          }
+        },
+        {
+          "at": "-219,68,-534",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -219,
+            "y": 68,
+            "z": -534,
+            "id": "minecraft:bell",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-218,68,-539",
+          "stage": "lots",
+          "element": "pad-d5-chapel-1",
+          "elementHash": "600c11d9",
+          "op": {
+            "x": -218,
+            "y": 68,
+            "z": -539,
+            "id": "minecraft:air",
+            "kind": "cut",
+            "states": null
+          }
+        },
+        {
+          "at": "-218,68,-538",
+          "stage": "lots",
+          "element": "pad-d5-chapel-1",
+          "elementHash": "600c11d9",
+          "op": {
+            "x": -218,
+            "y": 68,
+            "z": -538,
+            "id": "minecraft:air",
+            "kind": "cut",
+            "states": null
+          }
+        },
+        {
+          "at": "-218,68,-537",
+          "stage": "lots",
+          "element": "pad-d5-chapel-1",
+          "elementHash": "600c11d9",
+          "op": {
+            "x": -218,
+            "y": 68,
+            "z": -537,
+            "id": "minecraft:air",
+            "kind": "cut",
+            "states": null
+          }
+        },
+        {
+          "at": "-218,68,-536",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -218,
+            "y": 68,
+            "z": -536,
+            "id": "minecraft:red_carpet",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-218,68,-535",
+          "stage": "lots",
+          "element": "pad-d5-chapel-1",
+          "elementHash": "600c11d9",
+          "op": {
+            "x": -218,
+            "y": 68,
+            "z": -535,
+            "id": "minecraft:air",
+            "kind": "cut",
+            "states": null
+          }
+        },
+        {
+          "at": "-218,68,-534",
+          "stage": "lots",
+          "element": "pad-d5-chapel-1",
+          "elementHash": "600c11d9",
+          "op": {
+            "x": -218,
+            "y": 68,
+            "z": -534,
+            "id": "minecraft:air",
+            "kind": "cut",
+            "states": null
+          }
+        },
+        {
+          "at": "-217,68,-539",
+          "stage": "lots",
+          "element": "pad-d5-chapel-1",
+          "elementHash": "600c11d9",
+          "op": {
+            "x": -217,
+            "y": 68,
+            "z": -539,
+            "id": "minecraft:air",
+            "kind": "cut",
+            "states": null
+          }
+        },
+        {
+          "at": "-217,68,-538",
+          "stage": "lots",
+          "element": "pad-d5-chapel-1",
+          "elementHash": "600c11d9",
+          "op": {
+            "x": -217,
+            "y": 68,
+            "z": -538,
+            "id": "minecraft:air",
+            "kind": "cut",
+            "states": null
+          }
+        },
+        {
+          "at": "-217,68,-537",
+          "stage": "lots",
+          "element": "pad-d5-chapel-1",
+          "elementHash": "600c11d9",
+          "op": {
+            "x": -217,
+            "y": 68,
+            "z": -537,
+            "id": "minecraft:air",
+            "kind": "cut",
+            "states": null
+          }
+        },
+        {
+          "at": "-217,68,-536",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -217,
+            "y": 68,
+            "z": -536,
+            "id": "minecraft:red_carpet",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-217,68,-535",
+          "stage": "lots",
+          "element": "pad-d5-chapel-1",
+          "elementHash": "600c11d9",
+          "op": {
+            "x": -217,
+            "y": 68,
+            "z": -535,
+            "id": "minecraft:air",
+            "kind": "cut",
+            "states": null
+          }
+        },
+        {
+          "at": "-217,68,-534",
+          "stage": "lots",
+          "element": "pad-d5-chapel-1",
+          "elementHash": "600c11d9",
+          "op": {
+            "x": -217,
+            "y": 68,
+            "z": -534,
+            "id": "minecraft:air",
+            "kind": "cut",
+            "states": null
+          }
+        },
+        {
+          "at": "-216,68,-540",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -216,
+            "y": 68,
+            "z": -540,
+            "id": "minecraft:mossy_cobblestone",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-216,68,-539",
+          "stage": "lots",
+          "element": "pad-d5-chapel-1",
+          "elementHash": "600c11d9",
+          "op": {
+            "x": -216,
+            "y": 68,
+            "z": -539,
+            "id": "minecraft:air",
+            "kind": "cut",
+            "states": null
+          }
+        },
+        {
+          "at": "-216,68,-538",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -216,
+            "y": 68,
+            "z": -538,
+            "id": "minecraft:birch_planks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-216,68,-537",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -216,
+            "y": 68,
+            "z": -537,
+            "id": "minecraft:birch_planks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-216,68,-536",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -216,
+            "y": 68,
+            "z": -536,
+            "id": "minecraft:red_carpet",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-216,68,-535",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -216,
+            "y": 68,
+            "z": -535,
+            "id": "minecraft:birch_planks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-216,68,-534",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -216,
+            "y": 68,
+            "z": -534,
+            "id": "minecraft:birch_planks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-215,68,-540",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -215,
+            "y": 68,
+            "z": -540,
+            "id": "minecraft:cobblestone",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-215,68,-539",
+          "stage": "lots",
+          "element": "pad-d5-chapel-1",
+          "elementHash": "600c11d9",
+          "op": {
+            "x": -215,
+            "y": 68,
+            "z": -539,
+            "id": "minecraft:air",
+            "kind": "cut",
+            "states": null
+          }
+        },
+        {
+          "at": "-215,68,-538",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -215,
+            "y": 68,
+            "z": -538,
+            "id": "minecraft:birch_planks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-215,68,-537",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -215,
+            "y": 68,
+            "z": -537,
+            "id": "minecraft:birch_planks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-214,68,-540",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -214,
+            "y": 68,
+            "z": -540,
+            "id": "minecraft:cobblestone",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-214,68,-539",
+          "stage": "lots",
+          "element": "pad-d5-chapel-1",
+          "elementHash": "600c11d9",
+          "op": {
+            "x": -214,
+            "y": 68,
+            "z": -539,
+            "id": "minecraft:air",
+            "kind": "cut",
+            "states": null
+          }
+        },
+        {
+          "at": "-214,68,-538",
+          "stage": "lots",
+          "element": "pad-d5-chapel-1",
+          "elementHash": "600c11d9",
+          "op": {
+            "x": -214,
+            "y": 68,
+            "z": -538,
+            "id": "minecraft:air",
+            "kind": "cut",
+            "states": null
+          }
+        },
+        {
+          "at": "-216,69,-540",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -216,
+            "y": 69,
+            "z": -540,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-213,69,-540",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -213,
+            "y": 69,
+            "z": -540,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-220,70,-534",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -220,
+            "y": 70,
+            "z": -534,
+            "id": "minecraft:glass_pane",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-220,70,-535",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -220,
+            "y": 70,
+            "z": -535,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-220,70,-536",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -220,
+            "y": 70,
+            "z": -536,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-220,70,-537",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -220,
+            "y": 70,
+            "z": -537,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-220,70,-538",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -220,
+            "y": 70,
+            "z": -538,
+            "id": "minecraft:glass_pane",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-220,70,-539",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -220,
+            "y": 70,
+            "z": -539,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-216,70,-540",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -216,
+            "y": 70,
+            "z": -540,
+            "id": "minecraft:glass_pane",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-215,70,-540",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -215,
+            "y": 70,
+            "z": -540,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-214,70,-540",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -214,
+            "y": 70,
+            "z": -540,
+            "id": "minecraft:glass_pane",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-213,70,-540",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -213,
+            "y": 70,
+            "z": -540,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-220,71,-535",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -220,
+            "y": 71,
+            "z": -535,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-220,71,-536",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -220,
+            "y": 71,
+            "z": -536,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-220,71,-537",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -220,
+            "y": 71,
+            "z": -537,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-220,71,-538",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -220,
+            "y": 71,
+            "z": -538,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-220,71,-539",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -220,
+            "y": 71,
+            "z": -539,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-216,71,-540",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -216,
+            "y": 71,
+            "z": -540,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-215,71,-540",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -215,
+            "y": 71,
+            "z": -540,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-214,71,-540",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -214,
+            "y": 71,
+            "z": -540,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-213,71,-540",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -213,
+            "y": 71,
+            "z": -540,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-220,72,-536",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -220,
+            "y": 72,
+            "z": -536,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-220,72,-537",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -220,
+            "y": 72,
+            "z": -537,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-220,72,-538",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -220,
+            "y": 72,
+            "z": -538,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-216,72,-540",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -216,
+            "y": 72,
+            "z": -540,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-215,72,-540",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -215,
+            "y": 72,
+            "z": -540,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-214,72,-540",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -214,
+            "y": 72,
+            "z": -540,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-213,72,-540",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -213,
+            "y": 72,
+            "z": -540,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-220,73,-536",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -220,
+            "y": 73,
+            "z": -536,
+            "id": "minecraft:stone_brick_stairs",
+            "kind": "structure",
+            "states": {
+              "upside_down_bit": false,
+              "weirdo_direction": 0
+            }
+          }
+        },
+        {
+          "at": "-220,73,-537",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -220,
+            "y": 73,
+            "z": -537,
+            "id": "minecraft:stone_brick_stairs",
+            "kind": "structure",
+            "states": {
+              "upside_down_bit": false,
+              "weirdo_direction": 0
+            }
+          }
+        },
+        {
+          "at": "-220,73,-538",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -220,
+            "y": 73,
+            "z": -538,
+            "id": "minecraft:stone_brick_stairs",
+            "kind": "structure",
+            "states": {
+              "upside_down_bit": false,
+              "weirdo_direction": 0
+            }
+          }
+        },
+        {
+          "at": "-216,73,-540",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -216,
+            "y": 73,
+            "z": -540,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-215,73,-540",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -215,
+            "y": 73,
+            "z": -540,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-214,73,-540",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -214,
+            "y": 73,
+            "z": -540,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-213,73,-540",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -213,
+            "y": 73,
+            "z": -540,
+            "id": "minecraft:stone_bricks",
+            "kind": "structure",
+            "states": null
+          }
+        },
+        {
+          "at": "-216,69,-537",
+          "stage": "lots",
+          "element": "building-d5-chapel-1",
+          "elementHash": "0d14ee16",
+          "op": {
+            "x": -216,
+            "y": 69,
+            "z": -537,
+            "id": "minecraft:lantern",
+            "kind": "structure",
+            "states": {
+              "hanging": false
+            }
+          }
+        }
+      ],
+      "historicalTree": [],
+      "targetHistory": [
+        {
+          "at": "-215,69,-539",
+          "rows": [
+            {
+              "stage": "clear",
+              "element": "clear-d5-chapel-1",
+              "elementHash": "2cfd719f",
+              "op": {
+                "x": -215,
+                "y": 69,
+                "z": -539,
+                "id": "minecraft:air",
+                "kind": "clear",
+                "states": null
+              }
+            }
+          ]
+        },
+        {
+          "at": "-214,69,-539",
+          "rows": [
+            {
+              "stage": "clear",
+              "element": "clear-d5-chapel-1",
+              "elementHash": "2cfd719f",
+              "op": {
+                "x": -214,
+                "y": 69,
+                "z": -539,
+                "id": "minecraft:air",
+                "kind": "clear",
+                "states": null
+              }
+            }
+          ]
+        },
+        {
+          "at": "-219,69,-538",
+          "rows": [
+            {
+              "stage": "clear",
+              "element": "clear-d5-chapel-1",
+              "elementHash": "2cfd719f",
+              "op": {
+                "x": -219,
+                "y": 69,
+                "z": -538,
+                "id": "minecraft:air",
+                "kind": "clear",
+                "states": null
+              }
+            }
+          ]
+        },
+        {
+          "at": "-218,69,-538",
+          "rows": [
+            {
+              "stage": "clear",
+              "element": "clear-d5-chapel-1",
+              "elementHash": "2cfd719f",
+              "op": {
+                "x": -218,
+                "y": 69,
+                "z": -538,
+                "id": "minecraft:air",
+                "kind": "clear",
+                "states": null
+              }
+            }
+          ]
+        },
+        {
+          "at": "-215,69,-538",
+          "rows": [
+            {
+              "stage": "clear",
+              "element": "clear-d5-chapel-1",
+              "elementHash": "2cfd719f",
+              "op": {
+                "x": -215,
+                "y": 69,
+                "z": -538,
+                "id": "minecraft:air",
+                "kind": "clear",
+                "states": null
+              }
+            }
+          ]
+        },
+        {
+          "at": "-214,69,-538",
+          "rows": [
+            {
+              "stage": "clear",
+              "element": "clear-d5-chapel-1",
+              "elementHash": "2cfd719f",
+              "op": {
+                "x": -214,
+                "y": 69,
+                "z": -538,
+                "id": "minecraft:air",
+                "kind": "clear",
+                "states": null
+              }
+            }
+          ]
+        },
+        {
+          "at": "-219,69,-537",
+          "rows": [
+            {
+              "stage": "clear",
+              "element": "clear-d5-chapel-1",
+              "elementHash": "2cfd719f",
+              "op": {
+                "x": -219,
+                "y": 69,
+                "z": -537,
+                "id": "minecraft:air",
+                "kind": "clear",
+                "states": null
+              }
+            }
+          ]
+        },
+        {
+          "at": "-218,69,-537",
+          "rows": [
+            {
+              "stage": "clear",
+              "element": "clear-d5-chapel-1",
+              "elementHash": "2cfd719f",
+              "op": {
+                "x": -218,
+                "y": 69,
+                "z": -537,
+                "id": "minecraft:air",
+                "kind": "clear",
+                "states": null
+              }
+            }
+          ]
+        },
+        {
+          "at": "-219,69,-536",
+          "rows": [
+            {
+              "stage": "clear",
+              "element": "clear-d5-chapel-1",
+              "elementHash": "2cfd719f",
+              "op": {
+                "x": -219,
+                "y": 69,
+                "z": -536,
+                "id": "minecraft:air",
+                "kind": "clear",
+                "states": null
+              }
+            }
+          ]
+        },
+        {
+          "at": "-218,69,-536",
+          "rows": [
+            {
+              "stage": "clear",
+              "element": "clear-d5-chapel-1",
+              "elementHash": "2cfd719f",
+              "op": {
+                "x": -218,
+                "y": 69,
+                "z": -536,
+                "id": "minecraft:air",
+                "kind": "clear",
+                "states": null
+              }
+            }
+          ]
+        },
+        {
+          "at": "-217,69,-536",
+          "rows": [
+            {
+              "stage": "clear",
+              "element": "clear-d5-chapel-1",
+              "elementHash": "2cfd719f",
+              "op": {
+                "x": -217,
+                "y": 69,
+                "z": -536,
+                "id": "minecraft:air",
+                "kind": "clear",
+                "states": null
+              }
+            }
+          ]
+        },
+        {
+          "at": "-219,69,-535",
+          "rows": [
+            {
+              "stage": "clear",
+              "element": "clear-d5-chapel-1",
+              "elementHash": "2cfd719f",
+              "op": {
+                "x": -219,
+                "y": 69,
+                "z": -535,
+                "id": "minecraft:air",
+                "kind": "clear",
+                "states": null
+              }
+            }
+          ]
+        },
+        {
+          "at": "-218,69,-535",
+          "rows": [
+            {
+              "stage": "clear",
+              "element": "clear-d5-chapel-1",
+              "elementHash": "2cfd719f",
+              "op": {
+                "x": -218,
+                "y": 69,
+                "z": -535,
+                "id": "minecraft:air",
+                "kind": "clear",
+                "states": null
+              }
+            }
+          ]
+        },
+        {
+          "at": "-217,69,-535",
+          "rows": [
+            {
+              "stage": "clear",
+              "element": "clear-d5-chapel-1",
+              "elementHash": "2cfd719f",
+              "op": {
+                "x": -217,
+                "y": 69,
+                "z": -535,
+                "id": "minecraft:air",
+                "kind": "clear",
+                "states": null
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "Two separate native census pages were combined as historical coordinates only, not one snapshot.",
+    "Saved operation history includes planned placements that might have been skipped by protection/nativebuild conditions. A sameID claim does not establish ownership.",
+    "No matching planned ID is not proof of natural origin, player origin or original tree topology.",
+    "Final claims are per-record emission last writes, not an asserted cross-district actual build order.",
+    "Protection projection is exact closed kingdom/master state, not current game state.",
+    "No active files/world/progress/casualty/birth metadata changed."
+  ]
+}

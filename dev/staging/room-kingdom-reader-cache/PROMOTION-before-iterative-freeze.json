@@ -1,0 +1,37 @@
+{
+  "utc": "2026-11-07T01:54:31.033626+00:00",
+  "scope": "STAGING ONLY; command-local immutable validated decode reuse; all fresh raw and source/native barriers retained",
+  "files": [
+    {
+      "source": "dev/staging/room-kingdom-reader-cache/proposed/CivilizationApocalypse_BP/scripts/commands/civ.js",
+      "target": "CivilizationApocalypse_BP/scripts/commands/civ.js",
+      "sha256": "6850D8FC7935D8BE691B8EE5FE2C1CF57E87DA33AAB25AA67329629C210D6063",
+      "baselineSha256": "B0E0A19CADC9C39AAF7D0DE453664AE763B37FB6E1AC8310C0295DCAABBA20EE"
+    },
+    {
+      "source": "dev/staging/room-kingdom-reader-cache/proposed/CivilizationApocalypse_BP/scripts/integration/roomKingdomReader.js",
+      "target": "CivilizationApocalypse_BP/scripts/integration/roomKingdomReader.js",
+      "sha256": "DABDED1D9B7923174A18B37CA7E23D8864F47DDE684FCC55DDE3E9A620F23DFD",
+      "baselineSha256": null
+    }
+  ],
+  "focused": {
+    "tests": 8,
+    "pass": 8,
+    "fail": 0,
+    "durationMs": 1115.459,
+    "log": "focused-final.log"
+  },
+  "strictTypecheck": {
+    "exitCode": 0,
+    "config": "tsconfig.json",
+    "log": "typecheck.log"
+  },
+  "testSha256": "C6C563634C102EEBAE98F306A66008B7A5A8A1C6D481BAB4385426CA0E3BBF9C",
+  "sourceDependencies": {
+    "CivilizationApocalypse_BP/scripts/kingdom/store.js": "8C49CCAC4D7A905E0D831A9D7BFAA2354E10484B67FEDB122B8D022B9DC193F5",
+    "CivilizationApocalypse_BP/scripts/kingdom/state.js": "F757E2EF72354542E7E4F4B0435AC77A9D8131EEE9B34C91CC1B5D56C14F481E",
+    "CivilizationApocalypse_BP/scripts/civ/wallLeafRepair.js": "97998CF2E8A2318601B3AB75E0950DC242A57D534C3C1B996EDF83464BA08770",
+    "CivilizationApocalypse_BP/scripts/civ/roomVegetationPreview.js": "6CA1FF81158112438520A1695250E8748CBA74F51010089FD91CBE3F415F0FDC"
+  }
+}

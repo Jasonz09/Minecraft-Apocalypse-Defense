@@ -1,0 +1,100 @@
+{
+  "utc": "2026-11-06T15:49:17.724306+00:00",
+  "status": "Exact minimal composition31/31focusedPASS+strictTSC PASS after reservation-boundary source stamp fix; parentreview/centralfull/deploy/native pending",
+  "baseFreeze": "dist/leaf-source-streaming-pack-hashes-20261106.json",
+  "production": [
+    {
+      "target": "CivilizationApocalypse_BP/scripts/main.js",
+      "proposal": "dev/staging/civilian-work-assignment/minimal-readonly/proposed/CivilizationApocalypse_BP/scripts/main.js",
+      "expectedBaseSHA256": "80537025C35B312DE59B2175B5A0BACADBA35FADCECF723D261924D96410D95E",
+      "sha256": "50E67723B7C4A867F98BEE07D27D3109865A4AE5EE51AC0E0BA7C49B33AF34B4",
+      "newFile": false
+    },
+    {
+      "target": "CivilizationApocalypse_BP/scripts/commands/people.js",
+      "proposal": "dev/staging/civilian-work-assignment/minimal-readonly/proposed/CivilizationApocalypse_BP/scripts/commands/people.js",
+      "expectedBaseSHA256": "37793F439EFC58C1DE9B2E876537FAE829A5ABCEADEAEBB27F3F2B09B2DB9D73",
+      "sha256": "61DBB52AF4C27D2DB75E0F6AD22296E150C88709C70610BB9F663EEC0387F559",
+      "newFile": false
+    },
+    {
+      "target": "CivilizationApocalypse_BP/scripts/integration/civilianDestinations.js",
+      "proposal": "dev/staging/civilian-work-assignment/minimal-readonly/proposed/CivilizationApocalypse_BP/scripts/integration/civilianDestinations.js",
+      "expectedBaseSHA256": "13AD5F3A7036901AA6E2C3602A255FD8E5019EEC49A3FA6432F9770F81A604B4",
+      "sha256": "E0CEB5C929CEB758718E04C05A45539FC8A61873697CC219D9B491AAC3E6FC82",
+      "newFile": false
+    },
+    {
+      "target": "CivilizationApocalypse_BP/scripts/integration/civilianTravel.js",
+      "proposal": "dev/staging/civilian-work-assignment/minimal-readonly/proposed/CivilizationApocalypse_BP/scripts/integration/civilianTravel.js",
+      "expectedBaseSHA256": "DB15747CE5C43F6338F3AA11DFEB42C220050C81032727630C0F8889C854A633",
+      "sha256": "19A9010D153DCD117FB7002B7E70AFF95B57A61B164F6F902CCBF5802FE09832",
+      "newFile": false
+    },
+    {
+      "target": "CivilizationApocalypse_BP/scripts/people/walkSafety.js",
+      "proposal": "dev/staging/civilian-work-assignment/minimal-readonly/proposed/CivilizationApocalypse_BP/scripts/people/walkSafety.js",
+      "expectedBaseSHA256": null,
+      "sha256": "1EC6C41F9F9B9794E6A2256599F2E8137C6F1247D2BEA89FEE82522560BB6E3A",
+      "newFile": true
+    },
+    {
+      "target": "CivilizationApocalypse_BP/scripts/people/workRoutePreview.js",
+      "proposal": "dev/staging/civilian-work-assignment/minimal-readonly/proposed/CivilizationApocalypse_BP/scripts/people/workRoutePreview.js",
+      "expectedBaseSHA256": null,
+      "sha256": "C5DEEB03253D913FDBB280083837848B89326BA6DC3E433769536F94323B595D",
+      "newFile": true
+    }
+  ],
+  "testsAndHelper": [
+    {
+      "target": "dev/lib/civilian-route-preview-fixture.mjs",
+      "proposal": "dev/staging/civilian-work-assignment/minimal-readonly/tests/dev/lib/civilian-route-preview-fixture.mjs",
+      "sha256": "57457D07E196EDCE4D0306252629A3C89E7B23BA9AFBD9E7877B695A94661FCC",
+      "newFile": true
+    },
+    {
+      "target": "dev/test/civilian-loaded-route-preview.test.mjs",
+      "proposal": "dev/staging/civilian-work-assignment/minimal-readonly/tests/dev/test/civilian-loaded-route-preview.test.mjs",
+      "sha256": "379AEC7D12F9AF60E1B1E16A39749B112BC22431158625AEFA6FA1E269D55C70",
+      "newFile": true
+    },
+    {
+      "target": "dev/test/civilian-route-preview-command.test.mjs",
+      "proposal": "dev/staging/civilian-work-assignment/minimal-readonly/tests/dev/test/civilian-route-preview-command.test.mjs",
+      "sha256": "8CEE5CAC4D312998EC5EB170DE928E7DE643C6E92FA9A35D32B5E6E7D097CBE1",
+      "newFile": true
+    },
+    {
+      "target": "dev/test/civilian-route-preview-source.test.mjs",
+      "proposal": "dev/staging/civilian-work-assignment/minimal-readonly/tests/dev/test/civilian-route-preview-source.test.mjs",
+      "sha256": "832B0AA13BA4D87C702727A3B794F6862FBEF9F30A53CE933F8A715190DF84FD",
+      "newFile": true
+    }
+  ],
+  "focused": {
+    "tests": 31,
+    "pass": 31,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 2394.3679,
+    "log": "dist/civilian-route-preview-minimal-focused-20261106.log"
+  },
+  "typecheck": {
+    "pass": true,
+    "log": "dist/civilian-route-preview-minimal-typecheck-20261106.log"
+  },
+  "preservation": {
+    "existingDriverBodyExactlyRestoresByPredicateExtractionAndIsActiveReversal": true,
+    "existingFormattedDestinationCommandBlockByteIdentical": true,
+    "noAssignmentStateOrNewTimerOrImpulseEntry": true
+  },
+  "retainedNegativeEvidence": {
+    "plannedRoadActualD1": "FAIL unchanged, start10/goal7/14missingroadcolumn boundaries/gap141",
+    "path": "dist/civilian-work-road-actual-D1-20261106.json",
+    "frozenCheckpoint": "checkpoints/road87-negative/checkpoint-hashes.json"
+  },
+  "nativeGate": "Actual loaded native D1 path pending; preview does not authorize walking/vertical movement/workcredit",
+  "reservationBoundaryFix": "Selected-civ signature captured BEFORE reserveJob; current context compares it; explicit verify BEFORE constructing/calling source loader. Regression asserts0loadercalls/0nativeblockreads/cleanup."
+}

@@ -18,6 +18,11 @@ import { whole } from "./text.js";
 const POLICY_MODE_WORDS = Object.freeze({ balanced: "Balanced", paused: "Paused", rapid: "Rapid" });
 const GATE_MODE_WORDS = Object.freeze({ auto: "automatic", forced_open: "held open", forced_closed: "held closed" });
 
+/** @param {any} kingdom @param {number} index */
+function buildDistrictName(kingdom, index) {
+    return String(districtById(kingdom, `district-${String(index)}`)?.name ?? `District ${String(index)}`);
+}
+
 /**
  * @param {Frame} frame
  * @param {any} kingdom
@@ -31,8 +36,10 @@ export function constructionMenu(frame, kingdom, live) {
     if (live === undefined) {
         lines.push("Live job status is unavailable in this build.");
     } else if (session !== undefined) {
-        lines.push(`Running: district-${String(session.district)}, ${String(session.status)}, stage ${String(session.stage)}`);
+        lines.push(`Building ${buildDistrictName(kingdom, session.district)}: ${String(session.stage)}`);
         lines.push(`Progress ${String(session.pct)}% (${String(session.done)} of ${String(session.total)} operations)`);
+    } else if (civ?.operation !== undefined) {
+        lines.push(`Preparing construction: ${String(civ.operation.phase)}`);
     } else if (civ?.busy !== undefined) {
         lines.push(`A ${String(civ.busy)} job is running (not a civilization build).`);
     } else {
@@ -43,19 +50,15 @@ export function constructionMenu(frame, kingdom, live) {
         const generated = district.civ;
         const physical = district.physical;
         lines.push(
-            `${String(district.name)}: civilization ${generated === undefined ? "not started" : `${String(generated.status)} stage ${String(generated.stage)}`}`,
+            `${String(district.name)}: ${generated === undefined ? "not started" : generated.status === "complete" ? "built" : `${String(generated.status)} (${String(generated.stage)})`}`,
         );
-        lines.push(
-            `  physical ${physical === undefined ? "no record" : `${String(physical.status)} ${String(physical.placed)} of ${String(physical.total)} blocks`}`,
-        );
+        if (physical !== undefined) lines.push(`  Other structures: ${String(physical.status)}, ${String(physical.placed)} of ${String(physical.total)} blocks`);
         const origin = physical?.origin;
         const centre = generated?.centre;
         if (origin !== undefined) {
-            lines.push(`  centre ${String(origin.x)} ${String(origin.y)} ${String(origin.z)}`);
-            lines.push(`  teleport: /tp @s ${String(origin.x)} ${String(origin.y)} ${String(origin.z)}`);
+            lines.push(`  Location: ${String(origin.x)}, ${String(origin.y)}, ${String(origin.z)}`);
         } else if (centre !== undefined) {
-            lines.push(`  centre ${String(centre.x)} ~ ${String(centre.z)}`);
-            lines.push(`  teleport: /tp @s ${String(centre.x)} ~ ${String(centre.z)}`);
+            lines.push(`  Location: X ${String(centre.x)}, Z ${String(centre.z)}`);
         }
     }
 
@@ -63,18 +66,18 @@ export function constructionMenu(frame, kingdom, live) {
     const abortButton =
         live === undefined
             ? disabledButton("abort", "Stop the build", "live job status is unavailable")
-            : session !== undefined
+            : session !== undefined || civ?.operation !== undefined
                 ? enabledButton("abort", "Stop the build", { id: "construction.abort" })
                 : disabledButton("abort", "Stop the build", "no civilization build is running");
     let resumeButton;
     if (live === undefined) {
         resumeButton = disabledButton("resume", "Resume a build", "live job status is unavailable");
-    } else if (civ?.busy !== undefined || session !== undefined) {
+    } else if (civ?.busy !== undefined || civ?.operation !== undefined || session !== undefined) {
         resumeButton = disabledButton("resume", "Resume a build", "a job is already running");
     } else if (resumable?.index === undefined) {
         resumeButton = disabledButton("resume", "Resume a build", String(resumable?.reason ?? "nothing to resume"));
     } else {
-        resumeButton = enabledButton(`resume:${String(resumable.index)}`, `Resume district-${String(resumable.index)}`, {
+        resumeButton = enabledButton(`resume:${String(resumable.index)}`, `Resume ${buildDistrictName(kingdom, resumable.index)}`, {
             id: "construction.resume",
             params: { district: Number(resumable.index) },
         });

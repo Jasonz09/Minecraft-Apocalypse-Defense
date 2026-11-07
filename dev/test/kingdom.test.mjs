@@ -95,7 +95,7 @@ test("totals are derived from districts, never stored separately", () => {
 test("validation rejects malformed kingdom state", () => {
     assert.deepEqual(findValidationProblems(null), ["kingdom is not an object"]);
     assert.deepEqual(findValidationProblems([]), ["kingdom is not an object"]);
-    assert.deepEqual(findValidationProblems({ schemaVersion: 99 }), ["kingdom schemaVersion 99, expected 2"]);
+    assert.deepEqual(findValidationProblems({ schemaVersion: 99 }), [`kingdom schemaVersion 99, expected ${KINGDOM_SCHEMA_VERSION}`]);
 
     const wrongName = { ...createInitialKingdom(), name: "" };
     assert.deepEqual(findValidationProblems(wrongName), ["kingdom name must be a non-empty string"]);

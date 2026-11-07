@@ -1,0 +1,5 @@
+import{readFileSync}from'node:fs';
+const root=new URL('../../../',import.meta.url),stage=new URL('./',import.meta.url);
+const targets=new Map(['CivilizationApocalypse_BP/scripts/integration/civilianTravel.js','CivilizationApocalypse_BP/scripts/people/travel.js','CivilizationApocalypse_BP/scripts/main.js'].map(p=>[new URL(p,root).href,new URL('proposed/'+p,stage)]));
+export async function resolve(s,c,n){if(s==='@minecraft/server')return{url:'data:text/javascript,export const world={};export const system={};',shortCircuit:true};let parent=c.parentURL;if(parent?.includes('/civilian-travel-cadence/proposed-dev/test/'))parent=new URL('dev/test/'+parent.split('/').at(-1),root).href;return n(s,{...c,parentURL:parent});}
+export async function load(u,c,n){if(targets.has(u))return{format:'module',source:readFileSync(targets.get(u),'utf8'),shortCircuit:true};if(u===new URL('dev/fixtures/civilian-travel-before-cadence.json',root).href)return{format:'json',source:readFileSync(new URL('proposed-dev/fixtures/civilian-travel-before-cadence.json',stage),'utf8'),shortCircuit:true};return n(u,c);}

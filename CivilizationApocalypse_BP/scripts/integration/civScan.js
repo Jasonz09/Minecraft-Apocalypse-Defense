@@ -6,6 +6,23 @@ import { planScan } from "../civ/siteselect.js";
 import { isTreePart } from "../structures/terrain.js";
 import { nowTick, note, touch } from "./civProgress.js";
 import { readColumn } from "./terrainScan.js";
+import { createChunkLoader } from "./chunkLeases.js";
+
+const createSurveyLoader = () => createChunkLoader(undefined, nowTick, { prefix: "civ-survey-load-", padding: 0, maxUnits: 16, maxChunks: 16, maxGroups: 1, timeoutTicks: CIV.holdTimeoutTicks });
+/** @type {{ owner: Job, lease: ReturnType<ReturnType<typeof createSurveyLoader>["acquire"]> } | undefined} */
+let surveyLease;
+
+/** @param {Job | undefined} owner */
+function releaseSurveyLease(owner) {
+    if (surveyLease && (owner === undefined || surveyLease.owner === owner)) {
+        surveyLease.lease.release();
+        surveyLease = undefined;
+    }
+}
+
+export function recoverSurveyHolds() {
+    if (!surveyLease) createSurveyLoader().recover();
+}
 
 /**
  * Bedrock boundary for the one-command civilization workflow, READ side: chunk holding with
@@ -21,13 +38,13 @@ import { readColumn } from "./terrainScan.js";
  * loads is skipped (its columns stay unread) - several stalled tiles abort the run with a clear message.
  *
  * @typedef {import("@minecraft/server").Dimension} Dimension
- * @typedef {{ kind: string, jobId: number | undefined, cancelled: boolean }} Job
+ * @typedef {{ kind: string, jobId: number | undefined, cancelled: boolean, cancelJob?: () => void }} Job
  * @typedef {{ x0: number, z0: number, x1: number, z1: number }} Rect
  * @typedef {import("../civ/field.js").GridField} GridField
  * @typedef {import("./civProgress.js").Progress} Progress
  * @typedef {{
  *   slices: number, maxReadsPerSlice: number, maxColumnsPerSlice: number, columns: number, reads: number,
- *   unloaded: number, tiles: number, unheldTiles: number, notes: string[],
+ *   unloaded: number, unreadSamples: string[], tiles: number, unheldTiles: number, notes: string[],
  *   tilesTotal: number, chunksScanned: number, stalledTiles: Rect[], consecutiveStalls: number, attempted: number, ringsDone: number,
  *   retriedTiles: number, recoveredTiles: number, skippedColumns: number,
  *   aborted: string | undefined
@@ -40,12 +57,12 @@ export const CIV_TICKING_ID = "civ-generate";
 /** Default side of one held tile / window in blocks (8 x 8 chunks). */
 export const TILE_SIZE = 128;
 
-/** Deepest column walk of terrainScan.readColumn (MAX_WALK) plus the topmost read and one spare. */
-const COLUMN_WORST_READS = 98;
+/** Bounded upward verification + downward walk (96 each), topmost read and one spare. */
+const COLUMN_WORST_READS = 194;
 
 /** @returns {ScanStats} */
 export function newScanStats() {
-    return { slices: 0, maxReadsPerSlice: 0, maxColumnsPerSlice: 0, columns: 0, reads: 0, unloaded: 0, tiles: 0, unheldTiles: 0, notes: [], tilesTotal: 0, chunksScanned: 0, stalledTiles: [], consecutiveStalls: 0, attempted: 0, ringsDone: 0, retriedTiles: 0, recoveredTiles: 0, skippedColumns: 0, aborted: undefined };
+    return { slices: 0, maxReadsPerSlice: 0, maxColumnsPerSlice: 0, columns: 0, reads: 0, unloaded: 0, unreadSamples: [], tiles: 0, unheldTiles: 0, notes: [], tilesTotal: 0, chunksScanned: 0, stalledTiles: [], consecutiveStalls: 0, attempted: 0, ringsDone: 0, retriedTiles: 0, recoveredTiles: 0, skippedColumns: 0, aborted: undefined };
 }
 
 /**
@@ -85,6 +102,7 @@ export function countTiles(anchor, radius, tile) {
 export function meteredDimension(dimension, meter) {
     return /** @type {any} */ ({
         id: dimension.id,
+        heightRange: dimension.heightRange,
         getTopmostBlock(/** @type {any} */ position) {
             meter.reads += 1;
             return dimension.getTopmostBlock(position);
@@ -98,8 +116,8 @@ export function meteredDimension(dimension, meter) {
 
 /**
  * Run a generator as one system.runJob and resolve with its return value when it finishes. Every yield counts as
- * progress for the session. If the job is cancelled (system.clearJob) the promise never settles; callers check
- * token.cancelled after every await.
+ * progress for the session. Cancellation closes the inner generator before the engine job
+ * is cleared, so its finally blocks release owned resources and callers can settle cleanly.
  *
  * @template T
  * @param {Job} token
@@ -110,12 +128,20 @@ export function meteredDimension(dimension, meter) {
 export function runJobAsync(token, generator, progress = undefined) {
     return new Promise((resolve, reject) => {
         if (token.cancelled) {
+            generator.return(/** @type {any} */ (undefined));
             resolve(undefined);
             return;
         }
+        const cancel = () => {
+            try { generator.return(/** @type {any} */ (undefined)); resolve(undefined); }
+            catch (error) { reject(error); }
+            if (token.cancelJob === cancel) token.cancelJob = undefined;
+        };
+        token.cancelJob = cancel;
         function* wrapped() {
             try {
                 for (;;) {
+                    if (token.cancelled) { cancel(); return; }
                     const step = generator.next();
                     if (step.done === true) {
                         resolve(step.value);
@@ -126,6 +152,8 @@ export function runJobAsync(token, generator, progress = undefined) {
                 }
             } catch (error) {
                 reject(error);
+            } finally {
+                if (token.cancelJob === cancel) token.cancelJob = undefined;
             }
         }
         token.jobId = system.runJob(wrapped());
@@ -323,6 +351,7 @@ function raceCreate(manager, id, options, owner, generation, progress, chunks) {
  * @param {string} [id]
  */
 export function releaseArea(owner = undefined, id = CIV_TICKING_ID) {
+    if (id === CIV_TICKING_ID) releaseSurveyLease(owner);
     if (owner !== undefined && holdOwner !== owner) {
         return;
     }
@@ -356,7 +385,8 @@ export function cellFromColumn(info) {
     if (liquid !== null) {
         const y = Number(liquid[2]);
         if (liquid[1] === "lava") return { g: y, k: "lava", tree: false };
-        const bed = info.bed === undefined ? y - 1 : Number(info.bed);
+        if (info.bed === undefined) return undefined; // a pier cannot stand on an invented sea bed
+        const bed = Number(info.bed);
         return { g: bed, k: "water", tree: false, surface: info.surface === undefined ? y : Number(info.surface) };
     }
     if (info.ground !== undefined) {
@@ -432,6 +462,9 @@ function* readColumns(token, dimension, points, field, stats, progress = undefin
         stats.columns += 1;
         if (cell === undefined) {
             stats.unloaded += 1;
+            if (stats.unreadSamples.length < 6) {
+                stats.unreadSamples.push(`(${String(point.x)},${String(point.z)}): ${info === undefined ? "column unavailable or walk bound reached" : `${info.problem ?? "unclassified column"}; bed ${String(info.bed ?? "unknown")}`}`);
+            }
         } else {
             field.set(point.x, point.z, cell);
         }
@@ -493,7 +526,7 @@ async function surveyTile(token, dimension, rect, pointsOf, field, stats, progre
     while (work.length > 0) {
         const r = /** @type {Rect} */ (work.shift());
         if (progress !== undefined) progress.tile = r;
-        const held = await holdArea(dimension, r, token, CIV_TICKING_ID, progress);
+        let held = await holdArea(dimension, r, token, CIV_TICKING_ID, progress);
         if (token.cancelled || held.status === "cancelled") {
             return "cancelled";
         }
@@ -509,6 +542,33 @@ async function surveyTile(token, dimension, rect, pointsOf, field, stats, progre
             note(progress, "the engine refused the tile size (chunk limit): using smaller tiles");
             work.unshift(...parts);
             continue;
+        }
+        // In live 26.60 an accepted 64-chunk area can stay partly loaded through
+        // both attempts. Retry its ground in smaller holds before leaving a hole.
+        // At sixteen chunks or fewer, try separate chunk holds once instead of
+        // recursively multiplying the number of long area-loading attempts.
+        if (held.status === "stalled" && chunksOfRect(r) > 16) {
+            note(progress, "the tile stayed partly loaded: retrying its ground using smaller tiles");
+            work.unshift(...quadrants(r));
+            continue;
+        }
+        if (held.status === "stalled" && chunksOfRect(r) > 1 && chunksOfRect(r) <= 16) {
+            const units = [];
+            for (let z = Math.floor(r.z0 / 16) * 16; z <= r.z1; z += 16) {
+                for (let x = Math.floor(r.x0 / 16) * 16; x <= r.x1; x += 16) {
+                    units.push({ dimension, cells: [{ x, y: 64, z }, { x: x + 15, y: 64, z: z + 15 }] });
+                }
+            }
+            note(progress, "the small survey area stayed partly loaded: trying individual chunks");
+            const lease = createSurveyLoader().acquire(units);
+            surveyLease = { owner: token, lease };
+            let status = lease.status();
+            if (progress !== undefined) { progress.chunksPending = units.length; progress.holdStartedTick = nowTick(); }
+            while (status.state === "loading" && !token.cancelled) { await nextTick(); status = lease.status(); }
+            if (progress !== undefined) { progress.chunksPending = 0; progress.holdStartedTick = undefined; }
+            if (token.cancelled) { releaseSurveyLease(token); return "cancelled"; }
+            if (status.state === "ready") held = { held: true, status: "held", note: undefined };
+            else releaseSurveyLease(token);
         }
         stats.attempted += 1;
         if (held.status === "stalled") {
@@ -531,7 +591,11 @@ async function surveyTile(token, dimension, rect, pointsOf, field, stats, progre
                 note(progress, held.note);
             }
         }
-        await runJobAsync(token, readColumns(token, dimension, pointsOf(r), field, stats, progress), progress);
+        try {
+            await runJobAsync(token, readColumns(token, dimension, pointsOf(r), field, stats, progress), progress);
+        } finally {
+            releaseSurveyLease(token);
+        }
         if (token.cancelled) {
             return "cancelled";
         }

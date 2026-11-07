@@ -1,0 +1,22 @@
+[
+  {
+    "path": "CivilizationApocalypse_BP\\scripts\\civ\\wallLeafTrim.js",
+    "sha256": "9D5BB161ADC1987ED8D197D2BC975C5B01F39B00297718574E7C52A33D126DC1"
+  },
+  {
+    "path": "CivilizationApocalypse_BP\\scripts\\civ\\wallLeafRepair.js",
+    "sha256": "8BC001C6CCCC84D09757FEE7C1890F8CEA3835EEA3631BCE193838972CC89C6E"
+  },
+  {
+    "path": "CivilizationApocalypse_BP\\scripts\\civ\\wallleafpreview.js",
+    "sha256": "A38ED00650C7DB05E42ADD0F2218080FCBA3D023D6B39F47DE1BBB0DC47F22EE"
+  },
+  {
+    "path": "CivilizationApocalypse_BP\\scripts\\commands\\civ.js",
+    "sha256": "7292784554D6FD34FC57CC92F33F9D704FDEBA55FB1BACBA3FB66786FB9900AB"
+  },
+  {
+    "path": "CivilizationApocalypse_BP\\scripts\\sim\\starter.js",
+    "sha256": "C343B6629D04C2121D2E13BF31A5941F5EFEE4C9459D5AC7C5D12A8E0FEA95E6"
+  }
+]

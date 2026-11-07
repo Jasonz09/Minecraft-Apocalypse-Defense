@@ -1,0 +1,47 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Civ Swordsman Reach C Probe (Isolated)",
+    "description": "Copied-world hypothesis only: melee reach multiplier2 instead of1.5; complete-path remains true. No scripts or other entity changes.",
+    "uuid": "97395889-9805-4903-a863-de65eefd0458",
+    "version": [
+      0,
+      0,
+      1
+    ],
+    "min_engine_version": [
+      1,
+      26,
+      20
+    ]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "0566c7d7-8f6b-430f-85a4-d907d9b822e2",
+      "version": [
+        0,
+        0,
+        1
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "fd04cb50-dddc-4ebe-83fc-5b5375819bcb",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "uuid": "e634c636-7b98-49f7-81cd-13483bfa3f9f",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+[
+  {
+    "path": "proposed/CivilizationApocalypse_BP/scripts/population/reconcile.js",
+    "sha256": "E1E24B8CF7ABEF66CFB91308F8ADCF632B7B0E896E9CC489C10089E60386ABE9"
+  },
+  {
+    "path": "proposed/CivilizationApocalypse_BP/scripts/integration/popSync.js",
+    "sha256": "4F658ABC6153DB289F73C3E987CE20C9FFE86EBA07C9F78F096783BD7EB86443"
+  },
+  {
+    "path": "proposed/CivilizationApocalypse_BP/scripts/integration/peopleStreets.js",
+    "sha256": "FB3AAE2AD293B902E53A6DC87BEEA8E4EA17BEA6BCD0419927229CA5468D526E"
+  }
+]

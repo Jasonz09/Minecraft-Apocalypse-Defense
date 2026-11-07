@@ -1,0 +1,44 @@
+{
+  "scope": "STAGING ONLY; root review before integration; production unchanged",
+  "baselineSha256": "A5B25830ADDF632A41FE772E852B15E847B7A9CC293B7DB5B2328759AAC6CACC",
+  "proposedSha256": "92F139BB1EA58599A2019460DDF4F4DB0FEBE1831997B0DDBB19CE660D944EAA",
+  "files": [
+    {
+      "staged": "dev/staging/civilian-travel-trace/proposed-civilianTravel.js",
+      "destination": "CivilizationApocalypse_BP/scripts/integration/civilianTravel.js",
+      "sha256": "92F139BB1EA58599A2019460DDF4F4DB0FEBE1831997B0DDBB19CE660D944EAA"
+    },
+    {
+      "staged": "dev/staging/civilian-travel-trace/proposed-dev/test/civilian-travel-trace.test.mjs",
+      "destination": "dev/test/civilian-travel-trace.test.mjs",
+      "sha256": "B83E82E89BEA2B60AD1BEC27D68E5E88D007266BD913BC0F31F64863555EB197"
+    },
+    {
+      "staged": "dev/staging/civilian-travel-trace/proposed-dev/fixtures/civilian-travel-before-trace.json",
+      "destination": "dev/fixtures/civilian-travel-before-trace.json",
+      "sha256": "78070B8250901B18D73A256BD75C63584591678C75C8582690583FD082B0D901"
+    }
+  ],
+  "evidence": {
+    "focused": {
+      "passed": 11,
+      "failed": 0,
+      "durationMs": 215.0064
+    },
+    "centralDefaultImportOverlay": {
+      "passed": 11,
+      "failed": 0,
+      "durationMs": 212.1335
+    },
+    "strictIsolatedTsc": "exit 0",
+    "nativeTrace": "NOT RUN",
+    "fullVerification": "NOT RUN"
+  },
+  "contracts": [
+    "Exact existing travelImpulse(a.entity.getVelocity(),desired) retained",
+    "Six scenario native API/getter/control parity",
+    "No new queries/getters/native block reads/timers/owner/property or movement permissions",
+    "At most16 primitive frames; stop history retained; explicit successful setup resets",
+    "Velocity unavailable, never separately sampled"
+  ]
+}

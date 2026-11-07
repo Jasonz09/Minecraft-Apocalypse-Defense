@@ -1,0 +1,6 @@
+{
+  "source": "CivilizationApocalypse_BP\\scripts\\integration\\civilianTravel.js",
+  "beforeSha256": "7AF92C70B75EC7EC55CF190E47381818FAB8CEEC4DCB6E98D33846B8CFA6F5C5",
+  "proposedSha256": "A5B25830ADDF632A41FE772E852B15E847B7A9CC293B7DB5B2328759AAC6CACC",
+  "scope": "Validated39focused(17unchanged+22new)+strictisolatedTSC;stagedonly"
+}

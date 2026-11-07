@@ -1,0 +1,12 @@
+--- a/CivilizationApocalypse_BP/scripts/people/destinations.js
++++ b/CivilizationApocalypse_BP/scripts/people/destinations.js
+@@ -46,6 +46,9 @@
+     const stamp=metadata(record),candidates=[],columns=new Set(),lotIds=new Set(),entrances=new Set();
+     if(stamp.length>512000)refuse("destination source metadata bound exceeded");
+     for(const e of record.lots){
++        // Lots also contain foundation pads sharing the same farm blueprint/lot.
++        // Only actual building descriptors own entrances and destination identity.
++        if(!String(e.kind).startsWith("building-"))continue;
+         const kind=String(e.kind).replace(/^building-/,""),role=homes.has(kind)?"home":farms.has(e.blueprint)?"farm":undefined;
+         if(!role)continue;
+         if(candidates.length>=DESTINATION_LIMITS.candidates)refuse("destination candidate bound exceeded");

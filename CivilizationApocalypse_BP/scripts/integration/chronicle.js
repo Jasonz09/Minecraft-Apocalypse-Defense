@@ -83,6 +83,13 @@ function splitDistrict(text) {
 export function clauseOf(text, config = CHRONICLE_DEFAULTS) {
     const line = String(text ?? "").trim();
     const { district, body } = splitDistrict(line);
+    // These are routine reducer bookkeeping, not a change in the player's situation.
+    // Keep the original log intact; suppress only these exact known shapes so new
+    // warnings and events still reach the unknown-line fallback below.
+    if (/^expansion survey reached its bound of \d+ lands this step$/.test(line)
+        || (district !== "" && /^no civilians left to move\.$/.test(body))) {
+        return { rank: 9, clause: "" };
+    }
     for (const beat of BEATS) {
         const match = body.match(beat.re);
         if (match === null) {

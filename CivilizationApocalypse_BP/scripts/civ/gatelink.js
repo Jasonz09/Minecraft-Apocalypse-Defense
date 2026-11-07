@@ -434,8 +434,8 @@ export function proofCells(spec) {
  *
  * @param {any} spec
  * @param {Map<string, string | undefined>} ids block id per "x,y,z" for every cell of proofCells(spec); undefined = unloaded
- * @param {{ height?: number, squeeze?: boolean }} [options]
- * @returns {{ crosses: boolean, unloaded: number, visited: number }}
+ * @param {{ height?: number, squeeze?: boolean, trace?: boolean }} [options]
+ * @returns {{ crosses: boolean, unloaded: number, visited: number, path?: {x:number,y:number,z:number}[] }}
  */
 export function crossingFromWorld(spec, ids, options = {}) {
     const s = normalizeSpec(spec);
@@ -487,11 +487,14 @@ export function crossingFromWorld(spec, ids, options = {}) {
     const seen = new Uint8Array((2 * U + 1) * (2 * V + 1) * HH);
     /** @type {[number, number, number][]} */
     const queue = [];
+    /** @type {number[] | undefined} */
+    const parents = options.trace === true ? [] : undefined;
     for (let u = -U; u <= U; u += 1) {
         for (let h = 0; h < HH - mobHeight; h += 1) {
             if (bodyFree(u, -V, h, h + mobHeight - 1) && isSolid(u, -V, h - 1)) {
                 seen[idx(u, -V, h)] = 1;
                 queue.push([u, -V, h]);
+                parents?.push(-1);
             }
         }
     }
@@ -500,6 +503,15 @@ export function crossingFromWorld(spec, ids, options = {}) {
         const [u, v, h] = /** @type {[number, number, number]} */ (queue[head]);
         visited += 1;
         if (v === V) {
+            if (parents !== undefined) {
+                /** @type {{x:number,y:number,z:number}[]} */
+                const path = [];
+                for (let at = head; at >= 0; at = /** @type {number} */ (parents[at])) {
+                    const step = /** @type {[number,number,number]} */ (queue[at]);
+                    path.push(toWorld(s, ...step));
+                }
+                return { crosses: true, unloaded, visited, path: path.reverse() };
+            }
             return { crosses: true, unloaded, visited };
         }
         for (let du = -1; du <= 1; du += 1) {
@@ -537,6 +549,7 @@ export function crossingFromWorld(spec, ids, options = {}) {
                     if (seen[slot] === 0) {
                         seen[slot] = 1;
                         queue.push([nu, nv, nh]);
+                        parents?.push(head);
                     }
                 }
             }

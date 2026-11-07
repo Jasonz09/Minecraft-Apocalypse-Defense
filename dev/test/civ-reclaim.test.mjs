@@ -125,6 +125,10 @@ test("a deck over deep water stands on pillars down to the sea bed and fills not
     // the apron is railed (a drop into the sea) and no op touches water above the deck
     assert.ok(plain.counts.rail > 0);
     assert.ok(plain.ops.every((op) => op.y <= 63));
+    // over water the structure is timber: planks on the deck, logs for the piles, a fence for the rail
+    assert.ok(plain.ops.filter((op) => op.kind === "deck").every((op) => op.id === "minecraft:oak_planks"), "a deck over water is planks");
+    assert.ok(plain.ops.filter((op) => op.kind === "pillar").every((op) => op.id === "minecraft:oak_log"), "the piles are logs");
+    assert.ok(plain.ops.filter((op) => op.kind === "rail").every((op) => op.id === "minecraft:oak_fence"), "the rail is a fence");
 });
 
 test("a deck on a slope cuts only the uphill side, carries the downhill side on pillars, and fills nothing", () => {
@@ -139,6 +143,9 @@ test("a deck on a slope cuts only the uphill side, carries the downhill side on 
     const pillars = deck.ops.filter((op) => op.kind === "pillar");
     assert.ok(pillars.length > 0, "the downhill edge stands on pillars");
     assert.ok(pillars.every((op) => op.y > 70 && op.y < 72));
+    // no water here, so the same deck keeps its masonry: timber is for what stands over water
+    assert.ok(deck.ops.filter((op) => op.kind === "deck").every((op) => op.id === "minecraft:stone_bricks"), "a slope deck on land is stone");
+    assert.ok(pillars.every((op) => op.id !== "minecraft:oak_log"), "and its pillars are not logs");
 });
 
 test("a deck refuses a cut deeper than its limit and a level below the water surface", () => {
@@ -284,6 +291,54 @@ test("a district on the open sea stands on piers (deck + pillars) and rehydrates
     const again = D.rehydrateSite(plan, 1, ground, { seed: 5, policy, expectChecksum: site.record.checksum });
     assert.equal(again.ok, true, again.problems.join(" | "));
     assert.equal(again.record.checksum, site.record.checksum);
+});
+
+test("new coastal gates have dry floors and bed-supported foundations while archived plans still rehydrate", T, () => {
+    const policy = { allowWater: true, adaptive: true, maxRelief: 8 };
+    const made = M.planCivilizationDetailed(OCEAN, { seed: 5, policy });
+    assert.equal(made.ok, true);
+    const legacy = D.planDistrictSite(made.plan, 1, OCEAN, { seed: 5, policy });
+    assert.equal(legacy.ok, true);
+    const site = D.planDistrictSite(made.plan, 1, OCEAN, { seed: 5, policy, gateHeight: "surface" });
+    assert.equal(site.ok, true, site.problems.join(" | "));
+    assert.ok(site.record.gates.length > 0);
+    assert.ok(site.record.gates.every((gate) => gate.walkingLevel === 64), "players stand on dry floors above water at 62");
+    for (let index = 0; index < site.record.gates.length; index += 1) {
+        const blocks = D.siteOpsFor(site.record, "gates", index);
+        assert.ok(blocks.some((op) => op.kind === "footing" && op.y === 31), "coastal gate foundations reach the actual bed at 30");
+    }
+    const ground = D.exportSiteInputs(made.plan, 1, OCEAN);
+    const cleared = D.planDistrictSite(made.plan, 1, OCEAN, { seed: 5, policy, gateHeight: "surface", gatePassage: "clear" });
+    assert.equal(cleared.ok, true, cleared.problems.join(" | "));
+    for (const record of [legacy.record, site.record, cleared.record]) {
+        const again = D.rehydrateSite(made.plan, 1, ground, { ...D.siteOptionsOf(record), expectChecksum: record.checksum });
+        assert.equal(again.ok, true, again.problems.join(" | "));
+        assert.equal(again.record.checksum, record.checksum);
+    }
+    assert.equal(D.siteOptionsOf(site.record).gateHeight, "surface");
+    assert.equal(D.siteOptionsOf(site.record).gatePassage, undefined);
+    assert.equal(D.siteOptionsOf(cleared.record).gatePassage, "clear");
+    assert.notEqual(cleared.record.checksum, site.record.checksum);
+    assert.equal(D.siteOptionsOf(legacy.record).gateHeight, undefined);
+    assert.notEqual(site.record.checksum, legacy.record.checksum);
+});
+
+test("water with no recorded surface is refused, never planned from the bed", T, () => {
+    const policy = { allowWater: true, adaptive: true, maxRelief: 8 };
+    const made = M.planCivilizationDetailed(OCEAN, { seed: 5, policy });
+    assert.equal(made.ok, true, made.errors.slice(-4).join(" | "));
+    // The same sea without the stored surfaces: the old fallback assumed one block of depth, which sinks a wall.
+    const noSurface = {
+        seed: 1,
+        bounds: OCEAN.bounds,
+        at(x, z) {
+            const cell = OCEAN.at(x, z);
+            return cell.k === "water" ? { g: cell.g, k: "water", tree: false } : cell;
+        },
+    };
+    const refused = D.planDistrictSite(made.plan, 1, noSurface, { seed: 5, policy });
+    assert.equal(refused.ok, false, "a water column with no surface must not be built on");
+    assert.match(refused.problems.join(" | "), /no water surface/, refused.problems.join(" | "));
 });
 
 test("a land plan's stored options are unchanged by the policy plumbing (no checksum break for old worlds)", T, () => {

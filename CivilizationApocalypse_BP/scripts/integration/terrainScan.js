@@ -75,7 +75,17 @@ export function readColumn(dimension, x, z, options = {}) {
     if (top === undefined) {
         return undefined;
     }
-    const startY = top.location.y;
+    // The live engine can return the highest SOLID block, ignoring water above
+    // it. Verify upward first instead of certifying a submerged bed as dry land.
+    let startY = top.location.y;
+    for (let rise = 0; rise < MAX_WALK; rise += 1) {
+        if (startY + 1 >= (dimension.heightRange?.max ?? Infinity)) break;
+        const above = readCell(dimension, x, startY + 1, z);
+        if (above === undefined) return undefined;
+        if (above.id === "minecraft:air") break;
+        startY += 1;
+        if (rise === MAX_WALK - 1) return undefined; // unverified top, never a guessed surface
+    }
     /** @type {{ y: number, id: string }[]} */
     const cells = [];
     /** @type {number | undefined} */
@@ -86,7 +96,8 @@ export function readColumn(dimension, x, z, options = {}) {
             return undefined;
         }
         cells.push({ y, id: cell.id });
-        if (surface === undefined && options.bed === true && isLiquid(cell.id) && !cell.id.includes("lava")) {
+        const aquatic = ["minecraft:kelp", "minecraft:seagrass", "minecraft:bubble_column"].includes(cell.id);
+        if (surface === undefined && options.bed === true && ((isLiquid(cell.id) && !cell.id.includes("lava")) || aquatic)) {
             surface = y;
             continue; // still water: walk on to the bed so a pier has something to stand on
         }
@@ -94,7 +105,7 @@ export function readColumn(dimension, x, z, options = {}) {
         if (previous !== undefined && isNaturalGround(previous.id)) {
             break; // this cell is the block beneath the ground: enough to judge it
         }
-        if (!isBenign(cell.id) && !(surface !== undefined && isLiquid(cell.id))) {
+        if (!isBenign(cell.id) && !(surface !== undefined && (isLiquid(cell.id) || aquatic))) {
             break; // an unknown or player-made block: classifyColumn will report it
         }
     }
@@ -102,7 +113,19 @@ export function readColumn(dimension, x, z, options = {}) {
         /** @type {number | undefined} */
         let bed;
         for (const cell of cells) {
-            if (cell.y < surface && isNaturalGround(cell.id)) bed = cell.y;
+            // A fresh-world native sample exposes smooth basalt at the seabed.
+            // It may support a pier without granting permission to cut/clear it.
+            // Keep this separate from the terrain replacement allowlist.
+            if (bed === undefined && cell.y < surface && (isNaturalGround(cell.id) || cell.id === "minecraft:smooth_basalt")) bed = cell.y;
+        }
+        if (bed === undefined) {
+            const obstruction = cells.find((cell) => cell.y < /** @type {number} */ (surface) && !isBenign(cell.id) && cell.id !== "minecraft:bubble_column");
+            if (obstruction !== undefined) {
+                // We DID read this column. Preserve masonry, ores and player blocks
+                // as blocked terrain, just as the dry-land reader does. Never turn
+                // the obstruction into a bed for a pier or an unloaded chunk.
+                return { above: [], surface, problem: `${obstruction.id} at y=${String(obstruction.y)} is not natural terrain (under water at y=${String(surface)})` };
+            }
         }
         return { above: [], surface, ...(bed === undefined ? {} : { bed }), problem: `water at y=${String(surface)}` };
     }

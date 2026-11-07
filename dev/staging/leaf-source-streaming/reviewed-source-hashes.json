@@ -1,0 +1,11 @@
+{
+  "utc": "2026-11-06T13:06:59.861429+00:00",
+  "scope": "Read-only design, no implementation/benchmark/native stability claim",
+  "sha256": {
+    "CivilizationApocalypse_BP/scripts/civ/districtplan.js": "BAE2D199DE6ABADB33C15CD7EA2BA07DFDD856018C3E3B57B4B48EB1CFDB663A",
+    "CivilizationApocalypse_BP/scripts/civ/wallLeafTrim.js": "186502AC8A63CB2D9F414CACB070419A2071AF13EC5848BB0A842F7ACA13312A",
+    "CivilizationApocalypse_BP/scripts/civ/wallleafpreview.js": "A38ED00650C7DB05E42ADD0F2218080FCBA3D023D6B39F47DE1BBB0DC47F22EE",
+    "CivilizationApocalypse_BP/scripts/integration/civBuilder.js": "2BE8D7A5F577624D06C789B956AF41D317489FF97F1629AD049C4CF606B3450F",
+    "CivilizationApocalypse_BP/scripts/commands/civ.js": "BDF356E3E8362626171B07C8F14947FD234F5C0F0483BBF0BB5FE5204ADC3201"
+  }
+}

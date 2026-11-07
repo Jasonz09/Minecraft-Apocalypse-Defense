@@ -476,6 +476,16 @@ export function createLedgerUi(deps) {
         return outcome;
     }
 
+    /** A prepared template gives the ordinary item on join without a typed command.
+     * @param {any} player
+     */
+    function ensureForPlayer(player) {
+        if (!isPlayer(player) || !gateIsOpen()) return;
+        const outcome = grantLedger(player, { ...deps, dropIfFull: false });
+        if (outcome.status !== "already-held") tell(player, outcome.lines);
+        return outcome;
+    }
+
     /**
      * Subscribes to the item, the leave and the recovery events. Idempotent. Called once from the binding.
      * @returns {boolean} true the first time
@@ -506,6 +516,7 @@ export function createLedgerUi(deps) {
         handleItemUse,
         handlePlayerLeave,
         handleRecoverCommand,
+        ensureForPlayer,
         openFor,
         /** @param {string} playerId */
         isOpen: (playerId) => sessions.has(playerId),
@@ -522,7 +533,7 @@ export function createLedgerUi(deps) {
  * Gives the Ledger to a player, at most one. Pure over the player and the item factory.
  *
  * @param {any} player
- * @param {{ ItemStack: new (typeId: string, amount?: number) => any, ItemLockMode: { inventory: string } }} deps
+ * @param {{ ItemStack: new (typeId: string, amount?: number) => any, ItemLockMode: { inventory: string }, dropIfFull?: boolean }} deps
  * @returns {{ status: string, slot?: number, lines: string[] }}
  */
 export function grantLedger(player, deps) {
@@ -549,6 +560,9 @@ export function grantLedger(player, deps) {
     if (leftover === undefined) {
         const slot = findLedgerSlot(container);
         return { status: "granted", slot, lines: [`The Commander's Ledger is in your inventory (slot ${String((slot ?? 0) + 1)}).`] };
+    }
+    if (deps.dropIfFull === false) {
+        return { status: "inventory-full", lines: ["Make room in your inventory, then rejoin to receive the Commander's Ledger."] };
     }
     try {
         player.dimension.spawnItem(leftover, player.location);

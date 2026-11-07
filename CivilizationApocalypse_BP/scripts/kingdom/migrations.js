@@ -1,3 +1,4 @@
+import { emptyDiplomacy } from "../sim/diplomacy.js";
 import { DEFAULT_SEED, KINGDOM_SCHEMA_VERSION } from "../config.js";
 import { createV2Kingdom, findValidationProblems } from "./state.js";
 
@@ -9,8 +10,12 @@ import { createV2Kingdom, findValidationProblems } from "./state.js";
  * @type {{ [fromVersion: number]: (state: any) => any }}
  */
 const upgrades = {
-    1: (state) =>
-        createV2Kingdom({
+    2: (state) => {
+        if (Object.hasOwn(state,"diplomacy")) throw new Error("Existing diplomacy extension is preserved; explicit migration required.");
+        return {...state,schemaVersion:3,diplomacy:emptyDiplomacy()};
+    },
+    1: (state) => {
+        const kingdom = createV2Kingdom({
             name: state.name,
             seed: DEFAULT_SEED,
             districts: /** @type {any[]} */ (state.districts ?? []).map((district, index) => ({
@@ -19,7 +24,10 @@ const upgrades = {
                 civilians: district?.civilians,
                 soldiers: district?.soldiers,
             })),
-        }),
+        });
+        // The shared constructor creates the current format; this registered step returns EXACTLY v2.
+        delete kingdom.diplomacy; kingdom.schemaVersion=2; return kingdom;
+    },
 };
 
 /**
@@ -39,6 +47,7 @@ export function migrateKingdom(value) {
     if (start === undefined) {
         return { problems: ["saved state has no schemaVersion"] };
     }
+    if(start<3&&Object.hasOwn(value,"diplomacy"))return {problems:["Legacy diplomacy extension requires explicit migration; save preserved."]};
     if (start > KINGDOM_SCHEMA_VERSION) {
         return { problems: [`saved state is v${String(start)}, newer than this pack (v${String(KINGDOM_SCHEMA_VERSION)})`] };
     }

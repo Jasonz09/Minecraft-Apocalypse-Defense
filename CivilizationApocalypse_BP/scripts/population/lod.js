@@ -17,11 +17,25 @@ import { compareText, parseGroupId } from "./groups.js";
  *   headcount: number,
  *   hasSpot: boolean,
  *   distance: number,
+ *   homeDistance?: number,
  *   spotLoaded: boolean,
  *   bound: boolean,
  * }} LodInput
  * @typedef {{ level: "physical" | "coarse" | "simulated", admitted: boolean, reason: string }} LodDecision
  */
+
+/**
+ * How near a group counts as "the player is here". A district's people are a neighbourhood, not a point: the
+ * player standing at the plaza is near the district even when a soldier's own post is 60 blocks down the wall.
+ * The smaller of the group's spot distance and its district home distance is therefore the reach, and a caller
+ * that supplies no home distance keeps the old spot-only reading.
+ * @param {LodInput} input
+ * @returns {number}
+ */
+function reachOf(input) {
+    const home = Number(input.homeDistance);
+    return Number.isFinite(home) ? Math.min(input.distance, home) : input.distance;
+}
 
 /**
  * @param {LodInput[]} inputs
@@ -47,14 +61,15 @@ export function planLevels(inputs, config, meter) {
             decisions.set(input.id, { level: "simulated", admitted: false, reason: "no-home" });
             continue;
         }
+        const reach = reachOf(input);
         const wanted = input.bound
-            ? input.distance <= config.holdRadius
-            : input.distance <= config.physicalRadius && input.spotLoaded;
+            ? reach <= config.holdRadius
+            : reach <= config.physicalRadius && input.spotLoaded;
         if (wanted) {
             candidates.push(input);
             continue;
         }
-        if (!input.bound && input.distance <= config.physicalRadius) {
+        if (!input.bound && reach <= config.physicalRadius) {
             chunkBlocked += 1;
             decisions.set(input.id, { level: ringLevel(input, config), admitted: false, reason: "chunk-unloaded" });
             continue;
@@ -132,7 +147,7 @@ export function planLevels(inputs, config, meter) {
  * @returns {"coarse" | "simulated"}
  */
 function ringLevel(input, config) {
-    return input.hasSpot && input.distance <= config.coarseRadius ? "coarse" : "simulated";
+    return input.hasSpot && reachOf(input) <= config.coarseRadius ? "coarse" : "simulated";
 }
 
 /**

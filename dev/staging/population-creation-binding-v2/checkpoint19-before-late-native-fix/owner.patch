@@ -1,0 +1,144 @@
+--- a/CivilizationApocalypse_BP/scripts/integration/popSync.js
++++ b/CivilizationApocalypse_BP/scripts/integration/popSync.js
+@@ -22,14 +22,16 @@
+  * Runtime boundary for the population representation layer (population/reconcile.js is the pure part).
+  *
+  * This file is thin on purpose. It reads the world into the reducer's observation, asks the reducer what to do,
+- * and applies the result. It holds no rules of its own, and it is NOT wired into main.js: nothing here runs
+- * until an integrator constructs it and calls reconcileOnce() on purpose. The pack default is off.
++ * and applies the result. Streets constructs it as the sole owner; this module registers no timer.
++ * The optional staged creationBindings protocol records issued instances separately from the advisory cursor.
+  *
+  * Safety rules enforced here, on top of the reducer's:
+  *  - the cursor is written only AFTER the actions are applied. A crash in between leaves the cursor behind the
+- *    world, and the next run adopts the representatives it finds (identity is the tag, not the cursor);
++ *    world. Loaded tagged actors can be adopted. Legacy tag-only ownership cannot exclude an UNLOADED
++ *    surviving actor; the isolated reproduction disproves the earlier unconditional no-duplicate claim.
++ *    Opt-in creation bindings hold an issued-but-unobserved generation instead of inferring death;
+  *  - every spawn is re-checked against a dimension-wide tag query first, so a representative that wandered
+- *    outside the observation window is adopted, not duplicated;
++ *    outside the observation window is adopted when LOADED. Unloaded absence is not death or removal;
+  *  - every despawn and retag re-reads the entity's tags and requires the group it was planned for to still be
+  *    claimed, and requires its chunk to be loaded at apply time;
+  *  - only tags in the civpop: namespace are ever added or removed. Foreign tags and untagged units are never read
+@@ -58,6 +60,7 @@
+         throw new TypeError("createPopSync: a dimension with getEntities and spawnEntity is required");
+     }
+     const config = resolveConfig(deps.config ?? {});
++    const creationBindings=deps.creationBindings;
+     const enabled = deps.enabled === true;
+     /** Last owner plan only: diagnostic reads never reconcile or advance its cursor. @type {any} */
+     let lastPlan;
+@@ -229,9 +232,9 @@
+         const posts = postsOf(kingdom);
+         const snapshot=militaryPolicy(kingdom);
+         const policy=snapshot?.selection?snapshot:null;
+-        const session = observe(kingdom, anchors, posts,policy!==null);
++        const session = observe(kingdom, anchors, posts,policy!==null||!!creationBindings);
+         if(policy?.selection){const found=findTagged(tagFor(policy.selection.groupId),true);diagnose("observe",policy.selection.groupId,found);for(const handle of found)session.admit(handle);}
+-        let result = reconcile(prior, session.observation, tick, config,policy?.typeForGroup);
++        let result = reconcile(prior, session.observation, tick, config,policy?.typeForGroup??(creationBindings?(group=>POP_ENTITY_TYPES[group.kind]):undefined));
+         if(policy!==null)chargeMilitaryWork(result.report.work??0);
+         for (let pass = 0; pass < 2; pass += 1) {
+             let discovered = 0;
+@@ -250,7 +253,7 @@
+             if (discovered === 0) {
+                 break;
+             }
+-            result = reconcile(prior, session.observation, tick, config,policy?.typeForGroup);
++            result = reconcile(prior, session.observation, tick, config,policy?.typeForGroup??(creationBindings?(group=>POP_ENTITY_TYPES[group.kind]):undefined));
+             if(policy!==null)chargeMilitaryWork(result.report.work??0);
+         }
+         lastPlan={tick,posts:Object.fromEntries(Object.entries(posts).map(([id,list])=>[id,{count:list.length,points:list.slice(0,9).map((/** @type {any} */p)=>({...p}))}])),
+@@ -310,9 +313,14 @@
+         if (!enabled) {
+             return { refused: "population sync is disabled (the pack default); pass enabled: true to apply", actions: [], report: null, applied: [], skipped: [], failed: [], saved: false };
+         }
++        if(creationBindings){try{creationBindings.recoverIssuance();}catch(error){return{refused:"creation issuance recovery held: "+String(error),actions:[],report:null,applied:[],skipped:[],failed:[],saved:false};}}
+         const planned = planFromStore(tick);
+         if (planned.plan === null || planned.refused !== null) {
+             return { refused: planned.refused, actions: [], report: planned.plan?.result.report ?? null, applied: [], skipped: [], failed: [], saved: false };
++        }
++        if(creationBindings){
++            try{const rows=[];for(const handle of planned.plan.handles.values()){const d=describe(handle);if(!d)throw Error("creation observation unreadable");const read=classifyTags(d.tags);if(read.claims.length===1&&isCanonicalFor(read.ownTags,read.claims[0]))rows.push({groupId:read.claims[0],id:d.id,typeId:d.typeId,tags:d.tags});}creationBindings.observeLoaded(rows);}
++            catch(error){return{refused:"creation binding observation held: "+String(error),actions:[],report:planned.plan.result.report,applied:[],skipped:[],failed:[],saved:false};}
+         }
+         const outcome = applyActions(planned.plan.result.actions, planned.plan.handles,planned.plan.policy);
+         const saved = outcome.militaryRefused===null?saveCursor(planned.plan.result.state):{saved:false,reason:outcome.militaryRefused};
+@@ -357,7 +365,7 @@
+                 if(policy?.selection?.groupId===action.groupId)diagnose("ownerOutcome",action,{ok:false,reason:String(error).slice(0,180)});
+                 failed.push({ action, error: String(error) });
+                 if(action.op==="spawn"&&lastPlan)lastPlan.outcomes.push({groupId:action.groupId,status:"failed",reason:String(error).slice(0,180),settled:null,entityId:null});
+-                if(policy?.selection||error instanceof MilitaryOwnerRefusal){militaryRefused=String(error);break;}
++                if(creationBindings||policy?.selection||error instanceof MilitaryOwnerRefusal){militaryRefused=String(error);break;}
+             }
+         }
+         if(policy!==null&&militaryRefused===null) {
+@@ -421,7 +429,11 @@
+             return { ok: false, reason: "chunk-unloaded" };
+         }
+         beforeWrite?.();
+-        handle.remove();
++        const removal=creationBindings?.beginRemove({groupId:action.groupId,id:String(handle.id),typeId:handle.typeId,tags:[...handle.getTags()]});
++        beforeWrite?.();
++        if(removal){const live=findTagged(tagFor(action.groupId),true);if(live.length!==1||String(live[0].id)!==removal.actor)throw Error("owner removal uniqueness changed; all preserved");creationBindings.assertOwned({groupId:action.groupId,id:String(live[0].id),typeId:live[0].typeId,tags:[...live[0].getTags()]});}
++        const removalId=String(handle.id);handle.remove();
++        if(removal){if(handle.isValid!==false||removal.actor!==removalId)throw Error("owner removal not positively observed; binding held");creationBindings.commitRemoved(removal);}
+         return { ok: true, reason: null };
+     }
+ 
+@@ -431,6 +443,7 @@
+      * @param {()=>void} [beforeWrite]
+      */
+     function retagOne(action, handles,beforeWrite) {
++        if(creationBindings)return{ok:false,reason:"creation binding retag requires explicit protocol; representative preserved"};
+         const handle = handles.get(action.entityId);
+         if (handle === undefined || !isLive(handle)) {
+             return { ok: false, reason: "gone" };
+@@ -480,9 +493,10 @@
+      */
+     function spawnOne(action,beforeWrite) {
+         const tag = tagFor(action.groupId);
+-        if (findTagged(tag).length > 0) {
++        if (findTagged(tag,!!creationBindings).length > 0) {
+             return { ok: false, reason: "representative-exists" };
+         }
++        if(creationBindings){const permission=creationBindings.canBirth(action.groupId,action.typeId);if(!permission.allowed)return{ok:false,reason:permission.reason};}
+         const at = settleSpot(action.at);
+         if (at === undefined) {
+             return { ok: false, reason: "no-safe-standing-spot" };
+@@ -491,22 +505,29 @@
+             return { ok: false, reason: "chunk-unloaded",settled:at };
+         }
+         beforeWrite?.();
+-        const entity = dimension.spawnEntity(action.typeId, at);
++        const ticket=creationBindings?.prepare(action.groupId,action.typeId);
++        beforeWrite?.();
++        if(creationBindings&&findTagged(tag,true).length>0)throw Error("representative appeared after birth prepare; pending binding held");
++        const entity = dimension.spawnEntity(action.typeId, at),spawnedId=String(entity.id);
++        const rollbackNewborn=()=>{if(String(entity.id)!==spawnedId)throw Error("newborn identity changed; preserved");entity.remove();if(entity.isValid!==false)throw Error("newborn removal not positively observed");if(ticket)creationBindings.rollbackRemoved(ticket,spawnedId);};
++        if(ticket){try{creationBindings.recordSpawned(ticket,spawnedId);}catch(error){try{rollbackNewborn();}catch(_rollback){}throw error;}}
+         let tagged = false;
+         try {
+             tagged = entity.addTag(tag) === true;
++            if(tagged&&ticket)tagged=entity.addTag(ticket.tag)===true;
+         } catch (_error) {
+             tagged = false;
+         }
+         if (!tagged) {
+             // We created this unit a moment ago, so removing it is a rollback, not a removal of population.
+             try {
+-                entity.remove();
++                if(ticket)rollbackNewborn();else entity.remove();
+                 return { ok: false, reason: "tag-failed-rolled-back" };
+             } catch (_error) {
+-                return { ok: false, reason: "tag-failed-stray-untagged" };
+-            }
+-        }
++                return { ok: false, reason: ticket?"tag-failed-rollback-unverified; pending binding held":"tag-failed-stray-untagged" };
++            }
++        }
++        if(ticket){const live=findTagged(tag,true);if(live.length!==1||String(live[0].id)!==spawnedId)throw Error("newborn canonical census changed; binding pending");creationBindings.confirmBorn(ticket,{groupId:action.groupId,id:String(live[0].id),typeId:live[0].typeId,tags:[...live[0].getTags()]});}
+         diagnose("observe",action.groupId,[entity]);
+         return { ok: true, reason: null, entityId: String(entity.id),settled:at };
+     }

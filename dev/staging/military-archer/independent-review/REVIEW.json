@@ -1,0 +1,106 @@
+{
+  "utc": "2026-11-07T02:45:03.704606+00:00",
+  "scope": "fresh read-only adversarial pass against frozen archer code/data; source untouched",
+  "finding": "No additional concrete defect found beyond declared native and composition gates",
+  "pins": [
+    {
+      "target": "CivilizationApocalypse_BP/entities/archer.json",
+      "proposalMatch": true,
+      "activeBaselineMatch": null
+    },
+    {
+      "target": "CivilizationApocalypse_BP/entities/guard_arrow.json",
+      "proposalMatch": true,
+      "activeBaselineMatch": null
+    },
+    {
+      "target": "CivilizationApocalypse_BP/scripts/commands/military.js",
+      "proposalMatch": true,
+      "activeBaselineMatch": true
+    },
+    {
+      "target": "CivilizationApocalypse_BP/scripts/integration/militaryLifecycleDiagnostics.js",
+      "proposalMatch": true,
+      "activeBaselineMatch": true
+    },
+    {
+      "target": "CivilizationApocalypse_BP/scripts/integration/militarySelectionStore.js",
+      "proposalMatch": true,
+      "activeBaselineMatch": true
+    },
+    {
+      "target": "CivilizationApocalypse_BP/scripts/population/militarySelection.js",
+      "proposalMatch": true,
+      "activeBaselineMatch": true
+    },
+    {
+      "target": "CivilizationApocalypse_RP/animations/archer.animation.json",
+      "proposalMatch": true,
+      "activeBaselineMatch": null
+    },
+    {
+      "target": "CivilizationApocalypse_RP/entity/archer.entity.json",
+      "proposalMatch": true,
+      "activeBaselineMatch": null
+    },
+    {
+      "target": "CivilizationApocalypse_RP/entity/guard_arrow.entity.json",
+      "proposalMatch": true,
+      "activeBaselineMatch": null
+    },
+    {
+      "target": "CivilizationApocalypse_RP/models/entity/archer.geo.json",
+      "proposalMatch": true,
+      "activeBaselineMatch": null
+    },
+    {
+      "target": "CivilizationApocalypse_RP/render_controllers/archer.render_controllers.json",
+      "proposalMatch": true,
+      "activeBaselineMatch": null
+    }
+  ],
+  "tests": [
+    {
+      "name": "frozen focused suite",
+      "pass": 54,
+      "durationMs": 363.665,
+      "log": "focused54.log"
+    },
+    {
+      "name": "new actual frozen-old codec comparison plus54 class/schema/type combinations",
+      "pass": 2,
+      "durationMs": 112.8231,
+      "log": "compatibility.log"
+    }
+  ],
+  "reviewed": [
+    "schema1 exact canonical stamps and malformed-old-input results match frozen decoder; onlyschema2 archer pair newlyvalid",
+    "onegroup selection policy returns selected.typeId; actual existing owner creates/tag/adopts it; othergroups keep normaltype",
+    "Orders stationarity and diagnostic subscriptions use existing owner/group path; no new script scheduler/spawner",
+    "proactive targets exact siege tag plus explicit family exclusions; selfdefense retains current limited hostile-familypolicy",
+    "custom arrow documented monster-family damage filter and explicit vanilla player/villager/golem/customguard ignoredIDs; no vanilla override",
+    "own humanoid assets reused; fixedbow and builtinarrow references remain native-unverified"
+  ],
+  "primary": [
+    {
+      "url": "https://learn.microsoft.com/en-us/minecraft/creator/reference/content/entityreference/examples/entitycomponents/minecraftcomponent_projectile?view=minecraft-bedrock-stable",
+      "supports": "ignored_entities array of identifiers; impact_damage.filter family/type string; not native friendlyfire acceptance"
+    },
+    {
+      "url": "https://github.com/Mojang/bedrock-samples/blob/v1.26.0.2/behavior_pack/entities/skeleton.json",
+      "supports": "pinned ranged/shooter component shape"
+    },
+    {
+      "url": "https://github.com/Mojang/bedrock-samples/blob/v1.26.0.2/resource_pack/entity/arrow.entity.json",
+      "supports": "builtin arrow material/geometry/texture/controller references"
+    }
+  ],
+  "remaining": [
+    "native client/log/ranged-shot/friendlyfire/pursuit/rejoin proof absent",
+    "same existing creation owner still has documented unloaded absence weakness until reviewed binding integration",
+    "creationbinding allowedtypes/death/census require coordinated archer extension, not bypass",
+    "fixedbow has no equippable/inventory or accepted draw-animation claim",
+    "projectile maycollaterallyhit another monster, including untagged; onlytarget acquisition is siege-tag gated",
+    "no aggregate casualty debit, physical cohort accounting or fixed mix"
+  ]
+}

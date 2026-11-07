@@ -1,0 +1,497 @@
+--- /dev/null
++++ CivilizationApocalypse_BP\scripts\civ\leafSourceStreaming.js
+@@ -0,0 +1,122 @@
++// Staged read-only compiler orchestration. This is NOT a command or write authorization.
++import {POLICY,createLeafTrimAccumulator,accumulateLeafSourceSteps,finishLeafTrimAccumulator,readLeafTrimReceipt,readLeafTrimReceiptForPlan,leafSourceManifest} from "./wallLeafTrim.js";
++import {collectWallLeafCensusSteps,wallLeafCensusView,accumulateWallLeafPreviewSourceSteps,finishWallLeafPreviewSteps} from "./wallleafpreview.js";
++/** @param {string} reason @returns {never} */
++const fail=reason=>{throw new Error(reason);};
++/** @param {any} input @param {any} deps @returns {Generator<undefined,import("./wallLeafTrim.js").LeafPlan,unknown>} */
++export function* compilePendingLeafSourcesSteps(input,deps){
++    if(input?.policy!==POLICY)fail("explicit existing leaf policy required");
++    if(typeof deps?.sourcesCurrent!=="function"||typeof deps?.loadSourceSteps!=="function"||typeof deps?.receiptStore?.load!=="function")fail("guarded verified source loader and receipt reader required");
++    const raw=deps.receiptStore.load();
++    if(raw===undefined)fail("pending receipt required by staged streaming path; retain existing bounded no-pending census path");
++    const receipt=readLeafTrimReceipt(raw);
++    if(receipt.complete)fail("pending original receipt required; no new admission from completed history");
++    if(!Array.isArray(input.sources)||input.sources.length<1||input.sources.length>5)fail("complete expected source manifest required");
++    // Detach only scalar metadata. No records or source wrappers can enter this manifest.
++    const sources=input.sources.map(/** @param {any} s */s=>({record:{districtIndex:s.index,checksum:s.checksum},civ:{status:s.status,checksum:s.checksum,dimension:s.dimension},masterHash:input.masterHash}));
++    const requested={index:input.index,checksum:input.checksum,masterHash:input.masterHash,dimension:input.dimension,candidates:receipt.requested,sources};
++    const token=createLeafTrimAccumulator(requested);
++    const manifest=sources.map(/** @param {any} s */s=>({index:s.record.districtIndex,checksum:s.record.checksum})).sort(/** @param {any} a @param {any} b */(a,b)=>a.index-b.index);
++    if(receipt.index!==input.index||receipt.checksum!==input.checksum||receipt.masterHash!==input.masterHash||receipt.dimension!==input.dimension||JSON.stringify(receipt.sources)!==JSON.stringify(manifest))fail("pending receipt source manifest differs; preserve it");
++    function assert(){if(deps.cancelled?.()||deps.sourcesCurrent()!==true||deps.receiptStore.load()!==raw)fail("streaming source/protection/cancellation/receipt guard refused");}
++    /** @template T @param {Generator<any,T,any>} generator @returns {Generator<undefined,T,unknown>} */
++    function* guarded(generator){for(;;){assert();const step=generator.next();assert();if(step.done)return step.value;yield;assert();}}
++    /** Each completed helper returns ONLY master JSON text. Its heavy wrapper, record,
++     * arrays, iterators and generators leave scope BEFORE the next source load starts. */
++    /** @param {any} entry @param {string|undefined} masterJSON */
++    function* one(entry,masterJSON){
++        /** @type {any} */ const loaded=yield* guarded(deps.loadSourceSteps(entry.record.districtIndex,entry.civ));
++        if(!loaded?.ok||loaded.queue?.state!=="complete"||!loaded.record||!loaded.plan)fail("verified complete source load refused");
++        const text=JSON.stringify(loaded.plan);if(masterJSON!==undefined&&text!==masterJSON)fail("neighbor belongs to a different master plan");
++        deps.onVerifiedMaster?.(loaded.plan);assert();
++        yield* guarded(accumulateLeafSourceSteps(token,{record:loaded.record,civ:entry.civ,masterHash:entry.masterHash},deps.compilerDependencies??{}));
++        assert();return text;
++    }
++    let masterJSON;
++    for(const entry of sources){assert();masterJSON=yield* one(entry,masterJSON);assert();}
++    assert();const plan=finishLeafTrimAccumulator(token);readLeafTrimReceiptForPlan(raw,plan);assert();
++    return plan;
++}
++
++/** Full fresh read-only census/compilation path. All existing sources are verified before a result is returned. */
++/** @param {any} input @param {any} deps */
++export function* compileFreshLeafSourcesSteps(input,deps){
++    if(input?.policy!==POLICY)fail("explicit existing leaf policy required");
++    if(typeof deps?.sourcesCurrent!=="function"||typeof deps?.journalsCurrent!=="function"||typeof deps?.loadSourceSteps!=="function"||typeof deps?.read!=="function"||typeof deps?.isProtected!=="function")fail("guarded verified source loader, journals and native readers required");
++    if(!Array.isArray(input.sources)||input.sources.length<1||input.sources.length>5)fail("complete expected source manifest required");
++    const sources=input.sources.map(/** @param {any} s */s=>({record:{districtIndex:s.index,checksum:s.checksum},civ:{status:s.status,checksum:s.checksum,dimension:s.dimension},masterHash:input.masterHash}));
++    const request={index:input.index,checksum:input.checksum,masterHash:input.masterHash,dimension:input.dimension,candidates:[],sources};leafSourceManifest(request);
++    function assert(){if(deps.cancelled?.()||deps.sourcesCurrent()!==true||deps.journalsCurrent()!==true)fail("streaming source/protection/cancellation/journal guard refused");}
++    /** @template T @param {Generator<any,T,any>} generator @returns {Generator<undefined,T,unknown>} */
++    function* guarded(generator){for(;;){assert();const step=generator.next();assert();if(step.done)return step.value;yield;assert();}}
++    /** @type {object|undefined} */let census;
++    /** @type {object|undefined} */let accumulator;
++    /** @type {string|undefined} */let masterJSON;
++    const selected=sources.findIndex(/** @param {any} entry */entry=>entry.record.districtIndex===input.index);
++    const order=[selected,...sources.map(/** @param {any} _ @param {number} i */(_,i)=>i).filter(/** @param {number} i */i=>i!==selected)];
++    /** Heavy loaded wrappers/records remain inside one helper only. */
++    /** @param {number} ordinal */
++    function* one(ordinal){
++        const entry=sources[ordinal];
++        /** @type {any} */const loaded=yield* guarded(deps.loadSourceSteps(entry.record.districtIndex,entry.civ));
++        if(!loaded?.ok||loaded.queue?.state!=="complete"||!loaded.record||!loaded.plan)fail("verified complete source load refused");
++        if(loaded.record.districtIndex!==entry.record.districtIndex||loaded.record.checksum!==entry.record.checksum)fail("loaded source identity differs");
++        const text=JSON.stringify(loaded.plan);if(masterJSON!==undefined&&text!==masterJSON)fail("neighbor belongs to a different master plan");
++        deps.onVerifiedMaster?.(loaded.plan);assert();
++        if(ordinal===selected){
++            census=yield* guarded(collectWallLeafCensusSteps(loaded.record,{read:deps.read,isProtected:deps.isProtected,cancelled:deps.cancelled},{...deps.compilerDependencies,sourceCount:sources.length}));
++            const view=wallLeafCensusView(census);
++            if(view.candidates.length)accumulator=createLeafTrimAccumulator({...request,candidates:view.candidates});
++        }
++        if(!census)fail("selected wall census was not initialized");
++        yield* guarded(accumulateWallLeafPreviewSourceSteps(census,loaded.record,ordinal,deps.compilerDependencies??{}));
++        if(accumulator)yield* guarded(accumulateLeafSourceSteps(accumulator,{record:loaded.record,civ:entry.civ,masterHash:entry.masterHash},deps.compilerDependencies??{}));
++        assert();return text;
++    }
++    for(const ordinal of order){assert();masterJSON=yield* one(ordinal);assert();}
++    if(!census)fail("selected wall census was not initialized");
++    const survey=yield* guarded(finishWallLeafPreviewSteps(census));assert();
++    if(survey.truncated)return{state:"held: more than64 observed tree candidates; no partial capped admission",survey,plan:null};
++    const candidates=survey.rows.filter(/** @param {any} row */row=>row.state==="eligible").map(/** @param {any} row */row=>row.target);
++    if(!candidates.length)return{state:"no eligible loaded targets",survey,plan:null};
++    if(!accumulator)fail("wanted-cell source summary was not initialized");
++    const plan=finishLeafTrimAccumulator(accumulator,{candidates});assert();
++    if(plan.refused.length)fail("strict compiled source ownership refused candidates; no batch admitted");
++    return{state:"preview",survey,plan};
++}
++
++// Only this module can brand a finished source compilation. The controller never
++// accepts a parsed plan, partial census token or accumulator as write permission.
++const PREPARED_BATCHES=new WeakMap();
++/** @param {any} input */
++function batchIdentity(input){
++    const sources=input.sources.map(/** @param {any} s */s=>s.record?{record:{districtIndex:s.record.districtIndex,checksum:s.record.checksum},civ:{status:s.civ?.status,checksum:s.civ?.checksum,dimension:s.civ?.dimension},masterHash:s.masterHash}:{record:{districtIndex:s.index,checksum:s.checksum},civ:{status:s.status,checksum:s.checksum,dimension:s.dimension},masterHash:input.masterHash});
++    const manifest=leafSourceManifest({...input,candidates:[],sources});
++    return JSON.stringify({index:input.index,checksum:input.checksum,masterHash:input.masterHash,dimension:input.dimension,sources:manifest});
++}
++/** @param {any} value */
++function freezeData(value){if(value&&typeof value==="object"){Object.freeze(value);for(const child of Object.values(value))freezeData(child);}return value;}
++/** Producer API: all compilation happens under the same controller-owned fences.
++ * Returned token holds small immutable data only, never loaded source objects.
++ * @param {any} input @param {any} deps */
++export function* prepareLeafSourceBatchSteps(input,deps){
++    if(typeof deps?.sourcesCurrent!=="function"||typeof deps?.journalsCurrent!=="function")fail("controller-owned source and journal guards required");
++    const identity=batchIdentity(input),raw=deps.receiptStore?.load();
++    const assert=()=>{if(deps.cancelled?.()||deps.sourcesCurrent()!==true||deps.journalsCurrent()!==true||batchIdentity(input)!==identity||deps.receiptStore?.load()!==raw)fail("prepared leaf batch source/journal/cancellation binding changed");};
++    assert();
++    const generator=raw===undefined?compileFreshLeafSourcesSteps(input,deps):compilePendingLeafSourcesSteps(input,deps);
++    let result;
++    for(;;){assert();const next=generator.next();assert();if(next.done){result=next.value;break;}yield;assert();}
++    const payload=raw===undefined?result:{state:"preview",survey:null,plan:result};
++    assert();
++    const token=Object.freeze({});
++    PREPARED_BATCHES.set(token,{identity,raw,sourcesCurrent:deps.sourcesCurrent,payload:freezeData(payload)});
++    return token;
++}
++/** One-use exact consumer. No generic plan input and no partial capability can pass.
++ * @param {object} token @param {{input:any,sourcesCurrent:()=>boolean,receiptRaw:unknown}} options */
++export function consumePreparedLeafBatch(token,{input,sourcesCurrent,receiptRaw}){
++    const state=PREPARED_BATCHES.get(token);PREPARED_BATCHES.delete(token);
++    if(!state||state.sourcesCurrent!==sourcesCurrent||state.identity!==batchIdentity(input)||state.raw!==receiptRaw||sourcesCurrent()!==true)fail("foreign/stale/already-consumed prepared leaf batch; no write permission");
++    return state.payload;
++}
+--- CivilizationApocalypse_BP\scripts\civ\wallleafpreview.js
++++ CivilizationApocalypse_BP\scripts\civ\wallleafpreview.js
+@@ -19,12 +19,13 @@
+  * @param {{record:any,records:any[],read:(p:any)=>any,isProtected:(x:number,z:number)=>boolean,cancelled?:()=>boolean}} input
+  * @param {{opsFor?:typeof siteOpsFor}} [deps]
+  * @returns {Generator<void,any,void>} */
+-export function* previewWallLeavesSteps(input,deps={}) {
+-    const limits=WALL_LEAF_PREVIEW_LIMITS,opsFor=deps.opsFor??siteOpsFor;
+-    if(!input.record||!Array.isArray(input.records)||input.records.length<1||input.records.length>5||!input.records.includes(input.record))throw new Error("verified leaf-preview sources are missing");
++const WALL_CENSUS=new WeakMap();
++/** @param {any} checksum @param {any} context @param {number} sourceCount */
++function previewState(checksum,context,sourceCount){
++    const limits=WALL_LEAF_PREVIEW_LIMITS;
+     let reads=0,work=0,maxReads=0,maxOps=0,totalReads=0,totalOps=0;
+     function* budget(/** @type {number} */ n=0) {
+-        if(input.cancelled?.())throw new Error("Leaf preview cancelled");
++        if(context.cancelled?.())throw new Error("Leaf preview cancelled");
+         if(reads+n>limits.readsPerSlice||work>=limits.opsPerSlice) {
+             maxReads=Math.max(maxReads,reads);maxOps=Math.max(maxOps,work);reads=0;work=0;yield;
+         }
+@@ -34,7 +35,7 @@
+     function read(p) {
+         reads++;totalReads++;
+         try {
+-            const b=input.read(p);
++            const b=context.read(p);
+             if(!b||b.isValid===false)return {ok:false,reason:b?"invalid block":"no block returned"};
+             const id=b.typeId;if(typeof id!=="string")return {ok:false,reason:"no type id returned"};
+             let persistent;
+@@ -42,12 +43,23 @@
+             return {ok:true,id,...(isLeaves(id)?{persistent}: {})};
+         }catch(error){return {ok:false,reason:String(error)};}
+     }
++    return{checksum,context,sourceCount,processed:new Set(),budget,read,
++        stats:()=>({totalReads,totalOps,maxReads:Math.max(maxReads,reads),maxOps:Math.max(maxOps,work)}),op(){work++;totalOps++;}};
++}
++/** Read ALL selected final wall cells. No eligibility filtering or source permission. */
++/** @param {any} record @param {any} context @param {{sourceCount:number,opsFor?:typeof siteOpsFor}} deps */
++export function* collectWallLeafCensusSteps(record,context,deps){
++    const limits=WALL_LEAF_PREVIEW_LIMITS,opsFor=deps.opsFor??siteOpsFor;
++    if(!record||!Number.isInteger(deps.sourceCount)||deps.sourceCount<1||deps.sourceCount>5)throw new Error("verified leaf-preview sources are missing");
++    // Detached callbacks ensure the long-lived session does not close over a source record.
++    const s=previewState(record.checksum,{read:context.read,isProtected:context.isProtected,cancelled:context.cancelled},deps.sourceCount);
++    const budget=s.budget,read=s.read;
+     /** @type {Map<string,{wall:any,last:any,stage:string}>} */
+     const walls=new Map();
+     for(const stage of SITE_STAGES) {
+-        if(!Array.isArray(input.record[stage]))throw new Error("verified source is missing a stage");
+-        for(let i=0;i<input.record[stage].length;i++)for(const op of opsFor(input.record,stage,i)) {
+-            yield* budget();work++;totalOps++;
++        if(!Array.isArray(record[stage]))throw new Error("verified source is missing a stage");
++        for(let i=0;i<record[stage].length;i++)for(const op of opsFor(record,stage,i)) {
++            yield* budget();s.op();
+             const at=key(op);
+             if(stage==="walls"&&!AIR.has(op.id)) {
+                 if(!walls.has(at)&&walls.size>=limits.wallTargets)throw new Error("leaf-preview wall target budget exceeded");
+@@ -68,32 +80,45 @@
+         tree++;
+         if(candidates.length<limits.candidates)candidates.push({target:value.wall,final:value.last,stage:value.stage,observed});
+     }
+-    const wanted=new Set(candidates.flatMap(c=>cube(c.target)).map(key)),historical=new Set();
+-    /** @type {Map<string,Set<string>>} */
+-    const expected=new Map();
+-    for(const record of input.records)for(const stage of SITE_STAGES) {
+-        if(!Array.isArray(record[stage]))throw new Error("verified neighboring source is missing a stage");
+-    }
+-    for(const record of input.records) {
+-        /** @type {Map<string,string>} */
++    const token=Object.freeze({});
++    Object.assign(s,{candidates,unloadedSamples,targets,surveyed,unloaded,tree,present,other,wanted:new Set(candidates.flatMap(c=>cube(c.target)).map(key)),historical:new Set(),expected:new Map()});
++    WALL_CENSUS.set(token,s);return token;
++}
++/** Read-only coordinates/statistics, never eligibility or a compiled batch. */
++/** @param {object} token */
++export function wallLeafCensusView(token){const s=WALL_CENSUS.get(token);if(!s)throw new Error("foreign wall census capability");return{candidates:s.candidates.map(/** @param {any} c */c=>({x:c.target.x,y:c.target.y,z:c.target.z})),targets:s.targets,surveyed:s.surveyed,unloaded:s.unloaded,tree:s.tree,truncated:s.tree>WALL_LEAF_PREVIEW_LIMITS.candidates};}
++/** @param {object} token @param {any} record @param {number} ordinal @param {{opsFor?:typeof siteOpsFor}} [deps] */
++export function* accumulateWallLeafPreviewSourceSteps(token,record,ordinal,deps={}){
++    const s=WALL_CENSUS.get(token),opsFor=deps.opsFor??siteOpsFor;
++    if(!s||!Number.isInteger(ordinal)||ordinal<0||ordinal>=s.sourceCount||s.processed.has(ordinal))throw new Error("missing/duplicate wall census source");
++    let complete=false;
++    try{
+         const final=new Map();
+-        for(const stage of SITE_STAGES)for(let i=0;i<record[stage].length;i++)for(const op of opsFor(record,stage,i)) {
+-            yield* budget();work++;totalOps++;
+-            const at=key(op);if(!wanted.has(at))continue;
+-            if(decor(op,stage))historical.add(at);
+-            final.set(at,op.id);
++        for(const stage of SITE_STAGES){
++            if(!Array.isArray(record[stage]))throw new Error("verified neighboring source is missing a stage");
++            for(let i=0;i<record[stage].length;i++)for(const op of opsFor(record,stage,i)){
++                yield* s.budget();s.op();const at=key(op);if(!s.wanted.has(at))continue;
++                if(decor(op,stage))s.historical.add(at);final.set(at,op.id);
++            }
+         }
+-        for(const [at,id] of final)if(MASONRY.has(id)){const ids=expected.get(at)??new Set();ids.add(id);expected.set(at,ids);}
+-    }
++        for(const[at,id]of final)if(MASONRY.has(id)){const ids=s.expected.get(at)??new Set();ids.add(id);s.expected.set(at,ids);}
++        s.processed.add(ordinal);complete=true;
++    }finally{if(!complete)WALL_CENSUS.delete(token);}
++}
++/** Fresh27-cell classification only after every source contribution. */
++/** @param {object} token */
++export function* finishWallLeafPreviewSteps(token){
++    const s=WALL_CENSUS.get(token);if(!s||s.processed.size!==s.sourceCount)throw new Error("incomplete or foreign wall census summary");
++    const {candidates,historical,expected}=s;
+     /** @type {any[]} */
+     const rows=[];let contactsUnread=0;
+     for(const candidate of candidates) {
+-        yield* budget(27);
++        yield* s.budget(27);
+         const contacts=[];let reason;
+         for(const p of cube(candidate.target)) {
+             let protectedCell;
+-            try{protectedCell=input.isProtected(p.x,p.z);}catch(_error){protectedCell=undefined;}
+-            const block=read(p);contacts.push({...p,...block,protected:protectedCell,historical:historical.has(key(p))});
++            try{protectedCell=s.context.isProtected(p.x,p.z);}catch(_error){protectedCell=undefined;}
++            const block=s.read(p);contacts.push({...p,...block,protected:protectedCell,historical:historical.has(key(p))});
+             if(protectedCell!==false)reason??=`protected or unknown neighboring column ${key(p)}`;
+             if(historical.has(key(p)))reason??=`historical planned vegetation/decor ${key(p)}`;
+             if(!block.ok){contactsUnread++;reason??=`unreadable contact ${key(p)}: ${block.reason}`;}
+@@ -112,12 +137,20 @@
+         rows.push({target:{x:candidate.target.x,y:candidate.target.y,z:candidate.target.z},expected:candidate.final.id,
+             actual:target?.id??candidate.observed.id,persistent:target?.persistent,state,reason:reason??null,contacts});
+     }
+-    maxReads=Math.max(maxReads,reads);maxOps=Math.max(maxOps,work);
+-    return {policy:WALL_LEAF_PREVIEW_POLICY,checksum:input.record.checksum,targets,surveyed,unloaded,present,other,tree,
+-        truncated:tree>limits.candidates,complete:unloaded===0&&contactsUnread===0&&tree<=limits.candidates,rows,unloadedSamples,contactsUnread,
+-        eligible:rows.filter(r=>r.state==="eligible").length,refused:rows.filter(r=>r.state==="refused").length,
+-        nowPresent:rows.filter(r=>r.state==="present").length,
+-        stats:{totalReads,totalOps,maxReads,maxOps}};
++    const result={policy:WALL_LEAF_PREVIEW_POLICY,checksum:s.checksum,targets:s.targets,surveyed:s.surveyed,unloaded:s.unloaded,present:s.present,other:s.other,tree:s.tree,
++        truncated:s.tree>WALL_LEAF_PREVIEW_LIMITS.candidates,complete:s.unloaded===0&&contactsUnread===0&&s.tree<=WALL_LEAF_PREVIEW_LIMITS.candidates,rows,unloadedSamples:s.unloadedSamples,contactsUnread,
++        eligible:rows.filter(r=>r.state==="eligible").length,refused:rows.filter(r=>r.state==="refused").length,nowPresent:rows.filter(r=>r.state==="present").length,stats:s.stats()};
++    WALL_CENSUS.delete(token);return result;
++}
++/** Same public batch preview API, using the exact shared census/classifier. */
++/** @param {{record:any,records:any[],read:(p:any)=>any,isProtected:(x:number,z:number)=>boolean,cancelled?:()=>boolean}} input @param {{opsFor?:typeof siteOpsFor}} [deps] */
++export function* previewWallLeavesSteps(input,deps={}){
++    if(!input.record||!Array.isArray(input.records)||input.records.length<1||input.records.length>5||!input.records.includes(input.record))throw new Error("verified leaf-preview sources are missing");
++    const token=yield* collectWallLeafCensusSteps(input.record,input,{...deps,sourceCount:input.records.length});
++    // Preserve current all-source stage validation before any contribution.
++    for(const record of input.records)for(const stage of SITE_STAGES)if(!Array.isArray(record[stage]))throw new Error("verified neighboring source is missing a stage");
++    for(let i=0;i<input.records.length;i++)yield* accumulateWallLeafPreviewSourceSteps(token,input.records[i],i,deps);
++    return yield* finishWallLeafPreviewSteps(token);
+ }
+ 
+ /** At most 32 chat lines; subsequent pages rerun a fresh read-only survey.
+--- CivilizationApocalypse_BP\scripts\civ\wallLeafRepair.js
++++ CivilizationApocalypse_BP\scripts\civ\wallLeafRepair.js
+@@ -1,6 +1,7 @@
+ import {POLICY,compileLeafTrimSteps,previewLeafTrim,prepareLeafTrimSteps,resumeLeafTrimSteps,commitOneLeafTrim,LeafUpdatePendingError,key,readLeafTrimReceipt} from "./wallLeafTrim.js";
+ import {previewWallLeavesSteps} from "./wallleafpreview.js";
+ import {utf8Length} from "./planstore.js";
++import {consumePreparedLeafBatch} from "./leafSourceStreaming.js";
+ 
+ export const WALL_LEAF_STATE_PREFIX="civ:wall_leaf_trim:";
+ export const WALL_LEAF_REPAIR_LIMITS=Object.freeze({sourceKeys:128,allKeys:4096,sourceBytes:1500000,journalsPerDistrict:16});
+@@ -54,8 +55,8 @@
+ /** Pure injected controller. New batches admit only freshly eligible loaded
+  * candidates. Interrupted batches recover ORIGINAL coordinates from their receipt.
+  * No lease/chunk loader, original queue save, or broad tree clearer exists here. */
+-/** @param {import("./wallLeafTrim.js").LeafInput} input @param {import("./wallLeafTrim.js").LeafContext} ctx @param {import("@minecraft/server").World} world @param {{confirm?:boolean,policy?:string,readTick?:()=>number}} [options] */
+-export function* wallLeafRepairSteps(input,ctx,world,{confirm=false,policy,readTick}={}){
++/** @param {import("./wallLeafTrim.js").LeafInput} input @param {import("./wallLeafTrim.js").LeafContext} ctx @param {import("@minecraft/server").World} world @param {{confirm?:boolean,policy?:string,readTick?:()=>number,streamSourcesSteps?:(options:{input:import("./wallLeafTrim.js").LeafInput,context:import("./wallLeafTrim.js").LeafContext,receiptStore?:import("./wallLeafTrim.js").LeafStore})=>Generator<undefined,object,unknown>}} [options] */
++export function* wallLeafRepairSteps(input,ctx,world,{confirm=false,policy,readTick,streamSourcesSteps}={}){
+     if(policy!==POLICY)fail("explicit versioned wall-leaf policy required");
+     if(!Number.isInteger(input.index)||input.index<1||input.index>5||!hash(input.checksum)||!hash(input.masterHash))fail("verified source identity required");
+     /** @type {{state:string,writeAttempts:number,verifiedChanges:number,rows:{target:import("./wallLeafTrim.js").LeafPoint,state:string,reason?:string,reads:number}[],journalKey:string|null,complete:boolean,globalSurvey:null|{targets:number,surveyed:number,unloaded:number,tree:number,refused:number,truncated:boolean,complete:boolean}}} */
+@@ -83,8 +84,20 @@
+         const receipts=journalKeys.map(k=>{const receipt=readLeafTrimReceipt(world.getDynamicProperty(k));if(receipt.index!==input.index||receipt.checksum!==input.checksum||receipt.masterHash!==input.masterHash||receipt.dimension!==input.dimension||JSON.stringify(receipt.sources)!==expectedSourceIds||k!==prefix+receipt.planId)fail("leaf receipt source/key differs; preserve it");return{key:k,receipt};});
+         const pending=receipts.filter(r=>!r.receipt.complete);if(pending.length>1)fail("multiple unfinished leaf batches; no automatic recovery permission");
+         /** @type {import("./wallLeafTrim.js").LeafPlan} */ let plan;
+-        /** @type {import("./wallLeafTrim.js").LeafStore} */ let io;
+-        if(pending.length){
++        /** @type {import("./wallLeafTrim.js").LeafStore|undefined} */ let io;
++        if(streamSourcesSteps){
++            if(pending.length){view.journalKey=pending[0].key;io=storeFor(view.journalKey);}
++            const capability=yield* guarded(streamSourcesSteps({input,context:ctx,receiptStore:io}),ctx);
++            const compiled=consumePreparedLeafBatch(capability,{input,sourcesCurrent:ctx.sourcesCurrent,receiptRaw:pending.length?io?.load():undefined});
++            if(compiled.survey){const survey=compiled.survey;view.globalSurvey={targets:survey.targets,surveyed:survey.surveyed,unloaded:survey.unloaded,tree:survey.tree,refused:survey.refused,truncated:survey.truncated,complete:survey.complete};}
++            if(!compiled.plan){view.state=compiled.state;return view;}
++            plan=compiled.plan;
++            if(!pending.length){
++                view.journalKey=prefix+plan.planId;
++                if(!journalKeys.includes(view.journalKey)&&(allReceipts.length>=80||journalKeys.length>=WALL_LEAF_REPAIR_LIMITS.journalsPerDistrict))fail("retained leaf receipt capacity reached; no history discarded");
++                io=storeFor(view.journalKey);
++            }
++        }else if(pending.length){
+             view.journalKey=pending[0].key;io=storeFor(view.journalKey);
+             plan=yield* guarded(resumeLeafTrimSteps({...input,candidates:[]},ctx,io,{}, {policy}),ctx);
+         }else{
+@@ -101,6 +114,7 @@
+             if(!journalKeys.includes(view.journalKey)&&(allReceipts.length>=80||journalKeys.length>=WALL_LEAF_REPAIR_LIMITS.journalsPerDistrict))fail("retained leaf receipt capacity reached; no history discarded");
+             io=storeFor(view.journalKey);
+         }
++        if(!io)fail("compiled leaf batch has no receipt store; preserve world");
+         yield;
+         for(const proposal of plan.proposals){
+             if(ctx.sourcesCurrent()!==true)fail("fresh source guard refused before preview");
+--- CivilizationApocalypse_BP\scripts\civ\wallLeafTrim.js
++++ CivilizationApocalypse_BP\scripts\civ\wallLeafTrim.js
+@@ -55,9 +55,13 @@
+  * @param {{index:number,checksum:string,masterHash:string,dimension:string,candidates:any[],sources:{record:any,civ:any,masterHash:string}[]}} input
+  * @param {{opsFor?:typeof siteOpsFor}} deps
+  * @returns {Generator<undefined,LeafPlan,unknown>} */
+-export function* compileLeafTrimSteps(input,deps={}) {
++/** @typedef {{index:number,checksum:string,masterHash:string,dimension:string,requested:LeafPoint[],candidates:LeafPoint[],sources:LeafSourceId[],wanted:Set<string>,historical:Set<string>,finals:Map<string,Map<number,{stage:string,index:number,op:LeafOp}>>,processed:Set<number>,scanned:number,work:number,active:boolean}} LeafAccumulatorState */
++/** @type {WeakMap<object,LeafAccumulatorState>} */
++const LEAF_ACCUMULATORS=new WeakMap();
++/** Scalar manifest validation shared by batch/streaming; it grants no operation permission. */
++/** @param {LeafInput} input */
++export function leafSourceManifest(input){
+     if(!Number.isInteger(input.index)||input.index<1||input.index>5||!hash(input.checksum)||!hash(input.masterHash)||input.dimension!=="minecraft:overworld")fail("invalid leaf-trim source identity");
+-    if(!Array.isArray(input.candidates)||input.candidates.length<1||input.candidates.length>LIMITS.targets||input.candidates.some(p=>!point(p))||new Set(input.candidates.map(key)).size!==input.candidates.length)fail("invalid or oversized leaf-trim candidate list");
+     if(!Array.isArray(input.sources)||input.sources.length<1||input.sources.length>5)fail("all verified source plans are required");
+     const records=new Set(),sources=[];
+     for(const {record,civ,masterHash} of input.sources) {
+@@ -67,12 +71,34 @@
+     }
+     if(!records.has(input.index))fail("active district source is missing");
+     sources.sort((a,b)=>a.index-b.index);
+-    const wanted=new Set(input.candidates.flatMap(cube).map(key)),historical=new Set(),finals=new Map();
+-    const opsFor=deps.opsFor??siteOpsFor;let work=0,scanned=0;
+-    for(const {record} of input.sources)for(const stage of SITE_STAGES) {
++    return freeze(sources);
++}
++/** Shared private-state compiler capability. It never retains input records or producer closures. */
++/** @param {LeafInput} input */
++export function createLeafTrimAccumulator(input){
++    if(!Number.isInteger(input.index)||input.index<1||input.index>5||!hash(input.checksum)||!hash(input.masterHash)||input.dimension!=="minecraft:overworld")fail("invalid leaf-trim source identity");
++    if(!Array.isArray(input.candidates)||input.candidates.length<1||input.candidates.length>LIMITS.targets||input.candidates.some(p=>!point(p))||new Set(input.candidates.map(key)).size!==input.candidates.length)fail("invalid or oversized leaf-trim candidate list");
++    const sources=leafSourceManifest(input);
++    const token=Object.freeze({});
++    LEAF_ACCUMULATORS.set(token,{index:input.index,checksum:input.checksum,masterHash:input.masterHash,dimension:input.dimension,
++        requested:input.candidates.map(p=>({x:p.x,y:p.y,z:p.z})),candidates:clone(input.candidates),sources,
++        wanted:new Set(input.candidates.flatMap(cube).map(key)),historical:new Set(),finals:new Map(),processed:new Set(),scanned:0,work:0,active:false});
++    return token;
++}
++/** @param {object} token */
++function accumulatorState(token){const state=LEAF_ACCUMULATORS.get(token);if(!state)fail("incomplete or foreign leaf summary capability");return state;}
++/** Accumulate every source operation, retaining only wanted-cell history and final claims. */
++/** @param {object} token @param {{record:any,civ:any,masterHash:string}} source @param {LeafDependencies} [deps] */
++export function* accumulateLeafSourceSteps(token,{record,civ,masterHash},deps={}){
++    const state=accumulatorState(token),expected=state.sources.find(s=>s.index===record?.districtIndex);
++    if(!expected||state.processed.has(record.districtIndex)||record.checksum!==expected.checksum||civ?.status!=="complete"||civ.checksum!==record.checksum||civ.dimension!==state.dimension||masterHash!==state.masterHash)fail("source plan/completion/dimension/master proof is missing or ambiguous");
++    const {wanted,historical,finals}=state,opsFor=deps.opsFor??siteOpsFor;
++    if(state.active){LEAF_ACCUMULATORS.delete(token);fail("concurrent leaf source accumulation refused");}
++    state.active=true;let complete=false;
++    try{for(const stage of SITE_STAGES){
+         if(!Array.isArray(record[stage]))fail("verified source is missing a stage");
+-        for(let index=0;index<record[stage].length;index++)for(const op of opsFor(record,stage,index)) {
+-            scanned++;if(++work>=LIMITS.compileOpsPerYield){work=0;yield;}
++        for(let index=0;index<record[stage].length;index++)for(const op of opsFor(record,stage,index)){
++            state.scanned++;if(++state.work>=LIMITS.compileOpsPerYield){state.work=0;yield;}
+             if(!point(op))fail("source contains invalid coordinates");
+             const at=key(op);if(!wanted.has(at))continue;
+             if(historicalDecor(op,stage))historical.add(at);
+@@ -80,6 +106,22 @@
+             byDistrict.set(record.districtIndex,{stage,index,op:clone(op)});finals.set(at,byDistrict);
+         }
+     }
++    if(record.checksum!==expected.checksum||record.districtIndex!==expected.index||civ?.status!=="complete"||civ.checksum!==expected.checksum||civ.dimension!==state.dimension||masterHash!==state.masterHash)fail("source identity changed during accumulation");
++    state.processed.add(record.districtIndex);complete=true;
++    }finally{state.active=false;if(!complete)LEAF_ACCUMULATORS.delete(token);}
++}
++/** Finalization requires the complete exact source manifest, never a partial summary. */
++/** @param {object} token @param {{candidates?:LeafPoint[]}} [options] @returns {LeafPlan} */
++export function finishLeafTrimAccumulator(token,{candidates}={}){
++    const state=accumulatorState(token);
++    if(state.active||state.processed.size!==state.sources.length||state.sources.some(s=>!state.processed.has(s.index)))fail("all verified source plans are required before finalization");
++    let selected=state.candidates;
++    if(candidates!==undefined){
++        if(!Array.isArray(candidates)||!candidates.length||candidates.length>LIMITS.targets||candidates.some(p=>!point(p)))fail("invalid summary candidate subset");
++        const keys=new Set(candidates.map(key));if(keys.size!==candidates.length||candidates.some(p=>!state.wanted.has(key(p))||!state.candidates.some(c=>key(c)===key(p))))fail("summary subset contains an unscanned target");
++        selected=state.candidates.filter(p=>keys.has(key(p)));
++    }
++    const {historical,finals,sources}=state,input={index:state.index,checksum:state.checksum,masterHash:state.masterHash,dimension:state.dimension,candidates:selected};
+     const proposals=[],refused=[];
+     for(const candidate of input.candidates) {
+         const own=finals.get(key(candidate))?.get(input.index);
+@@ -87,6 +129,7 @@
+         const conflicting=[...(finals.get(key(candidate))??new Map()).entries()].some(([district,last])=>district!==input.index
+             &&(last.stage!=="walls"||last.op.kind!=="wall"||last.op.id!==own?.op.id||Object.keys(last.op.states??{}).length));
+         if(reason||conflicting){refused.push({target:clone(candidate),reason:reason??"another district has a conflicting final target claim"});continue;}
++        if(!own)fail("eligible candidate has no final source claim");
+         const contacts=cube(candidate).map(p=>{
+             const claims=[...(finals.get(key(p))??new Map()).values()];
+             const ids=claims.map(v=>v.op.id);
+@@ -96,8 +139,16 @@
+         proposals.push({target:clone(own.op),contacts});
+     }
+     const body={v:1,policy:POLICY,index:input.index,checksum:input.checksum,masterHash:input.masterHash,dimension:input.dimension,sources,requested:input.candidates.map(p=>({x:p.x,y:p.y,z:p.z})),proposals,refused};
+-    return freeze({...body,planId:signature(body),compileScannedOps:scanned});
+-}
++    const result=freeze({...body,planId:signature(body),compileScannedOps:state.scanned});LEAF_ACCUMULATORS.delete(token);return result;
++}
++/** Preserve the public batch API through the same summary/assembly implementation. */
++/** @param {LeafInput} input @param {LeafDependencies} [deps] @returns {Generator<undefined,LeafPlan,unknown>} */
++export function* compileLeafTrimSteps(input,deps={}){
++    const token=createLeafTrimAccumulator(input);
++    for(const source of input.sources)yield* accumulateLeafSourceSteps(token,source,deps);
++    return finishLeafTrimAccumulator(token);
++}
++
+ /** @param {LeafInput} input @param {LeafDependencies} [deps] @returns {LeafPlan} */
+ export function compileLeafTrim(input,deps){const g=compileLeafTrimSteps(input,deps);for(;;){const next=g.next();if(next.done)return next.value;}}
+ 
+@@ -191,6 +242,9 @@
+     for(let i=0;i<value.entries.length;i++)if(value.entries[i].target!==key(plan.proposals[i].target)||value.entries[i].desired.id!==plan.proposals[i].target.id)fail("journal planned material differs; preserve it");
+     return value;
+ }
++/** Exact existing recovery binding for a fully compiled plan; no write authorization. */
++/** @param {unknown} raw @param {LeafPlan} plan */
++export function readLeafTrimReceiptForPlan(raw,plan){return freeze(clone(decodeJournal(raw,plan)));}
+ /** @param {LeafStore} io @param {unknown} expected */
+ function journalCAS(io,expected){if(io.load()!==expected)fail("journal changed externally; preserve both the world and receipt");}
+ /** @param {LeafContext} ctx @param {any} plan */
+--- CivilizationApocalypse_BP\scripts\commands\civ.js
++++ CivilizationApocalypse_BP\scripts\commands\civ.js
+@@ -7,6 +7,7 @@
+ import { formatWallLeafPreview, previewWallLeavesSteps } from "../civ/wallleafpreview.js";
+ import { POLICY as LEAF_TRIM_POLICY, LEAF_TRIM_MASONRY_IDS } from "../civ/wallLeafTrim.js";
+ import { createWallLeafSourceGuard, wallLeafRepairSteps, createWallLeafBlockAdapter } from "../civ/wallLeafRepair.js";
++import {prepareLeafSourceBatchSteps} from "../civ/leafSourceStreaming.js";
+ import { retainedRoofColumnsSteps, roofFixtureAlternates } from "../civ/roofcolumns.js";
+ import { buildingInteriorLightRevisionSteps, buildingRoofRevisionSteps, rehydrateSiteSteps, schoolRoofRevisionSteps, siteOptionsOf, siteOpsFor } from "../civ/districtplan.js";
+ import { isDoorOp, inspectDoorPair, placeDoorPair } from "../integration/doorPlacement.js";
+@@ -1412,7 +1413,7 @@
+         const guard=createWallLeafSourceGuard(world,()=>kingdomStore.load().kingdom,cancelled);
+         /** @param {Generator<void,any,void>} generator @returns {Generator<void,any,void>} */
+         function* checked(generator){for(;;){guard.assert();const step=generator.next();guard.assert();if(step.done)return step.value;yield;}}
+-        const sources=[];let master,record;
++        const sources=[];
+         const districts=/** @type {any[]} */(loaded.kingdom.districts).filter(d=>d.civ!==undefined);
+         if(districts.length<1||districts.length>5)throw new Error("Unsupported source set; every existing civilization must be verified.");
+         for(const n of DISTRICT_INDEXES){
+@@ -1422,23 +1423,23 @@
+         for(const district of districts){
+             const n=Number(String(district.id).replace(/^district-/,""));
+             if(!DISTRICT_INDEXES.includes(n)||district.id!==districtIdFor(n)||district.civ?.status!=="complete"||district.civ.dimension!==player.dimension.id)throw new Error("All existing neighboring city sources must be completed in this dimension.");
+-            reply([`Verifying ${districtTitle(n)}'s original source for leaf-only wall repair (read-only)...`],event);
+-            const saved=await runJobAsync(token,checked(loadSavedRunSteps(district.civ,newOps(),n)));
+-            if(cancelled()||!saved)return;
+-            if(!saved.ok||saved.queue.state!=="complete")throw new Error(saved.ok?"An original source queue is incomplete.":saved.reasons.join("; "));
+-            const serial=JSON.stringify(saved.plan);if(master&&JSON.stringify(master)!==serial)throw new Error("Neighbor belongs to a different master plan.");
+-            master=saved.plan;if(n===index)record=saved.record;
+-            sources.push({record:saved.record,civ:district.civ});
+-        }
+-        guard.assert();if(!record||!master)throw new Error("Selected verified source is absent.");
++            sources.push({record:{districtIndex:n,checksum:district.civ.checksum},civ:district.civ});
++        }
++        guard.assert();if(!sources.some(s=>s.record.districtIndex===index))throw new Error("Selected verified source is absent.");
+         const meta=JSON.parse(String(world.getDynamicProperty("civ:plan:meta")));
+         if(!/^[a-f0-9]{8}$/.test(String(meta.hash)))throw new Error("Verified master envelope hash is absent.");
+-        const areas=protectedRects(kingdomStore.load().kingdom,1,master,WRITE_PROTECT_GROW,index);
++        /** @type {ReturnType<typeof protectedRects>|undefined} */let areas;
+         const permutations=new Map(LEAF_TRIM_MASONRY_IDS.map(id=>[id,BlockPermutation.resolve(id)]));
+         const native=createWallLeafBlockAdapter(player.dimension,permutations);
+         const input={candidates:[],index,checksum:civ.checksum,masterHash:meta.hash,dimension:player.dimension.id,sources:sources.map(s=>({...s,masterHash:meta.hash}))};
+-        const context={...native,isProtected:(/** @type {number} */x,/** @type {number} */z)=>inProtectedArea(areas,x,z),sourcesCurrent:()=>guard.current(),cancelled};
+-        const result=await runJobAsync(token,wallLeafRepairSteps(input,context,world,{confirm,policy:LEAF_TRIM_POLICY,readTick:()=>system.currentTick}));
++        const context={...native,isProtected:(/** @type {number} */x,/** @type {number} */z)=>{if(areas===undefined)throw new Error("Verified source protection is not initialized.");return inProtectedArea(areas,x,z);},sourcesCurrent:()=>guard.current(),cancelled};
++        /** @param {{input:import("../civ/wallLeafTrim.js").LeafInput,context:import("../civ/wallLeafTrim.js").LeafContext,receiptStore?:import("../civ/wallLeafTrim.js").LeafStore}} options */
++        const streamSourcesSteps=({input:batchInput,context:batchContext,receiptStore})=>prepareLeafSourceBatchSteps({index:batchInput.index,checksum:batchInput.checksum,masterHash:batchInput.masterHash,dimension:batchInput.dimension,policy:LEAF_TRIM_POLICY,sources:batchInput.sources.map(s=>({index:s.record.districtIndex,checksum:s.record.checksum,status:s.civ.status,dimension:s.civ.dimension}))},{
++            sourcesCurrent:batchContext.sourcesCurrent,journalsCurrent:batchContext.sourcesCurrent,cancelled,receiptStore,read:native.read,isProtected:batchContext.isProtected,
++            onVerifiedMaster:(/** @type {any} */plan)=>{if(areas===undefined)areas=protectedRects(kingdomStore.load().kingdom,1,plan,WRITE_PROTECT_GROW,index);},
++            loadSourceSteps:(/** @type {number} */n,/** @type {any} */civ)=>{reply([`Verifying ${districtTitle(n)}'s original source for leaf-only wall repair (read-only)...`],event);return loadSavedRunSteps(civ,newOps(),n);},
++        });
++        const result=await runJobAsync(token,wallLeafRepairSteps(input,context,world,{confirm,policy:LEAF_TRIM_POLICY,readTick:()=>system.currentTick,streamSourcesSteps}));
+         if(!result)return;
+         reply([`Leaf-only wall batch: ${result.state}; verified replacements ${result.verifiedChanges}, write attempts ${result.writeAttempts}.`,
+             `Admitted/inspected batch targets ${result.rows.length}; batch receipt key ${result.journalKey??"none"}. Source city completion and ordinary queues are unchanged.`,

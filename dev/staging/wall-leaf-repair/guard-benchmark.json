@@ -1,0 +1,48 @@
+{
+  "scope": "Standalone source-fence CPU only; fake Bedrock property/block calls. Not native watchdog or chunk proof.",
+  "sourceKeys": 27,
+  "rawSourceBytes": 267989,
+  "serializedFenceBytes": 274235,
+  "baseline": {
+    "calls": 100,
+    "sumMs": 102.59420000002137,
+    "meanMs": 1.0259420000002137,
+    "maxMs": 1.7039000000004307
+  },
+  "preview": {
+    "state": "preview",
+    "rows": 14,
+    "refused": 3,
+    "unloaded": 0,
+    "totalMs": 7434.470399999998,
+    "generatorNextCalls": 2943,
+    "yields": 2942,
+    "sourceGuardCalls": 5871,
+    "guardTotalMs": 5982.844999999932,
+    "guardMeanMs": 1.0190504173053878,
+    "guardP95Ms": 1.5763000000006286,
+    "guardMaxMs": 12.037000000000262,
+    "maxSliceMs": 30.83719999999812,
+    "p95SliceMs": 4.270300000000134
+  },
+  "breakdown": {
+    "survey": {
+      "yields": 1837,
+      "cpuMs": 756.8945999999996
+    },
+    "strictCompile": {
+      "yields": 1089,
+      "cpuMs": 555.7426999999989,
+      "scannedOps": 435683
+    },
+    "previewTargetYields": 14,
+    "betweenPhaseYields": 2
+  },
+  "syntheticMaxBudget": {
+    "scope": "Synthetic fake-property padding to sourceBytes limit; no native I/O or compile",
+    "rawSourceBytes": 1500000,
+    "calls": 100,
+    "meanMs": 6.5279630000002,
+    "maxMs": 12.851200000000972
+  }
+}

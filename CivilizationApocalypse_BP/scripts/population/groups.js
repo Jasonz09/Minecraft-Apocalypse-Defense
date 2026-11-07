@@ -107,7 +107,24 @@ export function buildGroupTable(kingdom, config) {
 }
 
 /**
- * Deterministic spawn spot for a group: a grid inside the district's physical footprint.
+ * The post a group keeps. Groups are dealt round their district's posts in index order, so the people of a
+ * district stand in its square and in its quarters rather than all in one place. A district with a single post
+ * (a home whose other posts could not be probed) keeps every group there, exactly as it always did.
+ *
+ * @param {ReadonlyArray<Point> | undefined} posts the district's posts, plaza first
+ * @param {number} index the group's own index
+ * @returns {Point | null}
+ */
+export function postOf(posts, index) {
+    if (!Array.isArray(posts) || posts.length === 0) {
+        return null;
+    }
+    const at = Math.max(0, Math.floor(Number(index) || 0)) % posts.length;
+    return posts[at] ?? null;
+}
+
+/**
+ * Deterministic spawn spot for a group: a grid inside the post its people are posted at.
  * @param {Point} home
  * @param {GroupKind} kind
  * @param {number} index
@@ -135,13 +152,32 @@ export function chunkKeyOf(x, z) {
 
 /**
  * Horizontal distance from a point to the nearest anchor. Infinity when there are no anchors.
- * @param {Point} point
+ * @param {{ x: number, z: number }} point
  * @param {ReadonlyArray<{ x: number, z: number }>} anchors
  */
 export function nearestDistance(point, anchors) {
     let best = Infinity;
     for (const anchor of anchors) {
         const distance = Math.hypot(point.x - anchor.x, point.z - anchor.z);
+        if (distance < best) {
+            best = distance;
+        }
+    }
+    return best;
+}
+
+/**
+ * Distance from the nearest anchor to any of a district's posts. A district is a neighbourhood of posts, so this
+ * is how near "the district's people" are - the plaza alone stopped being the answer once the posts were spread.
+ *
+ * @param {ReadonlyArray<{ x: number, z: number }>} posts
+ * @param {ReadonlyArray<{ x: number, z: number }>} anchors
+ * @returns {number}
+ */
+export function nearestPostDistance(posts, anchors) {
+    let best = Infinity;
+    for (const post of posts) {
+        const distance = nearestDistance(post, anchors);
         if (distance < best) {
             best = distance;
         }

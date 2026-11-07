@@ -1,0 +1,50 @@
+--- a/CivilizationApocalypse_BP/scripts/population/reconcile.js
++++ b/CivilizationApocalypse_BP/scripts/population/reconcile.js
+@@ -167,6 +167,9 @@
+     return compareText(left.entityId, right.entityId);
+ }
+ 
++/** Bounded refusal text only; native IDs stay exact within64characters. @param {string} value */
++const conflictToken=value=>value.slice(0,64).replace(/[^A-Za-z0-9:_-]/g,"?");
++
+ /**
+  * Group the observed entities by the group they claim. Only our namespace is read; foreign and untagged
+  * entities are counted and left alone.
+@@ -436,7 +439,13 @@
+                 const groupId=read.claims[0];
+                 if(read.claims.length!==1||!isCanonicalFor(read.ownTags,groupId)||expectedTypes.get(groupId)!==raw.typeId)throw new Error("military owner type or canonical identity conflict");
+             }
+-            for(const entries of scan.byGroup.values()){meter.ops+=entries.length;if(entries.length>1)throw new Error("military owner duplicate conflict; representatives preserved");}
++            for(const [groupId,entries] of scan.byGroup){
++                meter.ops+=entries.length;
++                if(entries.length>1){
++                    const sample=entries.slice(0,2).map(entry=>conflictToken(entry.entityId));
++                    throw new Error(`military owner duplicate conflict; representatives preserved; group=${conflictToken(groupId)} observed=${entries.length} sampleIds=${sample.join(",")}`);
++                }
++            }
+             if(meter.ops>config.workBudget)throw new Error("military owner validation work budget exhausted");
+         } catch(error) {
+             report.refused=String(error);report.work=meter.ops;report.overBudget=meter.ops>config.workBudget;
+--- a/CivilizationApocalypse_BP/scripts/integration/popSync.js
++++ b/CivilizationApocalypse_BP/scripts/integration/popSync.js
+@@ -582,7 +582,7 @@
+         const deferred=lastPlan.deferred.find((/** @type {any} */d)=>d.groupId===groupId)?.reason;
+         const lastAttempt=outcome??{status:action?"queued but not executed":lastPlan.bound.has(groupId)?"already observed":deferred??(lastPlan.admitted.includes(groupId)?"not queued within last attempt budget":"not admitted"),reason:lastPlan.refused,settled:null,entityId:null};
+         return{state:/** @type {const} */("ok"),groupId,ownerTick:lastPlan.tick,currentTick:tick,ageTicks:Number.isSafeInteger(tick)&&tick>=lastPlan.tick?tick-lastPlan.tick:null,
+-            admitted:lastPlan.admitted.includes(groupId),expectedType,postIndex,postCount:list?.count??0,post,requested,lastAttempt,
++            ownerRefused:lastPlan.refused,admitted:lastPlan.admitted.includes(groupId),expectedType,postIndex,postCount:list?.count??0,post,requested,lastAttempt,
+             settle:{point:settled,reason:settleReason,nativeBlockReads:reads,maxBlockReads:240,limited,unreadable},live};
+     }
+     return { dryRun, reconcileOnce, status, config, enabled,inspectGroup };
+--- a/CivilizationApocalypse_BP/scripts/integration/peopleStreets.js
++++ b/CivilizationApocalypse_BP/scripts/integration/peopleStreets.js
+@@ -413,7 +413,8 @@
+         return[`=== Read-only population ${info.groupId} ===`,`Cached owner tick ${info.ownerTick}; now ${info.currentTick} (${age}).`,
+             `Admitted intent: ${info.admitted?"yes":"no"}; fresh loaded canonical: ${info.live.canonicalLoaded??"unknown"}; expected-type matches: ${info.live.expectedTypeLoaded??"unknown"}; tag matches: ${info.live.queryMatches??"unknown"}.`,
+             `Cached expected type: ${info.expectedType}.`,`Cached post ${info.postIndex??"?"}/${info.postCount}: ${point(info.post)}; requested spot ${point(info.requested)}.`,
+-            `Last owner birth: ${info.lastAttempt.status}${info.lastAttempt.reason?" — "+info.lastAttempt.reason:""}; actual settled spot ${point(info.lastAttempt.settled)}.`,
++            `Cached owner result: ${info.lastAttempt.status}${info.lastAttempt.reason&&info.lastAttempt.reason!==info.ownerRefused?" — "+info.lastAttempt.reason:""}; actual settled spot ${point(info.lastAttempt.settled)}.`,
++            ...(info.ownerRefused?[`Owner plan refusal (all observed groups): ${info.ownerRefused}`]:[]),
+             `Fresh settle: ${info.settle.reason}; ${point(info.settle.point)}.`,`Native block reads: ${info.settle.nativeBlockReads}/${info.settle.maxBlockReads}; one loaded tag query, at most two entity identities inspected.`,
+             ...(info.live.reason?[`Census held: ${info.live.reason}`]:[]),...info.live.entities.map((/** @type {any} */e)=>`Loaded actor ${e.id}: ${e.typeId}; canonical ${e.canonical?"yes":"no"}; live position ${point(e.location)}; health ${e.health??"unknown"}.`),
+             ...(deps.militaryDiagnostics?.statusLines()??[]),

@@ -3,7 +3,8 @@
 In-game verified by the user (previous milestone): the pack loads, `civ:status` and save persistence work.
 The physical district below (the 49x49 prototype) is **built and tested offline only**; nothing in it has run in the game.
 The enlarged civilization path is no longer in that state: districts 1 and 2 were built end to end and verified inside
-Minecraft on 2026-10-26, in a development save (`docs/PROGRESS.md`).
+Minecraft on 2026-10-26, districts 3-5 on 2026-10-29/30, and all five were then armed, exported and packaged as the
+starter template (`docs/PROGRESS.md`, `docs/STARTER_WORLD.md`).
 
 ## Verified (executed, offline)
 Run `npm run verify` — all four gates green; `npm test` = 253 tests (incl. 66 reliability/regression
@@ -141,7 +142,7 @@ Independent adversarial run (about 80 scenarios on a fake world): no block that 
 ## Status after the goal pass (offline when written; what has run in Minecraft since is marked per line)
 
 - Siege balance: merged to master (7679415); difficulty needs playtesting.
-- Districts 2-5: build through the Hearthgate path behind the development gate (ad23eef); shared-wall deviation documented in FIVE_DISTRICT_BUILD.md. District 2 has since been built and verified in a development save (2026-10-26); 3-5 have not.
+- Districts 2-5: build through the Hearthgate path behind the development gate (ad23eef); shared-wall deviation documented in FIVE_DISTRICT_BUILD.md. Districts 2-5 have since been built in the game (district 2 on 2026-10-26, 3-5 on 2026-10-29/30) and all five were armed and packaged.
 - Invasion director: built and disabled by default; the tick calls it as a no-op (aa8977d, 86f14eb).
-- Population LOD: built, spawning disabled, not wired into main.js (9d5e50b).
+- Population LOD: built and wired behind `civ:people on` (9d5e50b, wired on 2026-10-29); it ran in the player's world that day (`docs/PROGRESS.md`).
 - Commander's Ledger: presenters, runtime and dev-gated wiring on master (50590e3, 7f35c71); the `@minecraft/server-ui` pin does resolve in the real game (the pack loaded with it on 2026-10-26), so the load risk is closed. The Ledger itself is still unverified in game: dev gate off by default, its item and menus never opened.

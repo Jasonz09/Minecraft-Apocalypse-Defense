@@ -1,0 +1,28 @@
+--- a/CivilizationApocalypse_BP/scripts/civ/wallLeafRepair.js
++++ b/CivilizationApocalypse_BP/scripts/civ/wallLeafRepair.js
+@@ -30,8 +30,23 @@
+         let bytes=0;const values=keys.map(k=>{const v=world.getDynamicProperty(k);if(typeof v!=="string")fail("source property is not text: "+k);bytes+=utf8Length(v);if(bytes>WALL_LEAF_REPAIR_LIMITS.sourceBytes)fail("source snapshot byte budget exceeded");return[k,v];});
+         return{values,protection:protectionIdentity(readKingdom())};
+     }
+-    const original=JSON.stringify(capture());
+-    return{current(){try{return !cancelled()&&JSON.stringify(capture())===original;}catch(_error){return false;}},
++    const original=capture();
++    return{current(){try{
++            if(cancelled())return false;
++            const all=world.getDynamicPropertyIds();
++            if(!Array.isArray(all)||all.length>WALL_LEAF_REPAIR_LIMITS.allKeys||all.some(k=>typeof k!=="string"))return false;
++            const keys=all.filter(scopedKey).sort();
++            if(keys.length>WALL_LEAF_REPAIR_LIMITS.sourceKeys||keys.length!==original.values.length)return false;
++            for(let i=0;i<keys.length;i++){
++                const [expectedKey,expectedRaw]=original.values[i];
++                if(keys[i]!==expectedKey)return false;
++                const currentRaw=world.getDynamicProperty(keys[i]);
++                if(typeof currentRaw!=="string"||currentRaw!==expectedRaw)return false;
++            }
++            // Equal immutable strings retain the initial UTF8 quota proof.
++            // Every raw value/key and current protection is still reread here.
++            return protectionIdentity(readKingdom())===original.protection;
++        }catch(_error){return false;}},
+         assert(){if(!this.current())fail("source/master/queue/protection changed or cancellation requested; preserve journal and world");}};
+ }
+ /** @template T @param {Generator<any,T,any>} generator @param {import("./wallLeafTrim.js").LeafContext} ctx @returns {Generator<undefined,T,any>} */

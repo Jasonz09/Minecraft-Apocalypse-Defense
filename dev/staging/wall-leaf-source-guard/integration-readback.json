@@ -1,0 +1,11 @@
+{
+  "utc": "2026-11-06T11:19:43.455203+00:00",
+  "reviewedGuardSha256": "8BC001C6CCCC84D09757FEE7C1890F8CEA3835EEA3631BCE193838972CC89C6E",
+  "productionGuardSha256": "8BC001C6CCCC84D09757FEE7C1890F8CEA3835EEA3631BCE193838972CC89C6E",
+  "match": true,
+  "productionSourceCountRootReported": 157,
+  "rootFullVerification": "RUNNING session31549; dist/native-fixes-frontage-guard-verify-20261106.log",
+  "rootSourceHashManifest": "dist/native-fixes-frontage-guard-pack-hashes-20261106.json",
+  "installedNativeBuild": "previous156; currentread-onlyleafpreview source3; no new157nativeacceptance",
+  "agentScope": "Only read/hash of approved productionguard plus staged metadata; no furtherproduction/centraltest edits or rootverification polling"
+}

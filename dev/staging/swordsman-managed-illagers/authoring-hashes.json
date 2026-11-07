@@ -1,0 +1,12 @@
+{
+  "scope": "Authored only, no tests yet; production unchanged C0AB",
+  "files": {
+    "dev\\staging\\swordsman-managed-illagers\\proposed-swordsman.json": "774943076D553408FD2A997559159B7F430ADEF39702DAB3ACF854017FF6DEF0",
+    "dev\\staging\\swordsman-managed-illagers\\proposed.patch": "3071603EED779ED85F708819BE20BFE2FFF3C7B10F43774AEC991438D0C84492",
+    "dev\\staging\\swordsman-managed-illagers\\proposed-dev\\test\\content-packs.test.mjs": "143504E7592B4984BB3D093BC55E09EAD96FEB45E9632EC35DBE7D2F4B117CD5",
+    "dev\\staging\\swordsman-managed-illagers\\proposed-dev\\test\\swordsman-managed-illagers.test.mjs": "7F9C70FAE037102A9B4456FEF6F7932DB05318EDC2AD54460C0262154BBDF802",
+    "dev\\staging\\swordsman-managed-illagers\\proposed-dev\\test\\swordsman-self-defense.test.mjs": "BA61E936B2AD7849691FA3389A828738F7850FA4C7F146EBDDC920E316ABEB70",
+    "dev\\staging\\swordsman-managed-illagers\\proposed-dev\\fixtures\\swordsman-before-managed-illagers.json": "C0AB66464976DF1EF0ADE7685C0C5800AB96D4EE0BA8A8AEDAED462098958D82",
+    "dev\\staging\\swordsman-managed-illagers\\proposed-dev\\fixtures\\swordsman-managed-illager-families.json": "042628D1371A78356A6872DA5082B8FB3F58DA01F05EFAF1CB03F090A40C380F"
+  }
+}

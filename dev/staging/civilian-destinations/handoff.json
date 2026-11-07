@@ -1,0 +1,77 @@
+{
+  "status": "STAGING ONLY; not integrated, deployed or natively accepted",
+  "proposedFiles": [
+    {
+      "productionPath": "CivilizationApocalypse_BP/scripts/people/destinations.js",
+      "stagedPath": "dev/staging/civilian-destinations/scripts/people/destinations.js",
+      "baselineSha256": null,
+      "proposalSha256": "5901c116c04c59c25f393d43f82ad456b6a9f09f98d88341e63010b3818b7e0c"
+    },
+    {
+      "productionPath": "CivilizationApocalypse_BP/scripts/integration/civilianDestinations.js",
+      "stagedPath": "dev/staging/civilian-destinations/scripts/integration/civilianDestinations.js",
+      "baselineSha256": null,
+      "proposalSha256": "e3f7c484c6d8629abaf0caab2b061cd8b1810ff0a792153808ff3519c8b9a2fb"
+    },
+    {
+      "productionPath": "CivilizationApocalypse_BP/scripts/commands/people.js",
+      "stagedPath": "dev/staging/civilian-destinations/scripts/commands/people.js",
+      "baselineSha256": "759d1c32959897f50c94572dd4bd94a58cca4ab8d489d373c84234ccb572e0df",
+      "proposalSha256": "37793f439efc58c1de9b2e876537fae829a5abceadeaebb27f3f2b09b2db9d73"
+    },
+    {
+      "productionPath": "CivilizationApocalypse_BP/scripts/main.js",
+      "stagedPath": "dev/staging/civilian-destinations/scripts/main.js",
+      "baselineSha256": "1c71fa68d378555b87259eff6dccce2aa13e502d1fdc5b6363b25177eb4ae115",
+      "proposalSha256": "80537025c35b312de59b2175b5a0bacadba35fadcecf723d261924d96410d95e"
+    }
+  ],
+  "activeExistingFilesStillMatchBaseline": true,
+  "standaloneTests": {
+    "command": "node --test dev/staging/civilian-destinations/destinations.test.mjs",
+    "passed": 33,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 2313.0542,
+    "realPlannerFixtures": 1
+  },
+  "strictTypecheck": {
+    "command": "node node_modules/typescript/bin/tsc -p dev/staging/civilian-destinations/validation-overlay/tsconfig.json",
+    "exitCode": 0,
+    "scope": "Full active scripts copied under isolated validation-overlay; proposed4files overlaid; no active-source changes"
+  },
+  "nativeAcceptance": false,
+  "actualWorldReadsAndWrites": 0,
+  "testShimsNotForPromotion": [
+    "scripts/civ/districtplan.js",
+    "scripts/structures/blueprints2.js"
+  ],
+  "nativeCommandAfterIntegration": "/scriptevent civ:people travel destinations district=1 page=1",
+  "limitations": [
+    "Saved-plan candidates, not native standability/load proof",
+    "No steering, route generation, home assignment, food/work credit, population/spawn changes, timer or durable new state",
+    "Existing planner op producer and saved reconstruction work are inherited; compiler scans256ops per yielded slice, candidate review at most382elevation positions per yield, prior descriptor bounds100000ops per element/2000000total",
+    "New modules require central integration/full verification and native preview before acceptance"
+  ],
+  "previousFocusedResult": {
+    "command": "node --test dev/staging/civilian-destinations/destinations.test.mjs",
+    "passed": 30,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 3253.0638,
+    "realPlannerFixtures": 1
+  },
+  "independentReview": {
+    "stagingOnly": true,
+    "confirmedBeforeFixFailingRegressions": 2,
+    "issuesResolved": [
+      "Fresh metadata recheck after all candidate review yields",
+      "Require exact final road op.kind, not support/fill sharing a road element"
+    ],
+    "newRegressionTests": 3,
+    "negativeControls": "Real road-kind surface keeps exact owner/height; real11candidate fixture unchanged",
+    "strictTypecheckAfterFix": "PASS"
+  }
+}

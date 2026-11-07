@@ -1,0 +1,54 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Civ Controlled Target Filter Fixture (Isolated)",
+    "description": "Disposable-copy tagged pillager/vindicator filter observations; NOT real siege-owner integration.",
+    "uuid": "fddde689-c92c-43bd-a68a-3cda9f5203d6",
+    "version": [
+      0,
+      0,
+      4
+    ],
+    "min_engine_version": [
+      1,
+      26,
+      20
+    ]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "2a4843cb-005d-47f0-a9be-1cb1dcf31cce",
+      "version": [
+        0,
+        0,
+        4
+      ]
+    },
+    {
+      "type": "script",
+      "language": "javascript",
+      "uuid": "16040681-1573-4243-a6cd-fe4b57e28f6e",
+      "version": [
+        0,
+        0,
+        4
+      ],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "fd04cb50-dddc-4ebe-83fc-5b5375819bcb",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "module_name": "@minecraft/server",
+      "version": "2.7.0"
+    }
+  ]
+}

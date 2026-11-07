@@ -1,0 +1,96 @@
+--- a/CivilizationApocalypse_BP/scripts/integration/civilianTravel.js
++++ b/CivilizationApocalypse_BP/scripts/integration/civilianTravel.js
+@@ -12,9 +12,10 @@
+     const world=deps.world??runtimeWorld;
+     /** @type {import("../people/travel.js").TravelRoute|undefined} */ let route;
+     /** @type {string|undefined} */ let boundActorId;
++    /** @type {1|4} */let correctionInterval=TRAVEL_LIMITS.interval;
+     let state="off",lastTick=-TRAVEL_LIMITS.interval,impulses=0,arrivals=0,reads=0,lastDestination="";
+     const pointText=(/** @type {{x:number,y:number,z:number}} */ p)=>[p.x,p.y,p.z].map(n=>Number(n.toFixed(3))).join(",");
+-    const statusLines=()=>[`Civilian travel trial: ${state}.`,...(route?[`Group ${route.groupId}; bound actor ${boundActorId??"unavailable"}; one representative, no extra population or production.`,`Replacement requires another explicit start/start-near setup; no automatic identity rebinding.`,`Trial endpoints ${pointText(route.home)} -> ${pointText(route.farm)} (routine labels only, not physical farming).`,`Impulses ${impulses}; arrivals ${arrivals}; last probes ${reads}/${TRAVEL_LIMITS.maxReads}.`]:[])];
++    const statusLines=()=>[`Civilian travel trial: ${state}.`,...(route?[`Group ${route.groupId}; bound actor ${boundActorId??"unavailable"}; one representative, no extra population or production.`,`Replacement requires another explicit start/start-near setup; no automatic identity rebinding.`,`Trial endpoints ${pointText(route.home)} -> ${pointText(route.farm)} (routine labels only, not physical farming).`,`Impulses ${impulses}; arrivals ${arrivals}; last probes ${reads}/${TRAVEL_LIMITS.maxReads}.`,...(correctionInterval===1?[`Opt-in correction cadence 1 tick; braking horizon ${TRAVEL_LIMITS.interval} ticks.`]:[])]:[])];
+     // Bounded observations from this SAME callback only; no native reads or movement permissions.
+     /** @type {any[]} */const trace=[];
+     /** @type {any} */let traceFrame;
+@@ -33,12 +34,13 @@
+         while(trace.length>=limit)trace.shift();trace.push(frame);
+         if(outside)traceLatched=true;if(terminal)traceStopped=true;
+     }
+-    function resetTrace(){trace.length=0;traceEpoch=(traceEpoch+1)%2147483647;traceLatched=false;traceStopped=false;traceSetup=route?{actorId:boundActorId??null,groupId:route.groupId,home:tracePoint(route.home),farm:tracePoint(route.farm)}:null;}
++    function resetTrace(){trace.length=0;traceEpoch=(traceEpoch+1)%2147483647;traceLatched=false;traceStopped=false;traceSetup=route?{actorId:boundActorId??null,groupId:route.groupId,home:tracePoint(route.home),farm:tracePoint(route.farm),cadence:correctionInterval}:null;}
+     /** Pure formatter: uses stored primitive data only, never census/getters/probes. */
+     function traceLines(){
+         const point=(/** @type {any} */p)=>p?`${p.x},${p.y??"-"},${p.z}`:"unavailable";
+         return[`Travel trace: ${trace.length}/16; first-outside ${traceLatched?"latched":"not seen"}; stopped ${traceStopped?"yes":"no"}.`,
+             ...(traceSetup?[`Explicit setup ${traceSetup.groupId}; bound ${traceSetup.actorId}; home ${point(traceSetup.home)}; farm ${point(traceSetup.farm)}.`]:[]),
++            ...(traceSetup?.cadence===1?[`Opt-in correction cadence 1 tick; braking horizon ${TRAVEL_LIMITS.interval} ticks.`]:[]),
+             ...trace.map(row=>`${row.kind} tick ${row.tick??"unknown"} (${row.tickBasis}): ${row.state}; actor ${row.actorId??"unavailable"}; feet ${point(row.feet)}; routine ${row.routine??"not reached"}; destination ${point(row.destination)}; desired ${point(row.desired)}; impulse ${point(row.impulse)}; apply returned ${row.applyReturned?"yes":"no"}; velocity ${row.velocity}.`),
+             "Observed control intent/corrections only; no AI cause, arrival, production or navigation authority inferred. Trace retained after stop; successful explicit setup/session resets it."];
+     }
+@@ -113,7 +115,7 @@
+         traceFrame=stopFrame;
+         try{if(route){const a=actor(route);if(a&&actorId(a.entity)===boundActorId&&nearTravelRoute(route,a.entity.location))brakeLocal(a,route,reset);}}catch(_error){}
+         route=undefined;boundActorId=undefined;state="off";lastDestination="";
+-        retainTrace(stopFrame,true);traceFrame=previousFrame;
++        retainTrace(stopFrame,true);traceFrame=previousFrame;correctionInterval=TRAVEL_LIMITS.interval;
+     }
+     /** @param {string} message */
+     function command(message) {
+@@ -123,6 +125,7 @@
+         if(text==="status"||text==="")return [...statusLines(),...(route?inspect(route.groupId):[]),`Admitted group intents (not a fresh loaded-actor census): ${deps.admittedGroups().filter(id=>/^district-[1-5]:civ:\d+$/.test(id)).slice(0,8).join(", ")||"none"}.`,`Session-only; rejoin starts off. Use civ:people travel stop to cancel.`];
+         const near=/^(?:inspect|start-near)(?:\s|$)/.test(text)?parseTravelNear(text):undefined;
+         if(near?.error)return [near.error];
++        const selectedCadence=near?.cadence===1?1:TRAVEL_LIMITS.interval;
+         if(near?.kind==="inspect"&&near.groupId)return inspect(near.groupId);
+         const parsed=near?undefined:parseTravelRoute(text);
+         if(!near&&!parsed?.route)return [parsed?.error??"Invalid travel route."];
+@@ -164,8 +167,8 @@
+             if(!deps.isGateOn()||deps.isBusy())return ["Travel setup was interrupted; nothing moved."];
+             selectedId=actorId(final.entity);if(!selectedId)return ["The representative ID is unreadable; nothing moved."];
+         }catch(_error){return ["Travel could not safely read this representative; nothing moved."];}
+-        if(route&&boundActorId===selectedId&&JSON.stringify(route)===JSON.stringify(selected)){resetTrace();return statusLines();}
+-        stop(false);route=selected;boundActorId=selectedId;state="ready";lastTick=-TRAVEL_LIMITS.interval;lastDestination="";resetTrace();return statusLines();
++        if(route&&boundActorId===selectedId&&JSON.stringify(route)===JSON.stringify(selected)){correctionInterval=selectedCadence;resetTrace();return statusLines();}
++        stop(false);route=selected;boundActorId=selectedId;correctionInterval=selectedCadence;state="ready";lastTick=-TRAVEL_LIMITS.interval;lastDestination="";resetTrace();return statusLines();
+     }
+     /** Read-only; neither block probes nor steering are needed to locate a unique actor.
+      * @param {string} groupId */
+@@ -178,7 +181,7 @@
+     }
+     /** @param {number} tick */
+     function onTick(tick) {
+-        if(!route||!Number.isSafeInteger(tick)||tick-lastTick<TRAVEL_LIMITS.interval)return;
++        if(!route||!Number.isSafeInteger(tick)||tick-lastTick<correctionInterval)return;
+         lastTick=tick;
+         const previousFrame=traceFrame,observation=traceLatched||traceStopped?undefined:newTraceFrame("tick",tick);traceFrame=observation;
+         try {
+--- a/CivilizationApocalypse_BP/scripts/people/travel.js
++++ b/CivilizationApocalypse_BP/scripts/people/travel.js
+@@ -17,11 +17,11 @@
+ 
+ /** Read-only inspection or synchronous route discovery around an existing actor.
+  * @param {string} message
+- * @returns {{kind?:"inspect"|"start-near",groupId?:string,length?:number,error?:string}} */
++ * @returns {{kind?:"inspect"|"start-near",groupId?:string,length?:number,cadence?:1,error?:string}} */
+ export function parseTravelNear(message) {
+-    const match=/^(inspect|start-near) district=([1-5]) group=(0|[1-9]\d{0,4})(?: length=([1-8]))?$/.exec(message.trim());
+-    if(!match||(match[1]==="inspect"&&match[4]))return {error:"Usage: civ:people travel inspect district=N group=G | start-near district=N group=G [length=1-8]."};
+-    return {kind:/** @type {"inspect"|"start-near"} */(match[1]),groupId:`district-${match[2]}:civ:${match[3]}`,length:Number(match[4]??TRAVEL_LIMITS.nearDefaultLength)};
++    const match=/^(inspect|start-near) district=([1-5]) group=(0|[1-9]\d{0,4})(?: length=([1-8]))?(?: cadence=(1))?$/.exec(message.trim());
++    if(!match||(match[1]==="inspect"&&(match[4]||match[5])))return {error:"Usage: civ:people travel inspect district=N group=G | start-near district=N group=G [length=1-8]."};
++    return {kind:/** @type {"inspect"|"start-near"} */(match[1]),groupId:`district-${match[2]}:civ:${match[3]}`,length:Number(match[4]??TRAVEL_LIMITS.nearDefaultLength),...(match[5]?{cadence:/** @type {1} */(1)}:{})};
+ }
+ 
+ /** Candidate geometry only. Native validation still checks every swept body cell.
+--- a/CivilizationApocalypse_BP/scripts/main.js
++++ b/CivilizationApocalypse_BP/scripts/main.js
+@@ -67,7 +67,8 @@
+     destinationsCommand:civilianDestinations.command,routePreviewCommand:civilianDestinations.routePreviewCommand,inspectCommand:streets.inspectCommand,travelCommand:civilianTravel.command,stopTravel:civilianTravel.stop,
+     militaryCommand:(message,event)=>/^diagnostics(?:\s|$)/.test(message)?militaryDiagnostics.command(message):military.command(message,event)});
+ peopleRuntime.register(streets);
+-system.runInterval(()=>civilianTravel.onTick(system.currentTick),4);
++// One timer: ordinary trials throttle at4 ticks; only explicit cadence=1 setup opts in.
++system.runInterval(()=>civilianTravel.onTick(system.currentTick),1);
+ peopleRuntime.register(createSiegeDriver(kingdomStore));
+ // Registered last on purpose: the streets driver signs every levy "<district> levy" and the orders driver titles
+ // some of them officers, so running orders after streets makes the rank the name a player sees at the end of the

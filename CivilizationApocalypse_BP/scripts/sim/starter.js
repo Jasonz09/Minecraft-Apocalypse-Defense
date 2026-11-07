@@ -27,15 +27,21 @@ import { createInitialKingdom } from "../kingdom/state.js";
  * no business deleting another add-on's properties.
  *
  * @param {string[]} keys
- * @param {{ keepKeyPrefixes?: string[], wipeKeyPrefixes?: string[] }} [rules]
+ * @param {{ keepKeyPrefixes?: string[], wipeKeyPrefixes?: string[], wipeKeys?: string[] }} [rules]
  * @returns {{ keep: string[], wipe: string[], unknown: string[] }}
  */
 export function classifyStarterKeys(keys, rules = STARTER) {
     const keep = /** @type {string[]} */ (rules.keepKeyPrefixes ?? []);
     const wipe = /** @type {string[]} */ (rules.wipeKeyPrefixes ?? []);
+    const exactWipe = new Set(rules.wipeKeys ?? []);
     /** @type {{ keep: string[], wipe: string[], unknown: string[] }} */
     const out = { keep: [], wipe: [], unknown: [] };
     for (const key of [...keys].sort()) {
+        if(key.startsWith("civ:wall_leaf_trim:")){out.keep.push(key);continue;}
+        if (exactWipe.has(key)) {
+            out.wipe.push(key);
+            continue;
+        }
         const keepMatch = keep.filter((prefix) => key.startsWith(prefix)).sort((a, b) => b.length - a.length)[0];
         const wipeMatch = wipe.filter((prefix) => key.startsWith(prefix)).sort((a, b) => b.length - a.length)[0];
         if (keepMatch === undefined && wipeMatch === undefined) {
@@ -78,6 +84,26 @@ export function buildStarterBaseline(input = {}) {
             if (from.physical !== undefined) {
                 district.physical = JSON.parse(JSON.stringify(from.physical));
             }
+            // Gate geometry is built geography too. Dropping it silently turns every exported
+            // gate back into a logical-only record, disconnecting policy and Ledger controls.
+            for (const gate of district.gates ?? []) {
+                const previousGate = /** @type {any[]} */ (from.gates ?? []).find((entry) => entry.id === gate.id);
+                if (previousGate?.mode !== undefined || previousGate?.physical !== undefined) {
+                    gate.mode = "auto";
+                }
+                if (previousGate?.physical !== undefined) {
+                    const physical = previousGate.physical;
+                    gate.physical = { state: physical.state === "closed" ? "closed" : "open" };
+                    for (const field of ["spec", "link", "companions"]) {
+                        if (physical[field] !== undefined) {
+                            gate.physical[field] = JSON.parse(JSON.stringify(physical[field]));
+                        }
+                    }
+                    // Preserve the real portcullis position without carrying over combat history,
+                    // a pending destination, a blocked diagnostic, or a forced policy.
+                    gate.state = gate.physical.state === "closed" ? "sealed" : "open";
+                }
+            }
             if (Number.isInteger(from.soldiers) && from.soldiers !== district.soldiers) {
                 notes.push(`${district.name}: garrison reset from ${String(from.soldiers)} to the published ${String(district.soldiers)}`);
             }
@@ -100,7 +126,7 @@ export function buildStarterBaseline(input = {}) {
  * Why this world may not be armed yet. Deliberately strict: an empty or half-built template must
  * never be shipped as if it were the finished civilization.
  *
- * @param {{ kingdom?: any, job?: { pending?: number, total?: number, state?: string, status?: string } | null, planPresent?: boolean, planStoredKeys?: boolean, planStatus?: string, planningRunning?: boolean, planningDescription?: string, gates?: { status?: string, units?: number, overrides?: string[], moving?: string[] }, builtRequired?: string[] }} world
+ * @param {{ kingdom?: any, keys?: string[], job?: { pending?: number, total?: number, state?: string, status?: string } | null, planPresent?: boolean, planStoredKeys?: boolean, planStatus?: string, planningRunning?: boolean, planningDescription?: string, gates?: { status?: string, units?: number, overrides?: string[], moving?: string[], linksMissing?: string[] }, builtRequired?: string[], keysReadable?: boolean, allowArmed?: boolean, farmLighting?: {ready:boolean,reasons?:string[]} }} world
  */
 export function starterArmProblems(world = {}) {
     const /** @type {string[]} */ problems = [];
@@ -109,7 +135,21 @@ export function starterArmProblems(world = {}) {
     if (kingdom === undefined || kingdom === null) {
         return ["no kingdom is saved in this world - generate the city first, then arm it for release"];
     }
-    if (kingdom.starter !== undefined && typeof kingdom.starter.templateId === "string") {
+    if (world.keysReadable === false) {
+        problems.push("world state keys cannot be read - cleanup cannot be verified; nothing may be armed or exported");
+    }
+    // Trial identity and future casualty receipts are authoritative state, not
+    // disposable development residue. Never erase them while resetting headcounts.
+    if((world.keys??[]).some(key=>key.startsWith("civ:wall_leaf_trim:")))problems.push("wall-leaf maintenance receipts remain; retain every pending, completed or unknown receipt and reconcile release-copy export separately before arming");
+    const militaryKeys = (world.keys ?? []).filter((key) => key.startsWith("civ:military_"));
+    if (militaryKeys.length > 0) {
+        problems.push("military trial state remains - reconcile and explicitly clear the trial on a separate release copy before arming; no selection, binding or receipt may be discarded");
+    }
+    const farmKeys=(world.keys??[]).filter(key=>key.startsWith("civ:farm_lights:"));
+    if((farmKeys.length>0&&world.farmLighting?.ready!==true)||world.farmLighting?.ready===false) {
+        problems.push(`farm lighting must finish and its retained journals must verify before arming or export${world.farmLighting?.reasons?.length?`: ${world.farmLighting.reasons[0]}`:""}`);
+    }
+    if (world.allowArmed !== true && kingdom.starter !== undefined && typeof kingdom.starter.templateId === "string") {
         problems.push(`this world is already armed as '${kingdom.starter.templateId}' - re-arming would discard play state; start from a fresh build world instead`);
     }
 
@@ -157,6 +197,9 @@ export function starterArmProblems(world = {}) {
     }
     for (const moving of gates?.moving ?? []) {
         problems.push(`gate ${String(moving)} is still moving - wait for it to settle before arming`);
+    }
+    for (const missing of gates?.linksMissing ?? []) {
+        problems.push(`gate linkage is incomplete: ${String(missing)} - repair links before export`);
     }
     if (world.planPresent !== true) {
         problems.push(

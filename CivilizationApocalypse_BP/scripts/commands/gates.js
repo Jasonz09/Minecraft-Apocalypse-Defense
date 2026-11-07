@@ -1,6 +1,6 @@
 import { PHYSICAL_EVENT_IDS, SCRIPT_EVENT_NAMESPACE } from "../config.js";
 import { unitsOfGate } from "../civ/gatelink.js";
-import { describeAgreement, startGateSelfTest } from "../integration/civGates.js";
+import { describeAgreement, relinkRegisteredGates, restoreSavedGateLinks, startGateSelfTest } from "../integration/civGates.js";
 import { getGateAdapter, readGateRecord, readGateRegistry, setUnmanagedMode } from "../integration/gateAdapter.js";
 import { GATE_MODES, decideGate, findGate, listGates, setGateMode } from "../sim/gatecontrol.js";
 import { formatErrorLines, formatMissingKingdomLines, formatRefusedKingdomLines } from "../ui/report.js";
@@ -42,6 +42,7 @@ const GATE_CLOSE = IDS.gateClose ?? "civ:gate_close";
 const GATE_AUTO = IDS.gateAuto ?? "civ:gate_auto";
 const GATE_STATUS = IDS.gateStatus ?? "civ:gate_status";
 const GATE_TEST = IDS.gateTest ?? "civ:gate_test";
+const GATE_RELINK = PHYSICAL_EVENT_IDS.gateRelink;
 
 /** @type {Record<string, string>} */
 const MODE_OF = { [GATE_OPEN]: "forced_open", [GATE_CLOSE]: "forced_closed", [GATE_AUTO]: "auto" };
@@ -185,6 +186,10 @@ export function formatGateStatusLines(kingdom, gateId, inspection, registry) {
     }
     if (!inspection.ok) {
         lines.push(`Blocks: cannot inspect (${String(inspection.error)})`);
+        for (const saved of (registry?.gates ?? []).filter((candidate) => candidate.simGateId === gateId || candidate.id === gateId)) {
+            const spec = saved.spec;
+            lines.push(`Saved registry unit ${saved.id}: x ${String(spec?.at?.x)}, y ${String(spec?.y)}, z ${String(spec?.at?.z)} (recorded geometry; blocks not verified).`);
+        }
         return lines;
     }
     for (const unit of /** @type {any[]} */ (inspection.units)) {
@@ -225,6 +230,17 @@ export function registerGateCommands(kingdomStore, adapter = getGateAdapter(king
             handleStatus(kingdomStore, adapter, event);
         } else if (event.id === GATE_TEST) {
             handleTest(kingdomStore, adapter, event);
+        } else if (event.id === GATE_RELINK) {
+            if (event.message.trim() === "confirm saved") {
+                void restoreSavedGateLinks(kingdomStore, (lines) => reply(lines, event));
+                return;
+            }
+            if (event.message.trim() !== "confirm") {
+                reply(["Repair the kingdom's gate links from the saved registry without rebuilding blocks.", "Use on a backed-up test copy: /scriptevent civ:gate_relink confirm", "If a later district changed a shared gate's measurements: /scriptevent civ:gate_relink confirm saved verifies completed build plans and restores the oldest measurements."], event);
+                return;
+            }
+            const result = relinkRegisteredGates(kingdomStore);
+            reply(result.ok ? [`Gate links repaired: ${String(result.changed)} change(s). No blocks were rebuilt.`, "Check /scriptevent civ:gate_status before testing movement."] : formatErrorLines("Gate relink refused", [String(result.reason)]), event);
         }
     }, { namespaces: [SCRIPT_EVENT_NAMESPACE] });
     adapter.start();
@@ -277,7 +293,16 @@ function handleStatus(kingdomStore, adapter, event) {
         reply(formatErrorLines(title, [String(resolved.error), `Usage: /scriptevent ${event.id} [gate-id]`]), event);
         return;
     }
-    reply(formatGateStatusLines(loaded.kingdom, resolved.id, adapter.inspect(resolved.id), registry), event);
+    const inspection = adapter.inspect(resolved.id);
+    const lines = formatGateStatusLines(loaded.kingdom, resolved.id, inspection, registry);
+    if (!inspection.ok) {
+        for (const saved of registry.gates.filter((entry) => entry.simGateId === resolved.id)) {
+            const unitId = saved.role === "primary" ? resolved.id : saved.id;
+            const record = readGateRecord(unitId);
+            lines.push(`Saved position ${unitId}: ${record ? `${record.actual}, destination ${String(record.to)}${record.reason ? `, ${record.reason}` : ""}` : "missing or unreadable"}.`);
+        }
+    }
+    reply(lines, event);
 }
 
 /**

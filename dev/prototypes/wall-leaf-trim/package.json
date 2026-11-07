@@ -1,0 +1,1 @@
+{"name":"civ-isolated-wall-leaf-trim","private":true,"type":"module","scripts":{"test":"node --test leaf-trim.test.mjs"}}

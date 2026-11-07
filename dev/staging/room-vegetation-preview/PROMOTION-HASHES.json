@@ -1,0 +1,68 @@
+{
+  "scope": "STAGING ONLY FINAL FROZEN34focused+strictisolatedTSC; rootreviewbeforepromotion",
+  "baselineCommandSha256": "71CE4E760852794956E417FA279838ABB08C8920FDB9274FC48CBA979D8CFA5C",
+  "cadenceCandidateCurrentPins": {
+    "CivilizationApocalypse_BP/scripts/integration/civilianTravel.js": "514D1F8D4AEAE51954194FF4F0BB75F82512F0E19A762E483828F1D2F0FF7DF7",
+    "CivilizationApocalypse_BP/scripts/people/travel.js": "BA1963B4F31EA33E998D0D1875AAC8F4CBD4542CEED44C5C3A9F557391561034",
+    "CivilizationApocalypse_BP/scripts/main.js": "417E9C7181F9792CCAB013ED2BC48CA66AA05F169A8E8DF141A919554998AF62"
+  },
+  "files": [
+    {
+      "source": "dev/staging/room-vegetation-preview/proposed/CivilizationApocalypse_BP/scripts/civ/roomVegetationPreview.js",
+      "target": "CivilizationApocalypse_BP/scripts/civ/roomVegetationPreview.js",
+      "baselineSha256": null,
+      "sha256": "77D4DC8AA79D92078E7884EC8716A436A225811C538EDFDBD11A61F7159CF6E3"
+    },
+    {
+      "source": "dev/staging/room-vegetation-preview/proposed/CivilizationApocalypse_BP/scripts/commands/civ.js",
+      "target": "CivilizationApocalypse_BP/scripts/commands/civ.js",
+      "baselineSha256": "71CE4E760852794956E417FA279838ABB08C8920FDB9274FC48CBA979D8CFA5C",
+      "sha256": "A1BDE402FA18963C017F7DF34BC45B8033959B23D67CA3FD6D6E69179E850040"
+    },
+    {
+      "source": "dev/staging/room-vegetation-preview/proposed-dev/test/room-vegetation-preview.test.mjs",
+      "target": "dev/test/room-vegetation-preview.test.mjs",
+      "baselineSha256": null,
+      "sha256": "DB5550B2F3CBBB1FBC0177FF34E86CE9A53826FD6E88C25088E8D9FA57D730DA"
+    }
+  ],
+  "evidence": {
+    "focused": {
+      "pass": 34,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "durationMs": 210.6887,
+      "log": "dev/staging/room-vegetation-preview/focused-final.log"
+    },
+    "strictIsolatedTsc": {
+      "exitCode": 0,
+      "command": "npx.cmd tsc -p dev/staging/room-vegetation-preview/typecheck/tsconfig.json"
+    },
+    "historicalHarnessFailure": "First overlay missing-module resolution failed before executing tests; fixed staging loader only; candidate source unchanged",
+    "heavyHydration": "NOT RUN",
+    "native": "NOT RUN",
+    "full": "NOT RUN",
+    "history": [
+      "PROMOTION-before-cell-yield.json retains24PASS166.112ms",
+      "focused-cell-yield.log retains31PASS207.7929ms",
+      "focused-before-air-classification.log retains33PASS209.2129ms"
+    ]
+  },
+  "contracts": [
+    "475uniqueactualcells incl455room+20cornerposts; cap1024",
+    "No holds/writes/timers/owner/journal/cleanup authorization",
+    "Source-bound completed original queue/checksum/master verified throughloader",
+    "Guard before/after eachnativegetter andthroughyields",
+    "All fullstates primitive or explicitUNREADABLE;1024cell/256readslice budgets",
+    "32formattedrowsperpage; no native queries informatter",
+    "No engine timestamp or persistent pagingcache; newpage invocation rereads source+census; across-ticks notatomic",
+    "Selecteddistrict expectedops only; absentopnull,notAIRpermission/crossdistrictownership",
+    "Pure prioritysort: unplannedlogs,leafdiscrepancies,otherunknowns/unloaded,thenlabeledplannedstructure/cornerposts;0newnativequeries",
+    "Yield after EVERY completedcell, withguardsbefore/afterinclfinalyield; max1getBlockperslice",
+    "Selectedcivstamp uniqueidentity andplayerID/fixeddimension boundBEFOREreservation; latestkingdom reusedfromguardcallbacks",
+    "Fast token/player/active/devgatecheck repeatedAFTERfinalrawsourceaudit",
+    "Falsy nativegetter throws retainedasfailure; stateChars2048 finiteUTF16cap",
+    "AIRoverplannednonAIR counts/displays source-discrepancy; sourceAIR/absence+AIRordinaryair"
+  ]
+}

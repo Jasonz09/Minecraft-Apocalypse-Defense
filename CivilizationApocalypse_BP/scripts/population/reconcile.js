@@ -1,6 +1,6 @@
 import { findValidationProblems } from "../kingdom/state.js";
 import { emptyCursor } from "./cursor.js";
-import { buildGroupTable, chunkKeyOf, compareText, districtInFight, nearestDistance, parseGroupId, spotFor } from "./groups.js";
+import { buildGroupTable, chunkKeyOf, compareText, districtInFight, nearestDistance, nearestPostDistance, parseGroupId, postOf, spotFor } from "./groups.js";
 import { classifyTags, isCanonicalFor } from "./identity.js";
 import { planLevels } from "./lod.js";
 import { POP_ENTITY_TYPES, POP_SYNC_DEFAULTS } from "./settings.js";
@@ -17,6 +17,8 @@ import { POP_ENTITY_TYPES, POP_SYNC_DEFAULTS } from "./settings.js";
  *   entities,           [{ id, tags, x, y, z, loaded?, inFight?, valid? }] every entity the caller can see
  *   anchors,            [{ x, z }] players or other points that keep physical population near them
  *   homes,              { [districtId]: { x, y, z } } the physical origin of each district
+ *   posts,              { [districtId]: [{ x, y, z }, ...] } where that district's groups may be posted, plaza
+ *                       first; optional, and every group sits on its `homes` point when it is absent
  *   loadedChunks,       Set or array of "cx,cz" keys known to be loaded around the spots that matter
  * }
  *
@@ -165,6 +167,9 @@ function compareEntries(left, right) {
     return compareText(left.entityId, right.entityId);
 }
 
+/** Bounded refusal text only; native IDs stay exact within64characters. @param {string} value */
+const conflictToken=value=>value.slice(0,64).replace(/[^A-Za-z0-9:_-]/g,"?");
+
 /**
  * Group the observed entities by the group they claim. Only our namespace is read; foreign and untagged
  * entities are counted and left alone.
@@ -266,6 +271,43 @@ function normaliseHomes(source) {
 }
 
 /**
+ * The posts of each district, normalised. `homes` is the fallback: a caller that predates posts, or one whose
+ * ground probe found nothing, gives every district the single plaza post it always had.
+ *
+ * @param {unknown} source `observation.posts`
+ * @param {Map<string, { x: number, y: number, z: number }>} homes
+ * @returns {Map<string, Array<{ x: number, y: number, z: number }>>}
+ */
+function normalisePosts(source, homes) {
+    /** @type {Map<string, Array<{ x: number, y: number, z: number }>>} */
+    const posts = new Map();
+    if (source !== null && typeof source === "object") {
+        for (const [districtId, list] of Object.entries(source)) {
+            if (!Array.isArray(list)) {
+                continue;
+            }
+            /** @type {Array<{ x: number, y: number, z: number }>} */
+            const points = [];
+            for (const point of list) {
+                const candidate = /** @type {any} */ (point);
+                if (candidate !== null && typeof candidate === "object" && Number.isFinite(candidate.x) && Number.isFinite(candidate.y) && Number.isFinite(candidate.z)) {
+                    points.push({ x: candidate.x, y: candidate.y, z: candidate.z });
+                }
+            }
+            if (points.length > 0) {
+                posts.set(districtId, points);
+            }
+        }
+    }
+    for (const [districtId, home] of homes) {
+        if (!posts.has(districtId)) {
+            posts.set(districtId, [home]);
+        }
+    }
+    return posts;
+}
+
+/**
  * Honest drift, per district: what the records say against what is bound in the world. Drift is reported and
  * never corrected here: the records are authoritative.
  * @param {any} records
@@ -321,9 +363,10 @@ function driftFor(records, table, byGroup, config) {
  * @param {any} observation
  * @param {number} tick
  * @param {Partial<PopSyncConfig>} [overrides]
+ * @param {(group:import("./groups.js").GroupRecord)=>string} [typeForGroup] opt-in strict owner policy; absent preserves default behavior
  * @returns {{ actions: Array<SpawnAction | DespawnAction | RetagAction>, state: CursorState, report: any }}
  */
-export function reconcile(state, observation, tick, overrides = {}) {
+export function reconcile(state, observation, tick, overrides = {}, typeForGroup = undefined) {
     if (!Number.isInteger(tick) || tick < 0) {
         throw new RangeError(`reconcile: tick must be a non-negative integer, got ${String(tick)}`);
     }
@@ -351,6 +394,7 @@ export function reconcile(state, observation, tick, overrides = {}) {
     const districts = new Map(records.districts.map(/** @param {any} district */ (district) => [String(district.id), district]));
     const anchors = normaliseAnchors(observation.anchors);
     const homes = normaliseHomes(observation.homes);
+    const posts = normalisePosts(observation.posts, homes);
     const loaded = new Set(observation.loadedChunks ?? []);
     const table = buildGroupTable(records, config);
     report.problems = table.problems;
@@ -377,6 +421,37 @@ export function reconcile(state, observation, tick, overrides = {}) {
             groups.set(groupId, { id: groupId, district: parsed.district, kind: parsed.kind, index: parsed.index, headcount: 0 });
         }
     }
+    /** @type {Map<string,string>} */
+    const expectedTypes=new Map();
+    if(typeForGroup!==undefined) {
+        try {
+            for(const group of groups.values()) {
+                meter.ops+=1;
+                const expected=typeForGroup(group);
+                if(typeof expected!=="string"||expected.length===0)throw new Error("group type resolver returned an invalid type");
+                expectedTypes.set(group.id,expected);
+            }
+            for(const raw of Array.isArray(observation.entities)?observation.entities:[]) {
+                meter.ops+=1;
+                const tags=Array.isArray(raw?.tags)?raw.tags:[],read=classifyTags(tags);
+                meter.ops+=tags.length;
+                if(read.ownTags.length===0)continue;
+                const groupId=read.claims[0];
+                if(read.claims.length!==1||!isCanonicalFor(read.ownTags,groupId)||expectedTypes.get(groupId)!==raw.typeId)throw new Error("military owner type or canonical identity conflict");
+            }
+            for(const [groupId,entries] of scan.byGroup){
+                meter.ops+=entries.length;
+                if(entries.length>1){
+                    const sample=entries.slice(0,2).map(entry=>conflictToken(entry.entityId));
+                    throw new Error(`military owner duplicate conflict; representatives preserved; group=${conflictToken(groupId)} observed=${entries.length} sampleIds=${sample.join(",")}`);
+                }
+            }
+            if(meter.ops>config.workBudget)throw new Error("military owner validation work budget exhausted");
+        } catch(error) {
+            report.refused=String(error);report.work=meter.ops;report.overBudget=meter.ops>config.workBudget;
+            return {actions:[],state:prior,report};
+        }
+    }
     const ordered = countedSort([...groups.values()], (left, right) => compareText(left.id, right.id), meter);
 
     const hold = anchors.length === 0;
@@ -386,8 +461,9 @@ export function reconcile(state, observation, tick, overrides = {}) {
     const inputs = [];
     for (const group of ordered) {
         meter.ops += 1;
-        const home = homes.get(group.district);
-        const spot = group.headcount > 0 && home !== undefined ? spotFor(home, group.kind, group.index) : null;
+        const districtPosts = posts.get(group.district) ?? [];
+        const post = postOf(districtPosts, group.index);
+        const spot = group.headcount > 0 && post !== null ? spotFor(post, group.kind, group.index) : null;
         details.set(group.id, {
             spot,
             kind: group.kind,
@@ -401,6 +477,7 @@ export function reconcile(state, observation, tick, overrides = {}) {
             headcount: group.headcount,
             hasSpot: spot !== null,
             distance: spot !== null ? nearestDistance(spot, anchors) : Infinity,
+            homeDistance: districtPosts.length > 0 ? nearestPostDistance(districtPosts, anchors) : Infinity,
             spotLoaded: spot !== null && loaded.has(chunkKeyOf(spot.x, spot.z)),
             bound: scan.byGroup.has(group.id),
         });
@@ -491,7 +568,7 @@ export function reconcile(state, observation, tick, overrides = {}) {
                         kind: detail.kind,
                         index: detail.index,
                         at: detail.spot,
-                        typeId: POP_ENTITY_TYPES[detail.kind],
+                        typeId: expectedTypes.get(groupId)??POP_ENTITY_TYPES[detail.kind],
                     });
                 }
             } else {
@@ -543,7 +620,12 @@ export function reconcile(state, observation, tick, overrides = {}) {
         }
     }
     let spawned = 0;
-    for (const op of spawns) {
+    // A failed standing probe still spends an attempt. Rotate the pending queue
+    // using the persisted reconcile count so the same early failures cannot
+    // indefinitely prevent later admitted groups from reaching the sole owner.
+    const spawnOffset = spawns.length === 0 ? 0 : prior.runs % spawns.length;
+    for (let index = 0; index < spawns.length; index += 1) {
+        const op = spawns[(spawnOffset + index) % spawns.length];
         if (opsLeft > 0 && spawnsLeft > 0) {
             actions.push(op);
             opsLeft -= 1;

@@ -1,0 +1,55 @@
+{
+  "utc": "2026-11-07T00:52:17.822759+00:00",
+  "scope": "ISOLATED purepreview root-authorized safety/typing fixes; no adapter/writer/native/full",
+  "files": [
+    {
+      "path": "dev\\staging\\room-leaf-policy\\policy.mjs",
+      "sha256": "401B38DFD38013E1B55C682C372CD93BB285E4BD5D642B53915FFC6260829D5D"
+    },
+    {
+      "path": "dev\\staging\\room-leaf-policy\\policy.test.mjs",
+      "sha256": "C3CC05556348E745E86C0D901E1BF7C3732D9634C900F9D158CA31E8189DE7ED"
+    }
+  ],
+  "focused": {
+    "coreCases": 14,
+    "independentRegressions": 3,
+    "pass": 17,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 251.1026,
+    "log": "independent-review/focused-fixed.log",
+    "logSha256": "92E806C05304030A9E6E4DED5F7888D4E04598B741E61EC8F5B92028890AD2B8"
+  },
+  "active161FreezeUnchanged": "Historical original checkpoint only; no production writes here; parent owns later progress integration",
+  "activeFreeze": "dist\\cadence-room-preview-pack-hashes-20261106.json",
+  "activeFreezeSha256": "EE82BF01B41B5691E9866B2BE4E63449F7849A3C95D3923D0941AC823CB7506B",
+  "limits": {
+    "targets": 8,
+    "allBoundSources": 5,
+    "neighborsEach": 27,
+    "retainedRelevantCellsMax": 216,
+    "sourceOps": 2000000,
+    "opsPerYield": 400
+  },
+  "historicalFailures": [
+    "focused-initial.log: positive with explicitly plannedAIR rejected by blanketclaim mismatch",
+    "focused-before-center-AIR.log: centerknownleaf incorrectlytreatedasplannedneighborleaf. Both fixedunderNEWexplicitgeometryintent, notoldAIRauthority."
+  ],
+  "pending": [
+    "No fresh authenticated27cell nativeproof/all5source/protection adapter",
+    "All10transcribednativeleaves historicallytouchunknownlogs andcannotbeaccepted bycurrentpolicy",
+    "No native adapter/writer/journal/cleanup authority or promotion"
+  ],
+  "strictIsolatedTsc": {
+    "exitCode": 0,
+    "config": "independent-review/tsconfig.json",
+    "configSha256": "40AA6F07618B29A890FFEEB47D9B1EB714E66710A0D7EA345952200EA8A43508",
+    "log": "independent-review/typecheck-final.log",
+    "noRelaxedStrictFlags": true,
+    "noTsIgnore": true
+  },
+  "historicalCheckpoint": "CHECKPOINT-before-independent.json",
+  "independentReview": "independent-review/FINAL.json"
+}

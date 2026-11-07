@@ -1,0 +1,49 @@
+{
+  "status": "STAGING ONLY; actual native refusal reproduced, minimalfix validated, no install",
+  "productionFile": "CivilizationApocalypse_BP/scripts/people/destinations.js",
+  "baselineSha256": "5901C116C04C59C25F393D43F82AD456B6A9F09F98D88341E63010B3818B7E0C",
+  "proposalSha256": "077174ADAFBCBCDB11B5EBD00D41F55D8BFAC6FBFBE7FF52FA130863BE60D048",
+  "change": "Exclude non-building foundation descriptors BEFORE home/farm classification; every actualbuilding validation/finalopguard retained",
+  "pinnedFixture": {
+    "path": "dev/fixtures/wall-leaf-closed-source-20261106.json",
+    "sha256": "E08AD7B53DFABA1C6C551BF519471EDB527FF0ED4CB20BDBB523B01D9019B5F4",
+    "sequence": 274030,
+    "levelDatSha256": "0109A6B32F47536BFB53261DA771ECE8F62E47BF1ABAF1DAFB55AF43E71C1018",
+    "D1Checksum": "07515fcb",
+    "completeQueueVerifiedByActualLoader": true,
+    "fakePropertiesUnchanged": true,
+    "physicalBlockOrEntityProof": false
+  },
+  "actualCause": {
+    "padId": "pad-d1-farm_kitchen-1",
+    "padKind": "pad-farm_kitchen",
+    "blueprint": "farm_kitchen_v2",
+    "sharedLot": "d1-farm_kitchen-1",
+    "actualBuilding": "building-d1-farm_kitchen-1",
+    "padMissing": [
+      "rot",
+      "door",
+      "frontage"
+    ]
+  },
+  "beforeReproduction": "before.log: unchanged installed compiler gives exactnativeinvalid/duplicate metadata refusal",
+  "tests": {
+    "passed": 39,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 5472.6864,
+    "existingGuardChecks": 33,
+    "newRealFixtureChecks": 6,
+    "log": "focused.log"
+  },
+  "strictFullOverlayTypecheck": "PASS",
+  "source156StillFrozen": true,
+  "frontendProposalBoundary": "Earlier frontage3file proposal includes pre-fix compiler; must rebase after hotfix before any promotion; its baselineSHA guard must not be bypassed",
+  "remainingGates": [
+    "Rootpromotionreview/freshbaseSHAassertion",
+    "Centralrealfixturetest+TSC/fullverification",
+    "Closedinstall/native D1destinationpreview repeat",
+    "Frontageproposal rebase/review afterward"
+  ]
+}

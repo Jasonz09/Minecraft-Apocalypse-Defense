@@ -1,0 +1,39 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "CA Swordsman - Isolated Trial BP",
+    "description": "Opt-in prototype assets only; no script, spawn rules or casualty integration.",
+    "uuid": "396c29b5-e9fd-4a0b-9b3f-e36d7e796d0b",
+    "version": [
+      0,
+      1,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      26,
+      20
+    ]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "4e585dde-8cf1-44ab-865f-36b2eb61f99d",
+      "version": [
+        0,
+        1,
+        0
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "bb302c84-023f-43e8-bef8-87349accc27e",
+      "version": [
+        0,
+        1,
+        0
+      ]
+    }
+  ]
+}

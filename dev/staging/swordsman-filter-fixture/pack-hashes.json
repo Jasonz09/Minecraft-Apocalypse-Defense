@@ -1,0 +1,55 @@
+{
+  "scope": "STAGING ONLY; controlled tagged target FILTER test, NOT siege integration; no install/world changes",
+  "version": [
+    0,
+    0,
+    4
+  ],
+  "files": {
+    "manifest.json": "C5942399E01A498418B66C2F250C6C6CA1007477E941C7AD022742F7C128F958",
+    "scripts/fixtureInspection.js": "9A2318440999AE41E333DE3C45390400DC3BC9D7A88AD5A7812CA49B4AE8E80F",
+    "scripts/main.js": "9CDD869A9BFD0440A0F086CCADC3E83D0DCC6A2704DA4B8DD7C34E61CAA93926",
+    "functions/ca_combat_fixture/clear_gear.mcfunction": "1666B00AF84645B9D454A640743BAA868BDA376F55E55D6DB7E1D054402CF5BD",
+    "functions/ca_combat_fixture/engage.mcfunction": "375AF5F159C4A54A93F0599D25DE62E9BFE7E7057A96A58D2769DD31BC6949B3",
+    "functions/ca_combat_fixture/prepare.mcfunction": "B18CFDD5A349AADC93646804CEC8A3A723E0AD2FE70718C6F09C00CEDC4697D9",
+    "functions/ca_combat_fixture/spawn.mcfunction": "D5E8C703E4C33D95971521531F282143CB141456EB2818C39FEC415CB4E2879B",
+    "functions/ca_combat_fixture/spawn_caged.mcfunction": "D79A0AC6DD8919B7C7E08C2B02028F0D607A4DAC87CD6EA964813AF7DD9588DE",
+    "functions/ca_combat_fixture/view_cage.mcfunction": "0D7ABED43D910C39CF12063F402CCB4AEEC87D4DD56AE035B7EFE494FF8A2B6D",
+    "functions/ca_combat_fixture/view_guard.mcfunction": "3E9CE8235B2A5B9BFAB04903A0C2C11A830FE329DB5BDAA5E07DB0060BC81EFE",
+    "functions/ca_combat_fixture/internal/clear_gear_body.mcfunction": "5C617CC9CA2FD3F3DBB68A901E75A21A6054FD262DC8E27833CDF6C57831998B",
+    "functions/ca_combat_fixture/internal/engage_body.mcfunction": "32DB0C03873FDF9DB4B6059F6BB52AD1F9E41DBFDFE0CAF950A066475067FE34",
+    "functions/ca_combat_fixture/internal/prepare_body.mcfunction": "048AB1E5A13361F2C3528ABF5F8CF9414F2A0CDBDBE8C879AC7B391880C4DABF",
+    "functions/ca_combat_fixture/pillager/clear_gear.mcfunction": "CC55E3349BDBE355D82FD4E2F2721935195406EE232F785F8FCF6A2E45A683B4",
+    "functions/ca_combat_fixture/pillager/engage.mcfunction": "1281987384665B240F59B89CF22B90577AC208D275209E23770DE6A2A9500BAB",
+    "functions/ca_combat_fixture/pillager/return.mcfunction": "7F02EDA170FA20ADCAF26856E91E1AA9267A6903C66FD3D384C96E8CE7ABB0C1",
+    "functions/ca_combat_fixture/pillager/spawn_caged.mcfunction": "D3944D9FE4FAB0CFDDD630D4A0D886BC762D2AF44571B99F1FBA191E613D6685",
+    "functions/ca_combat_fixture/vindicator/clear_gear.mcfunction": "13F8F38F14E6B959E3591954CB4AFF82D7A03984FAED99C0D411E340299AC7B7",
+    "functions/ca_combat_fixture/vindicator/engage.mcfunction": "EE5BC7F9D0181004257426711D6339F51FEEC52EF51E9CC1E2A92E8B955CA322",
+    "functions/ca_combat_fixture/vindicator/return.mcfunction": "7A3125BB83168361DA326BB13860371DAB788DC08B6746E0BBFA2CB27D9B02A0",
+    "functions/ca_combat_fixture/vindicator/spawn_caged.mcfunction": "76AB3C94C9DE17D589EBCD4575F77746CD3CD1230DA9E1B54F974AD182EA6C5C",
+    "functions/ca_combat_fixture/pillager/internal/clear_gear_body.mcfunction": "25D9817193D2948B2BEF79359BA496A8141989449DEEE0D47694405C370CFCC6",
+    "functions/ca_combat_fixture/pillager/internal/engage_body.mcfunction": "712135204C841942DEC83267350ECA6C1C83C71130F7BC33E955B83E4E0A11DA",
+    "functions/ca_combat_fixture/pillager/internal/return_body.mcfunction": "81D0DA4FBB326B4338B5C6F9FE4EE3BB9D332AFB571FADF1EDB104CD615CC91C",
+    "functions/ca_combat_fixture/vindicator/internal/clear_gear_body.mcfunction": "081AD70A44A57C2883BC242C7110F2AA9CDB3F8494E640D9327D8E323D76D546",
+    "functions/ca_combat_fixture/vindicator/internal/engage_body.mcfunction": "A83625365AAAC37170E6D3BC304F2B3C78E641E4E4FB4BD5F831CA0B28E9BB00",
+    "functions/ca_combat_fixture/vindicator/internal/return_body.mcfunction": "D360FE844AF8B42F33736A3FCFCF153F93D1818DBDF85CFC628E5E91937C6EFA"
+  },
+  "count": 27,
+  "proof": {
+    "inspectionTests": {
+      "pass": 15,
+      "fail": 0,
+      "durationMs": 396.9831
+    },
+    "nativeFileContractTests": {
+      "pass": 10,
+      "fail": 0,
+      "durationMs": 106.4152
+    },
+    "strictIsolatedTsc": "exit0",
+    "native": "NOT RUN"
+  },
+  "productionChanged": false,
+  "worldsChanged": false,
+  "ownerRisk": "Namespace-only fixture is a real siege orphan; next owner pass removes it. Manual window evidence required, else inconclusive."
+}

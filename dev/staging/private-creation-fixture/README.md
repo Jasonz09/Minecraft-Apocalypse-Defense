@@ -1,0 +1,37 @@
+# Private vanilla-fixture activation — isolated review candidate
+
+No production, installed pack, world, UI, public preparation command, timer or population owner was changed. This factory belongs inside the ORIGINAL main behavior-pack namespace. It constructs the same v2 creationBindings store and exposes it to the existing owner; it does not create, remove, move or credit actors. The compiled trust module is literally null: no genuine source receipt or nonce exists in this stage, so ordinary activation refuses before native reads/writes. Synthetic test trust is injected ONLY by the isolated Node loader and cannot be supplied through command arguments.
+
+## Root preparation and actual trust
+
+Root may create a genuinely NEW vanilla world in the native UI with NO behavior packs and population never enabled. Add only the scoreboard objective `ca_fresh_owner`, whose displayName is a root-generated unique nonce, then exactly one fake participant with score0. Suggested syntax with placeholders, not actual nonce evidence:
+
+`/scoreboard objectives add ca_fresh_owner dummy "<ROOT_GENERATED_NONCE>"`
+
+`/scoreboard players set <ROOT_GENERATED_FAKE_NAME> ca_fresh_owner 0`
+
+Save/quit and fully close Minecraft. Pin every file and both empty pack-binding files; verify global Scoreboard WAL contents and absence of the original main BP's owner/history namespace. Keep this blank source forever and work only on new clones. Compile the actual receipt SHA, level.dat SHA, fixture/epoch IDs, exact objective nonce/name and fake participant identity ID into freshFixtureTrust.js after review. The descriptor is NOT accepted in a public request or parsed fresh=true flag. No source world is retrospectively blessed by empty loaded census alone. Played Pillager/Vindicator/A5/B5 worlds remain excluded.
+
+The marker is global scoreboard data, so the later MAIN pack can read it without the external-pack dynamic-property namespace problem. The adapter reads main's own properties directly after that same BP is bound. Root's witnessed new-world/closed-copy chain is operator provenance. The engine cannot hash its closed LevelDB and a nonce is not cryptographic protection against a malicious operator copying markers or restoring arbitrary properties.
+
+## Exact runtime scope
+
+Activation requires one valid caller in Overworld, developer mode, no active job, people strictly off, and EXACT current-main DP key/value snapshot: ordinary serialize(createInitialKingdom()) plus civ_devgate=true. No people key even false, cursor, military, binding, construction, starter or unknown key is allowed. It checks exact global objective/one fake participant/score0 repeatedly. Across each native scoreboard/entity getter it repeats caller/control checks and repeats full property/scoreboard snapshots before and after the bounded loaded census. Each vanilla dimension uses closest65 with a seed location and refuses65 results; at most64 actual entities/dimension,64tags/entity,256chars/tag are inspected, including foreign/unreadable/duplicate identities. Any civpop/civbirth/civbesiege tag or custom swordsman refuses; natural unowned villagers are not acquired. Query/read errors never mean empty. Native API internal allocation of scoreboard arrays is not separately bounded by Script API; mismatched returned census refuses immediately.
+
+Important startup boundary: welcome seeds the normal kingdom on first player spawn and the existing simulation advances after1000ticks. Exact initial snapshot means activation must occur before that first accepted hour (~50seconds), or root must review a first-spawn private activation hook. This proposal does NOT silently authorize evolved kingdom/source states. After successful initialization, normal future development and play are allowed through the durable binding protocol; the runtime status checker does not require the world remain a virgin kingdom forever.
+
+## Durable activation and wiring obligations
+
+`civ:creation_activation:v1` is OUTSIDE core civ:pop_bind: family because core initialize correctly refuses preexisting binding-family keys. The adapter performs: exact fresh proof, durable intent+exact readback, private core.initialize with a closure-only freshness callback and repeated proof, exact initial header readback, repeated proof, then complete activation publication/readback. No clear, fallback, automatic pending rescue or generic epoch request is exposed. Before/after write faults preserve intent/header; a completed durable publication may remain complete if the process crashes after that final write. No cross-property native atomic CAS or arbitrary last-getter adversarial atomicity is claimed.
+
+The composed runtime MUST consult activationStatus BEFORE any legacy fallback or legacy initialization, preserve/refuse the whole activation family in starter/export, and HOLD unknown/partial/unconfigured intent or a fresh-mode header without matching completed activation. A legacy core epoch without activation remains its existing explicit legacy-preservation path. Completion status revalidates the core registry/epoch and DURABLE activation-marker raw text; it does not reread the global scoreboard after successful activation. Global scoreboard provenance is verified during activation only. Normal later play may change scoreboard data without reclassifying existing owned generations. Corrupt durable activation/binding state never produces store permission from an absence guess. No binding read is required to mutate the scoreboard; the adapter never writes scoreboard data at all.
+
+This folder has no production wiring promotion patch: root/creation-wiring author must compose the factory's store+activate+status into createCreationRuntime, route existing explicit fresh confirmation with a real Overworld player, hold the activation family in activeStore, and guard starter/export. V2 and composed wiring remain separate frozen sources. There is no production descriptor until root supplies genuine evidence; thus not promotion-ready.
+
+## Evidence
+
+36/36 lightweight focused tests PASS120.1081ms. Strict isolated project-option TypeScript exit0, no suppressions/relaxation. Tests cover default unconfigured refusal, exact synthetic proof, marker/identity mismatch, source/history keys, evolved save refusal, all three dimension census errors/caps/foreign claims, before/after all3 publication writes, silent saves, partial header, repeated initialization and getter/control/source races. The original harness module-resolution failure and one Map inference type error are retained; loader resolution and explicit heterogeneous tuple typing corrected them, no policy relaxation.
+
+These are fake-world tests, not native blank-world provenance, native scoreboard parsing, initial birth/unload/rejoin/gate-off acceptance or full-project verification. No heavy planner/full suite was run. Native actor creation remains exclusively the existing owner and is not exercised by this adapter.
+
+Primary references: [Scoreboard introduction](https://learn.microsoft.com/en-us/minecraft/creator/documents/scoreboardintroduction?view=minecraft-bedrock-stable), [scoreboard command](https://learn.microsoft.com/en-us/minecraft/creator/reference/content/commandsreference/examples/commands/scoreboard?view=minecraft-bedrock-stable). Installed @minecraft/server2.7.0 types independently confirm FakePlayer identity, readonly objective identity/displayName, getScores, and closest+location query cap. No external addon is used to read main's private dynamic properties.

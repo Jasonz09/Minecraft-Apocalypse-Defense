@@ -38,7 +38,7 @@ const SHOWPIECES = ["hq_citadel", "command_hall", "market_square", "chapel", "sc
  * @param {any} region
  * @param {any} zones result of zoneDistrict
  * @param {any[]} roads
- * @param {{ seed?: number, attempts?: number }} [options]
+ * @param {{ seed?: number, attempts?: number, buildable?: (x: number, z: number) => boolean, essentialKinds?: readonly string[], essentialOnce?: boolean }} [options]
  * @param {Ops} [ops]
  * @returns {Generator<void, any, void>}
  */
@@ -47,7 +47,7 @@ export function* makeLotsSteps(region, zones, roads, options = {}, ops = newOps(
     let best = null;
     let bestScore = -Infinity;
     for (let attempt = 0; attempt < attempts; attempt += 1) {
-        const result = yield* layoutOnceSteps(region, zones, roads, options.seed ?? 1, attempt, ops);
+        const result = yield* layoutOnceSteps(region, zones, roads, options.seed ?? 1, attempt, ops, options);
         const missed = result.unplaced.reduce((/** @type {number} */ sum, /** @type {any} */ u) => sum + Math.max(0, u.wanted - u.placed) * (SHOWPIECES.includes(u.kind) ? 3 : 1), 0);
         const score = (result.composition.ok ? 1000 : 0) - missed;
         if (score > bestScore) {
@@ -68,8 +68,9 @@ export function* makeLotsSteps(region, zones, roads, options = {}, ops = newOps(
  * @param {number} planSeed
  * @param {number} attempt
  * @param {Ops} ops
+ * @param {{ buildable?: (x: number, z: number) => boolean, essentialKinds?: readonly string[], essentialOnce?: boolean }} siting
  */
-function* layoutOnceSteps(region, zones, roads, planSeed, attempt, ops) {
+function* layoutOnceSteps(region, zones, roads, planSeed, attempt, ops, siting = {}) {
     const seed = (planSeed * 7919 + region.index * 104729 + attempt * 15485863 + 17) >>> 0;
     const rand = makeRng(seed);
     /** @type {import("./zoning.js").Grids} */
@@ -207,6 +208,7 @@ function* layoutOnceSteps(region, zones, roads, planSeed, attempt, ops) {
         for (let z = c.z0 - 1; z <= z1 + 1; z += 1) {
             for (let x = c.x0 - 1; x <= x1 + 1; x += 1) {
                 const i = idx(x, z);
+                if (siting.buildable && !siting.buildable(x, z)) return no("survey-ground");
                 const border = x < c.x0 || x > x1 || z < c.z0 || z > z1;
                 if (border) {
                     if (road[i] === 1 && !clipped(x, z)) {
@@ -501,8 +503,9 @@ function* layoutOnceSteps(region, zones, roads, planSeed, attempt, ops) {
     };
 
     // ------------------------------------------------------------ placement, biggest buildings first across all zones
-    /** @type {{ zone: import("./zoning.js").Zone, program: import("./zoning.js").Program | null, key: number }[]} */
+    /** @type {{ zone: import("./zoning.js").Zone, program: import("./zoning.js").Program | null, key: number, essential?: boolean }[]} */
     const tasks = [];
+    const primaryKinds = new Set();
     for (const zone of zones.zones) {
         if (!zone.buildable || zone.programs.length === 0) {
             continue;
@@ -514,11 +517,22 @@ function* layoutOnceSteps(region, zones, roads, planSeed, attempt, ops) {
         for (const program of zone.programs) {
             const hasSquare = zones.zones.some((/** @type {any} */ z) => z.type === "square" && z.parent === zone.id);
             const squareBound = hasSquare && (program.kind === "well" || program.kind === "market_square");
-            tasks.push({ zone, program, key: program.kind === "hq_citadel" ? 2e6 : squareBound ? 1e6 : footprint(program.kind) });
+            if (siting.essentialOnce) {
+                const count = program.count ?? 0;
+                const essential = count > 0 && siting.essentialKinds?.includes(program.kind) && !primaryKinds.has(program.kind);
+                if (essential) {
+                    primaryKinds.add(program.kind);
+                    tasks.push({ zone, program: { ...program, count: 1 }, essential: true, key: program.kind === "hq_citadel" ? 2e6 : squareBound ? 1e6 : 5e5 + footprint(program.kind) });
+                }
+                const remaining = count - (essential ? 1 : 0);
+                if (remaining > 0) tasks.push({ zone, program: { ...program, count: remaining }, key: squareBound ? 1e6 : footprint(program.kind) });
+                continue;
+            }
+            tasks.push({ zone, program, key: program.kind === "hq_citadel" ? 2e6 : squareBound ? 1e6 : (siting.essentialKinds?.includes(program.kind) ? 5e5 : 0) + footprint(program.kind) });
         }
     }
     tasks.sort((a, b) => b.key - a.key || a.zone.id - b.zone.id);
-    for (const { zone, program } of tasks) {
+    for (const { zone, program, essential } of tasks) {
         if (program === null) {
             yield* fillFields(zone, zone.programs[0]);
             continue;
@@ -548,6 +562,9 @@ function* layoutOnceSteps(region, zones, roads, planSeed, attempt, ops) {
         }
         if (got < wanted) {
             got += yield* placeFrontage(zone, program.kind, wanted - got);
+        }
+        if (got < wanted && (essential === true || (!siting.essentialOnce && siting.essentialKinds?.includes(program.kind))) && (!siting.essentialOnce || program.kind !== "hq_citadel")) {
+            got += yield* placeFrontage(anywhere, program.kind, wanted - got, { allowCommons: true });
         }
         if (got < wanted) {
             unplaced.push({ zone: zone.id, zoneType: zone.type, kind: program.kind, wanted, placed: got });

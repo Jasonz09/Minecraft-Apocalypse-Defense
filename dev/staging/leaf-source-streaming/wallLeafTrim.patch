@@ -1,0 +1,94 @@
+--- CivilizationApocalypse_BP/scripts/civ/wallLeafTrim.js
++++ CivilizationApocalypse_BP/scripts/civ/wallLeafTrim.js
+@@ -55,7 +55,12 @@
+  * @param {{index:number,checksum:string,masterHash:string,dimension:string,candidates:any[],sources:{record:any,civ:any,masterHash:string}[]}} input
+  * @param {{opsFor?:typeof siteOpsFor}} deps
+  * @returns {Generator<undefined,LeafPlan,unknown>} */
+-export function* compileLeafTrimSteps(input,deps={}) {
++/** @typedef {{index:number,checksum:string,masterHash:string,dimension:string,requested:LeafPoint[],candidates:LeafPoint[],sources:LeafSourceId[],wanted:Set<string>,historical:Set<string>,finals:Map<string,Map<number,{stage:string,index:number,op:LeafOp}>>,processed:Set<number>,scanned:number,work:number,active:boolean}} LeafAccumulatorState */
++/** @type {WeakMap<object,LeafAccumulatorState>} */
++const LEAF_ACCUMULATORS=new WeakMap();
++/** Shared private-state compiler capability. It never retains input records or producer closures. */
++/** @param {LeafInput} input */
++export function createLeafTrimAccumulator(input){
+     if(!Number.isInteger(input.index)||input.index<1||input.index>5||!hash(input.checksum)||!hash(input.masterHash)||input.dimension!=="minecraft:overworld")fail("invalid leaf-trim source identity");
+     if(!Array.isArray(input.candidates)||input.candidates.length<1||input.candidates.length>LIMITS.targets||input.candidates.some(p=>!point(p))||new Set(input.candidates.map(key)).size!==input.candidates.length)fail("invalid or oversized leaf-trim candidate list");
+     if(!Array.isArray(input.sources)||input.sources.length<1||input.sources.length>5)fail("all verified source plans are required");
+@@ -67,12 +72,26 @@
+     }
+     if(!records.has(input.index))fail("active district source is missing");
+     sources.sort((a,b)=>a.index-b.index);
+-    const wanted=new Set(input.candidates.flatMap(cube).map(key)),historical=new Set(),finals=new Map();
+-    const opsFor=deps.opsFor??siteOpsFor;let work=0,scanned=0;
+-    for(const {record} of input.sources)for(const stage of SITE_STAGES) {
++    const token=Object.freeze({});
++    LEAF_ACCUMULATORS.set(token,{index:input.index,checksum:input.checksum,masterHash:input.masterHash,dimension:input.dimension,
++        requested:input.candidates.map(p=>({x:p.x,y:p.y,z:p.z})),candidates:clone(input.candidates),sources,
++        wanted:new Set(input.candidates.flatMap(cube).map(key)),historical:new Set(),finals:new Map(),processed:new Set(),scanned:0,work:0,active:false});
++    return token;
++}
++/** @param {object} token */
++function accumulatorState(token){const state=LEAF_ACCUMULATORS.get(token);if(!state)fail("incomplete or foreign leaf summary capability");return state;}
++/** Accumulate every source operation, retaining only wanted-cell history and final claims. */
++/** @param {object} token @param {{record:any,civ:any,masterHash:string}} source @param {LeafDependencies} [deps] */
++export function* accumulateLeafSourceSteps(token,{record,civ,masterHash},deps={}){
++    const state=accumulatorState(token),expected=state.sources.find(s=>s.index===record?.districtIndex);
++    if(!expected||state.processed.has(record.districtIndex)||record.checksum!==expected.checksum||civ?.status!=="complete"||civ.checksum!==record.checksum||civ.dimension!==state.dimension||masterHash!==state.masterHash)fail("source plan/completion/dimension/master proof is missing or ambiguous");
++    const {wanted,historical,finals}=state,opsFor=deps.opsFor??siteOpsFor;
++    if(state.active){LEAF_ACCUMULATORS.delete(token);fail("concurrent leaf source accumulation refused");}
++    state.active=true;let complete=false;
++    try{for(const stage of SITE_STAGES){
+         if(!Array.isArray(record[stage]))fail("verified source is missing a stage");
+-        for(let index=0;index<record[stage].length;index++)for(const op of opsFor(record,stage,index)) {
+-            scanned++;if(++work>=LIMITS.compileOpsPerYield){work=0;yield;}
++        for(let index=0;index<record[stage].length;index++)for(const op of opsFor(record,stage,index)){
++            state.scanned++;if(++state.work>=LIMITS.compileOpsPerYield){state.work=0;yield;}
+             if(!point(op))fail("source contains invalid coordinates");
+             const at=key(op);if(!wanted.has(at))continue;
+             if(historicalDecor(op,stage))historical.add(at);
+@@ -80,6 +99,16 @@
+             byDistrict.set(record.districtIndex,{stage,index,op:clone(op)});finals.set(at,byDistrict);
+         }
+     }
++    if(record.checksum!==expected.checksum||record.districtIndex!==expected.index||civ?.status!=="complete"||civ.checksum!==expected.checksum||civ.dimension!==state.dimension||masterHash!==state.masterHash)fail("source identity changed during accumulation");
++    state.processed.add(record.districtIndex);complete=true;
++    }finally{state.active=false;if(!complete)LEAF_ACCUMULATORS.delete(token);}
++}
++/** Finalization requires the complete exact source manifest, never a partial summary. */
++/** @param {object} token @returns {LeafPlan} */
++export function finishLeafTrimAccumulator(token){
++    const state=accumulatorState(token);
++    if(state.active||state.processed.size!==state.sources.length||state.sources.some(s=>!state.processed.has(s.index)))fail("all verified source plans are required before finalization");
++    const {historical,finals,sources}=state,input={index:state.index,checksum:state.checksum,masterHash:state.masterHash,dimension:state.dimension,candidates:state.candidates};
+     const proposals=[],refused=[];
+     for(const candidate of input.candidates) {
+         const own=finals.get(key(candidate))?.get(input.index);
+@@ -96,8 +125,16 @@
+         proposals.push({target:clone(own.op),contacts});
+     }
+     const body={v:1,policy:POLICY,index:input.index,checksum:input.checksum,masterHash:input.masterHash,dimension:input.dimension,sources,requested:input.candidates.map(p=>({x:p.x,y:p.y,z:p.z})),proposals,refused};
+-    return freeze({...body,planId:signature(body),compileScannedOps:scanned});
+-}
++    const result=freeze({...body,planId:signature(body),compileScannedOps:state.scanned});LEAF_ACCUMULATORS.delete(token);return result;
++}
++/** Preserve the public batch API through the same summary/assembly implementation. */
++/** @param {LeafInput} input @param {LeafDependencies} [deps] @returns {Generator<undefined,LeafPlan,unknown>} */
++export function* compileLeafTrimSteps(input,deps={}){
++    const token=createLeafTrimAccumulator(input);
++    for(const source of input.sources)yield* accumulateLeafSourceSteps(token,source,deps);
++    return finishLeafTrimAccumulator(token);
++}
++
+ /** @param {LeafInput} input @param {LeafDependencies} [deps] @returns {LeafPlan} */
+ export function compileLeafTrim(input,deps){const g=compileLeafTrimSteps(input,deps);for(;;){const next=g.next();if(next.done)return next.value;}}
+ 
+@@ -191,6 +228,9 @@
+     for(let i=0;i<value.entries.length;i++)if(value.entries[i].target!==key(plan.proposals[i].target)||value.entries[i].desired.id!==plan.proposals[i].target.id)fail("journal planned material differs; preserve it");
+     return value;
+ }
++/** Exact existing recovery binding for a fully compiled plan; no write authorization. */
++/** @param {unknown} raw @param {LeafPlan} plan */
++export function readLeafTrimReceiptForPlan(raw,plan){return freeze(clone(decodeJournal(raw,plan)));}
+ /** @param {LeafStore} io @param {unknown} expected */
+ function journalCAS(io,expected){if(io.load()!==expected)fail("journal changed externally; preserve both the world and receipt");}
+ /** @param {LeafContext} ctx @param {any} plan */

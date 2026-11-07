@@ -1,0 +1,56 @@
+{
+  "scope": "STAGING ONLY/FROZEN final24tinyfocused+strictisolatedTSC; no active changes/full/native",
+  "baselineCommandSha256": "71CE4E760852794956E417FA279838ABB08C8920FDB9274FC48CBA979D8CFA5C",
+  "cadenceCandidateCurrentPins": {
+    "CivilizationApocalypse_BP/scripts/integration/civilianTravel.js": "514D1F8D4AEAE51954194FF4F0BB75F82512F0E19A762E483828F1D2F0FF7DF7",
+    "CivilizationApocalypse_BP/scripts/people/travel.js": "BA1963B4F31EA33E998D0D1875AAC8F4CBD4542CEED44C5C3A9F557391561034",
+    "CivilizationApocalypse_BP/scripts/main.js": "417E9C7181F9792CCAB013ED2BC48CA66AA05F169A8E8DF141A919554998AF62"
+  },
+  "files": [
+    {
+      "source": "dev/staging/room-vegetation-preview/proposed/CivilizationApocalypse_BP/scripts/civ/roomVegetationPreview.js",
+      "target": "CivilizationApocalypse_BP/scripts/civ/roomVegetationPreview.js",
+      "baselineSha256": null,
+      "sha256": "E46430967316168506A2C758DF15CFEA1A5D3D06DE18723E78DB1849182F5E8E"
+    },
+    {
+      "source": "dev/staging/room-vegetation-preview/proposed/CivilizationApocalypse_BP/scripts/commands/civ.js",
+      "target": "CivilizationApocalypse_BP/scripts/commands/civ.js",
+      "baselineSha256": "71CE4E760852794956E417FA279838ABB08C8920FDB9274FC48CBA979D8CFA5C",
+      "sha256": "1AF50D3DF4BF52F65AE48BD94A7CDB00A506754E8BECC50CCA1B718A9C64B91A"
+    },
+    {
+      "source": "dev/staging/room-vegetation-preview/proposed-dev/test/room-vegetation-preview.test.mjs",
+      "target": "dev/test/room-vegetation-preview.test.mjs",
+      "baselineSha256": null,
+      "sha256": "44A1550E24FFAF96AA105459EA303C21BC34D9731B22F28385FF2D1F4814850B"
+    }
+  ],
+  "evidence": {
+    "focused": {
+      "pass": 24,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "durationMs": 166.112
+    },
+    "strictIsolatedTsc": {
+      "exitCode": 0
+    },
+    "historicalHarnessFailure": "First overlay missing-module resolution failed before executing tests; fixed staging loader only; candidate source unchanged",
+    "heavyHydration": "NOT RUN",
+    "native": "NOT RUN",
+    "full": "NOT RUN"
+  },
+  "contracts": [
+    "475uniqueactualcells incl455room+20cornerposts; cap1024",
+    "No holds/writes/timers/owner/journal/cleanup authorization",
+    "Source-bound completed original queue/checksum/master verified throughloader",
+    "Guard before/after eachnativegetter andthroughyields",
+    "All fullstates primitive or explicitUNREADABLE;1024cell/256readslice budgets",
+    "32formattedrowsperpage; no native queries informatter",
+    "No engine timestamp or persistent pagingcache; newpage invocation rereads source+census; across-ticks notatomic",
+    "Selecteddistrict expectedops only; absentopnull,notAIRpermission/crossdistrictownership",
+    "Pure prioritysort: unplannedlogs,leafdiscrepancies,otherunknowns/unloaded,thenlabeledplannedstructure/cornerposts;0newnativequeries"
+  ]
+}

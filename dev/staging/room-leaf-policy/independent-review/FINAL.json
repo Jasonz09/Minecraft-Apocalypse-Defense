@@ -1,0 +1,61 @@
+{
+  "scope": "STAGING ONLY independent review and root-authorized safety/typing fixes; no production/native/adapter/writer/fullsuite",
+  "files": {
+    "dev/staging/room-leaf-policy/policy.mjs": "401B38DFD38013E1B55C682C372CD93BB285E4BD5D642B53915FFC6260829D5D",
+    "dev/staging/room-leaf-policy/policy.test.mjs": "C3CC05556348E745E86C0D901E1BF7C3732D9634C900F9D158CA31E8189DE7ED",
+    "dev/staging/room-leaf-policy/independent-review/contract-repro.test.mjs": "FE57E5D4CCB9AE7339108C91363EFD47FA9F974188B9BAE3478352281A39EEE1"
+  },
+  "baselineFindings": "independent-review/FINDINGS-before-fixes.json",
+  "history": {
+    "originalCheckpoint": "CHECKPOINT-before-independent.json",
+    "originalPolicy": "policy-before-independent-fixes.mjs",
+    "originalTypecheckExit": 2,
+    "originalTypecheckDiagnostics": 38,
+    "originalFocused": {
+      "pass": 11,
+      "durationMs": 132.8995
+    },
+    "reproducerBeforeFixes": {
+      "pass": 3,
+      "durationMs": 69.3629,
+      "meaning": "confirmed gaps, not safe eligibility"
+    },
+    "logsRetained": true
+  },
+  "finalFocused": {
+    "coreCases": 14,
+    "independentRegressions": 3,
+    "pass": 17,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 251.1026,
+    "log": "independent-review/focused-fixed.log",
+    "logSha256": "92E806C05304030A9E6E4DED5F7888D4E04598B741E61EC8F5B92028890AD2B8"
+  },
+  "strictIsolatedTsc": {
+    "exitCode": 0,
+    "config": "independent-review/tsconfig.json",
+    "configSha256": "40AA6F07618B29A890FFEEB47D9B1EB714E66710A0D7EA345952200EA8A43508",
+    "log": "independent-review/typecheck-final.log",
+    "noRelaxedStrictFlags": true,
+    "noTsIgnore": true
+  },
+  "fixes": [
+    "Explicit JSDoc boundaries and typed Snapshot/States/Claim/Point/maps; boolean current callback; safe unknown-catch handling",
+    "Exact full state-key/value match, not declared subset",
+    "Historical plants or unknown noninert decoration veto despite laterAIR; onlyexplicitinertstructure/lantern allowlist bypasses this historicalcheck",
+    "Interior projection requires source-buildingId; ONLYsame selectedbuilding may be excluded, otherroom in selecteddistrict remainsprotected"
+  ],
+  "nativeStatus": {
+    "tenKnownLeavesHaveUnknownLogContacts": true,
+    "historicalAdjacencyReceipt": "independent-review/FINDINGS-before-fixes.json",
+    "positiveEligibilityProven": false,
+    "fresh27CubesPresent": false,
+    "authenticatedFiveSourcesAndProtectionPresent": false,
+    "newNativeAdapter": "NOT CREATED",
+    "writer": "NONE",
+    "writePermission": false
+  },
+  "productionScope": "No BP/RP/coretest/deploy/UI/world changes by this agent. Parent may independently integrate progress; current main freeze not reasserted by isolated policy checks."
+}

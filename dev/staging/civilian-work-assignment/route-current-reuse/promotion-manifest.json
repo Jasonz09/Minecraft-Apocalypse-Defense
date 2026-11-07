@@ -1,0 +1,48 @@
+{
+  "utc": "2026-11-06T16:51:13.063864+00:00",
+  "scope": "STAGED controller-only; no active/source160/testglob/deploy/UI changes",
+  "production": [
+    {
+      "target": "CivilizationApocalypse_BP/scripts/integration/civilianDestinations.js",
+      "proposal": "dev/staging/civilian-work-assignment/route-current-reuse/proposed/CivilizationApocalypse_BP/scripts/integration/civilianDestinations.js",
+      "baseSHA256": "37668DAC1FCEC85765BF7591222FA2586D209B325B3C0BE1C3262864B5DA6019",
+      "sha256": "168ADFCD2542FE614EFC9EB02D8CCCA0D57A542AE595C0B8683285FA7916E08C"
+    }
+  ],
+  "tests": [
+    {
+      "target": "dev/test/civilian-route-current.test.mjs",
+      "proposal": "dev/staging/civilian-work-assignment/route-current-reuse/tests/dev/test/civilian-route-current.test.mjs",
+      "sha256": "75241A79A90F8F4390FE83D28D055C872B9727EF357D9647507DA0543F1BA3A6",
+      "newCases": 10
+    }
+  ],
+  "focused": {
+    "tests": 41,
+    "pass": 41,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 2607.5822,
+    "log": "dist/route-current-reuse-final-focused-20261106.log"
+  },
+  "strictTypecheck": {
+    "pass": true,
+    "log": "dist/route-current-reuse-final-typecheck-20261106.log"
+  },
+  "negativeControl": {
+    "log": "dist/route-current-reuse-baseline-negative-20261106.log",
+    "actualBaselineValidatedKingdomLoads": 557,
+    "expectedProposedLoads": 187,
+    "unchangedFullAuditCalls": 186,
+    "scope": "Same tiny simulated positive command; call counts only, not native runtime/heap benchmark"
+  },
+  "safety": "Same full createWallLeafSourceGuard.current every productive check/native getter; no raw-source audit deferred to yields; no leaf/planner/driver edits. Per-call capture frame, constructor ignored, finally release, reentry invalidates. Fast token/player/dimension and reentry are checked again after all selected snapshot getters, without another kingdom read.",
+  "pending": [
+    "Root review",
+    "Central focused/typecheck/full verification",
+    "Closed deployment",
+    "Actual native timing/path result and closed log"
+  ],
+  "initialFailedHarnessLog": "dist/route-current-reuse-focused-20261106.log"
+}

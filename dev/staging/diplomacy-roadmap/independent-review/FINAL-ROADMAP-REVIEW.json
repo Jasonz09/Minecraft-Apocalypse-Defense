@@ -1,0 +1,119 @@
+{
+  "utc": "2026-11-07T02:17:50.161942+00:00",
+  "reviewer": "roadmap_review",
+  "recommendation": "No concrete blocker found in final preserved-extension proposal; eligible for central integration/full gates, not native acceptance",
+  "scope": "read-only production proposal review; writes limited to independent review tests/log/receipt",
+  "pins": [
+    {
+      "target": "CivilizationApocalypse_BP/scripts/config.js",
+      "sha256": "5B6E5325C3EB32B6C41EB3456E39AB529FC96C11B69A62BCF4DC8080C6F8D816",
+      "matchesFrozen": true,
+      "runtimeBytesMatch": true
+    },
+    {
+      "target": "CivilizationApocalypse_BP/scripts/kingdom/migrations.js",
+      "sha256": "7DF74F7EF9D9A258F8619D79C4249C59AD266A49D79932A970B91AAA1A104794",
+      "matchesFrozen": true,
+      "runtimeBytesMatch": true
+    },
+    {
+      "target": "CivilizationApocalypse_BP/scripts/kingdom/state.js",
+      "sha256": "D86F68AE94D64A41437096E9FFB569E63148001B5F72A5FCA8603330F21F4ABD",
+      "matchesFrozen": true,
+      "runtimeBytesMatch": true
+    },
+    {
+      "target": "CivilizationApocalypse_BP/scripts/kingdom/store.js",
+      "sha256": "2A899E946C031AFE8A1C753730EE97018ADD920FE9A9D5F98D20242B9EDDE20A",
+      "matchesFrozen": true,
+      "runtimeBytesMatch": true
+    },
+    {
+      "target": "CivilizationApocalypse_BP/scripts/ledger/actions.js",
+      "sha256": "A73ABE7D79AC2EC4BC7056801D78B855EAE0700F4298B58A41BC86F74EE889A6",
+      "matchesFrozen": true,
+      "runtimeBytesMatch": true
+    },
+    {
+      "target": "CivilizationApocalypse_BP/scripts/ledger/menus-kingdom.js",
+      "sha256": "7C1679DE6237DA82A99799365EF153B40E556AD6F93DB449321BFC1FC84A6D11",
+      "matchesFrozen": true,
+      "runtimeBytesMatch": true
+    },
+    {
+      "target": "CivilizationApocalypse_BP/scripts/ledger/menus.js",
+      "sha256": "C9565EEE15E07CB39D66CEB3F564A0B8F28BF5C47BBB26006B2CE6694D0E1725",
+      "matchesFrozen": true,
+      "runtimeBytesMatch": true
+    },
+    {
+      "target": "CivilizationApocalypse_BP/scripts/sim/diplomacy.js",
+      "sha256": "FA6EC2F3418AB653E4898E07D4C322FAD13D0BEC7C4C20E0B6E0D1351488997E",
+      "matchesFrozen": true,
+      "runtimeBytesMatch": true
+    },
+    {
+      "target": "CivilizationApocalypse_BP/scripts/sim/tick.js",
+      "sha256": "4E14AB1A0F739A1F783D363BC6FEF6285DAAB1B8EC0FDA7A792DBAB5ABAFB3C9",
+      "matchesFrozen": true,
+      "runtimeBytesMatch": true
+    },
+    {
+      "target": "dev/test/core-v2.test.mjs",
+      "sha256": "8390AAE809812DB04F1DDF8E9525E975B75A507D79E43E8CED3778878A378C5B",
+      "matchesFrozen": true,
+      "runtimeBytesMatch": true
+    },
+    {
+      "target": "dev/test/diplomacy-roadmap.test.mjs",
+      "sha256": "E97EED9F96108A138B9156248CB69974EEC36C8E4ABC6B196DEC8249A79AF44B",
+      "matchesFrozen": true,
+      "runtimeBytesMatch": true
+    },
+    {
+      "target": "dev/test/kingdom.test.mjs",
+      "sha256": "4BF1A54464D62879515E22653F7454C50090FEC4CA104BE181C897AF1D40DC54",
+      "matchesFrozen": true,
+      "runtimeBytesMatch": true
+    },
+    {
+      "target": "dev/test/ledger-presenters.test.mjs",
+      "sha256": "8F9E831D13DABE31B32CB8C55AF3504167DECC8E1993E7C5F732B6DA041E2EB7",
+      "matchesFrozen": true,
+      "runtimeBytesMatch": true
+    }
+  ],
+  "executed": [
+    {
+      "suite": "exact packaging extension-preservation ten cases",
+      "pass": 10,
+      "durationMs": 82.6235,
+      "log": "extension-preservation-review-rerun.log"
+    },
+    {
+      "suite": "prior independent migration/arrival-savefault/fresh-alliance-target",
+      "pass": 3,
+      "durationMs": 116.9689
+    },
+    {
+      "suite": "actual room cached reader with proposed schema3 decoder",
+      "pass": 2,
+      "durationMs": 74.2822,
+      "log": "room-cache-schema3.log"
+    }
+  ],
+  "findings": [],
+  "reviewedContracts": [
+    "v2->3 spreads existing records; v1->2->3 registered; legacy preexisting diplomacy extension refuses",
+    "Malformed/missing/null/future current diplomacy returns unsupported/newer and direct save guard preserves raw kingdom without quarantine",
+    "Ledger execute reloads fresh state after confirmation then mutates private copy; readiness/fees/mission occupancy rechecked; failed save retains persisted source",
+    "Accepted hour snapshot rollback includes diplomacy; returning report and mission resolution transactional with existing hour",
+    "Room reader uses actual new store decoder: current schema3 cached only after full validation/freeze; changed malformed/future bytes invalidate; migrated schema2 is readonly and not cached as current"
+  ],
+  "remainingGates": [
+    "Central combined full suite and storage budget under composed batch",
+    "Schema3 prevents rollback to old schema2 pack without preupgrade world backup",
+    "Native Ledger forms, multiplayer authorization and mission save/rejoin acceptance remain pending",
+    "Distant realms remain aggregate reports; physical settlements, travel/trade/assistance and military casualty authority are not implemented"
+  ]
+}

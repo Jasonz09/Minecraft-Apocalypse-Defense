@@ -1,0 +1,67 @@
+--- CivilizationApocalypse_BP\scripts\people\workRoutePreview.js
++++ CivilizationApocalypse_BP\scripts\people\workRoutePreview.js
+@@ -58,6 +58,12 @@
+  const roadHints=new Set(ctx.roadHints??[]),cache=new Map();let reads=0,inSlice=0,work=0,maxReads=0,yields=0,unloaded=0,directed=0;
+  const reasons={unknownFooting:0,body:0,unloaded:0,headroom:0};
+  /** @type {any[]} */ const samples=[];
++ // Observations only: overlapping search rejections do not establish a global cause.
++ /** @param {string} kind @param {any} p @param {string|undefined} observedId @param {string} expected */
++ function sample(kind,p,observedId,expected){
++  if(samples.length>=8||samples.filter(s=>s.kind===kind).length>=2||samples.some(s=>s.kind===kind&&key(s.point)===key(p)))return;
++  samples.push({kind,reason:kind==='unloaded'?'unloaded/unreadable':kind,point:{x:p.x,y:p.y,z:p.z},observedId:observedId??null,expected});
++ }
+  function current(){if(ctx.cancelled?.()||ctx.current()!==true)fail('source/player/dimension/cancellation changed during loaded route preview');}
+  function* pace(){current();if(inSlice>=L.readsPerSlice||work>=L.workPerSlice){maxReads=Math.max(maxReads,inSlice);yield;current();inSlice=0;work=0;yields++;}}
+  /** @param {any} p @param {boolean} [fresh] @returns {Generator<undefined,string|undefined,unknown>} */
+@@ -67,16 +73,16 @@
+   yield* pace();if(reads>=L.totalReads)fail('total native read budget exceeded');reads++;inSlice++;work++;
+   let id,valid;
+   try{const block=ctx.read({x:p.x,y:p.y,z:p.z});valid=block?.isValid;id=block?.typeId;}catch{valid=false;}
+-  current();if(valid!==true||typeof id!=='string'){id=undefined;unloaded++;reasons.unloaded++;if(samples.length<8)samples.push({point:clone(p),reason:'unloaded/unreadable'});}
++  current();if(valid!==true||typeof id!=='string'){sample('unloaded',p,typeof id==='string'?id:undefined,'readable valid loaded block with typeId');id=undefined;unloaded++;reasons.unloaded++;}
+   if(!fresh){if(cache.size>=L.cachedCells&&!cache.has(at))fail('bounded native-cell cache exceeded');cache.set(at,id);}
+   return id;
+  }
+  /** @param {any} p @returns {Generator<undefined,any,unknown>} */
+  function* stand(p){
+   if(p.y< -64||p.y>317)return undefined;
+-  const floor=yield* read(p);if(!isKnownTravelFooting(floor)){reasons.unknownFooting++;return undefined;}
++  const floor=yield* read(p);if(!isKnownTravelFooting(floor)){reasons.unknownFooting++;sample('unknownFooting',p,floor,'known travel footing (existing policy)');return undefined;}
+   const feet=yield* read({...p,y:p.y+1}),head=yield* read({...p,y:p.y+2});
+-  if(!isTravelBodyAir(feet)||!isTravelBodyAir(head)){reasons.body++;return undefined;}
++  if(!isTravelBodyAir(feet)||!isTravelBodyAir(head)){reasons.body++;if(!isTravelBodyAir(feet))sample('body',{...p,y:p.y+1},feet,'minecraft:air at feet');if(!isTravelBodyAir(head))sample('body',{...p,y:p.y+2},head,'minecraft:air at head');return undefined;}
+   return{x:p.x,y:p.y,z:p.z,id:floor};
+  }
+  /** @param {any} a @param {any} b */
+@@ -90,15 +96,19 @@
+  let goalIndex;
+  try{
+   current();const start=yield* stand(endpoints.home.floor),goal=yield* stand(endpoints.farm.floor);
+-  if(!start||!goal)return freeze({state:'REFUSED_ENDPOINT',reason:'saved frontage is unloaded, obstructed or unsafe',permission:false,verticalPermission:false,reads,maxReadsPerSlice:Math.max(maxReads,inSlice),unloaded});
+-  if(start.id!==endpoints.home.floor.id||goal.id!==endpoints.farm.floor.id)return freeze({state:'REFUSED_ENDPOINT',reason:'saved endpoint floor differs from exact planned material',permission:false,verticalPermission:false,reads,maxReadsPerSlice:Math.max(maxReads,inSlice),unloaded});
++  if(!start||!goal)return freeze({state:'REFUSED_ENDPOINT',reason:'saved frontage is unloaded, obstructed or unsafe',permission:false,verticalPermission:false,reads,maxReadsPerSlice:Math.max(maxReads,inSlice),unloaded,reasons,samples});
++  if(start.id!==endpoints.home.floor.id||goal.id!==endpoints.farm.floor.id){
++   if(start.id!==endpoints.home.floor.id)sample('endpointMaterial',endpoints.home.floor,start.id,`exact saved footing ${endpoints.home.floor.id}`);
++   if(goal.id!==endpoints.farm.floor.id)sample('endpointMaterial',endpoints.farm.floor,goal.id,`exact saved footing ${endpoints.farm.floor.id}`);
++   return freeze({state:'REFUSED_ENDPOINT',reason:'saved endpoint floor differs from exact planned material',permission:false,verticalPermission:false,reads,maxReadsPerSlice:Math.max(maxReads,inSlice),unloaded,reasons,samples});
++  }
+   push(start,0,null);const order=[[0,-1],[1,0],[0,1],[-1,0]],height=[0,1,-1];
+   while(heap.size){
+    yield* pace();work++;const[,index]=heap.pop(),p=nodes[index],at=key(p);if(best.get(at)!==index||closed.has(at))continue;closed.add(at);
+    if(at===key(goal)){goalIndex=index;break;}if(p.g>=L.pathEdges)continue;
+    for(const[dx,dz]of order){let selected;
+     for(const dy of height){const candidate=yield* stand({x:p.x+dx,y:p.y+dy,z:p.z+dz});if(!candidate)continue;
+-     if(dy===1&&!isTravelBodyAir(yield* read({x:p.x,y:p.y+3,z:p.z}))){reasons.headroom++;continue;}
++     if(dy===1){const overhead=yield* read({x:p.x,y:p.y+3,z:p.z});if(!isTravelBodyAir(overhead)){reasons.headroom++;sample('headroom',{x:p.x,y:p.y+3,z:p.z},overhead,'minecraft:air above rising actor');continue;}}
+      selected=candidate;break;
+     }
+     if(!selected)continue;if(++directed>L.directedEdges)fail('native route edge budget exceeded');push(selected,p.g+1,index);yield* pace();
+@@ -126,6 +136,8 @@
+ export function formatLoadedWorkRoutePreview(view){return[
+  `Saved work route preview: ${view.state}; ${view.reason??view.scope}`,
+  `Native reads${view.reads}; max/slice${view.maxReadsPerSlice}/256; visited${view.visited??0}; unloaded${view.unloaded??0}; path edges${view.waypoints?view.waypoints.length-1:0}.`,
++ ...(view.reasons?[`Search rejection counts (overlapping observations): footing${view.reasons.unknownFooting}; body${view.reasons.body}; rise headroom${view.reasons.headroom}; unloaded/unreadable${view.reasons.unloaded}.`]:[]),
++ ...(view.samples?.length?[`Observed samples${view.samples.length}/8 (max2 per reason); examples, not proof of why the entire path was not found.`,...view.samples.slice(0,8).map((/** @type {any} */ s)=>`${s.kind} at ${key(s.point)}: observed ${s.observedId??'unavailable'}; expected ${s.expected}.`)]:[]),
+  ...(view.waypoints?[`Home${view.home.id} lot${view.home.lotId}; farm${view.farm.id} lot${view.farm.lotId}; checksum${view.checksum}.`,...view.waypoints.slice(0,8).map((/** @type {any} */ p,/** @type {number} */ index)=>`point${index}: ${p.x},${p.y},${p.z}; floor${p.floor.id}`),...(view.waypoints.length>8?[`Showing8/${view.waypoints.length} observed points; no movement permission.`]:[])]:[]),
+  'Read-only: no blocks, properties, entities, impulses, teleports, chunk holds, timer or production changed. Vertical stepping remains a separate native microgate.'
+ ];}

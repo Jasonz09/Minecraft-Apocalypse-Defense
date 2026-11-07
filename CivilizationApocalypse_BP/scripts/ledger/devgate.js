@@ -1,9 +1,11 @@
 import { LEDGER_DEV_GATE_KEY, LEDGER_EVENT_IDS, LEDGER_NAMESPACE } from "./ids.js";
+import { STARTER } from "../config.js";
 
 /**
  * The development gate of the Commander's Ledger and its switch, `civ:ledger_devgate on|off`.
  *
- * Off by default: a world without the property has no working Ledger. The switch is the one script-event
+ * Unarmed authoring worlds are off by default; prepared templates enable the ordinary Ledger without this
+ * development property. An explicit off still disables it. The switch is the one script-event
  * listener that exists while the gate is off, because it is the only way to turn the gate on. It is
  * registered unconditionally by main.js (through integration/ledgerBindings.js). Turning the gate on also
  * registers the Ledger's own handlers at once, so no reload is needed.
@@ -24,11 +26,14 @@ import { LEDGER_DEV_GATE_KEY, LEDGER_EVENT_IDS, LEDGER_NAMESPACE } from "./ids.j
 
 /**
  * @param {WorldLike} world
- * @returns {boolean} true only when the development gate is explicitly on; an unreadable world counts as off
+ * @param {any} [kingdom] validated saved kingdom; an armed template enables ordinary play
+ * @returns {boolean} an explicit development override wins; unreadable state counts as off
  */
-export function ledgerGateOn(world) {
+export function ledgerGateOn(world, kingdom) {
     try {
-        return world.getDynamicProperty(LEDGER_DEV_GATE_KEY) === true;
+        const override = world.getDynamicProperty(LEDGER_DEV_GATE_KEY);
+        if (override === true || override === false) return override;
+        return kingdom?.starter?.templateId === STARTER.templateId;
     } catch (_error) {
         return false;
     }

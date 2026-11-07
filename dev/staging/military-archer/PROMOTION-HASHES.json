@@ -1,0 +1,102 @@
+{
+  "scope": "staged archer vertical slice only; no promotion/native acceptance",
+  "focused": {
+    "tests": 54,
+    "pass": 54,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 316.1523
+  },
+  "strictTypecheck": {
+    "exitCode": 0,
+    "config": "tsconfig.json",
+    "log": "typecheck.log"
+  },
+  "files": [
+    {
+      "source": "dev/staging/military-archer/proposed/CivilizationApocalypse_BP/entities/archer.json",
+      "target": "CivilizationApocalypse_BP/entities/archer.json",
+      "sha256": "660C1D0665C97910DD4B6291A8222069A8CC23F6E94DC59EBA440157979B4F30",
+      "baselineSha256": null,
+      "bytes": 5578
+    },
+    {
+      "source": "dev/staging/military-archer/proposed/CivilizationApocalypse_BP/entities/guard_arrow.json",
+      "target": "CivilizationApocalypse_BP/entities/guard_arrow.json",
+      "sha256": "B3DEA57342313664AB1A66EE46806D75B1AA6697CA767CCDFE69508AC816F761",
+      "baselineSha256": null,
+      "bytes": 1715
+    },
+    {
+      "source": "dev/staging/military-archer/proposed/CivilizationApocalypse_BP/scripts/commands/military.js",
+      "target": "CivilizationApocalypse_BP/scripts/commands/military.js",
+      "sha256": "C7BC09BEE785E83EEF13F31E1105156179236D59DC0F815F4571E0A1AE96E044",
+      "baselineSha256": "D1CD0E06EDC68133BED9E593F4DEDC98B6F5DF0DE48C65115A21E75C758383BB",
+      "bytes": 6976
+    },
+    {
+      "source": "dev/staging/military-archer/proposed/CivilizationApocalypse_BP/scripts/integration/militaryLifecycleDiagnostics.js",
+      "target": "CivilizationApocalypse_BP/scripts/integration/militaryLifecycleDiagnostics.js",
+      "sha256": "EA32B85E1642934434F9B355845F7194AB62C44B1E4FF640616E442E0BC9144D",
+      "baselineSha256": "527C1E7E6CE80F72561239787724C013090D06BC56827BB91C0C48FD9174BB4F",
+      "bytes": 9507
+    },
+    {
+      "source": "dev/staging/military-archer/proposed/CivilizationApocalypse_BP/scripts/integration/militarySelectionStore.js",
+      "target": "CivilizationApocalypse_BP/scripts/integration/militarySelectionStore.js",
+      "sha256": "647C4A52ADE6B2DD18CAE4D989E068AB01DBECBFA440F0F5F81A61B291B050B4",
+      "baselineSha256": "8853226D9F5935C03D036A041C9B801622EA0E90D4B7E38470E41754451D58AE",
+      "bytes": 5382
+    },
+    {
+      "source": "dev/staging/military-archer/proposed/CivilizationApocalypse_BP/scripts/population/militarySelection.js",
+      "target": "CivilizationApocalypse_BP/scripts/population/militarySelection.js",
+      "sha256": "63DEBCFE85CB69650707FFEDA5A98D5DCF585887A0D194556C66258035CC7C1D",
+      "baselineSha256": "852505EEEA88F549A92302B4C4EF28E51CA166B66DD759FD1EE497CBA1A16C7F",
+      "bytes": 4333
+    },
+    {
+      "source": "dev/staging/military-archer/proposed/CivilizationApocalypse_RP/animations/archer.animation.json",
+      "target": "CivilizationApocalypse_RP/animations/archer.animation.json",
+      "sha256": "E68E2F2C90078B29C3A6B18DA98FBFE29C588466713D3D912F0DDE38C273E3D2",
+      "baselineSha256": null,
+      "bytes": 406
+    },
+    {
+      "source": "dev/staging/military-archer/proposed/CivilizationApocalypse_RP/entity/archer.entity.json",
+      "target": "CivilizationApocalypse_RP/entity/archer.entity.json",
+      "sha256": "D7888CF04760F270A5FE25EA4F913424AB2397B1396F7B6F53FA78825B1FF895",
+      "baselineSha256": null,
+      "bytes": 858
+    },
+    {
+      "source": "dev/staging/military-archer/proposed/CivilizationApocalypse_RP/entity/guard_arrow.entity.json",
+      "target": "CivilizationApocalypse_RP/entity/guard_arrow.entity.json",
+      "sha256": "362EA8232F2A39C392E84621B3D43871B552C9D347CFA9EBA7A529984E27F217",
+      "baselineSha256": null,
+      "bytes": 808
+    },
+    {
+      "source": "dev/staging/military-archer/proposed/CivilizationApocalypse_RP/models/entity/archer.geo.json",
+      "target": "CivilizationApocalypse_RP/models/entity/archer.geo.json",
+      "sha256": "992C234164367C9B45C96A83FD2D3FB086558472A9D9A0484D3091414A40B26A",
+      "baselineSha256": null,
+      "bytes": 33281
+    },
+    {
+      "source": "dev/staging/military-archer/proposed/CivilizationApocalypse_RP/render_controllers/archer.render_controllers.json",
+      "target": "CivilizationApocalypse_RP/render_controllers/archer.render_controllers.json",
+      "sha256": "AAB93AE3D4735D22A3815858F16C0A1833EF9003985BEB3A86176FBA52450C99",
+      "baselineSha256": null,
+      "bytes": 305
+    }
+  ],
+  "otherStageEdits": false,
+  "nativeAcceptance": false,
+  "requiredComposition": [
+    "creation-binding TYPES and death filters need coordinated archer extension",
+    "fresh matching military source adapter/receipt before native activation",
+    "central integration/full validation and client combat tests"
+  ]
+}

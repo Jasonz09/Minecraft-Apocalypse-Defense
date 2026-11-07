@@ -1,0 +1,10 @@
+{
+  "scope": "Staged diagnostics validated10before-after+10central-overlay and strictisolatedTSC; notpromoted/native",
+  "path": "CivilizationApocalypse_BP\\scripts\\people\\workRoutePreview.js",
+  "baselineSha256": "C5DEEB03253D913FDBB280083837848B89326BA6DC3E433769536F94323B595D",
+  "proposedSha256": "A330CA7E4E0727950CC8B7D16A15424400A99D38712A3994C2C6BB056B550188",
+  "sampleCap": 8,
+  "perReasonCap": 2,
+  "unchangedAlgorithmAndSafety": "A* ordering/cache/read calls/caps/predicates/source guards/permission flags unchanged",
+  "testSha256": "7C541060B4A0CE3CE78415CDD6ADB37B71439C477FCE216D1103DE4EDB9D01B0"
+}

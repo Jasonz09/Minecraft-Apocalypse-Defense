@@ -1,0 +1,18 @@
+{
+  "sourceEntitySha256": "C0AB66464976DF1EF0ADE7685C0C5800AB96D4EE0BA8A8AEDAED462098958D82",
+  "variantEntitySha256": "52A6ABFE038F47748B7ECC2AE874EFFC1CFF7EE2DEBEFAC49BB6D35A369C89D5",
+  "changedJsonPointer": "/minecraft:entity/components/minecraft:behavior.melee_attack/reach_multiplier",
+  "before": 1.5,
+  "after": 2,
+  "completePathRemains": true,
+  "schemaSource": "https://raw.githubusercontent.com/Mojang/bedrock-samples/v1.26.0.2/metadata/json_schemas/server/entity/1.26.0/MeleeAttackDefinition.json",
+  "schemaFileSha256": "A2A77966521A2A03C6CD3240EA3AE5782B48517ED85FF98E5CEE89A1544D2EE3",
+  "schemaGitBlob": "fa9d7bb2c4b2970d570dcb4ba0ee40fbd30e8a4d",
+  "reachSchema": {
+    "default": 2,
+    "description": "Used with the base size of the entity to determine minimum target-distance before trying to deal attack damage.",
+    "minimum": 0,
+    "type": "number"
+  },
+  "status": "STAGED ONLY: not installed, not used, no world created; hypothesis not cause/fix"
+}

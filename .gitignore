@@ -3,3 +3,6 @@ node_modules/
 *.zip
 dist/
 *.log
+
+# Local native-test world saves; source and test specifications remain versioned.
+dev/staging/**/worlds/

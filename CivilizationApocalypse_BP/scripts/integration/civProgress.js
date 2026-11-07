@@ -180,7 +180,7 @@ export function describeProgress(p) {
     /** @type {string[]} */
     const lines = [];
     lines.push(`Session ${String(p.id)} (${p.kind}): ${p.state}, phase ${String(p.phaseIndex)}/${String(p.phases)} ${p.phaseName}, elapsed ${formatTicks(end - p.startedTick)}${progressPercent(p) !== undefined ? `, ${String(progressPercent(p))}%${p.kind !== "build" && p.phaseIndex === 1 ? " of the current ring plan (grows if the survey widens)" : ""}` : ""}.`);
-    if (p.tilesTotal > 0 && p.phaseIndex === 1) {
+    if (p.tilesTotal > 0 && (p.phaseIndex === 1 || p.phaseIndex === 4)) {
         lines.push(`  survey: tile ${String(p.tilesDone)}/${String(p.tilesTotal)}${p.tile ? ` (now ${String(p.tile.x0)},${String(p.tile.z0)} to ${String(p.tile.x1)},${String(p.tile.z1)})` : ""}; ${String(p.chunksScanned)} of ${String(p.chunksTotal)} chunks scanned (${String(p.chunksScanned * 256)} blocks), ${String(p.columnsScanned)} columns read, ${String(p.chunksPending)} chunk(s) still loading.`);
     }
     if (p.endedTick === undefined) {

@@ -1,0 +1,23 @@
+# Native acceptance after full verification and closed installation
+
+This plan is prospective. Installed-source parity and Node maxConcurrentLoaders=1 do not prove Bedrock memory behavior. Root owns Minecraft, deployment, closed backups and evidence. No game action or acceptance is performed by this review.
+
+## Functional fresh path on the completed copy
+
+Use the existing reviewed city copy with the original `civ:wall_leaf_trim:v1:d4:c835b06e` receipt now schema2/complete/14done, all14 original before snapshots unchanged, and the three protected leaves intact. Do not use a manually cleared or newly generated map as a substitute. Record the build158 installed SHA proof, world identity, observer position, session/content-log filename and command time before beginning. Keep the observer at the reviewed D4 test position and avoid other heavy work throughout this command window.
+
+Run the normal leaf-maintenance command on this completed world. The preview spelling is `/scriptevent civ:generate_diag leafrepair district=4 policy=wall-leaves-trim-v1`; adding `confirm` tests the idempotent confirm path. No new permission or fixture event is required. A completed receipt makes this a FRESH census path, not pending recovery. Expect selected D4 verification first, then every other existing source, all using the same job slot. Seeing D4 before D1 is intentional. Do not stop observation just because the order differs from the former all-record loader.
+
+Expected result on the same loaded area: `no eligible loaded targets`, zero write attempts/verified changes, and a global survey retaining the remaining three protected refusals. No new receipt should be admitted. The existing complete14 receipt stays unchanged. The batch's generic `complete` field is not evidence that the historical receipt became incomplete; the no-eligible invocation never created a new batch. Global unreadable wall counts must remain explicitly scoped to what was loaded. Do not require or invent the offline deterministic fixture's34673/1238 counts; the earlier native6758/29153 coverage is also not guaranteed identical after rejoin/loading differences.
+
+Use the previously reviewed independent masonry/protected-leaf marker checks for ALL14 exact expected masonry cells and ALL3 preserved leaves after the invocation. Preserve exact marker output. A zero-write report alone does not establish these cells remained correct. If a source fails, an unknown journal appears, a protected leaf changes or any unverified cell is replaced, hold acceptance and save the exact diagnostic instead of changing metadata to force a pass.
+
+Save/quit, observe the world list, fully close Minecraft, retain a new hash-verified backup, and inspect only that closed copy. Verify latest CRC-backed schema2 receipt remains complete14done0pending with the same requested order/material/before snapshots, no extra leaf receipt key, and the same original35 source/job raw values. Rejoin and repeat the known all14+3 markers. These are scoped persistence checks, not a claim that every city cell is correct.
+
+## Memory/stability evidence
+
+Capture the fresh session's existing content log rather than deleting old logs. Record byte/line offsets or timestamps around the maintenance invocation. After closing, count project-relevant high-memory warnings, watchdog/runtime/script exceptions and Molang/content errors in that exact interval and separately across the whole session. Retain matching lines and filenames. Prior closed sessions had17/18/24 warnings in different workloads; do not turn those unmatched totals into a percentage speedup or causal memory reduction.
+
+Acceptance requires the actual source-loading/census/controller flow to finish, normal game response during and after it, source/receipt and all14+3 persistence proof, and an honestly reported closed-log audit. If high-memory warnings persist, functional correctness may pass while memory/stability remains unresolved. A warning-free observed command interval supports only that bounded native test, not a global heap guarantee. A causal before/after reduction needs equivalent completed-copy state, observer/loading scope, settings, workload and no competing tests; a prior partial repair/wait session is not an equivalent no-eligible baseline.
+
+The previously disclosed approximately15second Node overlap belongs to the earlier native D3 verification window. Preserve that limitation in its evidence; do not import it into a later clean session or erase it. Any new competing workload or user input should be timestamped and scoped similarly. No additional Node benchmarks should run during this native window.

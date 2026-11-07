@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { levelSection, readLevelDat } from "./lib/nbt.mjs";
+import { contentPackProblems, packBindings, packBindingProblems } from "./lib/content-packs.mjs";
 
 /**
  * Offline validation of the starter-world packaging: the repository-side spec, and (when given a
@@ -65,6 +66,8 @@ export function validateTemplateSpec(spec, ctx = {}) {
     ok(manifest.headerUuid !== manifest.moduleUuid, "the template's two UUIDs must differ");
     ok(manifest.moduleType === "world_template", 'manifest.moduleType must be "world_template"', String(manifest.moduleType));
     ok(manifest.formatVersion === 2, "manifest.formatVersion must be 2", String(manifest.formatVersion));
+    ok(typeof manifest.lockTemplateOptions === "boolean", "manifest.lockTemplateOptions must be an explicit boolean (required for template import)");
+    ok(isTriple(manifest.baseGameVersion), "manifest.baseGameVersion must be [major, minor, patch]");
 
     const packUuids = new Set();
     const packs = Array.isArray(spec.packs) ? spec.packs : [];
@@ -89,6 +92,8 @@ export function validateTemplateSpec(spec, ctx = {}) {
             ok(module.uuid !== manifest.headerUuid && module.uuid !== manifest.moduleUuid, `${label} module uuid must not collide with the template uuids`);
         }
     }
+
+    problems.push(...contentPackProblems(packs.map(p=>({root:join(projectRoot,p.source),kind:p.kind}))));
 
     const world = spec.world ?? {};
     ok(Array.isArray(world.requiredFiles) && world.requiredFiles.includes("level.dat"), "world.requiredFiles must include level.dat");
@@ -234,35 +239,14 @@ export function validateTemplateDir(dir, spec, options = {}) {
         ok(hit.length === 0, `forbidden file(s) present in the template: ${hit.slice(0, 3).join(", ")}`);
     }
 
-    if (has("world_behavior_packs.json")) {
-        let bound;
-        try {
-            bound = JSON.parse(readFileSync(join(dir, "world_behavior_packs.json"), "utf8"));
-        } catch (error) {
-            ok(false, "world_behavior_packs.json is not valid JSON", String(error));
-            bound = [];
-        }
-        const entries = Array.isArray(bound) ? bound : [];
-        const wanted = new Set((spec.packs ?? []).filter((pack) => pack.kind === "behavior_packs").map((pack) => pack.packageDir));
-        for (const packDir of wanted) {
-            ok(has(`behavior_packs/${packDir}/manifest.json`), `the bound behavior pack folder behavior_packs/${packDir} is not in the package`);
-        }
-        const manifestUuids = new Set();
-        for (const pack of spec.packs ?? []) {
-            try {
-                manifestUuids.add(JSON.parse(readFileSync(join(projectRoot, pack.manifest), "utf8")).header.uuid);
-            } catch (error) {
-                /* reported by validateTemplateSpec */
-            }
-        }
-        for (const entry of entries) {
-            const id = String(entry?.pack_id ?? entry?.uuid ?? "");
-            ok(manifestUuids.has(id), `world_behavior_packs.json binds pack ${id}, which is not shipped in this package`);
-            const version = entry?.version ?? entry?.pack_version;
-            ok(version !== undefined, `world_behavior_packs.json entry ${id} has no version`);
-        }
-    } else {
-        notes.push("no world_behavior_packs.json: Minecraft will not auto-attach the pack to worlds created from this template");
+    const shipped=(spec.packs??[]).map(p=>({root:join(dir,p.kind,p.packageDir),kind:p.kind}));
+    problems.push(...contentPackProblems(shipped));
+    for(const kind of ["behavior_packs","resource_packs"]) {
+        const binding=kind==="behavior_packs"?"world_behavior_packs.json":"world_resource_packs.json";
+        let entries=[];
+        if(!has(binding))problems.push(`missing ${binding}: shipped packs must attach automatically`);
+        else try{entries=JSON.parse(readFileSync(join(dir,binding),"utf8"));}catch(error){problems.push(`${binding} is not valid JSON: ${String(error)}`);}
+        try{problems.push(...packBindingProblems(entries,packBindings(shipped,kind),binding));}catch(error){problems.push(`cannot verify ${binding}: ${String(error)}`);}
     }
 
     if (has("manifest.json")) {
@@ -271,6 +255,8 @@ export function validateTemplateDir(dir, spec, options = {}) {
             ok(templateManifest?.header?.uuid === spec.manifest.headerUuid, "template manifest.json header uuid must match starter/template.json");
             ok(templateManifest?.modules?.[0]?.type === "world_template", 'template manifest.json module type must be "world_template"');
             ok(templateManifest?.format_version === 2, "template manifest.json format_version must be 2");
+            ok(typeof templateManifest?.header?.lock_template_options === "boolean" && templateManifest.header.lock_template_options === spec.manifest.lockTemplateOptions, "template manifest.json header.lock_template_options must explicitly match starter/template.json");
+            ok(isTriple(templateManifest?.header?.base_game_version) && JSON.stringify(templateManifest.header.base_game_version) === JSON.stringify(spec.manifest.baseGameVersion), "template manifest.json header.base_game_version must match starter/template.json");
             ok(templateManifest?.header?.allow_random_seed !== true, "template manifest.json sets allow_random_seed: the built city lives in db/, and a re-seeded world regenerates the terrain away from it");
             ok(/^pack\.name$/.test(String(templateManifest?.header?.name ?? "")), 'template manifest.json header.name must be the literal "pack.name"');
         } catch (error) {

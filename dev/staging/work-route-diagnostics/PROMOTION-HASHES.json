@@ -1,0 +1,43 @@
+{
+  "utc": "2026-11-06T16:41:43.252962+00:00",
+  "scope": "Staging only; one diagnostics production file +one default-path central test+one frozen baseline observation fixture. No active edits.",
+  "checks": {
+    "stagedAlgorithmBeforeAfter": {
+      "pass": 10,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "durationMs": 2001.9073,
+      "log": "dev\\staging\\work-route-diagnostics\\focused-rerun.log"
+    },
+    "defaultPathCentralOverlay": {
+      "pass": 10,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "durationMs": 1973.506,
+      "log": "dev\\staging\\work-route-diagnostics\\central-focused.log"
+    },
+    "strictIsolatedTsc": "PASS"
+  },
+  "files": [
+    {
+      "source": "dev\\staging\\work-route-diagnostics\\proposed-workRoutePreview.js",
+      "target": "CivilizationApocalypse_BP\\scripts\\people\\workRoutePreview.js",
+      "beforeSha256": "C5DEEB03253D913FDBB280083837848B89326BA6DC3E433769536F94323B595D",
+      "proposedSha256": "A330CA7E4E0727950CC8B7D16A15424400A99D38712A3994C2C6BB056B550188"
+    },
+    {
+      "source": "dev\\staging\\work-route-diagnostics\\proposed-dev\\test\\civilian-loaded-route-diagnostics.test.mjs",
+      "target": "dev\\test\\civilian-loaded-route-diagnostics.test.mjs",
+      "beforeSha256": null,
+      "proposedSha256": "C4E7EAADEC66BE649A74880D317D32842F4828240FC42E8BE197FA311A3FE083"
+    },
+    {
+      "source": "dev\\staging\\work-route-diagnostics\\proposed-dev\\fixtures\\civilian-loaded-route-diagnostics-before.json",
+      "target": "dev\\fixtures\\civilian-loaded-route-diagnostics-before.json",
+      "beforeSha256": null,
+      "proposedSha256": "570186BA9739D30F046B4B3F020CB7D26EDBBC94CD1913B778243D94B9408768"
+    }
+  ]
+}

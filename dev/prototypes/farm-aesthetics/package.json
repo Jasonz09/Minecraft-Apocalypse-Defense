@@ -1,0 +1,6 @@
+{
+  "name": "civ-isolated-farm-aesthetics",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test farm-aesthetics.test.mjs" }
+}

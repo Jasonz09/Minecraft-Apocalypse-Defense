@@ -1,0 +1,25 @@
+{
+  "scope": "isolated compound cavalry design and pure no-write decision model only",
+  "focused": {
+    "tests": 9,
+    "pass": 9,
+    "fail": 0,
+    "durationMs": 69.153
+  },
+  "strictTypecheck": {
+    "exitCode": 0,
+    "config": "tsconfig.json",
+    "log": "typecheck.log"
+  },
+  "files": {
+    "DESIGN.md": "E951D8876C3E91C7E1129188FC5134CD80C27D03AE636E999F572FF2DF127243",
+    "focused.log": "B6F58BF5B57BB1029EDC610D88D656D91FCA6B973BA58F176A89E9146845351B",
+    "lifecycle.mjs": "F83C3C530738EEE37F8D9651615E734FC7521BE9097289031EFB8E736F9E1061",
+    "lifecycle.test.mjs": "BC0E4BCFCE375F9D275B1036578107A8E0EC7B3A7EF4ED95A543364878E69F92",
+    "tsconfig.json": "B4F7E204CA0110DADAE29F52D212E32F468ADA32BE5ACD9F1D7FF4C09DE42220",
+    "typecheck.log": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+  },
+  "implementationStatus": "No durable compound store, owner/native adapter, assets or selection integrated; no cavalry acceptance",
+  "productionChanges": false,
+  "nativeCalls": false
+}

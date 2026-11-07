@@ -1,0 +1,47 @@
+{
+  "utc": "2026-11-07T02:05:32.155434+00:00",
+  "decision": "BLOCK PROMOTION: diplomacy-specific malformed/unsupported records can reseed/overwrite otherwise valid kingdom",
+  "scope": "Read-only13-path source/baseline/runtime pin review,3tiny independent real staged-module tests and10failure reproductions; no main edits/full/native",
+  "all13FrozenAndBaselineHashesMatch": true,
+  "runtime9ProposedModulesExact": true,
+  "independentNormalCases": {
+    "tests": 3,
+    "pass": 3,
+    "durationMs": 110.2351,
+    "log": "focused.log",
+    "covers": [
+      "Actual accepted-hour scout completion savefault preserves exact previous mission/debit and replay creates one contact",
+      "Real v2 migration preserves unknown extension and blocks numeric nested future version without quarantine/reset",
+      "Alliance recipient safety rechecked on arrival, no army/resources/home RNG reward"
+    ]
+  },
+  "blocker": {
+    "file": "proposed/CivilizationApocalypse_BP/scripts/kingdom/store.js",
+    "tests": "extension-preservation.test.mjs",
+    "log": "extension-preservation.log",
+    "safetyAssertions": 10,
+    "pass": 0,
+    "fail": 10,
+    "durationMs": 93.8557,
+    "cases": [
+      "null diplomacy",
+      "missing diplomacy",
+      "v0 diplomacy",
+      "string future version",
+      "malformed mission"
+    ],
+    "operations": [
+      "ensureInitial",
+      "direct save"
+    ],
+    "actual": "load classifies generic invalid; ensureInitial quarantines and seeds new kingdom; direct save overwrites. Valid existing city aggregate/unknown extension is lost.",
+    "required": "Refuse and preserve schema3 diplomacy absence/unsupported/malformed records before generic invalid/reset; protect same state in direct-save guard. Reuse bounded existing validator, do not normalize or drop source fields."
+  },
+  "otherFindings": [
+    "v2 migration shallow spread preserves original geometry/queues/extensions; v1 follows historical reconstruction then registered v2 step, not new v2-field dropping. Numeric future schema/nested version and any legacy diplomacy extension are guarded.",
+    "New logic only existing accepted hour and Ledger mutation path; no added timer/entity/owner/native writes or physical army credit.",
+    "Ledger action uses ordinary confirmation/fresh private-copy save/access/locking contracts; native multiplayer remains pending. Report fields remain stale until returning mission; no displayed current hidden force count.",
+    "Schema3 cannot roll back to old schema2 pack without pre-upgrade backup; current owner/room caches need revalidation against changed state/store dependencies before combined promotion.",
+    "Full central/template/native Ledger/rejoin acceptance remains required; author30/222/TSC evidence is scoped offline, not our full acceptance."
+  ]
+}

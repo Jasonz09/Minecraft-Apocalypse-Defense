@@ -1,0 +1,24 @@
+{
+  "scope": "Root authorized CLOSED execution, diagnostic-only baseline correction; no production/backup/world changes",
+  "oldAuthoringManifestSha256": "9CDAF862AF5C2E53133EE02FA38BEEC01029512A964B4E04749CC33E3B01CF3C",
+  "newScriptPins": {
+    "extract-closed-input.py": "C92989118BFCF99F488A6B8BBD419E291D018E78EF96AE4180648C4CC49FFE87",
+    "inspect-saved-fixtures.mjs": "2BC164373305182378D4BB5C6650DF28DAA0AC176A7470759EAC7130482961DA"
+  },
+  "failedRunRetained": "initial-counter-assertion.log",
+  "success": {
+    "exitCode": 0,
+    "toolWallSeconds": 9.466435,
+    "artifactElapsedMs": 8977,
+    "propertyWriteBaseline": 2,
+    "blockWriteBaseline": 0,
+    "propertyWriteDelta": 0,
+    "blockWriteDelta": 0,
+    "guardChecks": 26901
+  },
+  "artifacts": {
+    "dist\\d4-interior-light-closed-input-20261106.json": "DBF3646C174F0CCC207DEDADE0A9D979E90EB2EEE92742E579B25DE1160AC9DA",
+    "dist\\d4-interior-light-saved-coordinates-20261106.json": "BBC1A6FCB2E6715FE7E0362907C49AA0714B30FE1C745D184363F3ADF18CB0FF"
+  },
+  "nativeCleanupPermission": false
+}

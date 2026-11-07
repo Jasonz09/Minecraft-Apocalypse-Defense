@@ -55,6 +55,14 @@ export function createSystem(clock) {
     }
 
     const system = {
+        startupSubscribers: [],
+        beforeEvents: {
+            startup: {
+                subscribe(callback) {
+                    system.startupSubscribers.push(callback);
+                },
+            },
+        },
         get currentTick() {
             return clock.tick;
         },
@@ -160,6 +168,9 @@ export class FakeItemStack {
      * @param {unknown} [value]
      */
     setDynamicProperty(identifier, value) {
+        if (["minecraft:book", "minecraft:clock", "minecraft:compass"].includes(this.typeId)) {
+            throw new Error("Cannot set dynamic properties on stackable items.");
+        }
         if (value === undefined) {
             this.properties.delete(identifier);
         } else {
@@ -805,7 +816,7 @@ function findLedgerInInventory(player) {
  * A marker stack as the Ledger item is built, for tests that place one directly.
  */
 export function makeMarkerStack() {
-    const stack = new FakeItemStack("minecraft:book", 1);
+    const stack = new FakeItemStack("civapoc:ledger", 1);
     stack.nameTag = "Commander's Ledger";
     stack.setDynamicProperty("ca:ledger", true);
     stack.lockMode = FakeItemLockMode.inventory;

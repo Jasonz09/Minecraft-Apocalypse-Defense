@@ -1,6 +1,6 @@
 export const PACK_NAME = "Civilization Apocalypse";
 
-export const KINGDOM_SCHEMA_VERSION = 2;
+export const KINGDOM_SCHEMA_VERSION = 3;
 
 /** Oldest saved schema this build can still read (everything older is refused, never reseeded blindly). */
 export const MIN_SUPPORTED_SCHEMA_VERSION = 1;
@@ -49,6 +49,7 @@ export const PHYSICAL_EVENT_IDS = {
     gateAuto: "civ:gate_auto",
     gateStatus: "civ:gate_status",
     gateTest: "civ:gate_test",
+    gateRelink: "civ:gate_relink",
 };
 
 /**
@@ -63,8 +64,20 @@ export const CIV_EVENT_IDS = {
     resume: "civ:generate_resume",
     devgate: "civ:generate_devgate",
     diag: "civ:generate_diag",
+    doors: "civ:generate_doors",
+    schoolRoof: "civ:school_roof",
+    roofSupport: "civ:roof_support",
+    interiorLights: "civ:interior_lights",
+    farmLights: "civ:farm_lights",
+    farmLightsStatus: "civ:farm_lights_status",
+    farmLightsAbort: "civ:farm_lights_abort",
     /** The people gate: do the kingdom's civilians, garrison and attackers exist as entities at all. */
     people: "civ:people",
+    /** Retrofit lighting for districts built before the planner placed lamps (additive; place-only). */
+    lights: "civ:lights",
+    lightsStatus: "civ:lights_status",
+    lightsAbort: "civ:lights_abort",
+    lightsNatural: "civ:lights_natural",
 };
 
 /**
@@ -88,6 +101,8 @@ export const CIV = {
     holdTimeoutTicks: 1200,
     /** Retries of a stalled tile (so 1 + holdRetries attempts) before it is marked stalled. */
     holdRetries: 1,
+    /** Actual game ticks allowed for a temporarily unreadable construction cell/tree clearance. */
+    buildUnloadedRetryTicks: 40,
     /** Back-off (ticks) before retrying a hold whose identifier still exists; at most 3 times. */
     idBackoffTicks: 5,
     /** Whole-planning deadline in ticks (30 minutes). */
@@ -134,13 +149,15 @@ export const STARTER = {
      * expansion and rebuilding still works), the reset kingdom baseline, and the records of the
      * gates that physically exist in the city.
      */
-    keepKeyPrefixes: ["civ:kingdom", "civ:plan", "civ_gatereg", "civ_gate_"],
+    keepKeyPrefixes: ["civ:kingdom", "civ:plan", "civ_gatereg", "civ_gate_", "civ:farm_lights:"],
     /**
      * Development-only state that must not reach a player. One-colon prefixes throughout: the plan
      * store keeps its quarantine copy under the plan prefix, and it rides along with the kept plan -
      * see "Known limitations" in docs/STARTER_WORLD.md.
      */
-    wipeKeyPrefixes: ["civ:kingdom-quarantine", "civ:jobs", "civ:debug", "civ:demo-", "civ_devgate", "civ_ledger_dev"],
+    wipeKeyPrefixes: ["civ:kingdom-quarantine", "civ:jobs", "civ:debug", "civ:demo-", "civ_devgate", "civ_ledger_dev", "civ:people_", "civ:lamps:"],
+    /** Exact keys: similarly named properties belonging to another add-on must survive. */
+    wipeKeys: ["civ_people", "civ_pop"],
     /** Districts that must be physically complete before a world may be armed. Mirrors template.json. */
     builtRequired: ["district-1", "district-2", "district-3", "district-4", "district-5"],
 };

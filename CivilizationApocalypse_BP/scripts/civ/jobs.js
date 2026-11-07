@@ -1,5 +1,6 @@
 import { CIV_LIMITS } from "./budget.js";
 import { createChunkedStore, fnv1a } from "./planstore.js";
+import { decodeTreeClearance } from "./treeclear.js";
 
 // Resumable job-queue model for the staged construction pipeline. Pure JS, deterministic.
 //
@@ -36,6 +37,7 @@ const HASH_MOD = 36 ** 6;
  *   planHash: string, state: QueueState, maxAttempts: number, stages: StageInfo[],
  *   requires: Record<string, string[]>|null,
  *   total: number[], cursor: number[], status: ElementStatus[], attempts: number[], hash: number[],
+ *   treeClearance?: import("./treeclear.js").TreeClearance,
  * }} JobQueue
  * @typedef {{ stage: string, element: number, index: number, from: number, to: number, ops: number }} WorkItem
  * @typedef {{ total: number, hash?: number, inputs?: any }} ElementSpec
@@ -375,6 +377,7 @@ export function serializeQueue(queue) {
         a: attempts.join(","),
     };
     if (queue.requires !== null) out.rq = queue.requires;
+    if (queue.treeClearance !== undefined) out.tc = queue.treeClearance;
     return JSON.stringify(out);
 }
 
@@ -435,6 +438,7 @@ export function parseQueue(text) {
         return true;
     };
     if (!sparse(o.c, cursor, true) || !sparse(o.a, attempts, false)) return { ok: false, reason: "bad sparse fields" };
+    if (o.tc !== undefined && (!decodeTreeClearance(o.tc) || o.tc.element >= n || o.tc.cursor >= totals[o.tc.element] || cursor[o.tc.element] !== o.tc.cursor)) return { ok: false, reason: "bad pending tree clearance" };
     const hash = [];
     for (let i = 0; i < n; i += 1) hash.push(parseInt(o.h.slice(i * 6, i * 6 + 6), 36));
     return {
@@ -450,6 +454,7 @@ export function parseQueue(text) {
             status,
             attempts,
             hash,
+            ...(o.tc === undefined ? {} : { treeClearance: o.tc }),
         },
     };
 }

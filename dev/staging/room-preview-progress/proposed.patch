@@ -1,0 +1,85 @@
+--- a/CivilizationApocalypse_BP/scripts/civ/roomPreviewProgress.js
++++ b/CivilizationApocalypse_BP/scripts/civ/roomPreviewProgress.js
+@@ -0,0 +1,27 @@
++/** Bounded command-local progress only. No jobs, timers, native reads or stored authority. */
++export const ROOM_PROGRESS_LIMITS=Object.freeze({minTicks:200,totalMessages:16,sourceMessages:8,plannedMessages:2,censusMessages:6});
++/** @param {{current:()=>boolean,readTick:()=>number,send:(line:string)=>void}} deps */
++export function createRoomPreviewProgress(deps){
++ let busy=false,reentered=false,sent=0,lastTick=-1,lastRank=-1;
++ const counts=[0,0,0],lastCount=[-1,-1,-1];
++ function check(){if(deps.current()!==true||reentered)throw Error("Room progress source/player/cancellation changed");}
++ /** @param {"source"|"planned"|"census"} phase @param {number} count @param {number} [total] */
++ function report(phase,count,total){
++  if(busy){reentered=true;throw Error("Room progress callback reentered");}
++  const rank=phase==="source"?0:phase==="planned"?1:phase==="census"?2:-1;
++  if(rank<0||!Number.isSafeInteger(count)||count<0||rank<lastRank||count<lastCount[rank])throw Error("Invalid room progress counters");
++  if(phase==="census"&&(!Number.isSafeInteger(total)||/** @type {number} */(total)<count||/** @type {number} */(total)>1024))throw Error("Invalid room progress total");
++  busy=true;
++  try{
++   check();const tick=deps.readTick();check();
++   if(!Number.isSafeInteger(tick)||tick<0)return;
++   const cap=rank===0?ROOM_PROGRESS_LIMITS.sourceMessages:rank===1?ROOM_PROGRESS_LIMITS.plannedMessages:ROOM_PROGRESS_LIMITS.censusMessages;
++   lastCount[rank]=count;
++   if(sent>=ROOM_PROGRESS_LIMITS.totalMessages||counts[rank]>=cap||(rank===lastRank&&tick-lastTick<ROOM_PROGRESS_LIMITS.minTicks))return;
++   const line=phase==="source"?`Still verifying the saved chapel: ${count} source slices checked; no changes.`:phase==="planned"?`Saved chapel verified; checking planned room cells (${count} source operations).`:`Room cells read ${count}/${total}; result still being checked, no changes.`;
++   check();deps.send(line);check();
++   sent++;counts[rank]++;lastTick=tick;lastRank=rank;
++  }finally{busy=false;}
++ }
++ return{report};
++}
+--- a/CivilizationApocalypse_BP/scripts/civ/roomVegetationPreview.js
++++ b/CivilizationApocalypse_BP/scripts/civ/roomVegetationPreview.js
+@@ -41,14 +41,14 @@
+  if(points.length>ROOM_PREVIEW_LIMITS.cells||new Set(points.map(p=>`${p.x},${p.y},${p.z}`)).size!==points.length)throw Error("room census cell cap/duplicate refused");return{element:e,points,roomCells};
+ }
+ /** No mutation, lease, timer or retained native handle. Caller verifies actual saved source first.
+- * @param {any} record @param {string} building @param {{current:()=>boolean,cancelled?:()=>boolean,getBlock:(p:{x:number,y:number,z:number})=>any,opsFor?:typeof siteOpsFor}} ctx */
++ * @param {any} record @param {string} building @param {{current:()=>boolean,cancelled?:()=>boolean,getBlock:(p:{x:number,y:number,z:number})=>any,opsFor?:typeof siteOpsFor,progress?:(phase:"planned"|"census",count:number,total?:number)=>void}} ctx */
+ export function* roomVegetationPreviewSteps(record,building,ctx){
+  current(ctx);const geometry=roomPreviewGeometry(record,building),key=(/** @type {any} */p)=>`${p.x},${p.y},${p.z}`,wanted=new Map(geometry.points.map(p=>[key(p),p]));
+  /** @type {Map<string,{id:string,states:any,stage:string,element:string}>} */const final=new Map();let sourceOps=0,compiled=0;
+  for(const stage of SITE_STAGES){if(!Array.isArray(record[stage]))throw Error("verified room source stage missing");for(let i=0;i<record[stage].length;i++)for(const op of(ctx.opsFor??siteOpsFor)(record,stage,i)){
+   if(++sourceOps>ROOM_PREVIEW_LIMITS.sourceOps)throw Error("room source operation cap exceeded");
+   const point=wanted.get(key(op));if(point){final.set(key(op),{id:op.id,states:op.states===undefined?null:JSON.parse(JSON.stringify(op.states)),stage,element:record[stage][i].id});if(stage==="lots"&&record[stage][i].id===building){if(op.id==="minecraft:lectern"&&!point.tags.includes("lectern"))point.tags.push("lectern");if(op.id==="minecraft:lantern"&&!point.tags.includes("fixture-lamp"))point.tags.push("fixture-lamp");}}
+-  if(++compiled>=ROOM_PREVIEW_LIMITS.sourceOpsPerSlice){current(ctx);yield;current(ctx);compiled=0;}
++  if(++compiled>=ROOM_PREVIEW_LIMITS.sourceOpsPerSlice){current(ctx);if(sourceOps%3200===0)ctx.progress?.("planned",sourceOps);current(ctx);yield;current(ctx);compiled=0;}
+  }}
+  for(const point of geometry.points)if(point.tags.includes("fixture-lamp")){const anchor=wanted.get(key({...point,y:point.y+(final.get(key(point))?.states?.hanging===true?1:-1)}));if(anchor&&!anchor.tags.includes("fixture-anchor"))anchor.tags.push("fixture-anchor");}
+  /** @type {any[]} */const rows=[];let sliceReads=0,totalReads=0,loaded=0,unloaded=0,unreadable=0,obstructions=0;
+@@ -57,7 +57,7 @@
+   if(observed.status==="loaded"){loaded++;if(observed.id==="minecraft:air"&&(!expected||expected.id==="minecraft:air"))classification="air";else if(expected&&observed.id===expected.id&&(expected.states===null||Object.entries(expected.states).every(([k,v])=>observed.states?.[k]===v)))classification="planned-ID/explicit-state-match";else{classification="source-discrepancy";obstructions++;}}
+   else if(observed.status==="unloaded")unloaded++;else unreadable++;
+   rows.push({x:point.x,y:point.y,z:point.z,tags:[...point.tags],classification,observed,expected});
+-  current(ctx);yield;current(ctx);sliceReads=0;
++  current(ctx);if(totalReads%64===0||totalReads===geometry.points.length)ctx.progress?.("census",totalReads,geometry.points.length);current(ctx);yield;current(ctx);sliceReads=0;
+  }
+  current(ctx);return{geometryVersion:ROOM_PREVIEW_GEOMETRY,building,checksum:record.checksum,blueprint:"chapel_v2",roomCells:geometry.roomCells,totalCells:geometry.points.length,reads:totalReads,loaded,unloaded,unreadable,obstructions,complete:unloaded===0&&unreadable===0,sourceOps,rows,scope:"Read-only room census across cooperative ticks, not atomic. No engine timestamp sampled or persistent paging cache; each command/page rereads; separate commands/pages are NOT the same snapshot. District-only expected ops, no cross-district ownership or AIR/cleanup permission; no writes."};
+ }
+--- a/CivilizationApocalypse_BP/scripts/commands/civ.js
++++ b/CivilizationApocalypse_BP/scripts/commands/civ.js
+@@ -5,6 +5,7 @@
+ import { auditRecord, shortfallOf } from "../civ/facilities.js";
+ import { compileSharedTreeProtectionSteps } from "../civ/sharedtree.js";
+ import {roomVegetationPreviewSteps,formatRoomVegetationPreview} from "../civ/roomVegetationPreview.js";
++import {createRoomPreviewProgress} from "../civ/roomPreviewProgress.js";
+ import { formatWallLeafPreview, previewWallLeavesSteps } from "../civ/wallleafpreview.js";
+ import { POLICY as LEAF_TRIM_POLICY, LEAF_TRIM_MASONRY_IDS } from "../civ/wallLeafTrim.js";
+ import { createWallLeafSourceGuard, wallLeafRepairSteps, createWallLeafBlockAdapter } from "../civ/wallLeafRepair.js";
+@@ -1296,13 +1297,14 @@
+   const selectedCurrent=()=>{const districts=latestKingdom?.districts?.filter((/** @type {any} */d)=>d.id===districtIdFor(index));return districts?.length===1&&JSON.stringify(districts[0].civ)===selectedStamp;};
+   const fastCurrent=()=>!token.cancelled&&activeToken()===token&&devGateOn()&&player.isValid&&player.id===identity&&player.dimension.id===dimensionId&&!token.cancelled&&activeToken()===token;
+   const current=()=>{try{return fastCurrent()&&guard.current()&&selectedCurrent()&&fastCurrent()&&guard.current()&&selectedCurrent()&&fastCurrent();}catch(_error){return false;}};
++  const progress=createRoomPreviewProgress({current,readTick:()=>system.currentTick,send:line=>reply([line],event)});
+   /** @template T @param {Generator<any,T,any>} generator @returns {Generator<any,T,any>} */
+-  function* checked(generator){for(;;){if(!current())throw Error("Room census source/player/cancellation guard refused");const n=generator.next();if(!current())throw Error("Room census source changed during verification");if(n.done)return n.value;yield;}}
++  function* checked(generator){let slices=0;for(;;){if(!current())throw Error("Room census source/player/cancellation guard refused");const n=generator.next();if(!current())throw Error("Room census source changed during verification");if(n.done)return n.value;if(++slices%512===0)progress.report("source",slices);yield;}}
+   reply(["Verifying the completed saved chapel source for a read-only room census; player-loaded cells only, no holds or changes."],event);
+   const saved=await runJobAsync(token,checked(loadSavedRunSteps(civ,newOps(),index)));if(token.cancelled||!saved)return;
+   if(!saved.ok||saved.queue.state!=="complete"){reply(formatErrorLines("Room census refused",saved.ok?["Original queue is not complete"]:saved.reasons),event);return;}
+   if(!current()||saved.record.checksum!==civ.checksum)throw Error("Room source identity changed");
+-  const result=await runJobAsync(token,roomVegetationPreviewSteps(saved.record,building,{current,cancelled:()=>token.cancelled,getBlock:p=>dimension.getBlock(p)}));
++  const result=await runJobAsync(token,roomVegetationPreviewSteps(saved.record,building,{current,cancelled:()=>token.cancelled,getBlock:p=>dimension.getBlock(p),progress:progress.report}));
+   if(!result||token.cancelled)return;if(!current())throw Error("Room source changed after census");
+   const lines=formatRoomVegetationPreview(result,page);if(!current())throw Error("Room source changed before reporting");reply(lines,event);
+  }catch(error){if(!token.cancelled)reply(formatErrorLines("Room census refused",[String(error),"Nothing changed; no cleanup permission inferred."]),event);}

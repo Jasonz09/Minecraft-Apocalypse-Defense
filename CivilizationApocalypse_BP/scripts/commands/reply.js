@@ -16,11 +16,13 @@ import { ScriptEventSource, world } from "@minecraft/server";
  * @param {ScriptEvent} event
  */
 export function reply(lines, event) {
+    // Bedrock concatenates string[] as raw message fragments; it does not insert line breaks.
+    const message = lines.join("\n");
     const initiator = event.initiator;
     if (event.sourceType === ScriptEventSource.Entity && initiator !== undefined && initiator.typeId === "minecraft:player") {
         const player = /** @type {Player} */ (initiator);
-        player.sendMessage(lines);
+        player.sendMessage(message);
         return;
     }
-    world.sendMessage(lines);
+    world.sendMessage(message);
 }

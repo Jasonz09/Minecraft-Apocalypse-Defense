@@ -1,0 +1,72 @@
+{
+  "scope": "STAGED ONLY; no main source edits, installation or live Minecraft validation",
+  "entries": [
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/civ/sharedtree.js",
+      "destination": "CivilizationApocalypse_BP/scripts/civ/sharedtree.js",
+      "sha256": "EDDD2FEF9C761F5B9C05875DB9E005865311F092C9897219BEF4E453DD70F70C",
+      "baselineSha256": "CDA62FD898AB2512E63E1AA3486C9C546C8B72A9957C6D2F83CA7EEAF02E3A0F"
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/civ/treeInspectionStreaming.js",
+      "destination": "CivilizationApocalypse_BP/scripts/civ/treeInspectionStreaming.js",
+      "sha256": "6683F49A44C632778772A62EE25F0CD8D62495FB9494EA624C65E66195A869C3",
+      "baselineSha256": null
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/commands/civ.js",
+      "destination": "CivilizationApocalypse_BP/scripts/commands/civ.js",
+      "sha256": "3FBFCB782A3DF870501AFCB920707AB894BFACBBA148E7634AF60684CC730158",
+      "baselineSha256": "6850D8FC7935D8BE691B8EE5FE2C1CF57E87DA33AAB25AA67329629C210D6063"
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/integration/civBuilder.js",
+      "destination": "CivilizationApocalypse_BP/scripts/integration/civBuilder.js",
+      "sha256": "6CC60557A2DE01B25AEBED1F9C4C50B2CEF199982B024D8327F49D6DF4C46B79",
+      "baselineSha256": "2BE8D7A5F577624D06C789B956AF41D317489FF97F1629AD049C4CF606B3450F"
+    },
+    {
+      "staged": "proposed-dev/fixtures/tree-inspection-before.json",
+      "destination": "dev/fixtures/tree-inspection-before.json",
+      "sha256": "044418B5CD47CCCCF807D48750F15F2069385AE6DA9FC753EFC6DA183790EFB7",
+      "baselineSha256": null
+    },
+    {
+      "staged": "proposed-dev/test/tree-inspection-native-parity.test.mjs",
+      "destination": "dev/test/tree-inspection-native-parity.test.mjs",
+      "sha256": "85B932B863434646603EB4F029BFA7E4631DF7B2A95AC9ADE8E12D9D0BB0A1D8",
+      "baselineSha256": null
+    },
+    {
+      "staged": "proposed-dev/test/tree-inspection-streaming.test.mjs",
+      "destination": "dev/test/tree-inspection-streaming.test.mjs",
+      "sha256": "7E0C5D4DB55F584928A2BBEEF1A9AF8C5240D9FB38677A1390C5F730E2994B6C",
+      "baselineSha256": null
+    }
+  ],
+  "focusedTests": {
+    "pass": 19,
+    "fail": 0,
+    "elapsedMs": 342.279,
+    "log": "focused-final.log"
+  },
+  "typecheck": {
+    "strict": true,
+    "exitCode": 0,
+    "log": "typecheck-final.log"
+  },
+  "offlineActualSourceProof": "actual-five-source.json",
+  "actualTestedHashesBeforeReadOnlyBrandHardening": "ACTUAL-TESTED-HASHES.json",
+  "limits": {
+    "horizontal": 17,
+    "vertical": 41,
+    "entryCap": 16384,
+    "verifiedSources": 5,
+    "peakRetainedVerifiedHeavyRecords": 2
+  },
+  "limitations": [
+    "No heap measurement or causal proof for native memory warnings",
+    "No actual 627-cell native topology or live game test",
+    "Actual five-source hydration predates private read-only brand/writer rejection; final small tests and typecheck cover that delta"
+  ]
+}

@@ -15,6 +15,23 @@ const T = { timeout: 600000 };
 const GEN = "seed=1";
 const DEFAULTS = { ...CIV };
 
+test("full-resolution ground survey status includes the current rectangle and unread chunk count", async () => {
+    const progress = await load("integration", "civProgress.js");
+    const p = progress.startProgress("plan", undefined, () => {});
+    progress.setPhase(p, 4, "ground survey");
+    Object.assign(p, { tilesDone: 2, tilesTotal: 12, tile: { x0: 0, z0: -896, x1: 95, z1: -769 }, chunksScanned: 16, chunksTotal: 576, columnsScanned: 6528, chunksPending: 48 });
+    try {
+        const status = progress.describeProgress(p).join("\n");
+        assert.match(status, /phase 4\/6 ground survey/);
+        assert.match(status, /survey: tile 2\/12 \(now 0,-896 to 95,-769\)/);
+        assert.match(status, /6528 columns read, 48 chunk\(s\) still loading/);
+        progress.setPhase(p, 5, "site planning");
+        assert.doesNotMatch(progress.describeProgress(p).join("\n"), /survey: tile/);
+    } finally {
+        progress.resetProgressForTests();
+    }
+});
+
 function restoreConfig() {
     Object.assign(CIV, DEFAULTS);
 }
@@ -68,7 +85,7 @@ test("REPRODUCTION: a ticking area that never resolves does not hang - heartbeat
     // A hold is the engine's work, so each attempt resets the stall clock; it must NOT be cancelled at stallTicks
     // in the middle of two legal 60 s attempts. Three tiles that never load abort through the tile path instead.
     await pump();
-    assert.ok(mc.tick >= 3 * 2 * CIV.holdTimeoutTicks && mc.tick < 3 * 2 * CIV.holdTimeoutTicks + 400, `aborted at tick ${mc.tick}`);
+    assert.ok(mc.tick >= 11 * CIV.holdTimeoutTicks && mc.tick < 11 * CIV.holdTimeoutTicks + 400, `aborted at tick ${mc.tick}`);
     const out = text(player);
     assert.match(out, /Stopped at stalled - nothing was changed/);
     assert.match(out, /did not finish loading \(3 of 3 survey tiles stalled; each waited 60 s, 2 times\)/);
@@ -84,13 +101,13 @@ test("REPRODUCTION: a ticking area that never resolves does not hang - heartbeat
     assert.match(after, /Nothing is stored: the last run did not produce a civilization/);
 });
 
-test("tile-level abort: with the stall clock out of the way, three stalled tiles (2 attempts x 1200 ticks each) end the run in <= 7,200 ticks with a clear message", T, async () => {
+test("tile-level abort: after one large-area fallback, three smaller stalled tiles end the run with a clear message", T, async () => {
     setup();
     CIV.stallTicks = 1e9;
     mc.createMode = () => "never";
     const player = makePlayer();
     await planOnly(player);
-    assert.ok(mc.tick >= 3 * 2 * CIV.holdTimeoutTicks && mc.tick <= 3 * 2 * CIV.holdTimeoutTicks + 400, `aborted at tick ${mc.tick}`);
+    assert.ok(mc.tick >= 11 * CIV.holdTimeoutTicks && mc.tick <= 11 * CIV.holdTimeoutTicks + 400, `aborted at tick ${mc.tick}`);
     const out = text(player);
     assert.match(out, /Stopped at stalled - nothing was changed/);
     assert.match(out, /did not finish loading \(3 of 3 survey tiles stalled; each waited 60 s, 2 times\)/);
@@ -170,7 +187,7 @@ test("a lone stalled tile is skipped (its columns stay unread, never guessed); t
     assertClean("one hung attempt");
 });
 
-test("a tile that stalls both attempts is asked for again once the ring is generated, and its columns are recovered", T, async () => {
+test("a large tile that stalls both attempts recovers through smaller holds without leaving unread ground", T, async () => {
     setup();
     CIV.holdTimeoutTicks = 60;
     // both attempts of the 4th tile hang: calls 4 and 5; the retry pass asks again and succeeds
@@ -183,8 +200,9 @@ test("a tile that stalls both attempts is asked for again once the ring is gener
     await planOnly(player);
     const out = text(player);
     assert.match(out, /Plan is valid/, out.slice(-600));
-    assert.equal(outcome.stats.coarse.retriedTiles, 1, "the stalled tile was asked for again");
-    assert.ok(outcome.stats.coarse.recoveredTiles > 0, "its columns were read on the second pass");
+    assert.equal(outcome.stats.coarse.retriedTiles, 0, "smaller holds recover it immediately");
+    assert.match(asked(player, CIV_EVENT_IDS.status), /retrying its ground using smaller tiles/);
+    assert.ok(mc.areaLog.some((line) => line === "create civ-generate 16"), "the large accepted-but-stalled hold is retried at one quarter of its area");
     assert.equal(outcome.stats.coarse.stalledTiles.length, 0);
     assert.equal(outcome.stats.coarse.skippedColumns, 0);
     assert.doesNotMatch(out, /never finished loading/, "nothing was left unread, so nothing is reported");
@@ -264,6 +282,56 @@ test("a first attempt that hangs is retried and succeeds (stalls are counted, no
 });
 
 // ---------------------------------------------------------------------------- engine errors, limits
+
+test("unread terrain diagnostics retain bounded coordinates without inventing field cells", T, async () => {
+    setup();
+    mc.unloaded = () => true;
+    const token = { kind: "civ-plan", jobId: undefined, cancelled: false };
+    let result;
+    scan.scanFull(token, dimension, { x0: 0, z0: 0, x1: 9, z1: 0 }).then((value) => { result = value; });
+    await pump({ until: () => result !== undefined });
+    assert.equal(result.stats.unloaded, 10);
+    assert.equal(result.stats.unreadSamples.length, 6);
+    assert.match(result.stats.unreadSamples[0], /\(0,0\): column unavailable or walk bound reached/);
+    assert.equal(result.field.at(0, 0).k, "unloaded");
+    assert.equal(mc.writes, 0);
+    assert.equal(mc.areas.size, 0);
+});
+
+test("a partly loaded small survey tile recovers through individually held chunks", T, async () => {
+    setup(1, { field: { size: 2000 } });
+    CIV.holdTimeoutTicks = 60;
+    mc.createMode = (chunks) => chunks > 1 ? "never" : "instant";
+    mc.unloaded = ({ x, z }) => ![...mc.areas.values()].some((area) => area.loaded && x >= area.from.x && x <= area.to.x && z >= area.from.z && z <= area.to.z);
+    const token = { kind: "civ-plan", jobId: undefined, cancelled: false };
+    const rect = { x0: -204, z0: -896, x1: -177, z1: -833 };
+    let result;
+    scan.scanFull(token, dimension, rect).then((value) => { result = value; });
+    await pump({ until: () => result !== undefined });
+    assert.equal(result.stats.columns, 28 * 64, "read every real column of the previously stalled eight-chunk tile");
+    assert.equal(result.stats.stalledTiles.length, 0);
+    assert.equal(result.stats.unloaded, 0);
+    assert.equal(mc.writes, 0);
+    assert.equal(mc.areas.size, 0);
+});
+
+test("cancelling a fragmented survey releases all chunk holds without reading unloaded ground", T, async () => {
+    setup();
+    CIV.holdTimeoutTicks = 60;
+    mc.createMode = () => "never";
+    const token = { kind: "civ-plan", jobId: undefined, cancelled: false };
+    let result;
+    scan.scanFull(token, dimension, { x0: 0, z0: 0, x1: 31, z1: 31 }).then((value) => { result = value; });
+    await pump({ until: () => [...mc.areas.keys()].some((id) => id.startsWith("civ-survey-load-")) });
+    assert.equal(mc.areas.size, 4);
+    token.cancelled = true;
+    scan.releaseArea(token);
+    await pump({ until: () => result !== undefined });
+    assert.equal(result.cancelled, true);
+    assert.equal(result.stats.columns, 0);
+    assert.equal(mc.writes, 0);
+    assert.equal(mc.areas.size, 0);
+});
 
 test("OverChunkLimit on a tile shrinks the tile and carries on", T, async () => {
     setup();
@@ -743,7 +811,6 @@ test("knownHalfFromTiles certifies only squares whose tiles ALL loaded", () => {
 test("cellFromColumn reports the sea bed as g and the water surface as surface", () => {
     assert.deepEqual(scan.cellFromColumn({ above: [], surface: 62, bed: 30, problem: "water at y=62" }), { g: 30, k: "water", tree: false, surface: 62 });
     const unreadBed = scan.cellFromColumn({ above: [], surface: 62, problem: "water at y=62" });
-    assert.equal(unreadBed.g, 61, "an unread bed falls back to one block below the surface");
-    assert.equal(unreadBed.surface, 62);
+    assert.equal(unreadBed, undefined, "an unread bed stays unknown; never invent a one-block-deep sea");
     assert.equal(scan.cellFromColumn({ above: [], problem: "lava at y=40" }).k, "lava");
 });

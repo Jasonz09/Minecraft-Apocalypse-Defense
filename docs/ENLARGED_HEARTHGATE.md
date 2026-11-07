@@ -1,9 +1,10 @@
 # Enlarged Hearthgate - status and test instructions
 
 **The build path has run inside Minecraft.** On 2026-10-26 (Bedrock 1.26.5203) districts 1 and 2 were built
-end to end and verified in a development save - `docs/PROGRESS.md` carries both status lines and the defects
-those runs found. Everything not covered by those two runs is still verified offline against a fake Bedrock world
-only: districts 3-5, the 49x49 prototype, entity population and gate behaviour against real mobs.
+end to end and verified in a development save, and on 2026-10-29/30 districts 3-5 followed in the same world;
+all five were then armed, exported and packaged as the starter template (Minecraft 1.26.52) -
+`docs/PROGRESS.md` carries the status lines and the defects those runs found. Still verified offline against a
+fake Bedrock world only: the 49x49 prototype, entity population and gate behaviour against real mobs.
 
 ## What it is
 One explicit command plans a whole five-district civilization (irregular districts of about 35-40k block-columns each,

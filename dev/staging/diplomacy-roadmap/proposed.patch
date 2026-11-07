@@ -1,0 +1,460 @@
+--- a/CivilizationApocalypse_BP/scripts/config.js
++++ b/CivilizationApocalypse_BP/scripts/config.js
+@@ -1,6 +1,6 @@
+ export const PACK_NAME = "Civilization Apocalypse";
+ 
+-export const KINGDOM_SCHEMA_VERSION = 2;
++export const KINGDOM_SCHEMA_VERSION = 3;
+ 
+ /** Oldest saved schema this build can still read (everything older is refused, never reseeded blindly). */
+ export const MIN_SUPPORTED_SCHEMA_VERSION = 1;
+--- a/CivilizationApocalypse_BP/scripts/kingdom/migrations.js
++++ b/CivilizationApocalypse_BP/scripts/kingdom/migrations.js
+@@ -1,3 +1,4 @@
++import { emptyDiplomacy } from "../sim/diplomacy.js";
+ import { DEFAULT_SEED, KINGDOM_SCHEMA_VERSION } from "../config.js";
+ import { createV2Kingdom, findValidationProblems } from "./state.js";
+ 
+@@ -9,8 +10,12 @@
+  * @type {{ [fromVersion: number]: (state: any) => any }}
+  */
+ const upgrades = {
+-    1: (state) =>
+-        createV2Kingdom({
++    2: (state) => {
++        if (Object.hasOwn(state,"diplomacy")) throw new Error("Existing diplomacy extension is preserved; explicit migration required.");
++        return {...state,schemaVersion:3,diplomacy:emptyDiplomacy()};
++    },
++    1: (state) => {
++        const kingdom = createV2Kingdom({
+             name: state.name,
+             seed: DEFAULT_SEED,
+             districts: /** @type {any[]} */ (state.districts ?? []).map((district, index) => ({
+@@ -19,7 +24,10 @@
+                 civilians: district?.civilians,
+                 soldiers: district?.soldiers,
+             })),
+-        }),
++        });
++        // The shared constructor creates the current format; this registered step returns EXACTLY v2.
++        delete kingdom.diplomacy; kingdom.schemaVersion=2; return kingdom;
++    },
+ };
+ 
+ /**
+@@ -39,6 +47,7 @@
+     if (start === undefined) {
+         return { problems: ["saved state has no schemaVersion"] };
+     }
++    if(start<3&&Object.hasOwn(value,"diplomacy"))return {problems:["Legacy diplomacy extension requires explicit migration; save preserved."]};
+     if (start > KINGDOM_SCHEMA_VERSION) {
+         return { problems: [`saved state is v${String(start)}, newer than this pack (v${String(KINGDOM_SCHEMA_VERSION)})`] };
+     }
+--- a/CivilizationApocalypse_BP/scripts/kingdom/state.js
++++ b/CivilizationApocalypse_BP/scripts/kingdom/state.js
+@@ -1,3 +1,4 @@
++import { emptyDiplomacy, diplomacyProblems } from "../sim/diplomacy.js";
+ import {
+     DEFAULT_SEED,
+     DISTRICT_DEFAULTS,
+@@ -92,8 +93,8 @@
+ }
+ 
+ /**
+- * Shared constructor for a v2 kingdom. Used both for a brand new world and for
+- * upgrading a v1 save, so the two paths can never drift apart.
++ * Shared established-district constructor, retaining its historical v2 export name.
++ * Builds the current save format; registered migrations preserve intermediate versions.
+  *
+  * @param {{ name?: string, districts?: { id: string, name: string, civilians: number, soldiers: number }[], seed?: number }} input
+  */
+@@ -142,6 +143,7 @@
+             garrisonRequirement: 20 + index * 5,
+             surveyProgress: 0,
+         })),
++        diplomacy: emptyDiplomacy(),
+         battles: [],
+         log: [],
+     };
+@@ -504,6 +506,7 @@
+         }
+     }
+ 
++    problems.push(...diplomacyProblems(value.diplomacy,value.step,districtIds));
+     return problems;
+ }
+ 
+--- a/CivilizationApocalypse_BP/scripts/kingdom/store.js
++++ b/CivilizationApocalypse_BP/scripts/kingdom/store.js
+@@ -1,3 +1,4 @@
++import { DIPLOMACY, diplomacyProblems } from "../sim/diplomacy.js";
+ import { KINGDOM_SCHEMA_VERSION, MIN_SUPPORTED_SCHEMA_VERSION, STORAGE_KEYS } from "../config.js";
+ import { migrateKingdom, readSchemaVersion } from "./migrations.js";
+ import { createInitialKingdom, deserializeKingdom, serializeKingdom } from "./state.js";
+@@ -17,6 +18,12 @@
+  * @param {import("@minecraft/server").World} target
+  */
+ export function createKingdomStore(target) {
++    /** A recognized current-format extension must fail closed, never enter generic reseeding.
++     * @param {any} parsed */
++    function unreadableDiplomacy(parsed){
++        const ids=Array.isArray(parsed?.districts)?parsed.districts.map((/** @type {any} */d)=>d?.id):[];
++        return diplomacyProblems(parsed?.diplomacy,parsed?.step,ids);
++    }
+     const storageKey = STORAGE_KEYS.kingdom;
+     const quarantineKey = STORAGE_KEYS.quarantine;
+ 
+@@ -26,7 +33,9 @@
+             return undefined;
+         }
+         try {
+-            return readSchemaVersion(JSON.parse(raw));
++            const parsed=JSON.parse(raw);
++            const version=readSchemaVersion(parsed);
++            return parsed?.diplomacy?.v>DIPLOMACY.version||(typeof version==="number"&&version<3&&Object.hasOwn(parsed,"diplomacy"))||(version===KINGDOM_SCHEMA_VERSION&&unreadableDiplomacy(parsed).length>0)?Number.POSITIVE_INFINITY:version;
+         } catch (_error) {
+             return undefined;
+         }
+@@ -75,7 +84,9 @@
+             return { kingdom: undefined, status: "corrupt", reason: `saved state is not valid JSON (${String(error)})` };
+         }
+ 
++        if (parsed?.diplomacy?.v>DIPLOMACY.version) return {kingdom:undefined,status:"newer",reason:"Saved diplomacy format is newer; preserved without changes."};
+         const version = readSchemaVersion(parsed);
++        if (typeof version==="number"&&version<3&&Object.hasOwn(parsed,"diplomacy")) return {kingdom:undefined,status:"unsupported",reason:"Legacy save already contains a diplomacy extension; preserved for explicit migration."};
+         if (version === undefined) {
+             return { kingdom: undefined, status: "corrupt", reason: "saved state has no schemaVersion" };
+         }
+@@ -92,6 +103,10 @@
+                 status: "unsupported",
+                 reason: `saved state is schema v${String(version)}; the oldest readable version is v${String(MIN_SUPPORTED_SCHEMA_VERSION)}`,
+             };
++        }
++        if(version===KINGDOM_SCHEMA_VERSION){
++            const reasons=unreadableDiplomacy(parsed);
++            if(reasons.length)return {kingdom:undefined,status:"unsupported",reason:`Diplomatic records are unreadable; kingdom preserved: ${reasons.join("; ")}`};
+         }
+         if (version < KINGDOM_SCHEMA_VERSION) {
+             const result = migrateKingdom(parsed);
+@@ -114,6 +129,7 @@
+      */
+     function save(kingdom) {
+         const storedVersion = readStoredVersion();
++        if(storedVersion===Number.POSITIVE_INFINITY)throw new Error("refusing to overwrite a newer or unsupported diplomacy format");
+         if (storedVersion !== undefined && storedVersion > KINGDOM_SCHEMA_VERSION) {
+             throw new Error(`refusing to overwrite a v${String(storedVersion)} save with v${String(KINGDOM_SCHEMA_VERSION)}`);
+         }
+--- a/CivilizationApocalypse_BP/scripts/ledger/actions.js
++++ b/CivilizationApocalypse_BP/scripts/ledger/actions.js
+@@ -1,3 +1,4 @@
++import { diplomaticReadiness, sendDiplomaticMission } from "../sim/diplomacy.js";
+ import { CIV_EVENT_IDS, POLICY_MODES, POPULATION_DEFAULTS } from "../config.js";
+ import { canAfford, districtById } from "../kingdom/state.js";
+ import { closeImpact, findGate, setGateMode } from "../sim/gatecontrol.js";
+@@ -164,6 +165,20 @@
+ 
+ /** @type {Record<string, ActionSpec>} */
+ const SPECS = {
++    "diplomacy.mission": {
++        id:"diplomacy.mission",kind:"mutate",touchesKingdom:true,services:[],
++        calls:[{module:"sim/diplomacy.js",name:"sendDiplomaticMission"}],
++        describe(kingdom,params){
++            const kind=String(params.kind),realmId=params.realmId===undefined?null:String(params.realmId),ready=diplomaticReadiness(kingdom,kind,realmId);
++            return {title:kind==="scout"?"Send scouts":kind==="alliance"?`Propose alliance: ${ready.realmName??"unknown"}`:`Send envoy: ${ready.realmName??"unknown"}`,lines:ready.ok?[kind==="scout"?"Seeks a new regional contact; relations begin neutral.":kind==="envoy"?"Improves relations by up to 25 and refreshes news.":"Asks for an alliance; strained defenses may mean refusal.",`Cost: 6 food and 2 supplies from ${ready.homeName}.`,`The report returns after ${ready.hours} kingdom hours.`,"Travel is simulated; no physical settlement or route is placed."]:[ready.reason??"Mission unavailable."],confirmLabel:"Send expedition",blocked:ready.ok?undefined:ready.reason};
++        },
++        run(ctx,params){
++            const kind=String(params.kind),realmId=params.realmId===undefined?null:String(params.realmId),result=sendDiplomaticMission(ctx.kingdom,kind,realmId);
++            return result.ok?{ok:true,title:"Expedition sent",lines:[`Report due in ${result.hours} kingdom hours.`,"Read Diplomacy for the returning report."]}:{ok:false,title:"Mission refused",lines:[],reason:"reason" in result?result.reason:"Mission unavailable."};
++        },
++    },
++
++
+     "military.recruit": {
+         id: "military.recruit",
+         kind: "mutate",
+--- a/CivilizationApocalypse_BP/scripts/ledger/menus-kingdom.js
++++ b/CivilizationApocalypse_BP/scripts/ledger/menus-kingdom.js
+@@ -1,3 +1,4 @@
++import { diplomaticReadiness } from "../sim/diplomacy.js";
+ import { POPULATION_DEFAULTS } from "../config.js";
+ import { computeTotals, districtById, districtHeadroom } from "../kingdom/state.js";
+ import { formatGameTime } from "../sim/clock.js";
+@@ -226,21 +227,19 @@
+     return assemble(frame, { title: "Reports", lines, content: [notImplemented("forecast", "Invasion forecasts")] });
+ }
+ 
+-/**
+- * @param {Frame} frame
+- */
+-export function diplomacyMenu(frame) {
+-    return assemble(frame, {
+-        title: "Diplomacy",
+-        lines: [
+-            "No other kingdom is known to this one.",
+-            "Every diplomatic feature is shown disabled until a second kingdom exists.",
+-        ],
+-        content: [
+-            notImplemented("envoy", "Send an envoy"),
+-            notImplemented("trade", "Open trade"),
+-            notImplemented("alliance", "Propose an alliance"),
+-            notImplemented("ultimatum", "Send an ultimatum"),
+-        ],
+-    });
+-}
++/** @param {Frame} frame @param {any} kingdom */
++export function diplomacyMenu(frame,kingdom) {
++    const d=kingdom.diplomacy,now=Number(kingdom.step),lines=["Foreign reports; settlement sites and travel routes are not yet surveyed."],content=[];
++    if(!d||d.v!==1)return assemble(frame,{title:"Diplomacy",lines:["Diplomatic records are unavailable; no expedition was sent."],content:[]});
++    if(d.mission)lines.push(`Expedition travelling; report due in ${Math.max(0,d.mission.dueAt-now)} kingdom hours.`);
++    if(!d.realms.length)lines.push("No other kingdom has been reported. Send scouts to seek contact.");
++    const add=(/** @type {string} */kind,/** @type {string} */text,/** @type {string|null} */realmId=null)=>{const p={kind,...(realmId?{realmId}:{})},ready=diplomaticReadiness(kingdom,kind,realmId),id=`${kind}:${realmId??"region"}`;content.push(ready.ok?enabledButton(id,text,{id:"diplomacy.mission",params:p}):disabledButton(id,text,ready.reason??"Unavailable"));};
++    add("scout","Send scouts");
++    for(const r of d.realms){
++        lines.push(`${r.name} (${r.bearing}): ${r.treaty}; relations ${r.relation}.`);
++        lines.push(`Report ${now-r.report.at} hours old: people ${r.report.population}, soldiers ${r.report.soldiers}, defenses ${r.report.integrity}%.`);
++        add("envoy",`Send envoy to ${r.name}`,r.id);add("alliance",`Propose alliance with ${r.name}`,r.id);
++    }
++    content.push(notImplemented("trade","Open trade"),notImplemented("assistance","Request routed assistance"));
++    return assemble(frame,{title:"Diplomacy",lines,content});
++}
+--- a/CivilizationApocalypse_BP/scripts/ledger/menus.js
++++ b/CivilizationApocalypse_BP/scripts/ledger/menus.js
+@@ -40,7 +40,7 @@
+         case "expansion":
+             return expansionMenu(frame, kingdom);
+         case "diplomacy":
+-            return diplomacyMenu(frame);
++            return diplomacyMenu(frame,kingdom);
+         case "reports":
+             return reportsMenu(frame, kingdom);
+         case "policies":
+--- a/CivilizationApocalypse_BP/scripts/sim/diplomacy.js
++++ b/CivilizationApocalypse_BP/scripts/sim/diplomacy.js
+@@ -0,0 +1,91 @@
++/** Distant reports and diplomacy, advanced ONLY by the existing kingdom hour.
++ * No physical settlements, coordinates, entities, chunk holds or army credit. */
++export const DIPLOMACY = Object.freeze({version:1, realms:3, foodCost:6, supplyCost:2, scoutHours:12, envoyHours:18, allianceHours:24});
++const NAMES = ["Alderwatch", "Sunmere", "Stonehaven"];
++const BEARINGS = ["north", "southeast", "west"];
++/** @returns {any} */
++export function emptyDiplomacy(){return {v:1,realms:[],mission:null,lastAdvancedStep:0};}
++/** @param {unknown} n @param {number} max */
++const count=(n,max)=>Number.isSafeInteger(n)&&/** @type {number} */(n)>=0&&/** @type {number} */(n)<=max;
++/** @param {any} raw @param {number} step @param {string[]} districtIds @returns {string[]} */
++export function diplomacyProblems(raw,step,districtIds){
++ const fail=(/** @type {string} */s)=>["diplomacy: "+s];
++ if(!raw||typeof raw!=="object"||Array.isArray(raw)||raw.v!==1)return fail("unsupported or missing version");
++ if(!Array.isArray(raw.realms)||raw.realms.length>DIPLOMACY.realms||!count(raw.lastAdvancedStep,step))return fail("realm/clock bound");
++ const ids=new Set();
++ for(const [index,r] of raw.realms.entries()){
++  if(!r||r.id!==`realm-${index+1}`||!/^realm-[1-3]$/.test(r.id)||ids.has(r.id)||r.name!==NAMES[Number(r.id.slice(-1))-1]||r.bearing!==BEARINGS[Number(r.id.slice(-1))-1])return fail("realm identity");ids.add(r.id);
++  if(!count(r.discoveredAt,step)||!count(r.relation,100)||!['neutral','allied'].includes(r.treaty)||!count(r.population,10000)||r.population<1||!count(r.soldiers,5000)||r.soldiers>r.population||!count(r.food,20000)||!count(r.integrity,100))return fail("realm bounds");
++  const p=r.report;if(!p||!count(p.at,step)||p.at<r.discoveredAt||!count(p.population,10000)||p.population<1||!count(p.soldiers,5000)||p.soldiers>p.population||!count(p.integrity,100))return fail("report bounds");
++ }
++ const m=raw.mission;
++ if(m!==null){
++  if(!m||!['scout','envoy','alliance'].includes(m.kind)||!districtIds.includes(m.fromDistrictId)||!count(m.sentAt,step)||!count(m.dueAt,Number.MAX_SAFE_INTEGER)||m.dueAt<=m.sentAt||m.dueAt-m.sentAt!==(m.kind==='scout'?DIPLOMACY.scoutHours:m.kind==='envoy'?DIPLOMACY.envoyHours:DIPLOMACY.allianceHours))return fail("mission bounds");
++  if(m.kind==='scout'?(m.realmId!==null||raw.realms.length>=DIPLOMACY.realms):!ids.has(m.realmId))return fail("mission target");
++ }
++ return [];
++}
++/** @param {any} k */
++function state(k){const problems=diplomacyProblems(k.diplomacy,k.step,k.districts.map((/** @type {any} */d)=>d.id));if(problems.length)throw Error(problems.join('; '));return k.diplomacy;}
++/** @param {any} k @param {string} kind @param {string|null} realmId */
++export function diplomaticReadiness(k,kind,realmId=null){
++ try{
++  const d=state(k);if(!['scout','envoy','alliance'].includes(kind))throw Error('Unknown diplomatic mission.');
++  if(d.mission)throw Error('An expedition is already travelling.');
++  if(!Number.isSafeInteger(k.step)||k.step>Number.MAX_SAFE_INTEGER-24)throw Error('The kingdom clock cannot schedule another journey.');
++  const home=k.districts[0];if(!home||home.security!=='secure'||Number(home.assault)>0)throw Error('Headquarters must be secure before sending an expedition.');
++  if(!Number.isFinite(home.reserves?.food)||!Number.isFinite(home.reserves?.supplies)||home.reserves.food<DIPLOMACY.foodCost||home.reserves.supplies<DIPLOMACY.supplyCost)throw Error('Headquarters needs 6 food and 2 supplies.');
++  const realm=d.realms.find((/** @type {any} */r)=>r.id===realmId);
++  if(kind==='scout'){if(realmId!==null||d.realms.length>=DIPLOMACY.realms)throw Error('All available regional contacts have been reported.');}
++  else{
++   if(!realm)throw Error('That realm has not been discovered.');
++   if(kind==='alliance'&&(realm.treaty==='allied'||realm.relation<50))throw Error(realm.treaty==='allied'?'An alliance already exists.':'Relations must reach 50 before proposing an alliance.');
++  }
++  const hours=kind==='scout'?DIPLOMACY.scoutHours:kind==='envoy'?DIPLOMACY.envoyHours:DIPLOMACY.allianceHours;
++  return {ok:true,homeId:String(home.id),homeName:String(home.name),hours,realmName:realm?.name??null};
++ }catch(e){return {ok:false,reason:String(e instanceof Error?e.message:e)};}
++}
++/** Only called against the Ledger's fresh private save copy after confirmation.
++ * @param {any} k @param {string} kind @param {string|null} [realmId] */
++export function sendDiplomaticMission(k,kind,realmId=null){
++ const ready=diplomaticReadiness(k,kind,realmId);if(!ready.ok)return ready;
++ const home=k.districts[0],d=state(k);home.reserves.food=Math.round((home.reserves.food-DIPLOMACY.foodCost)*10)/10;home.reserves.supplies=Math.round((home.reserves.supplies-DIPLOMACY.supplyCost)*10)/10;
++ d.mission={kind,realmId,fromDistrictId:ready.homeId,sentAt:k.step,dueAt:k.step+/** @type {number} */(ready.hours)};
++ return {ok:true,hours:ready.hours,realmName:ready.realmName};
++}
++/** Independent deterministic distant pressure, does not consume the home RNG.
++ * @param {any} k @param {number} ordinal @param {number} step */
++function roll(k,ordinal,step){return (((k.seed>>>0)^Math.imul(ordinal,2654435761)^Math.imul(step,2246822519))>>>0);}
++/** @param {any} realm @param {number} step */
++function report(realm,step){realm.report={at:step,population:realm.population,soldiers:realm.soldiers,integrity:realm.integrity};}
++/** Called once inside the existing transactional kingdom step, never by a timer.
++ * @param {any} k @returns {string[]} */
++export function runDiplomacyStep(k){
++ const d=state(k);if(d.lastAdvancedStep===k.step)return [];
++ if(d.lastAdvancedStep>k.step)throw Error('Diplomacy clock reversed.');
++ const events=[];
++ for(const r of d.realms){
++  if(k.step%24===0){
++   const food=Math.floor(r.population/10);r.food=Math.min(20000,r.food+food);
++   if(r.integrity>=50&&r.food>=20){r.population=Math.min(10000,r.population+Math.max(1,Math.floor(r.population/100)));r.food-=20;}
++   else if(r.integrity<25)r.population=Math.max(1,r.population-Math.max(1,Math.floor(r.population/100)));
++   r.soldiers=Math.min(r.soldiers,r.population);
++  }
++  if(k.step%48===0){const force=20+roll(k,Number(r.id.slice(-1)),k.step)%41,loss=Math.min(r.soldiers,Math.max(1,Math.floor(force/10)));r.soldiers-=loss;r.integrity=Math.max(0,r.integrity-Math.max(1,force-Math.floor(r.soldiers/3)));}
++  else if(r.integrity<100&&r.food>0){r.integrity=Math.min(100,r.integrity+1);r.food--;}
++ }
++ const m=d.mission;
++ if(m&&m.dueAt<=k.step){
++  if(m.kind==='scout'){
++   const n=d.realms.length+1,r={id:`realm-${n}`,name:NAMES[n-1],bearing:BEARINGS[n-1],discoveredAt:k.step,relation:0,treaty:'neutral',population:300+roll(k,n,0)%201,soldiers:60+roll(k,n,1)%61,food:500,integrity:100,report:null};report(r,k.step);d.realms.push(r);events.push(`Scouts report ${r.name} to the ${r.bearing}; relations begin neutral. No settlement site has been surveyed for travel.`);
++  }else{
++   const r=d.realms.find((/** @type {any} */r)=>r.id===m.realmId);if(!r)throw Error('Diplomatic mission target disappeared.');
++   if(m.kind==='envoy'){r.relation=Math.min(100,r.relation+25);events.push(`The envoy returned from ${r.name}; relations ${r.relation}.`);}
++   else if(r.relation>=50&&r.integrity>=50&&r.soldiers>=20){r.treaty='allied';events.push(`${r.name} accepted an alliance. Assistance still requires a surveyed route.`);}
++   else events.push(`${r.name} declined the alliance while its defenses are strained.`);
++   report(r,k.step);
++  }
++  d.mission=null;
++ }
++ d.lastAdvancedStep=k.step;return events;
++}
+--- a/CivilizationApocalypse_BP/scripts/sim/tick.js
++++ b/CivilizationApocalypse_BP/scripts/sim/tick.js
+@@ -1,3 +1,4 @@
++import { runDiplomacyStep } from "./diplomacy.js";
+ import { SIM } from "../config.js";
+ import { findValidationProblems } from "../kingdom/state.js";
+ import { formatGameTime } from "./clock.js";
+@@ -144,6 +145,7 @@
+         events.push(...runPolicyStep(kingdom));
+         events.push(...toEvents(runPopulationStep(kingdom)));
+         events.push(...runTrainingStep(kingdom));
++        events.push(...runDiplomacyStep(kingdom));
+         problems = [...findValidationProblems(kingdom), ...validateGateRecords(kingdom)];
+     } catch (error) {
+         problems = [`a simulation system threw: ${String(error)}`];
+--- a/dev/test/core-v2.test.mjs
++++ b/dev/test/core-v2.test.mjs
+@@ -48,7 +48,7 @@
+ 
+ test("v2 districts start fully established, not empty", () => {
+     const kingdom = createInitialKingdom();
+-    assert.equal(kingdom.schemaVersion, 2);
++    assert.equal(kingdom.schemaVersion, config.KINGDOM_SCHEMA_VERSION);
+     for (const district of kingdom.districts) {
+         assert.equal(district.defensiveIntegrity, 100);
+         assert.equal(district.security, "secure");
+@@ -100,7 +100,7 @@
+     const result = migrateKingdom(JSON.parse(makeV1Save()));
+     assert.equal(result.problems, undefined);
+     assert.equal(result.fromVersion, 1);
+-    assert.equal(result.toVersion, 2);
++    assert.equal(result.toVersion, config.KINGDOM_SCHEMA_VERSION);
+     const migrated = result.kingdom;
+     assert.deepEqual(findValidationProblems(migrated), []);
+     assert.equal(computeTotals(migrated).civilians, 400);
+@@ -118,7 +118,7 @@
+ });
+ 
+ test("migration refuses newer, older-than-supported and unreadable saves instead of guessing", () => {
+-    assert.match(migrateKingdom({ schemaVersion: 3 }).problems.join(" "), /newer than this pack/);
++    assert.match(migrateKingdom({ schemaVersion: config.KINGDOM_SCHEMA_VERSION+1 }).problems.join(" "), /newer than this pack/);
+     assert.match(migrateKingdom({ schemaVersion: 0 }).problems.join(" "), /no migration path registered from schema v0/);
+     assert.match(migrateKingdom({ name: "no version" }).problems.join(" "), /no schemaVersion/);
+     assert.equal(readSchemaVersion({ schemaVersion: "1" }), undefined);
+@@ -138,7 +138,7 @@
+     assert.equal(computeTotals(result.kingdom).civilians, 400);
+ 
+     const storedNow = JSON.parse(world.properties.get(config.STORAGE_KEYS.kingdom));
+-    assert.equal(storedNow.schemaVersion, 2);
++    assert.equal(storedNow.schemaVersion, config.KINGDOM_SCHEMA_VERSION);
+ 
+     const kept = JSON.parse(world.properties.get(config.STORAGE_KEYS.quarantine));
+     assert.equal(kept.schemaVersion, 1);
+--- a/dev/test/diplomacy-roadmap.test.mjs
++++ b/dev/test/diplomacy-roadmap.test.mjs
+@@ -0,0 +1,45 @@
++import assert from 'node:assert/strict';
++import test from 'node:test';
++import {createInitialKingdom,findValidationProblems,serializeKingdom,deserializeKingdom} from '../../CivilizationApocalypse_BP/scripts/kingdom/state.js';
++import {migrateKingdom} from '../../CivilizationApocalypse_BP/scripts/kingdom/migrations.js';
++import {createKingdomStore} from '../../CivilizationApocalypse_BP/scripts/kingdom/store.js';
++import {emptyDiplomacy,diplomacyProblems,diplomaticReadiness,sendDiplomaticMission,runDiplomacyStep} from '../../CivilizationApocalypse_BP/scripts/sim/diplomacy.js';
++import {advanceKingdomStep} from '../../CivilizationApocalypse_BP/scripts/sim/tick.js';
++import {buildMenu,buildConfirmModel} from '../../CivilizationApocalypse_BP/scripts/ledger/menus.js';
++import {runAction,actionSpec} from '../../CivilizationApocalypse_BP/scripts/ledger/actions.js';
++import {createLedgerUi} from '../../CivilizationApocalypse_BP/scripts/ledger/runtime.js';
++import {createLedgerHarness,makeMarkerStack} from '../lib/ledgerharness.mjs';
++function kingdom(){const k=createInitialKingdom();for(const d of k.districts){d.reserves.food=10000;d.reserves.supplies=10000;d.reserves.materials=10000;}return k;}
++function hours(k,n){const events=[];for(let i=0;i<n;i++){k.step++;events.push(...runDiplomacyStep(k));}return events;}
++function contact(k){assert.equal(sendDiplomaticMission(k,'scout').ok,true);hours(k,12);return k.diplomacy.realms[0];}
++test('new save schema3 and explicit v2 migration preserve every old field and add no foreign realm',()=>{const k=kingdom();assert.equal(k.schemaVersion,3);assert.deepEqual(findValidationProblems(k),[]);const old=structuredClone(k);delete old.diplomacy;old.schemaVersion=2;old.exampleExtension={proof:'preserved'};const result=migrateKingdom(old);assert.deepEqual(result.path,[3]);assert.equal(result.kingdom.schemaVersion,3);assert.deepEqual({...result.kingdom,schemaVersion:2,diplomacy:undefined},{...old,diplomacy:undefined});assert.deepEqual(result.kingdom.diplomacy,emptyDiplomacy());});
++test('v1 migration still follows both registered steps and produces valid3',()=>{const migrated=migrateKingdom({schemaVersion:1,name:'old',districts:[{id:'district-1',name:'old',civilians:80,soldiers:30}]});assert.deepEqual(migrated.path,[2,3]);assert.equal(migrated.kingdom.schemaVersion,3);assert.deepEqual(findValidationProblems(migrated.kingdom),[]);});
++test('store preserves future schema and refuses overwrite',()=>{const values=new Map([['civ:kingdom',JSON.stringify({schemaVersion:4})]]),world={getDynamicProperty:k=>values.get(k),setDynamicProperty:(k,v)=>values.set(k,v)},s=createKingdomStore(world),before=values.get('civ:kingdom');assert.equal(s.load().status,'newer');assert.throws(()=>s.save(kingdom()),/overwrite/);assert.equal(values.get('civ:kingdom'),before);});
++test('scouting has exact real reserve debit and delayed neutral contact, never premature discovery',()=>{const k=kingdom(),food=k.districts[0].reserves.food,supplies=k.districts[0].reserves.supplies;assert.equal(sendDiplomaticMission(k,'scout').ok,true);assert.equal(k.districts[0].reserves.food,food-6);assert.equal(k.districts[0].reserves.supplies,supplies-2);hours(k,11);assert.equal(k.diplomacy.realms.length,0);assert.equal(k.diplomacy.mission.dueAt,12);hours(k,1);assert.equal(k.diplomacy.realms.length,1);assert.equal(k.diplomacy.realms[0].treaty,'neutral');assert.equal(k.diplomacy.realms[0].relation,0);assert.equal(k.diplomacy.mission,null);});
++test('all refused missions leave entire save byte-identical',()=>{for(const mutate of[k=>{k.districts[0].security='alert';},k=>{k.districts[0].reserves.food=5;},k=>{k.districts[0].reserves.supplies=1;},k=>{k.districts[0].assault=1;},k=>{sendDiplomaticMission(k,'scout');}]){const k=kingdom();mutate(k);const before=JSON.stringify(k);assert.equal(sendDiplomaticMission(k,'scout').ok,false);assert.equal(JSON.stringify(k),before);}const k=kingdom(),before=JSON.stringify(k);assert.equal(sendDiplomaticMission(k,'envoy','unknown').ok,false);assert.equal(sendDiplomaticMission(k,'fake').ok,false);assert.equal(JSON.stringify(k),before);});
++test('one shared mission prevents repeat/multiplayer double-debit from stale confirmation',()=>{const k=kingdom();assert.equal(runAction('diplomacy.mission',{kingdom:k},{kind:'scout'}).ok,true);const before=JSON.stringify(k);assert.equal(runAction('diplomacy.mission',{kingdom:k},{kind:'scout'}).ok,false);assert.equal(JSON.stringify(k),before);});
++test('envoys improve relations only on arrival and alliance rechecks recipient safety on arrival',()=>{const k=kingdom(),r=contact(k);assert.equal(sendDiplomaticMission(k,'alliance',r.id).ok,false);for(let n=0;n<2;n++){assert.equal(sendDiplomaticMission(k,'envoy',r.id).ok,true);const prior=r.relation;hours(k,17);assert.equal(r.relation,prior);hours(k,1);assert.equal(r.relation,prior+25);}assert.equal(sendDiplomaticMission(k,'alliance',r.id).ok,true);r.soldiers=0;hours(k,24);assert.equal(r.treaty,'neutral');assert.equal(k.diplomacy.mission,null);r.soldiers=50;r.integrity=100;assert.equal(sendDiplomaticMission(k,'alliance',r.id).ok,true);hours(k,24);assert.equal(r.treaty,'allied');assert.equal(sendDiplomaticMission(k,'alliance',r.id).ok,false);});
++test('distant truth changes while last-known report stays old until mission returns',()=>{const k=kingdom(),r=contact(k),report=structuredClone(r.report);hours(k,36);assert.notEqual(r.soldiers,report.soldiers);assert.deepEqual(r.report,report);const model=buildMenu({menu:'diplomacy',params:{},page:0},k);assert.ok(model.lines.some(s=>s.includes('36 hours old')));assert.ok(model.lines.some(s=>s.includes(`soldiers ${report.soldiers}`)));assert.equal(sendDiplomaticMission(k,'envoy',r.id).ok,true);hours(k,18);assert.equal(r.report.at,k.step);assert.equal(r.report.soldiers,r.soldiers);});
++test('foreign simulation is deterministic, does not spend home RNG, and is idempotent for one clock step',()=>{const a=kingdom(),b=kingdom();contact(a);contact(b);hours(a,200);hours(b,200);assert.deepEqual(a.diplomacy,b.diplomacy);assert.equal(a.rngState,b.rngState);const before=JSON.stringify(a);assert.deepEqual(runDiplomacyStep(a),[]);assert.equal(JSON.stringify(a),before);});
++test('three-contact cap, validated roundtrip and bounded long-run records',()=>{const k=kingdom();for(let n=0;n<3;n++)contact(k);assert.equal(sendDiplomaticMission(k,'scout').ok,false);hours(k,2400);assert.deepEqual(findValidationProblems(k),[]);const decoded=deserializeKingdom(serializeKingdom(k));assert.deepEqual(decoded.kingdom,k);assert.ok(JSON.stringify(k.diplomacy).length<3000);assert.equal(k.diplomacy.realms.length,3);});
++test('existing transactional kingdom hour owns completion and rolls back invalid foreign state',()=>{const k=kingdom();sendDiplomaticMission(k,'scout');for(let n=0;n<12;n++){const result=advanceKingdomStep(k);assert.deepEqual(result.problems,[]);}assert.equal(k.diplomacy.realms.length,1);const bad=structuredClone(k);bad.diplomacy.realms[0].population=-1;const before=JSON.stringify(bad),result=advanceKingdomStep(bad);assert.ok(result.problems.length);assert.equal(JSON.stringify(bad),before);});
++test('Ledger real action confirms cost/time and refreshes stale source safety before mutation',()=>{const k=kingdom(),f={menu:'diplomacy',params:{},page:0},menu=buildMenu(f,k),button=menu.buttons.find(b=>b.id==='scout:region');assert.ok(button);assert.equal(actionSpec('diplomacy.mission').touchesKingdom,true);const confirm=buildConfirmModel('diplomacy.mission',{kind:'scout'},k);assert.ok(confirm.lines.some(l=>l.includes('6 food and 2 supplies')));assert.ok(confirm.lines.some(l=>l.includes('12 kingdom hours')));k.districts[0].security='besieged';const before=JSON.stringify(k);assert.equal(runAction('diplomacy.mission',{kingdom:k},{kind:'scout'}).ok,false);assert.equal(JSON.stringify(k),before);});
++test('no fabricated surveyed position, physical army credit or working assistance button',()=>{const k=kingdom(),troops=k.districts.map(d=>d.soldiers),r=contact(k);r.relation=100;sendDiplomaticMission(k,'alliance',r.id);hours(k,24);assert.equal(r.treaty,'allied');assert.deepEqual(k.districts.map(d=>d.soldiers),troops);assert.equal(Object.hasOwn(r,'position'),false);const menu=buildMenu({menu:'diplomacy',params:{},page:0},k);assert.ok(menu.lines.some(l=>l.includes('not yet surveyed')));const aid=menu.buttons.find(b=>b.id==='assistance');assert.equal(aid.enabled,false);});
++for(const mutate of[d=>{d.v=2;},d=>{d.realms[0].report.at=999;},d=>{d.realms[0].soldiers=10001;},d=>{d.realms.push(structuredClone(d.realms[0]));},d=>{d.mission={kind:'envoy',realmId:'missing',fromDistrictId:'district-1',sentAt:1,dueAt:19};},d=>{d.lastAdvancedStep=999;}])test('malformed/future diplomatic record is refused',()=>{const k=kingdom();contact(k);mutate(k.diplomacy);assert.ok(diplomacyProblems(k.diplomacy,k.step,k.districts.map(d=>d.id)).length);assert.throws(()=>serializeKingdom(k),/invalid kingdom/);});
++test('future nested diplomatic version is preserved by both ensureInitial and save, not reset',()=>{const k=kingdom();k.diplomacy.v=2;const raw=JSON.stringify(k),values=new Map([['civ:kingdom',raw]]),world={getDynamicProperty:key=>values.get(key),setDynamicProperty:(key,value)=>values.set(key,value)},store=createKingdomStore(world);assert.equal(store.load().status,'newer');assert.equal(store.ensureInitial().refused,true);assert.throws(()=>store.save(kingdom()),/overwrite/);assert.equal(values.get('civ:kingdom'),raw);assert.equal(values.size,1);});
++test('unexpected v2 extension cannot be overwritten by v3 migration',()=>{const k=kingdom();k.schemaVersion=2;k.diplomacy={v:99,protected:'future'};const before=JSON.stringify(k),result=migrateKingdom(k);assert.ok(result.problems);assert.equal(JSON.stringify(k),before);});
++for(const version of [1,2])test('legacy'+version+' unknown extension survives load/ensure/save even when nestedversion looks current',()=>{const k=kingdom();k.schemaVersion=version;const raw=JSON.stringify(k),values=new Map([['civ:kingdom',raw]]),store=createKingdomStore({getDynamicProperty:key=>values.get(key),setDynamicProperty:(key,value)=>values.set(key,value)});assert.equal(store.load().status,'unsupported');assert.equal(store.ensureInitial().refused,true);assert.ok(migrateKingdom(k).problems);assert.throws(()=>store.save(kingdom()),/unsupported diplomacy/);assert.equal(values.get('civ:kingdom'),raw);assert.equal(values.size,1);});
++for(const [label,mutate] of [['null',k=>k.diplomacy=null],['missing',k=>delete k.diplomacy],['zero-version',k=>k.diplomacy.v=0],['string-future',k=>k.diplomacy.v='future'],['malformed-mission',k=>k.diplomacy.mission={kind:'scout',sentAt:0,dueAt:12}]])for(const operation of ['ensureInitial','direct-save'])test('unreadable current '+label+' '+operation+' preserves city and quarantines nothing',()=>{const k=kingdom();k.cityExtension={receipt:'keep'};k.districts[0].civilians=123;mutate(k);const raw=JSON.stringify(k),values=new Map([['civ:kingdom',raw]]),store=createKingdomStore({getDynamicProperty:key=>values.get(key),setDynamicProperty:(key,value)=>values.set(key,value)});assert.equal(store.load().status,'unsupported');if(operation==='ensureInitial')assert.equal(store.ensureInitial().refused,true);else assert.throws(()=>store.save(kingdom()),/unsupported diplomacy/);assert.equal(values.get('civ:kingdom'),raw);assert.equal(values.size,1);});
++test('null saved JSON keeps established nonthrowing corrupt-store behavior',()=>{const store=createKingdomStore({getDynamicProperty:()=> 'null',setDynamicProperty:()=>{}});assert.equal(store.load().status,'corrupt');});
++test('missing/noncontiguous realm identity refuses a fourth accidental ID before spending',()=>{const k=kingdom();const r=contact(k);r.id='realm-3';r.name='Stonehaven';r.bearing='west';const before=JSON.stringify(k);assert.equal(sendDiplomaticMission(k,'scout').ok,false);assert.equal(JSON.stringify(k),before);});
++test('rejoin during journey preserves exact deadline; arrival grants only one discovery',()=>{const original=kingdom();sendDiplomaticMission(original,'scout');hours(original,5);const restored=deserializeKingdom(serializeKingdom(original)).kingdom;hours(restored,7);assert.equal(restored.diplomacy.realms.length,1);assert.equal(restored.diplomacy.mission,null);const before=JSON.stringify(restored);runDiplomacyStep(restored);assert.equal(JSON.stringify(restored),before);});
++const closed={canceled:true,cancelationReason:'UserClosed'};
++const pick=label=>shown=>{const selection=shown.buttons.indexOf(label);assert.ok(selection>=0,`Missing ${label} in ${shown.buttons}`);return{canceled:false,selection};};
++for(const mode of ['confirm','cancel','save-failure','unsafe-before-confirm'])test('actual Ledger runtime diplomatic '+mode+' uses existing confirmation/private-copy save boundary',async()=>{
++ const k=kingdom(),h=createLedgerHarness({kingdom:k}),ui=createLedgerUi(h.deps),p=h.player('commander');ui.register();
++ h.forms.script.push(pick('Diplomacy'),pick('Send scouts'),mode==='cancel'?pick('Cancel'):shown=>{if(mode==='save-failure')h.store.setFailSaves(true);if(mode==='unsafe-before-confirm'){const changed=h.store.peek();changed.districts[0].security='besieged';h.store.save(changed);}return pick('Send expedition')(shown);},closed);
++ h.world.emitItemUse({source:p,itemStack:makeMarkerStack()});await h.advance(1);await h.settle();
++ assert.ok(h.forms.shown.some(s=>s.kind==='message'&&s.body.includes('6 food and 2 supplies')));
++ const saved=h.store.peek();if(mode==='confirm'){assert.equal(saved.diplomacy.mission.kind,'scout');assert.equal(saved.districts[0].reserves.food,k.districts[0].reserves.food-6);assert.equal(h.store.saves.length,1);}else{assert.equal(saved.diplomacy.mission,null);assert.equal(saved.districts[0].reserves.food,k.districts[0].reserves.food);}
++ assert.deepEqual(h.system.failures,[]);
++});
+--- a/dev/test/kingdom.test.mjs
++++ b/dev/test/kingdom.test.mjs
+@@ -95,7 +95,7 @@
+ test("validation rejects malformed kingdom state", () => {
+     assert.deepEqual(findValidationProblems(null), ["kingdom is not an object"]);
+     assert.deepEqual(findValidationProblems([]), ["kingdom is not an object"]);
+-    assert.deepEqual(findValidationProblems({ schemaVersion: 99 }), ["kingdom schemaVersion 99, expected 2"]);
++    assert.deepEqual(findValidationProblems({ schemaVersion: 99 }), [`kingdom schemaVersion 99, expected ${KINGDOM_SCHEMA_VERSION}`]);
+ 
+     const wrongName = { ...createInitialKingdom(), name: "" };
+     assert.deepEqual(findValidationProblems(wrongName), ["kingdom name must be a non-empty string"]);
+--- a/dev/test/ledger-presenters.test.mjs
++++ b/dev/test/ledger-presenters.test.mjs
+@@ -428,14 +428,14 @@
+ 
+ const NOT_BUILT_IDS = ["envoy", "trade", "alliance", "ultimatum", "commanders", "patrols", "golems", "other-buildings", "districts-2-5", "claim", "forecast"];
+ 
+-test("diplomacy is wholly unavailable: every feature disabled with 'not implemented'", () => {
++test("diplomacy offers confirmed scouting while physical trade/assistance stay unavailable", () => {
+     for (const row of ROWS.filter((entry) => entry.frame.menu === "diplomacy")) {
+-        assert.ok(row.model.buttons.length >= 4);
+-        for (const button of row.model.buttons.filter((entry) => entry.id !== "back" && entry.id !== "home")) {
+-            assert.equal(button.enabled, false, button.id);
+-            assert.equal(button.reason, "not implemented", button.id);
+-        }
+-        assert.ok(row.model.lines.some((line) => /No other kingdom/.test(line)));
++        const scout=row.model.buttons.find(button=>button.id==="scout:region");assert.ok(scout);
++        if(scout.enabled)assert.deepEqual(scout.action,{id:"diplomacy.mission",params:{kind:"scout"}});
++        else assert.ok(typeof scout.reason==="string"&&scout.reason.length>0);
++        for(const id of ["trade","assistance"]){const button=row.model.buttons.find(button=>button.id===id);assert.ok(button);assert.equal(button.enabled,false);assert.equal(button.reason,"not implemented");}
++        assert.ok(row.model.lines.some(line=>/No other kingdom/.test(line)));
++        assert.ok(row.model.lines.join(" ").includes("not yet surveyed"));
+     }
+ });
+ 

@@ -519,6 +519,49 @@ test("registerBuiltGates persists links through the kingdom store, writes the re
     assert.match(civGates.registerBuiltGates(store, RECORD, "overworld").reason, /no kingdom/);
 });
 
+test("neighbor registration preserves measured shared-gate geometry and omitted companions", () => {
+    use(freshWorld());
+    const before = JSON.stringify(kingdom());
+    const registryBefore = readGateRegistry();
+    const shifted = SITE_GATES.filter((gate) => gate.id !== COMPANION_15.id)
+        .map((gate) => ({ ...gate, walkingLevel: gate.walkingLevel + 9 }));
+    const result = civGates.registerBuiltGates(store, shifted, "minecraft:overworld");
+    assert.equal(result.ok, true, String(result.reason));
+    assert.equal(JSON.stringify(kingdom()), before, "a later survey cannot relocate an existing gate or drop its companion");
+    assert.deepEqual(readGateRegistry(), registryBefore);
+    assert.equal(mc.writes, 0, "registration does not rewrite physical blocks");
+});
+
+test("saved-plan recovery restores drifted measurements without block writes and rolls back refused recovery", () => {
+    use(freshWorld());
+    const original = readGateRegistry();
+    const shifted = SITE_GATES.map((gate) => ({ ...gate, walkingLevel: gate.walkingLevel + 9 }));
+    const k = kingdom();
+    const changed = link.linkPhysicalGates(k, shifted, { dimension: "minecraft:overworld" });
+    store.save(k);
+    adapterModule.updateGateRegistry(changed.links);
+    assert.notDeepEqual(readGateRegistry(), original, "reproduce the old neighbor-registration drift");
+    const blocksBefore = [...mc.blocks.entries()];
+    const recovered = civGates.restorePlannedGateGeometry(store, SITE_GATES);
+    assert.equal(recovered.ok, true, String(recovered.reason));
+    assert.deepEqual(readGateRegistry(), original);
+    assert.equal(simGate(kingdom(), 1, 2).physical.spec.y, MAIN_12.walkingLevel);
+    assert.deepEqual([...mc.blocks.entries()], blocksBefore);
+    const before = JSON.stringify(kingdom());
+    const bad = civGates.restorePlannedGateGeometry(store, SITE_GATES.filter((gate) => gate.id !== COMPANION_15.id));
+    assert.equal(bad.ok, false);
+    assert.deepEqual(readGateRegistry(), original);
+    assert.equal(JSON.stringify(kingdom()), before);
+    adapterModule.updateGateRegistry(changed.links);
+    const drifted = readGateRegistry();
+    mc.properties.set(`${GATE_RUNTIME.propertyPrefix}${G(1, 2)}`, JSON.stringify({ ...readGateRecord(G(1, 2)), actual: "partial", to: null }));
+    const unsettled = civGates.restorePlannedGateGeometry(store, SITE_GATES);
+    assert.equal(unsettled.ok, false);
+    assert.match(unsettled.reason, /position partial/);
+    assert.deepEqual(readGateRegistry(), drifted, "a refusal after the candidate registry write rolls it back");
+    assert.equal(JSON.stringify(kingdom()), before);
+});
+
 test("a gate list may be passed directly, and every gate stays OPEN after registration (no block is written)", () => {
     freshWorld({ register: false });
     const result = civGates.registerBuiltGates(store, SITE_GATES, "minecraft:overworld");
@@ -1115,6 +1158,94 @@ test("civ:gate_list shows companions moving together and the physical-only gates
     assert.match(command("civ:gate_auto", OUTER_ID), /Mode is now auto/);
 });
 
+test("ordinary gate orders load both distant units before closing and release their areas afterward", () => {
+    use(freshWorld());
+    const areas = new Map();
+    let ready = false;
+    mc.world.tickingAreaManager = {
+        maxChunkCount: 300, chunkCount: 0,
+        getAllTickingAreas: () => [], hasCapacity: () => true,
+        hasTickingArea: (id) => areas.has(id),
+        getTickingArea: (id) => areas.has(id) ? { isFullyLoaded: ready } : undefined,
+        removeTickingArea: (id) => { areas.delete(id); },
+        createTickingArea: (id, request) => { areas.set(id, request); return new Promise(() => {}); },
+    };
+    mc.unloaded = ({ x, z }) => !ready || ![...areas.values()].some((area) => x >= area.from.x && x <= area.to.x && z >= area.from.z && z <= area.to.z);
+    try {
+        const before = mc.writes;
+        assert.equal(currentAdapter.request(G(5, 1), "closed").status, "running");
+        stepJobs(30);
+        assert.equal(areas.size, 2, "each companion has its own small loading area");
+        assert.equal(mc.writes, before, "no gate moves until all unit areas are ready");
+        ready = true;
+        settle();
+        assert.equal(areas.size, 0, "completion releases the whole group");
+        mc.unloaded = () => false;
+        for (const gate of [PRIMARY_15, COMPANION_15]) assert.equal(latticeOf(specOf(gate)), "closed");
+        assert.equal(simPhysical(5, 1).state, "sealed");
+    } finally { delete mc.world.tickingAreaManager; mc.unloaded = () => false; }
+});
+
+test("distant paired self-test loads its crossing proof, rejects duplicate tests, and releases all holds", () => {
+    use(freshWorld());
+    const areas = new Map();
+    let ready = false, report;
+    mc.world.tickingAreaManager = {
+        maxChunkCount: 300, chunkCount: 0,
+        getAllTickingAreas: () => [], hasCapacity: () => true,
+        hasTickingArea: (id) => areas.has(id),
+        getTickingArea: (id) => areas.has(id) ? { isFullyLoaded: ready } : undefined,
+        removeTickingArea: (id) => { areas.delete(id); },
+        createTickingArea: (id, request) => { areas.set(id, request); return new Promise(() => {}); },
+    };
+    mc.unloaded = ({ x, z }) => !ready || ![...areas.values()].some((area) => x >= area.from.x && x <= area.to.x && z >= area.from.z && z <= area.to.z);
+    try {
+        const before = mc.writes;
+        assert.equal(civGates.startGateSelfTest(currentAdapter, store, G(5, 1), (value) => { report = value; }).ok, true);
+        assert.equal(civGates.startGateSelfTest(currentAdapter, store, G(5, 1), () => {}).ok, false);
+        stepJobs(30);
+        assert.equal(mc.writes, before);
+        assert.equal(areas.size, 2);
+        ready = true;
+        settle();
+        assert.equal(report.pass, true, report.lines.join("\n"));
+        assert.match(report.lines.join("\n"), /12 crossing checks as expected/);
+        assert.equal(areas.size, 0);
+        assert.equal(currentAdapter.isHeld(G(5, 1)), false);
+    } finally { delete mc.world.tickingAreaManager; mc.unloaded = () => false; }
+});
+
+test("self-test loading failure releases its lock without changing any blocks", () => {
+    use(freshWorld());
+    let report;
+    mc.world.tickingAreaManager = { getAllTickingAreas: () => [], chunkCount: 300, maxChunkCount: 300 };
+    try {
+        const before = mc.writes;
+        assert.equal(civGates.startGateSelfTest(currentAdapter, store, G(5, 1), (value) => { report = value; }).ok, true);
+        settle();
+        assert.equal(report.pass, false);
+        assert.match(report.lines.join("\n"), /capacity/);
+        assert.equal(mc.writes, before);
+        assert.equal(currentAdapter.isHeld(G(5, 1)), false);
+    } finally { delete mc.world.tickingAreaManager; }
+});
+
+test("self-test waits on game ticks when the scheduler gives it thousands of yields before the gate job", () => {
+    use(freshWorld());
+    let report;
+    assert.equal(civGates.startGateSelfTest(currentAdapter, store, G(1, 2), (value) => { report = value; }).ok, true);
+    const self = mc.jobs.shift();
+    const tick = mc.tick;
+    for (let i = 0; i < 6500; i += 1) assert.equal(self.generator.next().done, false);
+    assert.equal(mc.tick, tick, "all those work slices occurred in the same game tick");
+    assert.equal(report, undefined, "work slices cannot exhaust an elapsed-time deadline");
+    assert.equal(currentAdapter.isRunning(G(1, 2)), true, "the gate job was not aborted before it could run");
+    mc.jobs.push(self);
+    settle();
+    assert.equal(report.pass, true, report.lines.join("\n"));
+    assert.equal(latticeOf(specOf(MAIN_12)), "open", "the original position is restored");
+});
+
 function runSelfTest(gateId) {
     const player = makePlayer();
     commandHandler.callback({ id: "civ:gate_test", message: gateId, sourceType: "Entity", sourceEntity: player, initiator: player });
@@ -1190,6 +1321,30 @@ test("civ:gate_test refuses (and writes nothing): entity in a gateway, foreign b
     assert.match(runSelfTest("nowhere"), /no gate matches/);
 });
 
+test("raised approach decks cannot bypass a closed gate through its roof crenellations", () => {
+    for (const axis of ["x", "z"]) {
+        const spec = { at: { x: -274, z: -528 }, y: 57, axis };
+        const s = gates.normalizeSpec(spec);
+        const ids = new Map(link.proofCells(spec).map((p) => [cellKey(p), "minecraft:air"]));
+        for (const op of gates.fullGateBlocks(spec, "closed")) ids.set(cellKey(op), op.id);
+        // A raised coastal street at y=65 crosses the otherwise empty roof
+        // gaps. Gate masonry wins exact-cell collisions, as in the planner.
+        for (let u = -s.hw; u <= s.hw; u++) for (let v = -6; v <= 6; v++) {
+            const p = gates.toWorld(s, u, v, s.wallTop + 1);
+            if (ids.get(cellKey(p)) === "minecraft:air") ids.set(cellKey(p), "minecraft:oak_planks");
+        }
+        const before = link.crossingFromWorld(spec, ids, { height: 2, trace: true });
+        assert.equal(before.crosses, true, "reproduces the live Saltmere roof bypass");
+        assert.ok(before.path.some((p) => p.y === 66));
+        for (const op of gates.gateRoofGuardBlocks(spec)) ids.set(cellKey(op), op.id);
+        for (const height of [1, 2, 3]) for (const squeeze of [false, true]) {
+            assert.equal(link.crossingFromWorld(spec, ids, { height, squeeze }).crosses, false, `${axis}: sealed for 1x${height}, squeeze ${squeeze}`);
+        }
+        for (const op of gates.gateBlocks(spec, "open").ops) ids.set(cellKey(op), op.id);
+        assert.equal(link.crossingFromWorld(spec, ids, { height: 3 }).crosses, true, "the road through the gate remains usable");
+    }
+});
+
 test("civ:gate_test FAILS honestly on a leaking gatehouse (hole through a tower) and still restores the gate", () => {
     use(freshWorld());
     const s = gates.normalizeSpec(specOf(MAIN_12));
@@ -1202,6 +1357,7 @@ test("civ:gate_test FAILS honestly on a leaking gatehouse (hole through a tower)
     const text = runSelfTest(G(1, 2));
     assert.match(text, /FAIL {2}2 sealed/);
     assert.match(text, /walker.*gets through/);
+    assert.match(text, /gets through via \(-?\d+,-?\d+,-?\d+\)/, "the failure identifies a real route through the wall plane");
     assert.match(text, /PASS {2}3 reopen/);
     assert.match(text, /RESULT: FAIL/);
     assert.equal(latticeOf(specOf(MAIN_12)), "open", "restored");

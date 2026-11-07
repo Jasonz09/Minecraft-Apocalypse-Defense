@@ -1,9 +1,10 @@
 # Population representation and level of detail (WP4)
 
-Status: **built, tested offline, not wired.** Nothing in the pack imports or starts the population sync. The
-default configuration spawns nothing, and `popSync` refuses to apply actions unless its caller passes
-`enabled: true`. No in-game run has exercised it: the module is unwired, so the in-game runs of 2026-10-26
-(`docs/PROGRESS.md`), which built two districts, never reached this code. Requirements are in `docs/ROADMAP.md` section A.
+Status: **built and wired behind `civ:people on`, which is off by default.** The default configuration
+spawns nothing, and `popSync` refuses to apply actions unless its caller passes `enabled: true`;
+`integration/peopleStreets.js` is the one gated door into `population/`. The in-game runs of 2026-10-26
+predate that wiring; on 2026-10-29 the streets driver ran in the player's world (`docs/PROGRESS.md`) and
+adopted the entities already there rather than re-creating them. Requirements are in `docs/ROADMAP.md` section A.
 
 ## What it is
 

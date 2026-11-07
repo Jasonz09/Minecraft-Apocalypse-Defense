@@ -428,14 +428,14 @@ test("a result model shows success text, or the refusal reason with a Back that 
 
 const NOT_BUILT_IDS = ["envoy", "trade", "alliance", "ultimatum", "commanders", "patrols", "golems", "other-buildings", "districts-2-5", "claim", "forecast"];
 
-test("diplomacy is wholly unavailable: every feature disabled with 'not implemented'", () => {
+test("diplomacy offers confirmed scouting while physical trade/assistance stay unavailable", () => {
     for (const row of ROWS.filter((entry) => entry.frame.menu === "diplomacy")) {
-        assert.ok(row.model.buttons.length >= 4);
-        for (const button of row.model.buttons.filter((entry) => entry.id !== "back" && entry.id !== "home")) {
-            assert.equal(button.enabled, false, button.id);
-            assert.equal(button.reason, "not implemented", button.id);
-        }
-        assert.ok(row.model.lines.some((line) => /No other kingdom/.test(line)));
+        const scout=row.model.buttons.find(button=>button.id==="scout:region");assert.ok(scout);
+        if(scout.enabled)assert.deepEqual(scout.action,{id:"diplomacy.mission",params:{kind:"scout"}});
+        else assert.ok(typeof scout.reason==="string"&&scout.reason.length>0);
+        for(const id of ["trade","assistance"]){const button=row.model.buttons.find(button=>button.id===id);assert.ok(button);assert.equal(button.enabled,false);assert.equal(button.reason,"not implemented");}
+        assert.ok(row.model.lines.some(line=>/No other kingdom/.test(line)));
+        assert.ok(row.model.lines.join(" ").includes("not yet surveyed"));
     }
 });
 
@@ -629,10 +629,10 @@ test("construction: abort needs a running build; resume needs a stored one and n
     assert.match(find(busy, "resume").reason, /already running|job/);
 });
 
-test("construction shows the district centre and a teleport line from the saved record", () => {
+test("construction shows the saved location without requiring a typed command", () => {
     const built = buildMenu({ menu: "construction", params: {}, page: 0 }, kingdomStates().physicalGates(), undefined);
-    assert.ok(built.lines.some((line) => line.includes("centre 10 64 10")), built.lines.join(" | "));
-    assert.ok(built.lines.some((line) => line.includes("teleport: /tp @s 10 64 10")));
+    assert.ok(built.lines.some((line) => line.includes("Location: 10, 64, 10")), built.lines.join(" | "));
+    assert.ok(built.lines.every((line) => !line.includes("/tp") && !line.includes("physical no record")));
 });
 
 test("gate card: a physical gate can be self-tested; a broken gate cannot be moved", () => {
@@ -710,8 +710,8 @@ test("the empty kingdom still builds every menu without a placeholder", () => {
  * Item and marker (pure parts)
  * ------------------------------------------------------------------ */
 
-test("the Ledger item is a vanilla book identified by the ca:ledger marker", () => {
-    assert.equal(item.LEDGER_ITEM.typeId, "minecraft:book");
+test("the Ledger item is a custom nonstackable book identified by the ca:ledger marker", () => {
+    assert.equal(item.LEDGER_ITEM.typeId, "civapoc:ledger");
     assert.equal(item.LEDGER_ITEM.marker, "ca:ledger");
     for (const lore of item.LEDGER_ITEM.lore) {
         assert.ok(isPlainLine(lore), lore);
@@ -723,7 +723,7 @@ test("the Ledger item is a vanilla book identified by the ca:ledger marker", () 
 
 test("the item factory sets name, lore, marker, lock mode and keep-on-death", () => {
     const stack = item.makeLedgerStack(harness.FakeItemStack, harness.FakeItemLockMode);
-    assert.equal(stack.typeId, "minecraft:book");
+    assert.equal(stack.typeId, "civapoc:ledger");
     assert.equal(stack.nameTag, "Commander's Ledger");
     assert.equal(stack.lockMode, "inventory");
     assert.equal(stack.keepOnDeath, true);

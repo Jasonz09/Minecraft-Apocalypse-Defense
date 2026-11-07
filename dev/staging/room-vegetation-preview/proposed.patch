@@ -1,0 +1,62 @@
+--- a/CivilizationApocalypse_BP/scripts/commands/civ.js
++++ b/CivilizationApocalypse_BP/scripts/commands/civ.js
+@@ -4,6 +4,7 @@
+ import { LAMP_RETROFIT } from "../civ/lamps.js";
+ import { auditRecord, shortfallOf } from "../civ/facilities.js";
+ import { compileSharedTreeProtectionSteps } from "../civ/sharedtree.js";
++import {roomVegetationPreviewSteps,formatRoomVegetationPreview} from "../civ/roomVegetationPreview.js";
+ import { formatWallLeafPreview, previewWallLeavesSteps } from "../civ/wallleafpreview.js";
+ import { POLICY as LEAF_TRIM_POLICY, LEAF_TRIM_MASONRY_IDS } from "../civ/wallLeafTrim.js";
+ import { createWallLeafSourceGuard, wallLeafRepairSteps, createWallLeafBlockAdapter } from "../civ/wallLeafRepair.js";
+@@ -1281,6 +1282,33 @@
+         : live !== undefined ? `${CIV_EVENT_IDS.resume} district=${String(live.district)}` : CIV_EVENT_IDS.resume), event);
+ }
+ 
++/** Readonly complete chapel room snapshot. No lease, native writes or property writes.
++ * @param {KingdomStore} kingdomStore @param {ScriptEvent} event @param {number} index @param {string} building @param {number} page */
++async function inspectSavedRoom(kingdomStore,event,index,building,page){
++ const player=playerOf(event),loaded=kingdomStore.load(),civ=loaded.kingdom&&districtById(loaded.kingdom,districtIdFor(index))?.civ;
++ if(!player||player.dimension.id!=="minecraft:overworld"||civ?.status!=="complete"||civ.dimension!==player.dimension.id||!building.startsWith(`building-d${index}-`)){reply(["Room census requires a completed matching Overworld chapel and player. Nothing changed."],event);return;}
++ const selectedStamp=JSON.stringify(civ),identity=player.id,dimension=player.dimension,dimensionId=dimension.id;
++ if(dimensionId!=="minecraft:overworld"||dimensionId!==civ.dimension||typeof identity!=="string"){reply(["Room player/source identity is unreadable. Nothing changed."],event);return;}
++ const token=reserveJob("civ-room-preview");if(!token){reply([runningPhrase()],event);return;}
++ try{
++  /** @type {any} */let latestKingdom;
++  const guard=createWallLeafSourceGuard(world,()=>{latestKingdom=kingdomStore.load().kingdom;return latestKingdom;});
++  const selectedCurrent=()=>{const districts=latestKingdom?.districts?.filter((/** @type {any} */d)=>d.id===districtIdFor(index));return districts?.length===1&&JSON.stringify(districts[0].civ)===selectedStamp;};
++  const fastCurrent=()=>!token.cancelled&&activeToken()===token&&devGateOn()&&player.isValid&&player.id===identity&&player.dimension.id===dimensionId&&!token.cancelled&&activeToken()===token;
++  const current=()=>{try{return fastCurrent()&&guard.current()&&selectedCurrent()&&fastCurrent()&&guard.current()&&selectedCurrent()&&fastCurrent();}catch(_error){return false;}};
++  /** @template T @param {Generator<any,T,any>} generator @returns {Generator<any,T,any>} */
++  function* checked(generator){for(;;){if(!current())throw Error("Room census source/player/cancellation guard refused");const n=generator.next();if(!current())throw Error("Room census source changed during verification");if(n.done)return n.value;yield;}}
++  reply(["Verifying the completed saved chapel source for a read-only room census; player-loaded cells only, no holds or changes."],event);
++  const saved=await runJobAsync(token,checked(loadSavedRunSteps(civ,newOps(),index)));if(token.cancelled||!saved)return;
++  if(!saved.ok||saved.queue.state!=="complete"){reply(formatErrorLines("Room census refused",saved.ok?["Original queue is not complete"]:saved.reasons),event);return;}
++  if(!current()||saved.record.checksum!==civ.checksum)throw Error("Room source identity changed");
++  const result=await runJobAsync(token,roomVegetationPreviewSteps(saved.record,building,{current,cancelled:()=>token.cancelled,getBlock:p=>dimension.getBlock(p)}));
++  if(!result||token.cancelled)return;if(!current())throw Error("Room source changed after census");
++  const lines=formatRoomVegetationPreview(result,page);if(!current())throw Error("Room source changed before reporting");reply(lines,event);
++ }catch(error){if(!token.cancelled)reply(formatErrorLines("Room census refused",[String(error),"Nothing changed; no cleanup permission inferred."]),event);}
++ finally{finishJob(token);}
++}
++
+ /**
+  * Cheap diagnostics for real-game problems: the engine's chunk limits, whether a tile would fit, what we own.
+  * @param {KingdomStore} kingdomStore
+@@ -1288,6 +1316,8 @@
+  */
+ function handleDiag(kingdomStore, event) {
+     if (event.message.trim().length > 0) {
++        const room=/^roompreview district=([1-5]) building=(building-d[1-5]-chapel-[1-9]\d{0,2})(?: page=([1-9]\d{0,2}))?$/.exec(event.message.trim());
++        if(room){void inspectSavedRoom(kingdomStore,event,Number(room[1]),room[2],Number(room[3]??1));return;}
+         const leafRepair=/^leafrepair district=([1-5]) policy=wall-leaves-trim-v1(?: (confirm))?$/.exec(event.message.trim());
+         if(leafRepair){void repairSavedWallLeaves(kingdomStore,event,Number(leafRepair[1]),!!leafRepair[2]);return;}
+         const leaves=/^leafpreview district=([1-5])(?: page=([1-9]\d{0,2}))?$/.exec(event.message.trim());
+@@ -1309,7 +1339,7 @@
+         }
+         const match = /^lots district=([1-5])(?: preview=balanced)?$/.exec(event.message.trim());
+         if (!match) {
+-            reply([`Usage: /scriptevent ${CIV_EVENT_IDS.diag} [walls district=N | leafpreview district=N [page=P] | leafrepair district=N policy=wall-leaves-trim-v1 [confirm] | lots district=N [preview=balanced] | tree district=N x=X y=Y z=Z | repair district=N [confirm]]`], event);
++            reply([`Usage: /scriptevent ${CIV_EVENT_IDS.diag} [roompreview district=N building=ID [page=P] | walls district=N | leafpreview district=N [page=P] | leafrepair district=N policy=wall-leaves-trim-v1 [confirm] | lots district=N [preview=balanced] | tree district=N x=X y=Y z=Z | repair district=N [confirm]]`], event);
+             return;
+         }
+         void inspectSavedLots(kingdomStore, Number(match[1]), event, event.message.includes("preview=balanced"));

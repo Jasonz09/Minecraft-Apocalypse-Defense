@@ -1,0 +1,40 @@
+{
+  "scope": "AUTHORING ONLY: not executed/tested/installed; no native target acquisition proof",
+  "productionSource": "CivilizationApocalypse_BP\\entities\\swordsman.json",
+  "sourceEntitySha256": "C0AB66464976DF1EF0ADE7685C0C5800AB96D4EE0BA8A8AEDAED462098958D82",
+  "proposedEntitySha256": "774943076D553408FD2A997559159B7F430ADEF39702DAB3ACF854017FF6DEF0",
+  "changedPointers": [
+    "/minecraft:entity/components/minecraft:behavior.hurt_by_target/entity_types/0/filters/all_of/0",
+    "/minecraft:entity/components/minecraft:behavior.nearest_attackable_target/entity_types/0/filters/all_of/0"
+  ],
+  "primaryVanillaClassifications": [
+    {
+      "typeId": "minecraft:pillager",
+      "url": "https://raw.githubusercontent.com/Mojang/bedrock-samples/v1.26.0.2/behavior_pack/entities/pillager.json",
+      "file": "primary/pillager.jsonc",
+      "sha256": "295E9076ACFD25352A486F75BE15C1C4ACB3DC6A89918AAFDD912ED8AA43B185",
+      "gitBlobSha1": "9b31595170cc8da08006c1d39df3e5ec23f2d9fd",
+      "families": [
+        "pillager",
+        "monster",
+        "illager",
+        "mob"
+      ],
+      "sourceFormatVersion": "1.21.50"
+    },
+    {
+      "typeId": "minecraft:vindicator",
+      "url": "https://raw.githubusercontent.com/Mojang/bedrock-samples/v1.26.0.2/behavior_pack/entities/vindicator.json",
+      "file": "primary/vindicator.jsonc",
+      "sha256": "3C3A442A3218FE1502941B6A468D1EEBB89B808B55F66E4B10ED37AF9E69B189",
+      "gitBlobSha1": "44d7c764b226d0c7a07fdb6ec3906172d5128022",
+      "families": [
+        "vindicator",
+        "monster",
+        "illager",
+        "mob"
+      ],
+      "sourceFormatVersion": "1.21.50"
+    }
+  ]
+}

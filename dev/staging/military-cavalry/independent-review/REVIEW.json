@@ -1,0 +1,65 @@
+{
+  "utc": "2026-11-07T03:04:52.779709+00:00",
+  "scope": "Independent isolated fresh-onlyv3compound metadata review; no production/owner/native integration or fullsuite",
+  "decision": "No remaining blocker found in scoped metadata increment after2fixes. Not production-ready; unified v2/singleactor migration, trusted activation, soleowner/native acceptance remain absent.",
+  "checkpointSha256": "41889C7AEDC859621DCCF5C91C0371C3705C5C9064364349F17ED23D3A73BCF8",
+  "allFinalCompoundPinsMatch": true,
+  "originalPlan9SnapshotAllPinsMatch": true,
+  "original14SourceAndCheckpointPreserved": true,
+  "normal14BeforeFix": {
+    "tests": 14,
+    "pass": 14,
+    "durationMs": 1169.9967,
+    "log": "focused14.log"
+  },
+  "independentRegressionsBeforeFix": {
+    "tests": 2,
+    "pass": 0,
+    "fail": 2,
+    "durationMs": 656.3728,
+    "log": "compound-contracts.log"
+  },
+  "independentExactRegressionsAfterFix": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "log": "compound-contracts-after-fix.log"
+  },
+  "fixedFindings": [
+    {
+      "area": "rollbackRemoved +write",
+      "before": "Private pendingmountticket accepted livingriderID and persisted schema-invalid duplicatedroleIDs.",
+      "after": "Explicit counterpartID refusal occurs before ticket consumption/write, and generic write validates entire proposedrecord against current schema before publication."
+    },
+    {
+      "area": "prepareRole",
+      "before": "Never role could obtain new birthticket while counterpart removal remained unresolved aftercrash.",
+      "after": "Any removing counterpart now holds rolepreparation alongside pending/terminal/cancelled; exact loaded recovery/positive cleanup must resolve it."
+    }
+  ],
+  "positiveReview": [
+    "Exact namespace/keyset and append-only group inventory/chunk counts/hash protect missing/substituted records; fourwrite pair reservation recovers metadata only, per-role pending still precedes caller birth.",
+    "Pair reservation never roles are distinct from issued pending roles. Private role tickets bind exact raw header/record/epoch/generation/type; copied/stale tickets refuse.",
+    "Separate exact rider/mount death/ownerremove terminals preserve survivors; reservePair renews only after both terminal/cancelled. Never-created cancellation is explicit and does not infer death of pending/unloaded actors.",
+    "Positive native remove/death evidence remains future privileged caller contract. Metadata methods do not prove native removal, and tests simulate that evidence rather than exercising real actors.",
+    "No engine import/eventsubscriber/newtimer/spawner/seating/aggregatehuman debit. Allv2/otherfamily state is preserved/refused, not migrated."
+  ],
+  "limits": [
+    "Fresh-compound-onlyv3 is NOT a v2 migration or ordinary population-store replacement; current private activation header/API incompatible until unified single+compound lifecycle/receipts reviewed.",
+    "Cost2global/district caps and pending reservations need same existing reducer/LOD/owner enforcement; metadata has bounded counts but no global actor scheduler enforcement.",
+    "Native birth/seating/dualrelationship/rejoin/death/partialremoval/graphics/combat acceptance absent. Synchronous2048pair snapshot cost/heap nearcap unmeasured."
+  ],
+  "finalModuleSha256": "5BD32F4062C1472CFA43A1550403BDF4FFCADD2EE6CA04ED50B14519D5E231D1",
+  "authorFinalEvidence": {
+    "testsExecuted": 18,
+    "pass": 18,
+    "uniqueCases": 16,
+    "independentRegressionsRepeated": 2,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 652.0059,
+    "log": "compound-focused-reviewed.log"
+  },
+  "strictTypecheck": "Author strictisolatedexit0 log pinned; no independent heavy rerun during parentfullgate"
+}

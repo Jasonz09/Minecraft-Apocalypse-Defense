@@ -1,6 +1,6 @@
 # Commander's Ledger - implementation plan (presenters, runtime and dev-gated wiring on master)
 
-Gate: no Ledger code may be deployed until the enlarged Hearthgate has passed its first in-game test. Presenters and runtime are committed and unwired; the wiring is reverted (see Status below).
+The historical city-test deployment gate has been met. The Ledger is wired behind `civ_ledger_dev` and was tested on a separate imported city copy in Minecraft 26.60 on 2026-11-02: recovery, opening, Military, unavailable-action explanations, recruitment confirmation/result, Back navigation and item persistence passed. It remains off by default pending the rest of the checklist.
 The existing script-event commands stay as developer/debug tools.
 
 ## Compatibility findings (research, medium-high confidence)
@@ -11,11 +11,8 @@ The existing script-event commands stay as developer/debug tools.
   (toggle/slider/dropdown/text). `show(player)` is a Promise, never callable from a beforeEvent (restricted mode). Handle
   `response.canceled` and `FormCancelationReason.UserBusy` (chat or another UI open): retry every ~10-20 ticks for ~100 ticks.
   No documented button cap: keep pages <= ~20 buttons and paginate. Button icons need a resource pack, so use text only.
-- Item: use a VANILLA item (book/clock/compass) renamed with `nameTag`, `setLore`, a dynamic property `ca:ledger`, `lockMode =
-  inventory`, `keepOnDeath = true`. Identify by typeId + property. A custom item JSON needs a resource pack for texture/name and
-  its placeholder behaviour is unverified, so it is avoided.
-- Open: `world.afterEvents.itemUse` (not beforeEvents); defer `show()` with `system.run`; debounce 5-10 ticks (a book can fire
-  itemUse while targeting a block); one form in flight per player (Set of player ids); wrap `show()` in try/catch (player leaves).
+- Item (corrected after live tests on 2026-11-02): a custom nonstackable `civapoc:ledger`, defined in `items/ledger.json`, with the vanilla `book_writable` icon and literal display name. It needs no separate resource pack. `nameTag`, lore, `ca:ledger`, inventory lock and keep-on-death remain. Ordinary books reject dynamic properties because they stack; a writable book accepts the marker but opens its own editor without invoking our menu.
+- Open: register `civapoc:open_ledger` during `system.beforeEvents.startup`, even when the development gate is off. Its `onUse` forwards to the existing debounced runtime; `world.afterEvents.itemUse` remains a fallback. Forms are deferred with `system.run`. Both event paths arriving for one press still produce one form.
 - Give/recover: `inventory.container.addItem` (returns leftover -> `dimension.spawnItem` at the player), scan slots for an existing
   ledger first, recovery command `civ:ledger`, optional first-join grant idempotent via a PLAYER dynamic property.
 
@@ -46,20 +43,16 @@ The existing script-event commands stay as developer/debug tools.
 4. Independent safety/code review; update docs.
 
 ## Remaining dependencies
-Enlarged Hearthgate in-game pass (districts 1 and 2 have one, in a development save on 2026-10-26 - `docs/PROGRESS.md`);
-functional gate controls verified in-game (not done); civ generation status/abort/resume commands stable
-(`civ:generate_status` ran in game, and district 2 was resumed from its stored queue; an abort has not been run in game);
+Enlarged Hearthgate in-game pass (all five districts have one - districts 1-2 on 2026-10-26, districts 3-5 on
+2026-10-29/30, then armed and packaged - `docs/PROGRESS.md`);
+functional gate controls in ordinary play (a newly built distant pair passed its physical self test with automatic temporary loading and no manual area on 2026-11-02); civ generation status/abort/resume commands now exercised live on the separate authoring world, including Save & Quit/rejoin and Horn-confirmed resume;
 decision on first-join grant (default: off, grant only by `civ:ledger`).
 
-## Wiring status (built, not deployed)
+## Wiring status (deployed for live testing, development gate retained)
 - Manifest: `@minecraft/server-ui` 2.1.0 is in `CivilizationApocalypse_BP/manifest.json` dependencies and in
   `package.json` devDependencies (typings installed). **Tried in Minecraft on 2026-10-26**: the pack loaded on
   Bedrock 1.26.5203 with both `@minecraft/server` 2.7.0 and `@minecraft/server-ui` 2.1.0 resolved, so the
-  pack-start risk recorded here is closed. `scripts/main.js` still imports `integration/ledgerBindings.js` statically,
-  which imports `@minecraft/server-ui`, so the pin stays a load-path dependency rather than a feature flag, and a game
-  that cannot resolve it still fails the whole pack. What is **UNVERIFIED IN GAME** is the Ledger itself: with
-  `civ_ledger_dev` off by default its item, forms and confirmations have never been opened. Check those on a throwaway
-  world, with the gate switched on only for the check, before any release.
+  pack-start risk recorded here is closed. The live Ledger checks listed above now pass on 26.60; all remaining manual cases, ordinary first-join delivery and multiplayer still need verification before enabling it for normal play.
 - Development gate: world dynamic property `civ_ledger_dev` (`LEDGER_DEV_GATE_KEY`, absent = off). Switched by the
   development command `civ:ledger_devgate on|off` (write it as a scriptevent). The switch is the one Ledger listener
   that runs while the gate is off, because it is the only way to turn the gate on. With the gate on at load, the Ledger

@@ -1,0 +1,105 @@
+{
+  "scope": "FILE-ONLY plan reviewed syntax; default readonly planning exercised. --apply NOT RUN, no newworld/installedpack writes",
+  "script": {
+    "path": "dev\\staging\\swordsman-filter-fixture\\prepare-install-v004-reviewed.py",
+    "sha256": "34045107130523D46A45956DB90B8104FAE2A5096B7B6BD58EE16878545D6259"
+  },
+  "plan": {
+    "path": "dev\\staging\\swordsman-filter-fixture\\v004-install-plan.json",
+    "sha256": "EF48470828E7D4976A2B37BF9F854E1C779FB7253C282E67725E16944DAE1DC4"
+  },
+  "fixtureFrozen27ShaUnchanged": {
+    "functions/ca_combat_fixture/clear_gear.mcfunction": "1666B00AF84645B9D454A640743BAA868BDA376F55E55D6DB7E1D054402CF5BD",
+    "functions/ca_combat_fixture/engage.mcfunction": "375AF5F159C4A54A93F0599D25DE62E9BFE7E7057A96A58D2769DD31BC6949B3",
+    "functions/ca_combat_fixture/internal/clear_gear_body.mcfunction": "5C617CC9CA2FD3F3DBB68A901E75A21A6054FD262DC8E27833CDF6C57831998B",
+    "functions/ca_combat_fixture/internal/engage_body.mcfunction": "32DB0C03873FDF9DB4B6059F6BB52AD1F9E41DBFDFE0CAF950A066475067FE34",
+    "functions/ca_combat_fixture/internal/prepare_body.mcfunction": "048AB1E5A13361F2C3528ABF5F8CF9414F2A0CDBDBE8C879AC7B391880C4DABF",
+    "functions/ca_combat_fixture/pillager/clear_gear.mcfunction": "CC55E3349BDBE355D82FD4E2F2721935195406EE232F785F8FCF6A2E45A683B4",
+    "functions/ca_combat_fixture/pillager/engage.mcfunction": "1281987384665B240F59B89CF22B90577AC208D275209E23770DE6A2A9500BAB",
+    "functions/ca_combat_fixture/pillager/internal/clear_gear_body.mcfunction": "25D9817193D2948B2BEF79359BA496A8141989449DEEE0D47694405C370CFCC6",
+    "functions/ca_combat_fixture/pillager/internal/engage_body.mcfunction": "712135204C841942DEC83267350ECA6C1C83C71130F7BC33E955B83E4E0A11DA",
+    "functions/ca_combat_fixture/pillager/internal/return_body.mcfunction": "81D0DA4FBB326B4338B5C6F9FE4EE3BB9D332AFB571FADF1EDB104CD615CC91C",
+    "functions/ca_combat_fixture/pillager/return.mcfunction": "7F02EDA170FA20ADCAF26856E91E1AA9267A6903C66FD3D384C96E8CE7ABB0C1",
+    "functions/ca_combat_fixture/pillager/spawn_caged.mcfunction": "D3944D9FE4FAB0CFDDD630D4A0D886BC762D2AF44571B99F1FBA191E613D6685",
+    "functions/ca_combat_fixture/prepare.mcfunction": "B18CFDD5A349AADC93646804CEC8A3A723E0AD2FE70718C6F09C00CEDC4697D9",
+    "functions/ca_combat_fixture/spawn.mcfunction": "D5E8C703E4C33D95971521531F282143CB141456EB2818C39FEC415CB4E2879B",
+    "functions/ca_combat_fixture/spawn_caged.mcfunction": "D79A0AC6DD8919B7C7E08C2B02028F0D607A4DAC87CD6EA964813AF7DD9588DE",
+    "functions/ca_combat_fixture/view_cage.mcfunction": "0D7ABED43D910C39CF12063F402CCB4AEEC87D4DD56AE035B7EFE494FF8A2B6D",
+    "functions/ca_combat_fixture/view_guard.mcfunction": "3E9CE8235B2A5B9BFAB04903A0C2C11A830FE329DB5BDAA5E07DB0060BC81EFE",
+    "functions/ca_combat_fixture/vindicator/clear_gear.mcfunction": "13F8F38F14E6B959E3591954CB4AFF82D7A03984FAED99C0D411E340299AC7B7",
+    "functions/ca_combat_fixture/vindicator/engage.mcfunction": "EE5BC7F9D0181004257426711D6339F51FEEC52EF51E9CC1E2A92E8B955CA322",
+    "functions/ca_combat_fixture/vindicator/internal/clear_gear_body.mcfunction": "081AD70A44A57C2883BC242C7110F2AA9CDB3F8494E640D9327D8E323D76D546",
+    "functions/ca_combat_fixture/vindicator/internal/engage_body.mcfunction": "A83625365AAAC37170E6D3BC304F2B3C78E641E4E4FB4BD5F831CA0B28E9BB00",
+    "functions/ca_combat_fixture/vindicator/internal/return_body.mcfunction": "D360FE844AF8B42F33736A3FCFCF153F93D1818DBDF85CFC628E5E91937C6EFA",
+    "functions/ca_combat_fixture/vindicator/return.mcfunction": "7A3125BB83168361DA326BB13860371DAB788DC08B6746E0BBFA2CB27D9B02A0",
+    "functions/ca_combat_fixture/vindicator/spawn_caged.mcfunction": "76AB3C94C9DE17D589EBCD4575F77746CD3CD1230DA9E1B54F974AD182EA6C5C",
+    "manifest.json": "C5942399E01A498418B66C2F250C6C6CA1007477E941C7AD022742F7C128F958",
+    "scripts/fixtureInspection.js": "9A2318440999AE41E333DE3C45390400DC3BC9D7A88AD5A7812CA49B4AE8E80F",
+    "scripts/main.js": "9CDD869A9BFD0440A0F086CCADC3E83D0DCC6A2704DA4B8DD7C34E61CAA93926"
+  },
+  "productionFreezeDefault": "dist/civilian-travel-trace-pack-hashes-20261106.json",
+  "baselineLevelSHA": "7B0E743374390D57A63134CDE2997EBB9D4E8EC2DDE6555C8E5BF404FCB2F412",
+  "worlds": [
+    {
+      "profile": "pillager",
+      "destination": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\16044254735791270272\\games\\com.mojang\\minecraftWorlds\\CA_PillagerFilter_Nov6",
+      "files": 13,
+      "changedOnly": [
+        "level.dat",
+        "levelname.txt",
+        "world_behavior_packs.json"
+      ],
+      "levelSHA": "360D2930DC0B6D69732E81649F2867C326ED9C455A1807840AE646E3BEDE9DE6",
+      "behaviorBindings": [
+        {
+          "pack_id": "fddde689-c92c-43bd-a68a-3cda9f5203d6",
+          "version": [
+            0,
+            0,
+            4
+          ]
+        },
+        {
+          "pack_id": "fd04cb50-dddc-4ebe-83fc-5b5375819bcb",
+          "version": [
+            1,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "profile": "vindicator",
+      "destination": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\16044254735791270272\\games\\com.mojang\\minecraftWorlds\\CA_VindicatorFilter_Nov6",
+      "files": 13,
+      "changedOnly": [
+        "level.dat",
+        "levelname.txt",
+        "world_behavior_packs.json"
+      ],
+      "levelSHA": "76E5C3B717AF34837C3C047BCB3D9895009B4E64B5C8C81E2006B411B00D4833",
+      "behaviorBindings": [
+        {
+          "pack_id": "fddde689-c92c-43bd-a68a-3cda9f5203d6",
+          "version": [
+            0,
+            0,
+            4
+          ]
+        },
+        {
+          "pack_id": "fd04cb50-dddc-4ebe-83fc-5b5375819bcb",
+          "version": [
+            1,
+            0,
+            0
+          ]
+        }
+      ]
+    }
+  ],
+  "applicationGate": "Root source review; confirm Minecraft fully closed; choose exact installed-production freeze. Default1917freeze must be overridden if cadence deployed first. No launch by installer.",
+  "nativeBeforeFight": "Exact originalsameID/HP30/canonical/type/tag1/1/1, fixture004activeUI, profileactualHP, guard/targetuniqueness, intactemptycage, no other opponent; ownerhourwindow chronology. No guardheal/spawn/TP.",
+  "limits": "Fileprovenance of previouslyfullHPsource only. No semanticentityhealth/lossdurability/filter/combat accepted from copying. SameUUIDfixtureupgrade retains003 outsidepackscans; A5/B5bindings unchanged."
+}

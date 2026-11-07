@@ -1,0 +1,339 @@
+{
+  "schemaVersion": 1,
+  "scope": "Frozen fake-world baseline results captured from the pre-diagnostic active source; never generated during tests. Only error text masked. No native data.",
+  "baselineSourceSha256": {
+    "population/reconcile.js": "2805652123F2691C81A88801D8FA3D49F5F97B02CC76AC83EC26DBE110F01755",
+    "integration/popSync.js": "573F3B2933B7C30DCE4C55070A1ED34694E0673B3B46D287C9EB6924A2B33EA9",
+    "integration/peopleStreets.js": "96C4747DB226E7300E930BE12174DA342EB8AF02514752B56D7A0443B19D8B45"
+  },
+  "cases": {
+    "civilian": {
+      "result": {
+        "refused": "MASK",
+        "actions": [],
+        "report": {
+          "tick": 10,
+          "clockReset": false,
+          "refused": "MASK",
+          "hold": null,
+          "groups": {
+            "total": 0,
+            "physical": 0,
+            "coarse": 0,
+            "simulated": 0,
+            "capped": 0,
+            "chunkBlocked": 0
+          },
+          "observed": {
+            "entities": 3,
+            "own": 3,
+            "foreign": 0,
+            "unmanaged": 0,
+            "orphans": 0
+          },
+          "actions": {
+            "spawn": 0,
+            "despawn": 0,
+            "retag": 0
+          },
+          "pending": {
+            "spawn": 0,
+            "despawn": 0,
+            "retag": 0
+          },
+          "deferred": [],
+          "adopted": [],
+          "orphans": [],
+          "drift": [],
+          "problems": [],
+          "budget": {
+            "spawnsUsed": 0,
+            "spawnLimit": 2,
+            "opsUsed": 0,
+            "opsLimit": 6
+          },
+          "physicalTotal": 0,
+          "work": 20,
+          "workBudget": 6000,
+          "overBudget": false
+        },
+        "applied": [],
+        "skipped": [],
+        "failed": [],
+        "saved": false
+      },
+      "writes": {
+        "spawn": 0,
+        "remove": 0,
+        "tags": 0,
+        "props": 0
+      },
+      "cursor": "{\"v\":1,\"t\":null,\"n\":0,\"s\":0,\"o\":0,\"p\":[\"district-1:civ:0\",\"district-1:sol:1\"]}"
+    },
+    "guard": {
+      "result": {
+        "refused": "MASK",
+        "actions": [],
+        "report": {
+          "tick": 10,
+          "clockReset": false,
+          "refused": "MASK",
+          "hold": null,
+          "groups": {
+            "total": 0,
+            "physical": 0,
+            "coarse": 0,
+            "simulated": 0,
+            "capped": 0,
+            "chunkBlocked": 0
+          },
+          "observed": {
+            "entities": 3,
+            "own": 3,
+            "foreign": 0,
+            "unmanaged": 0,
+            "orphans": 0
+          },
+          "actions": {
+            "spawn": 0,
+            "despawn": 0,
+            "retag": 0
+          },
+          "pending": {
+            "spawn": 0,
+            "despawn": 0,
+            "retag": 0
+          },
+          "deferred": [],
+          "adopted": [],
+          "orphans": [],
+          "drift": [],
+          "problems": [],
+          "budget": {
+            "spawnsUsed": 0,
+            "spawnLimit": 2,
+            "opsUsed": 0,
+            "opsLimit": 6
+          },
+          "physicalTotal": 0,
+          "work": 19,
+          "workBudget": 6000,
+          "overBudget": false
+        },
+        "applied": [],
+        "skipped": [],
+        "failed": [],
+        "saved": false
+      },
+      "writes": {
+        "spawn": 0,
+        "remove": 0,
+        "tags": 0,
+        "props": 0
+      },
+      "cursor": "{\"v\":1,\"t\":null,\"n\":0,\"s\":0,\"o\":0,\"p\":[\"district-1:civ:0\",\"district-1:sol:1\"]}"
+    },
+    "none": {
+      "result": {
+        "refused": null,
+        "actions": [
+          {
+            "op": "spawn",
+            "groupId": "district-1:sol:0",
+            "district": "district-1",
+            "kind": "sol",
+            "index": 0,
+            "at": {
+              "x": 4,
+              "y": 70,
+              "z": 24
+            },
+            "typeId": "minecraft:iron_golem"
+          },
+          {
+            "op": "spawn",
+            "groupId": "district-1:sol:2",
+            "district": "district-1",
+            "kind": "sol",
+            "index": 2,
+            "at": {
+              "x": 10,
+              "y": 70,
+              "z": 24
+            },
+            "typeId": "minecraft:iron_golem"
+          }
+        ],
+        "report": {
+          "tick": 10,
+          "clockReset": false,
+          "refused": null,
+          "hold": null,
+          "groups": {
+            "total": 5,
+            "physical": 5,
+            "coarse": 0,
+            "simulated": 0,
+            "capped": 0,
+            "chunkBlocked": 0
+          },
+          "observed": {
+            "entities": 2,
+            "own": 2,
+            "foreign": 0,
+            "unmanaged": 0,
+            "orphans": 0
+          },
+          "actions": {
+            "spawn": 2,
+            "despawn": 0,
+            "retag": 0
+          },
+          "pending": {
+            "spawn": 1,
+            "despawn": 0,
+            "retag": 0
+          },
+          "deferred": [],
+          "adopted": [],
+          "orphans": [],
+          "drift": [
+            {
+              "district": "district-1",
+              "civilians": 10,
+              "soldiers": 20,
+              "recordGroups": {
+                "civ": 1,
+                "sol": 4
+              },
+              "boundGroups": 2,
+              "staleEntities": 0,
+              "unrepresented": {
+                "trainees": 0,
+                "refugees": 0
+              }
+            },
+            {
+              "district": "district-2",
+              "civilians": 0,
+              "soldiers": 0,
+              "recordGroups": {
+                "civ": 0,
+                "sol": 0
+              },
+              "boundGroups": 0,
+              "staleEntities": 0,
+              "unrepresented": {
+                "trainees": 0,
+                "refugees": 0
+              }
+            },
+            {
+              "district": "district-3",
+              "civilians": 0,
+              "soldiers": 0,
+              "recordGroups": {
+                "civ": 0,
+                "sol": 0
+              },
+              "boundGroups": 0,
+              "staleEntities": 0,
+              "unrepresented": {
+                "trainees": 0,
+                "refugees": 0
+              }
+            },
+            {
+              "district": "district-4",
+              "civilians": 0,
+              "soldiers": 0,
+              "recordGroups": {
+                "civ": 0,
+                "sol": 0
+              },
+              "boundGroups": 0,
+              "staleEntities": 0,
+              "unrepresented": {
+                "trainees": 0,
+                "refugees": 0
+              }
+            },
+            {
+              "district": "district-5",
+              "civilians": 0,
+              "soldiers": 0,
+              "recordGroups": {
+                "civ": 0,
+                "sol": 0
+              },
+              "boundGroups": 0,
+              "staleEntities": 0,
+              "unrepresented": {
+                "trainees": 0,
+                "refugees": 0
+              }
+            }
+          ],
+          "problems": [],
+          "budget": {
+            "spawnsUsed": 2,
+            "spawnLimit": 2,
+            "opsUsed": 2,
+            "opsLimit": 6
+          },
+          "physicalTotal": 5,
+          "work": 37,
+          "workBudget": 6000,
+          "overBudget": false
+        },
+        "applied": [
+          {
+            "action": {
+              "op": "spawn",
+              "groupId": "district-1:sol:0",
+              "district": "district-1",
+              "kind": "sol",
+              "index": 0,
+              "at": {
+                "x": 4,
+                "y": 70,
+                "z": 24
+              },
+              "typeId": "minecraft:iron_golem"
+            },
+            "reason": null,
+            "entityId": "e1"
+          },
+          {
+            "action": {
+              "op": "spawn",
+              "groupId": "district-1:sol:2",
+              "district": "district-1",
+              "kind": "sol",
+              "index": 2,
+              "at": {
+                "x": 10,
+                "y": 70,
+                "z": 24
+              },
+              "typeId": "minecraft:iron_golem"
+            },
+            "reason": null,
+            "entityId": "e2"
+          }
+        ],
+        "skipped": [],
+        "failed": [],
+        "saved": true,
+        "saveReason": null
+      },
+      "writes": {
+        "spawn": 2,
+        "remove": 0,
+        "tags": 2,
+        "props": 1
+      },
+      "cursor": "{\"v\":1,\"t\":10,\"n\":1,\"s\":2,\"o\":2,\"p\":[\"district-1:civ:0\",\"district-1:sol:0\",\"district-1:sol:1\",\"district-1:sol:2\",\"district-1:sol:3\"]}"
+    }
+  }
+}

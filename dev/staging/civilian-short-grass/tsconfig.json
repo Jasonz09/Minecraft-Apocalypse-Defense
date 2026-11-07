@@ -1,0 +1,9 @@
+{
+  "extends": "../../../tsconfig.json",
+  "include": [
+    "typecheck/scripts/integration/civilianTravel.js",
+    "typecheck/scripts/people/walkSafety.js",
+    "typecheck/scripts/people/workRoutePreview.js"
+  ],
+  "exclude": []
+}

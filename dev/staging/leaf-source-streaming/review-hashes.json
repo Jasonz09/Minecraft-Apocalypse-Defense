@@ -1,0 +1,99 @@
+{
+  "utc": "2026-11-06T13:51:35.297844+00:00",
+  "scope": "Isolated proposal only;52focusedPASS+strictisolatedTSC+real5sourcec835schema2deepParityPASS;no native memory claim",
+  "changes": [
+    {
+      "path": "CivilizationApocalypse_BP\\scripts\\civ\\leafSourceStreaming.js",
+      "beforeSha256": null,
+      "proposedSha256": "A61AA4A4EB1F86F866DB80CDFA62DECFAF92FAEC3AD27085FC08403547D3F5A4"
+    },
+    {
+      "path": "CivilizationApocalypse_BP\\scripts\\civ\\wallleafpreview.js",
+      "beforeSha256": "A38ED00650C7DB05E42ADD0F2218080FCBA3D023D6B39F47DE1BBB0DC47F22EE",
+      "proposedSha256": "39E2A3D6777F509C9E2CCFF3BD313CE3FDC549366E53C197699D10823FA48AC4"
+    },
+    {
+      "path": "CivilizationApocalypse_BP\\scripts\\civ\\wallLeafRepair.js",
+      "beforeSha256": "5D05DB7041AEFCA015687BD46B8733EA3124C2724FC7DB91238C2589F32D2905",
+      "proposedSha256": "97998CF2E8A2318601B3AB75E0950DC242A57D534C3C1B996EDF83464BA08770"
+    },
+    {
+      "path": "CivilizationApocalypse_BP\\scripts\\civ\\wallLeafTrim.js",
+      "beforeSha256": "186502AC8A63CB2D9F414CACB070419A2071AF13EC5848BB0A842F7ACA13312A",
+      "proposedSha256": "9D3EF064ADF9E4AA1B5D72623859077D47B46C3162D18EBEA75F7EB190E3A951"
+    },
+    {
+      "path": "CivilizationApocalypse_BP\\scripts\\commands\\civ.js",
+      "beforeSha256": "BDF356E3E8362626171B07C8F14947FD234F5C0F0483BBF0BB5FE5204ADC3201",
+      "proposedSha256": "71CE4E760852794956E417FA279838ABB08C8920FDB9274FC48CBA979D8CFA5C"
+    }
+  ],
+  "checks": {
+    "strictIsolatedTsc": "PASS",
+    "focused": {
+      "pass": 52,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "durationMs": 9510.3652,
+      "log": "dev\\staging\\leaf-source-streaming\\focused.log"
+    },
+    "realFiveSource": {
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "testMs": 30467.1455,
+      "durationMs": 30725.3468,
+      "log": "dev\\staging\\leaf-source-streaming\\real-five-source.log",
+      "nativeOriginalPlanId": "c835b06e",
+      "receiptSchema": 2,
+      "sourceAndReceiptWrites": 0
+    },
+    "productionChanged": false,
+    "convertedCentralFresh": {
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "testMs": 19770.0862,
+      "durationMs": 20019.2457,
+      "log": "dev\\staging\\leaf-source-streaming\\central-real-fresh.log",
+      "defaultProductionImports": true,
+      "fakeBlockAndPropertySetterCountersUnchanged": true,
+      "scope": "Offline deterministic fixture, not native memory/stability proof"
+    }
+  },
+  "newCentralFiles": [
+    {
+      "source": "dev\\staging\\leaf-source-streaming\\proposed-dev\\test\\leaf-source-streaming.test.mjs",
+      "target": "dev\\test\\leaf-source-streaming.test.mjs",
+      "sha256": "8480120B91EF460DEB44BCB22BFF51BC7330CB0A9E82D48B8D59E7D0FD1C91AB"
+    },
+    {
+      "source": "dev\\staging\\leaf-source-streaming\\proposed-dev\\test\\leaf-source-streaming-fresh.test.mjs",
+      "target": "dev\\test\\leaf-source-streaming-fresh.test.mjs",
+      "sha256": "715C1A283C44966DD770103C526C84640FF5F12301725D2F80A895386271CD5E"
+    },
+    {
+      "source": "dev\\staging\\leaf-source-streaming\\proposed-dev\\test\\leaf-source-streaming-real.test.mjs",
+      "target": "dev\\test\\leaf-source-streaming-real.test.mjs",
+      "sha256": "8CD03270774664184B4AA59E52B3D4AF456CDCC212B07650009A0378D35E6016"
+    },
+    {
+      "source": "dev\\staging\\leaf-source-streaming\\proposed-dev\\test\\leaf-source-streaming-real-fresh.test.mjs",
+      "target": "dev\\test\\leaf-source-streaming-real-fresh.test.mjs",
+      "sha256": "4C06923322469564FEC9E9C2E12220AF996EF8AB2F116D8B09061432361F3395"
+    },
+    {
+      "source": "dev\\staging\\leaf-source-streaming\\proposed-dev\\fixtures\\leaf-source-streaming-compiler-golden.json",
+      "target": "dev\\fixtures\\leaf-source-streaming-compiler-golden.json",
+      "sha256": "2DBD9209E607BBFA1A499C1A9F4716ED019448F8CF380615F9A61B56CA9097CC"
+    },
+    {
+      "source": "dev\\staging\\leaf-source-streaming\\proposed-dev\\fixtures\\leaf-source-streaming-real-fresh-golden.json",
+      "target": "dev\\fixtures\\leaf-source-streaming-real-fresh-golden.json",
+      "sha256": "D9C2B92CE0260A35EB4F18A8CC5B4F95BCA4DF81A1C19CE7AFD51342C6129E14"
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "extends": "../../../tsconfig.json",
+  "include": [
+    "BP/scripts/**/*.js"
+  ],
+  "exclude": []
+}

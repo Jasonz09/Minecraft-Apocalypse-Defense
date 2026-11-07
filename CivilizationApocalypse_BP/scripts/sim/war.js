@@ -1016,12 +1016,27 @@ function demoteSecurity(kingdom, district) {
  * the district count or the aid-ledger size; there is no while (true) and no recursion.
  *
  * @param {Kingdom} kingdom
+ * @param {Array<{ districtId: string, name: string, assault: number }>} [attacks] filled with the districts that
+ *   fought this step, at the strength the fight began with - the saved state has already resolved them down to
+ *   survivors by the time this returns
  * @returns {string[]} plain-string event descriptions, in the order they were produced
  */
-export function runWarStep(kingdom) {
+export function runWarStep(kingdom, attacks = undefined) {
     const /** @type {string[]} */ events = [];
     events.push(...spawnThreats(kingdom));
     events.push(...updateAlertState(kingdom));
+
+    // The numbers as the fight begins, for a caller that needs to know an attack HAPPENED this hour. By the
+    // time this step returns, `resolveAssault` has already shot the assault down to its survivors, so a
+    // reader of the saved state alone sees a peaceful kingdom and can never make the attackers physical.
+    if (Array.isArray(attacks)) {
+        for (const district of sortedDistricts(kingdom)) {
+            const assault = toInt(district.assault);
+            if (assault > 0) {
+                attacks.push({ districtId: String(district.id), name: String(district.name ?? district.id), assault });
+            }
+        }
+    }
 
     for (const district of sortedDistricts(kingdom)) {
         events.push(...updateFallback(kingdom, district));

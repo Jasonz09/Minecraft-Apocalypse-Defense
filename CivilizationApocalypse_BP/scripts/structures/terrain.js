@@ -72,6 +72,8 @@ export const PLANTS = [
     "minecraft:sweet_berry_bush",
     "minecraft:bamboo",
     "minecraft:bamboo_sapling",
+    "minecraft:seagrass",
+    "minecraft:kelp",
 ];
 
 /**
@@ -81,6 +83,9 @@ export const PLANTS = [
  * so a player's farm block is never taken by this list.
  */
 export const TREE_COMPANIONS = [
+    // Exposed cliff ore may touch roots. This is judgement-only: ore is never terrain
+    // preparation material and the tree eraser removes only logs, leaves and vines.
+    "minecraft:coal_ore",
     "minecraft:melon_block",
     "minecraft:cocoa",
     "minecraft:bee_nest",

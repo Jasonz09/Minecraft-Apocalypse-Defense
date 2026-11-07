@@ -1,0 +1,36 @@
+{
+  "utc": "2026-11-07T02:45:36.380601+00:00",
+  "scope": "Independent static review +light28tests/strictTSC; stage-only source guard fix authorized by root; no main edits/heavy hydration/native/UI",
+  "decision": "No remaining blocker found after full source reservation identity fix; root review/composition/full/native required",
+  "manifestSha256": "1BF53A78696931706A1AA08A6DFF4DE224C0781DADE35A4D08C70CD197C0D056",
+  "frozenPaths": 8,
+  "allActiveBaselinesStillMatch": true,
+  "runtime4ProposedFilesExact": true,
+  "safety": [
+    "All pre-reservation kingdom source/prototype inputs now bound before raw guard baseline; every current compares latest projection, selected uniqueness/stamp/last-fast checks retained.",
+    "Selected heavy record plus one neighboring verified source retained by orchestration. No completed neighbor wrapper/generator returned/cached; compact projections refuse caps rather than truncate. Instrumentation is not heap/native peak measurement.",
+    "H17/V41 exact read envelope covers unchanged H16/V40 traversal plus neighbor/root probes; out-of-envelope reads refuse. Every op remains charged before projection; allsource/master/checksum/queue/dimension checks retained.",
+    "Normal compiler defaults have no within projection and infinite cap; original writer native reader body is byte-identical behind inspector-only dispatch. Existing writes/leases/whole-tree refusal logic unchanged.",
+    "Original branded inspection projection is refused at construction session creation. Brand detects the original object identity, not arbitrary deliberately reconstructed objects; no production forwarding/cloning path from inspector to writer exists and no removal permission is returned.",
+    "Inspection native getter checks and cooperative current barriers prevent stale source/player publication, and existing lease release finally path retained."
+  ],
+  "foundAndFixed": {
+    "historicalFailedTest": "independent-review/adapter-reservation.log",
+    "beforeSourceAndPins": "before-full-source-reservation-fix/",
+    "sourceProjection": "Pre-reserve all ordered district IDs, full civ metadata, and physical.origin, compared to latest at every current() barrier. Covers all kingdom fields consumed by source enumeration/protectedRects, while unchanged master plan remains saved-loader verified.",
+    "cases": 9,
+    "log": "independent-review/command-guards-final.log",
+    "actualHydrationRerun": false
+  },
+  "focused": {
+    "pass": 28,
+    "fail": 0,
+    "elapsedMs": 373.3352,
+    "log": "independent-review/focused-after-source-fix.log"
+  },
+  "strictTypecheck": {
+    "exitCode": 0,
+    "log": "independent-review/typecheck-after-source-fix.log"
+  },
+  "actualHeavySourceEvidence": "Previously recorded run only, no rerun; its actual envelope had0historical claims, synthetic positives cover nonzero claims. No actual627cell/native tree or stability acceptance."
+}

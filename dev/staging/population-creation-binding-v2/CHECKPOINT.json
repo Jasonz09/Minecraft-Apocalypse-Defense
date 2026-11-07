@@ -1,0 +1,43 @@
+{
+  "scope": "isolated schema-next creation binding; no production promotion",
+  "createdUtc": "2026-11-07T01:58:38.576040+00:00",
+  "focused": {
+    "tests": 22,
+    "pass": 22,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 179.2503
+  },
+  "strictTypecheck": {
+    "exitCode": 0,
+    "command": "npx.cmd tsc -p dev/staging/population-creation-binding-v2/tsconfig.json --noEmit"
+  },
+  "files": {
+    "bindings.mjs": "F334676FB356CA7532567FAA8D9BB5B1FE093CA594CCE725CC46036553A3FB52",
+    "proposed-popSync.js": "FABED8F8527A1DB2FF71E42583D11151B513E62ED2642594FC964D3FDA3E12CA",
+    "frozen-popSync.js": "9C0CF7C87FA092DA024EEB8F087C389CCC50013579E05AA772FE45737E0378A6",
+    "binding.test.mjs": "90AC55FA388ED56A7C79DB3A2958D5D32B604964E10390F2A2256920A575110A",
+    "owner.patch": "7B5958CE6B7B85E8E216FF2FE79A862281A95C225034D27ED4B2C313C20E6F84",
+    "tsconfig.json": "7A50F7429D415B8BA4BECDED94C09FFB931C8F305582368A4EE251FE9C0D76F8",
+    "README.md": "0FEE2A3C2069BAE57201CCA16A411B5537BFC67B435A0E9C1DBD9E0C2876F8FC",
+    "focused-final.log": "C786E3FB5FD4E116AAA5FEB0F935A77D262C884104FB4BCCF46DD44DBD84C033",
+    "typecheck-final.log": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+    "focused-late-native.log": "D75B2A480647B0EBCF1C80E9A4533AECB3EF13EAA3CAED72A3AC8AFC8710A8D0",
+    "focused-policy.log": "DBFD5BA41D44C0BDF6BB6919AD334740E46794F3BE33F932042ECAE6A30A3DB0"
+  },
+  "productionBaseline": {
+    "path": "CivilizationApocalypse_BP/scripts/integration/popSync.js",
+    "sha256": "4F658ABC6153DB289F73C3E987CE20C9FFE86EBA07C9F78F096783BD7EB86443",
+    "matchesFrozen": false,
+    "normalizedTextMatchesFrozen": true,
+    "difference": "line endings only: stage copy LF, active source CRLF; no functional source difference"
+  },
+  "remaining": [
+    "Privileged fresh-world contract requires actual native source-authenticated activation adapter before promotion",
+    "No native acceptance; no aggregate casualty debit; no lossless death capture",
+    "Legacy unknowns and interrupted pending births hold; no automatic duplicate repair",
+    "Bounded lifetime issuance inventory has explicit 2048 capacity; no silent identity retirement"
+  ],
+  "historicalCheckpoint": "checkpoint19-before-late-native-fix/CHECKPOINT.json"
+}

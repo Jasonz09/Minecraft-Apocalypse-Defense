@@ -47,7 +47,9 @@ Object.assign(world, {
     getDimension: (name) => ({ id: name }),
     sendMessage: (message) => worldMessages.push(message),
 });
-world.afterEvents.playerSpawn = { subscribe: () => undefined };
+const spawnSubscribers = [];
+world.afterEvents.playerSpawn = { subscribe: (callback) => spawnSubscribers.push(callback) };
+world.afterEvents.playerInteractWithBlock = { subscribe: () => undefined };
 system.runInterval = () => 1;
 system.clearRun = () => undefined;
 const scriptSubscribers = system.scriptSubscribers;
@@ -78,7 +80,7 @@ export async function resolve(specifier, context, nextResolve) {
 `;
 register("data:text/javascript," + encodeURIComponent(hooksSource));
 
-const { STORAGE_KEYS } = await load("config.js");
+const { STORAGE_KEYS, STARTER } = await load("config.js");
 const { createInitialKingdom, serializeKingdom } = await load("kingdom", "state.js");
 const { LEDGER_DEV_GATE_KEY, LEDGER_EVENT_IDS } = await load("ledger", "ids.js");
 const { GATE_OFF_LINES } = await load("ledger", "runtime.js");
@@ -100,6 +102,31 @@ function ledgerCount(player) {
 }
 
 // ---- the child process: the gate is ON when the pack loads ----------------------------
+if (process.env.LEDGER_BINDING_CHILD?.startsWith("armed-template")) {
+    const kingdom = createInitialKingdom();
+    kingdom.starter = { templateId: STARTER.templateId, templateVersion: [1, 0, 0], armedAtStep: 0, sourceSeed: 1 };
+    props.set(STORAGE_KEYS.kingdom, serializeKingdom(kingdom));
+    if (process.env.LEDGER_BINDING_CHILD === "armed-template-off") props.set(LEDGER_DEV_GATE_KEY, false);
+    await import(fileUrl("main.js"));
+    await system.advance(1);
+    const player = createPlayer(world, { name: "TemplateJoiner" });
+    const emit = async (initialSpawn = true) => {
+        for (const callback of spawnSubscribers) callback({ player, initialSpawn });
+        await system.advance(1);
+    };
+    await emit(false);
+    const afterRespawn = ledgerCount(player);
+    await emit();
+    const joined = ledgerCount(player);
+    await emit();
+    const repeated = ledgerCount(player);
+    player.container.slots.fill(undefined);
+    await emit();
+    const recovered = ledgerCount(player);
+    const report = { afterRespawn, joined, repeated, recovered, devSwitch: props.has(LEDGER_DEV_GATE_KEY) };
+    await new Promise((done) => process.stdout.write(`${JSON.stringify(report)}\n`, done));
+    process.exit(0);
+}
 if (process.env.LEDGER_BINDING_CHILD === "gate-on-at-load") {
     props.set(LEDGER_DEV_GATE_KEY, true);
     props.set(STORAGE_KEYS.kingdom, serializeKingdom(createInitialKingdom()));
@@ -120,6 +147,27 @@ if (process.env.LEDGER_BINDING_CHILD === "gate-on-at-load") {
 props.set(STORAGE_KEYS.kingdom, serializeKingdom(createInitialKingdom()));
 await import(fileUrl("main.js"));
 await system.advance(1);
+
+const itemComponents = new Map();
+for (const startup of system.startupSubscribers) {
+    startup({ itemComponentRegistry: { registerCustomComponent: (id, component) => itemComponents.set(id, component) } });
+}
+
+test("the Ledger item definition and startup component agree, even with the development gate off", async () => {
+    const definition = JSON.parse(readFileSync(join(root, "CivilizationApocalypse_BP", "items", "ledger.json"), "utf8"))["minecraft:item"];
+    const { LEDGER_ITEM } = await load("ledger", "item.js");
+    assert.equal(definition.description.identifier, LEDGER_ITEM.typeId);
+    assert.equal(definition.components["minecraft:max_stack_size"], 1);
+    assert.ok(definition.components["civapoc:open_ledger"]);
+    assert.equal(system.startupSubscribers.length, 1);
+    const component = itemComponents.get("civapoc:open_ledger");
+    assert.equal(typeof component?.onUse, "function");
+    const holder = createPlayer(world, { name: "ComponentOff" });
+    component.onUse({ source: holder, itemStack: makeMarkerStack() });
+    await system.advance(1);
+    assert.deepEqual(holder.messages, [GATE_OFF_LINES.join("\n")]);
+    assert.equal(forms.shown.length, 0);
+});
 
 test("gate off at load: no Ledger item-use or leave handler, and the recovery command does nothing", async () => {
     // The horn's own use handler is always on (integration/beaconBindings.js); the Ledger's is not.
@@ -163,6 +211,42 @@ test("gate on: a use opens the Ledger; a use alone grants no item; a plain book 
     await system.advance(2);
     assert.equal(forms.shown.length, 1, "the Ledger's first form is shown");
     assert.equal(ledgerCount(ada), 0, "using the item grants nothing");
+});
+
+test("the custom item's use callback opens one form even when an after event also arrives", async () => {
+    const player = createPlayer(world, { name: "ComponentOn" });
+    const event = { source: player, itemStack: makeMarkerStack() };
+    const before = forms.shown.length;
+    itemComponents.get("civapoc:open_ledger").onUse(event);
+    world.emitItemUse(event);
+    await system.advance(2);
+    assert.equal(forms.shown.length, before + 1);
+});
+
+test("the real Ledger binding exposes saved resumes and distinguishes planning from unrelated work", async () => {
+    const { liveStatus } = await load("integration", "ledgerBindings.js");
+    const { reserveJob, finishJob } = await load("integration", "districtBuilder.js");
+    const { buildMenu } = await load("ledger", "menus.js");
+    const kingdom = createInitialKingdom();
+    kingdom.districts[1].civ = { status: "paused", stage: "gates" };
+    const store = { load: () => ({ kingdom }) };
+    const frame = { menu: "construction", params: {}, page: 0 };
+    const idle = liveStatus(store);
+    assert.equal(idle.civ.resumable.index, 2);
+    const menu = buildMenu(frame, kingdom, idle);
+    assert.equal(menu.buttons.find((button) => button.id === "resume:2")?.enabled, true);
+    for (const kind of ["civ-resume", "district-scan"]) {
+        const token = reserveJob(kind);
+        assert.ok(token);
+        try {
+            const live = liveStatus(store);
+            const busy = buildMenu(frame, kingdom, live);
+            assert.equal(busy.buttons.find((button) => button.id === "resume")?.enabled, false);
+            assert.equal(busy.buttons.find((button) => button.id === "abort")?.enabled, kind.startsWith("civ-"));
+            assert.equal(live.civ.operation?.kind, kind.startsWith("civ-") ? kind : undefined);
+            assert.equal(live.civ.busy, kind.startsWith("civ-") ? undefined : kind);
+        } finally { finishJob(token); }
+    }
 });
 
 test("gate on: the item is granted only by an explicit recovery, and a second recovery grants nothing more", () => {
@@ -222,6 +306,20 @@ test("a world whose gate is on at load registers the Ledger on the first tick", 
 });
 
 // ---- static rules -----------------------------------------------------------------------
+test("an armed template delivers and recovers the Ledger on join without a development switch or duplicates", () => {
+    const { NODE_TEST_CONTEXT: _ignored, ...env } = process.env;
+    const child = spawnSync(process.execPath, [fileURLToPath(import.meta.url)], { cwd: root, env: { ...env, LEDGER_BINDING_CHILD: "armed-template" }, encoding: "utf8", timeout: 120000 });
+    assert.equal(child.status, 0, child.stderr);
+    assert.deepEqual(JSON.parse(child.stdout.trim().split("\n").pop()), { afterRespawn: 0, joined: 1, repeated: 1, recovered: 1, devSwitch: false });
+});
+
+test("an explicit off switch still prevents automatic Ledger delivery in an armed template", () => {
+    const { NODE_TEST_CONTEXT: _ignored, ...env } = process.env;
+    const child = spawnSync(process.execPath, [fileURLToPath(import.meta.url)], { cwd: root, env: { ...env, LEDGER_BINDING_CHILD: "armed-template-off" }, encoding: "utf8", timeout: 120000 });
+    assert.equal(child.status, 0, child.stderr);
+    assert.deepEqual(JSON.parse(child.stdout.trim().split("\n").pop()), { afterRespawn: 0, joined: 0, repeated: 0, recovered: 0, devSwitch: true });
+});
+
 function walk(dir) {
     const found = [];
     for (const entry of readdirSync(dir, { withFileTypes: true })) {

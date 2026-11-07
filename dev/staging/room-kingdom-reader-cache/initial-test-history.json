@@ -1,0 +1,1 @@
+{"tests":6,"pass":5,"fail":1,"durationMs":234.2278,"failure":"Staging adapter text parity assertion normalized baseline CRLF but not proposal; harness-only correction normalizes both. No safety or runtime change."}
