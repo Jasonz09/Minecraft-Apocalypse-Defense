@@ -37,6 +37,7 @@ export function classifyStarterKeys(keys, rules = STARTER) {
     /** @type {{ keep: string[], wipe: string[], unknown: string[] }} */
     const out = { keep: [], wipe: [], unknown: [] };
     for (const key of [...keys].sort()) {
+        if((key.startsWith("civ:pop_bind:")||key.startsWith("civ:creation_activation:"))){out.keep.push(key);continue;}
         if(key.startsWith("civ:wall_leaf_trim:")){out.keep.push(key);continue;}
         if (exactWipe.has(key)) {
             out.wipe.push(key);
@@ -141,6 +142,7 @@ export function starterArmProblems(world = {}) {
     // Trial identity and future casualty receipts are authoritative state, not
     // disposable development residue. Never erase them while resetting headcounts.
     if((world.keys??[]).some(key=>key.startsWith("civ:wall_leaf_trim:")))problems.push("wall-leaf maintenance receipts remain; retain every pending, completed or unknown receipt and reconcile release-copy export separately before arming");
+    if((world.keys??[]).some(key=>(key.startsWith("civ:pop_bind:")||key.startsWith("civ:creation_activation:"))))problems.push("physical creation history remains; preserve every binding and issuance record and reconcile a separate release copy before arming/export");
     const militaryKeys = (world.keys ?? []).filter((key) => key.startsWith("civ:military_"));
     if (militaryKeys.length > 0) {
         problems.push("military trial state remains - reconcile and explicitly clear the trial on a separate release copy before arming; no selection, binding or receipt may be discarded");

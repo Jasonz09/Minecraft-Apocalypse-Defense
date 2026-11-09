@@ -282,7 +282,7 @@ test("the offline core stays free of the Minecraft runtime, and the adapters are
 
     // These explicit boundaries accept runtime capabilities by injection. They must
     // remain usable without importing the engine; every other runtime file imports it.
-    const injectedBoundaries = new Set(["commands/args.js", "commands/military.js", "integration/militarySelectionStore.js", "integration/militaryLifecycleDiagnostics.js", "integration/civilianDestinations.js", "integration/roomKingdomReader.js"]);
+    const injectedBoundaries = new Set(["commands/args.js", "commands/military.js", "integration/militarySelectionStore.js", "integration/militaryLifecycleDiagnostics.js", "integration/civilianDestinations.js", "integration/roomKingdomReader.js", "integration/creationBindings.js", "integration/creationRuntime.js", "integration/privateFreshFixture.js", "integration/freshFixtureTrust.js"]);
     let runtimeChecked = 0;
     for (const dir of runtimeDirs) {
         for (const file of readdirSync(join(scriptsRoot, dir))) {

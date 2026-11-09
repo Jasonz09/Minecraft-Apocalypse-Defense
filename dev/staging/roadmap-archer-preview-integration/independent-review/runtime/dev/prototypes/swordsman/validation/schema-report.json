@@ -1,0 +1,235 @@
+{
+  "source": {
+    "repository": "https://github.com/Mojang/bedrock-samples",
+    "commit": "15701fa9c13923f12662984c32c124327e40e3d3",
+    "format": "1.26.20",
+    "retrieved": "2026-11-05T07:39:32.448Z"
+  },
+  "componentCount": 19,
+  "structuredComponents": [
+    "minecraft:pushable_by_entity",
+    "minecraft:behavior.float",
+    "minecraft:behavior.move_towards_home_restriction",
+    "minecraft:behavior.nearest_attackable_target",
+    "minecraft:behavior.melee_attack",
+    "minecraft:behavior.look_at_player"
+  ],
+  "dynamicComponents": [
+    "minecraft:type_family",
+    "minecraft:health",
+    "minecraft:collision_box",
+    "minecraft:physics",
+    "minecraft:pushable_by_block",
+    "minecraft:persistent",
+    "minecraft:movement",
+    "minecraft:movement.basic",
+    "minecraft:jump.static",
+    "minecraft:navigation.walk",
+    "minecraft:home",
+    "minecraft:attack",
+    "minecraft:behavior.random_look_around"
+  ],
+  "unmodifiedMetadataPassed": false,
+  "filterSchemaWorkaround": "Published Filter Group Map has no additionalProperties restriction and overlaps Filter Test in oneOf. Validation closes only this map in memory to its documented operators; original cached schemas remain unchanged. This is not an unmodified full-schema pass.",
+  "unmodifiedMetadataErrors": [
+    {
+      "instancePath": "/minecraft:behavior.nearest_attackable_target/entity_types/0/filters",
+      "schemaPath": "./Filter%20Test.json/required",
+      "keyword": "required",
+      "params": {
+        "missingProperty": "test"
+      },
+      "message": "must have required property 'test'"
+    },
+    {
+      "instancePath": "/minecraft:behavior.nearest_attackable_target/entity_types/0/filters",
+      "schemaPath": "#/oneOf/1/type",
+      "keyword": "type",
+      "params": {
+        "type": "array"
+      },
+      "message": "must be array"
+    },
+    {
+      "instancePath": "/minecraft:behavior.nearest_attackable_target/entity_types/0/filters/all_of",
+      "schemaPath": "./Filter%20Test.json/type",
+      "keyword": "type",
+      "params": {
+        "type": "object"
+      },
+      "message": "must be object"
+    },
+    {
+      "instancePath": "/minecraft:behavior.nearest_attackable_target/entity_types/0/filters/all_of/0",
+      "schemaPath": "#/oneOf/1/type",
+      "keyword": "type",
+      "params": {
+        "type": "array"
+      },
+      "message": "must be array"
+    },
+    {
+      "instancePath": "/minecraft:behavior.nearest_attackable_target/entity_types/0/filters/all_of/0",
+      "schemaPath": "#/oneOf",
+      "keyword": "oneOf",
+      "params": {
+        "passingSchemas": [
+          0,
+          2
+        ]
+      },
+      "message": "must match exactly one schema in oneOf"
+    },
+    {
+      "instancePath": "/minecraft:behavior.nearest_attackable_target/entity_types/0/filters/all_of/1",
+      "schemaPath": "#/oneOf/1/type",
+      "keyword": "type",
+      "params": {
+        "type": "array"
+      },
+      "message": "must be array"
+    },
+    {
+      "instancePath": "/minecraft:behavior.nearest_attackable_target/entity_types/0/filters/all_of/1",
+      "schemaPath": "#/oneOf",
+      "keyword": "oneOf",
+      "params": {
+        "passingSchemas": [
+          0,
+          2
+        ]
+      },
+      "message": "must match exactly one schema in oneOf"
+    },
+    {
+      "instancePath": "/minecraft:behavior.nearest_attackable_target/entity_types/0/filters/all_of/2",
+      "schemaPath": "#/oneOf/1/type",
+      "keyword": "type",
+      "params": {
+        "type": "array"
+      },
+      "message": "must be array"
+    },
+    {
+      "instancePath": "/minecraft:behavior.nearest_attackable_target/entity_types/0/filters/all_of/2",
+      "schemaPath": "#/oneOf",
+      "keyword": "oneOf",
+      "params": {
+        "passingSchemas": [
+          0,
+          2
+        ]
+      },
+      "message": "must match exactly one schema in oneOf"
+    },
+    {
+      "instancePath": "/minecraft:behavior.nearest_attackable_target/entity_types/0/filters/all_of/3",
+      "schemaPath": "#/oneOf/1/type",
+      "keyword": "type",
+      "params": {
+        "type": "array"
+      },
+      "message": "must be array"
+    },
+    {
+      "instancePath": "/minecraft:behavior.nearest_attackable_target/entity_types/0/filters/all_of/3",
+      "schemaPath": "#/oneOf",
+      "keyword": "oneOf",
+      "params": {
+        "passingSchemas": [
+          0,
+          2
+        ]
+      },
+      "message": "must match exactly one schema in oneOf"
+    },
+    {
+      "instancePath": "/minecraft:behavior.nearest_attackable_target/entity_types/0/filters/all_of/4",
+      "schemaPath": "#/oneOf/1/type",
+      "keyword": "type",
+      "params": {
+        "type": "array"
+      },
+      "message": "must be array"
+    },
+    {
+      "instancePath": "/minecraft:behavior.nearest_attackable_target/entity_types/0/filters/all_of/4",
+      "schemaPath": "#/oneOf",
+      "keyword": "oneOf",
+      "params": {
+        "passingSchemas": [
+          0,
+          2
+        ]
+      },
+      "message": "must match exactly one schema in oneOf"
+    },
+    {
+      "instancePath": "/minecraft:behavior.nearest_attackable_target/entity_types/0/filters/all_of/5",
+      "schemaPath": "#/oneOf/1/type",
+      "keyword": "type",
+      "params": {
+        "type": "array"
+      },
+      "message": "must be array"
+    },
+    {
+      "instancePath": "/minecraft:behavior.nearest_attackable_target/entity_types/0/filters/all_of/5",
+      "schemaPath": "#/oneOf",
+      "keyword": "oneOf",
+      "params": {
+        "passingSchemas": [
+          0,
+          2
+        ]
+      },
+      "message": "must match exactly one schema in oneOf"
+    },
+    {
+      "instancePath": "/minecraft:behavior.nearest_attackable_target/entity_types/0/filters/all_of",
+      "schemaPath": "#/type",
+      "keyword": "type",
+      "params": {
+        "type": "object"
+      },
+      "message": "must be object"
+    },
+    {
+      "instancePath": "/minecraft:behavior.nearest_attackable_target/entity_types/0/filters/all_of",
+      "schemaPath": "#/oneOf",
+      "keyword": "oneOf",
+      "params": {
+        "passingSchemas": null
+      },
+      "message": "must match exactly one schema in oneOf"
+    },
+    {
+      "instancePath": "/minecraft:behavior.nearest_attackable_target/entity_types/0/filters",
+      "schemaPath": "#/oneOf",
+      "keyword": "oneOf",
+      "params": {
+        "passingSchemas": null
+      },
+      "message": "must match exactly one schema in oneOf"
+    },
+    {
+      "instancePath": "/minecraft:behavior.nearest_attackable_target/entity_types",
+      "schemaPath": "#/type",
+      "keyword": "type",
+      "params": {
+        "type": "object"
+      },
+      "message": "must be object"
+    },
+    {
+      "instancePath": "/minecraft:behavior.nearest_attackable_target/entity_types",
+      "schemaPath": "#/oneOf",
+      "keyword": "oneOf",
+      "params": {
+        "passingSchemas": null
+      },
+      "message": "must match exactly one schema in oneOf"
+    }
+  ],
+  "limitation": "Official metadata leaves dynamic components unconstrained. RP geometry, Molang, persistence and gameplay are checked separately/offline where possible and remain native acceptance work."
+}

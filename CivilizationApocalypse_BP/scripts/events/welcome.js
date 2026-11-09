@@ -9,8 +9,9 @@ let registered = false;
  * migrated, and a save this pack cannot read is reported rather than replaced.
  *
  * @param {ReturnType<typeof import("../kingdom/store.js").createKingdomStore>} kingdomStore
+ * @param {(player:any)=>void} [onInitialSpawn] private reviewed hook; no additional subscription
  */
-export function registerWelcomeOnJoin(kingdomStore) {
+export function registerWelcomeOnJoin(kingdomStore,onInitialSpawn) {
     if (registered) {
         return;
     }
@@ -28,6 +29,7 @@ export function registerWelcomeOnJoin(kingdomStore) {
             return;
         }
 
+        onInitialSpawn?.(player);
         player.sendMessage(formatWelcomeLines(result.kingdom, result.seeded, player.name).join("\n"));
     });
 }

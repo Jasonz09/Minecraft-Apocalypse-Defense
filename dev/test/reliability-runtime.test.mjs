@@ -25,6 +25,7 @@ const mc = {
     properties: new Map(),
     worldMessages: [],
     spawnSubscribers: [],
+    deathSubscribers: [],
     itemUseSubscribers: [],
     interactSubscribers: [],
     scriptEventSubscribers: [],
@@ -46,6 +47,7 @@ function guard(what) {
 mc.world = {
     afterEvents: {
         playerSpawn: { subscribe: (callback) => mc.spawnSubscribers.push(callback) },
+        entityDie: { subscribe: (callback, options) => mc.deathSubscribers.push({ callback, options }) },
         itemUse: { subscribe: (callback) => mc.itemUseSubscribers.push(callback) },
         playerInteractWithBlock: { subscribe: (callback) => mc.interactSubscribers.push(callback) },
     },
@@ -154,6 +156,7 @@ const earlySnapshot = {
     accesses: [...mc.earlyAccesses],
     constructionJobs: mc.constructionJobs.length,
     spawn: mc.spawnSubscribers.length,
+    death: mc.deathSubscribers.map(({ options }) => options.entityTypes),
     itemUse: mc.itemUseSubscribers.length,
     interact: mc.interactSubscribers.length,
     scriptEvents: mc.scriptEventSubscribers.length,
@@ -215,6 +218,7 @@ test("main.js: importing it during early execution does not touch world state an
 test("main.js: registers exactly the subscriptions and four bounded runtime timers", () => {
     assert.equal(earlySnapshot.spawn, 3, "welcome, horn and template Ledger delivery follow playerSpawn");
     assert.equal(earlySnapshot.itemUse, 1, "the horn's use handler");
+    assert.deepEqual(earlySnapshot.death, [["civ_trial:swordsman", "civ_trial:archer"], ["minecraft:villager_v2", "minecraft:iron_golem", "civ_trial:swordsman", "civ_trial:archer"]], "two observational death subscriptions, exact type filters and no new timer");
     assert.equal(earlySnapshot.interact, 1, "the gate-lever interaction listener");
     assert.equal(earlySnapshot.scriptEvents, 9, "status + inspection + debug + physical + gates + civ + starter script-event subscribers, + the people switch, + the Ledger development switch (the only Ledger listener while the gate is off)");
     assert.deepEqual([...earlySnapshot.intervals].sort((a, b) => a - b), [1, BEACON.guideTicks, 40, SIM.stepTicks], "one civilian travel poll (1 tick; driver defaults to 4-tick correction), gate-adapter poll (40 ticks), horn guide ticker, and simulation hour");
@@ -239,6 +243,7 @@ test("registration is idempotent: calling the register functions again adds no d
     (await load("commands", "people.js")).registerPeopleCommand((await load("integration", "peopleRuntime.js")).createPeopleRuntime(store));
     assert.equal((await load("integration", "gateLevers.js")).registerGateLevers(store), false, "the lever listener was already subscribed at import");
     assert.equal(mc.spawnSubscribers.length, 3);
+    assert.equal(mc.deathSubscribers.length, 2, "reimport does not register duplicate creation or military death observers");
     assert.equal(mc.itemUseSubscribers.length, 1);
     assert.equal(mc.interactSubscribers.length, 1, "one lever listener, not two");
     assert.equal(mc.scriptEventSubscribers.length, 9);

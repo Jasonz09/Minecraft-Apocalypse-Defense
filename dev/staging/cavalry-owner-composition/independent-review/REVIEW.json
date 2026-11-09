@@ -1,0 +1,142 @@
+{
+  "utc": "2026-11-08T06:11:59.663130+00:00",
+  "scope": "Independent read-only static/source pin review plus focused30 and strictTSC rerun; no stage/main edits or native calls",
+  "decision": "No blocker found for the explicitly limited single-owner/unified-registry foundation. Not approved as a compound native executor or activation adapter.",
+  "frozenFiles": [
+    {
+      "path": "compound-regressions.test.mjs",
+      "sha256": "9B4415352D30BE726B203F7886A530D338E64F2303AD6C065E7A84F05C5E85F8"
+    },
+    {
+      "path": "focused-final.log",
+      "sha256": "037E98F06D188C325DC8213D87A5527E5C67DF5E96C3FDEE5FCEABCE3F06259E"
+    },
+    {
+      "path": "focused-initial.log",
+      "sha256": "9A1550CF8EB0BF4B0FA7966E71FC371294137750750112219B72458C1C388E88"
+    },
+    {
+      "path": "focused-second.log",
+      "sha256": "C1C5E02BE926264B34FFF5C247DB80DF7432D50E653099AEB87BFC1D7E051021"
+    },
+    {
+      "path": "focused-third.log",
+      "sha256": "F9A193F71EC99929249B6DE85BE59AB973F62163EE0C250B1AA61CE17A4E3E7B"
+    },
+    {
+      "path": "loader.mjs",
+      "sha256": "2F914F8A9156491D80F9038D9271BA6DB315443797873016386D987F9C0097F0"
+    },
+    {
+      "path": "owner-debug.log",
+      "sha256": "135039E1C90D9B829C2028C576CA4BDCEC1C85659A57B7121BF2A3548B9414F6"
+    },
+    {
+      "path": "proposal.patch",
+      "sha256": "309C18FE967FB6EC8CCE0B389F009D16F8E5AC98ABF654ADB1C587BAC2DFE48A"
+    },
+    {
+      "path": "README.md",
+      "sha256": "709235AA5D7A6399E38B3E1FF507AC27C663A6B500361D90CBBF0BB0BDF78CD1"
+    },
+    {
+      "path": "register.mjs",
+      "sha256": "38E39EA17DBFC362D6444B2D60EE2AF5FF1D19471D83AFC767767AAA8215ABC7"
+    },
+    {
+      "path": "same-owner.test.mjs",
+      "sha256": "75FED165F20FE73FA79BB36B6F7117609F1D04B4F59C4A9EE63BBDD5FB23991B"
+    },
+    {
+      "path": "singleV2.mjs",
+      "sha256": "717741BBBC0E7E42391C7C84802AE8E5172766BF2009FD897454F20576A01433"
+    },
+    {
+      "path": "tsconfig.json",
+      "sha256": "F9131B46535332EA14D7DE8CF4887EC863CACA404D743141BBF647A4AB86EE0C"
+    },
+    {
+      "path": "typecheck-final.log",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "path": "typecheck-initial.log",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "path": "unified.test.mjs",
+      "sha256": "68E27B7B5F3132254119E84D4F5BEB477B144CE7D18BE987BF23CCA3F36FC0CB"
+    },
+    {
+      "path": "unifiedStore.mjs",
+      "sha256": "C86B8FDED449B81AA5CD5F55D3803C8D309A7802356C7A4FCACEFEDBBBCED8A0"
+    },
+    {
+      "path": "unifiedV3.mjs",
+      "sha256": "554FAE0CD3AE1B6A6EED20C22D342C1DF7444E817E0916E30EC4D4306896DCFD"
+    },
+    {
+      "path": "weightedLod.mjs",
+      "sha256": "CFB1FB8BDEAD94C183B030D26C7734CA7C216924E451291FAD8F915B49B0F37D"
+    },
+    {
+      "path": "baseline/integration/popSync.js",
+      "sha256": "ED93FC892FC19CC44DF865F98BF954058B7C5314D5961BDF36F0F13A767D58A7"
+    },
+    {
+      "path": "baseline/population/lod.js",
+      "sha256": "2BF2E2D0C3676635465B3A0DA8D01A687A36A4F330A306F5060B40DD78BA9AFB"
+    },
+    {
+      "path": "baseline/population/reconcile.js",
+      "sha256": "E1E24B8CF7ABEF66CFB91308F8ADCF632B7B0E896E9CC489C10089E60386ABE9"
+    },
+    {
+      "path": "proposed/integration/creationUnifiedStore.js",
+      "sha256": "0D94E8F1C454C1C6796CA3E64948FEEBF92DB860B18C7F4212147CAC604EF300"
+    },
+    {
+      "path": "proposed/integration/creationUnifiedV3.js",
+      "sha256": "554FAE0CD3AE1B6A6EED20C22D342C1DF7444E817E0916E30EC4D4306896DCFD"
+    },
+    {
+      "path": "proposed/integration/popSync.js",
+      "sha256": "F5A5437B6AC70D8F7986BD8B7ECCA4AB1A6DB314FFC8D61D6A71F6AA6033E8E7"
+    },
+    {
+      "path": "proposed/population/lod.js",
+      "sha256": "36BF59165021415CACBCD56FE8B25CFF8BA0566B3ADCAF828E92C2D857CC60E4"
+    },
+    {
+      "path": "proposed/population/reconcile.js",
+      "sha256": "17B205980B048AD35431C64A4C7B8B5F6FC04E4723E868C275F2443EFF7620C1"
+    }
+  ],
+  "v2DelegateMatchesArcherCreation": true,
+  "ownerBaselineMatchesArcherCreation": true,
+  "focused": {
+    "tests": 30,
+    "pass": 30,
+    "fail": 0,
+    "durationMs": 317.5524,
+    "log": "independent-review/focused.log"
+  },
+  "strictTypecheck": {
+    "exitCode": 0,
+    "log": "independent-review/typecheck.log"
+  },
+  "review": [
+    "Facade namespace dispatch validates family/schema and delegates actual v2 without rewriting or auto migration. Mixed/future, missing issued record and compound-as-single requests refuse.",
+    "Unified v3 inventory validates exact issued records, class/role/type, cross-role and cross-group IDs. Single reissuance preserves type and requires positive terminal/cancelled history; pending/absence cannot substitute.",
+    "Owner source delta is limited to forwarding optional physical-cost callback on both planning passes and using the store-issued private removal tag with exact legacy fallback; final repeated native identity/policy/loaded checks remain. Copied wrapper tickets remain invalid.",
+    "Weighted admission validates cost1/2 and charges both global and district budgets before admission. Existing default count shape and choices retained; actorSlots is admission intent, not a native population census.",
+    "Archer+creation v2 allowlists match v3 single types. Runtime currently registers only v2 direct store; private fixture still proves exact v2 header. Selecting format3 requires its own trusted activation composition."
+  ],
+  "remaining": [
+    "Compound native creation/seating and multi-action cost accounting are not implemented; no horse may be spawned by this stage.",
+    "Unresolved partial pair reservations/out-of-table survivors must count against physical budgets before compound execution.",
+    "No v2-to-v3 migration; no legacy-v3 initialization; existing v2 stores cannot acquire cavalry.",
+    "Fresh v3 activation contract/death+role/native census composition remains separate.",
+    "Native mounted collision/friendly combat/seat/unload/rejoin/partial cleanup and cohort casualties remain unverified."
+  ]
+}

@@ -1,0 +1,230 @@
+{
+  "utc": "2026-11-08T06:18:43.665749+00:00",
+  "scope": "New staging-only readiness increment;21 production paths unchanged from frozen archer165 composition plus1 central boundary test delta, read-only closed-copy evidence tooling. No main/native/trust writes.",
+  "proposedFiles": [
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/commands/people.js",
+      "destination": "CivilizationApocalypse_BP/scripts/commands/people.js",
+      "sha256": "B79FB7205A2F3186D08C7F0901053F2DC5872FD88B0B9CD8795853765BE7A448",
+      "baselineSha256": "61DBB52AF4C27D2DB75E0F6AD22296E150C88709C70610BB9F663EEC0387F559",
+      "matchesFrozenArcherCreation": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/events/welcome.js",
+      "destination": "CivilizationApocalypse_BP/scripts/events/welcome.js",
+      "sha256": "AAEBED353A1302D8D25B5D2300708C63333D1AB2FBE91ADA2EBC7FDBF1DC5AC0",
+      "baselineSha256": "DB13FB3B27163CE821A4962D9AF5771583534B534E93DE4CC15D6E415BAB4E55",
+      "matchesFrozenArcherCreation": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/integration/creationBindings.js",
+      "destination": "CivilizationApocalypse_BP/scripts/integration/creationBindings.js",
+      "sha256": "717741BBBC0E7E42391C7C84802AE8E5172766BF2009FD897454F20576A01433",
+      "baselineSha256": null,
+      "matchesFrozenArcherCreation": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/integration/creationRuntime.js",
+      "destination": "CivilizationApocalypse_BP/scripts/integration/creationRuntime.js",
+      "sha256": "C7E8F075D53DE71B9E240A4C7637C64082B687268A02B5867381B44DDF34C17A",
+      "baselineSha256": null,
+      "matchesFrozenArcherCreation": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/integration/freshFixtureTrust.js",
+      "destination": "CivilizationApocalypse_BP/scripts/integration/freshFixtureTrust.js",
+      "sha256": "5914C01773380ED8DF19B8AB7A271251F65E5EA6EDC7128AB0110808ACA7EADF",
+      "baselineSha256": null,
+      "matchesFrozenArcherCreation": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/integration/peopleStreets.js",
+      "destination": "CivilizationApocalypse_BP/scripts/integration/peopleStreets.js",
+      "sha256": "B0E2F279198203E015817104818FC4A7D52C30EADF96350C5B4CB58B67C180D0",
+      "baselineSha256": "FB3AAE2AD293B902E53A6DC87BEEA8E4EA17BEA6BCD0419927229CA5468D526E",
+      "matchesFrozenArcherCreation": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/integration/popSync.js",
+      "destination": "CivilizationApocalypse_BP/scripts/integration/popSync.js",
+      "sha256": "ED93FC892FC19CC44DF865F98BF954058B7C5314D5961BDF36F0F13A767D58A7",
+      "baselineSha256": "4F658ABC6153DB289F73C3E987CE20C9FFE86EBA07C9F78F096783BD7EB86443",
+      "matchesFrozenArcherCreation": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/integration/privateFreshFixture.js",
+      "destination": "CivilizationApocalypse_BP/scripts/integration/privateFreshFixture.js",
+      "sha256": "558190D973E5D5230D7DF817990B488324586FF3613B4F07336A137BE760A2B2",
+      "baselineSha256": null,
+      "matchesFrozenArcherCreation": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/main.js",
+      "destination": "CivilizationApocalypse_BP/scripts/main.js",
+      "sha256": "11D3875F2F0FADD15B09226C10E80543123C25DE646A5E6F2317F45D2DD9C241",
+      "baselineSha256": "417E9C7181F9792CCAB013ED2BC48CA66AA05F169A8E8DF141A919554998AF62",
+      "matchesFrozenArcherCreation": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/sim/starter.js",
+      "destination": "CivilizationApocalypse_BP/scripts/sim/starter.js",
+      "sha256": "50F751F967BCDA377329C3BABB61332A7402513F59C00A44A9DE18965CB59CB0",
+      "baselineSha256": "C343B6629D04C2121D2E13BF31A5941F5EFEE4C9459D5AC7C5D12A8E0FEA95E6",
+      "matchesFrozenArcherCreation": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/entities/archer.json",
+      "destination": "CivilizationApocalypse_BP/entities/archer.json",
+      "sha256": "660C1D0665C97910DD4B6291A8222069A8CC23F6E94DC59EBA440157979B4F30",
+      "baselineSha256": null,
+      "matchesFrozenArcherCreation": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/entities/guard_arrow.json",
+      "destination": "CivilizationApocalypse_BP/entities/guard_arrow.json",
+      "sha256": "B3DEA57342313664AB1A66EE46806D75B1AA6697CA767CCDFE69508AC816F761",
+      "baselineSha256": null,
+      "matchesFrozenArcherCreation": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/commands/military.js",
+      "destination": "CivilizationApocalypse_BP/scripts/commands/military.js",
+      "sha256": "C7BC09BEE785E83EEF13F31E1105156179236D59DC0F815F4571E0A1AE96E044",
+      "baselineSha256": "D1CD0E06EDC68133BED9E593F4DEDC98B6F5DF0DE48C65115A21E75C758383BB",
+      "matchesFrozenArcherCreation": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/integration/militaryLifecycleDiagnostics.js",
+      "destination": "CivilizationApocalypse_BP/scripts/integration/militaryLifecycleDiagnostics.js",
+      "sha256": "EA32B85E1642934434F9B355845F7194AB62C44B1E4FF640616E442E0BC9144D",
+      "baselineSha256": "527C1E7E6CE80F72561239787724C013090D06BC56827BB91C0C48FD9174BB4F",
+      "matchesFrozenArcherCreation": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/integration/militarySelectionStore.js",
+      "destination": "CivilizationApocalypse_BP/scripts/integration/militarySelectionStore.js",
+      "sha256": "647C4A52ADE6B2DD18CAE4D989E068AB01DBECBFA440F0F5F81A61B291B050B4",
+      "baselineSha256": "8853226D9F5935C03D036A041C9B801622EA0E90D4B7E38470E41754451D58AE",
+      "matchesFrozenArcherCreation": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/population/militarySelection.js",
+      "destination": "CivilizationApocalypse_BP/scripts/population/militarySelection.js",
+      "sha256": "63DEBCFE85CB69650707FFEDA5A98D5DCF585887A0D194556C66258035CC7C1D",
+      "baselineSha256": "852505EEEA88F549A92302B4C4EF28E51CA166B66DD759FD1EE497CBA1A16C7F",
+      "matchesFrozenArcherCreation": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_RP/animations/archer.animation.json",
+      "destination": "CivilizationApocalypse_RP/animations/archer.animation.json",
+      "sha256": "E68E2F2C90078B29C3A6B18DA98FBFE29C588466713D3D912F0DDE38C273E3D2",
+      "baselineSha256": null,
+      "matchesFrozenArcherCreation": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_RP/entity/archer.entity.json",
+      "destination": "CivilizationApocalypse_RP/entity/archer.entity.json",
+      "sha256": "D7888CF04760F270A5FE25EA4F913424AB2397B1396F7B6F53FA78825B1FF895",
+      "baselineSha256": null,
+      "matchesFrozenArcherCreation": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_RP/entity/guard_arrow.entity.json",
+      "destination": "CivilizationApocalypse_RP/entity/guard_arrow.entity.json",
+      "sha256": "362EA8232F2A39C392E84621B3D43871B552C9D347CFA9EBA7A529984E27F217",
+      "baselineSha256": null,
+      "matchesFrozenArcherCreation": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_RP/models/entity/archer.geo.json",
+      "destination": "CivilizationApocalypse_RP/models/entity/archer.geo.json",
+      "sha256": "992C234164367C9B45C96A83FD2D3FB086558472A9D9A0484D3091414A40B26A",
+      "baselineSha256": null,
+      "matchesFrozenArcherCreation": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_RP/render_controllers/archer.render_controllers.json",
+      "destination": "CivilizationApocalypse_RP/render_controllers/archer.render_controllers.json",
+      "sha256": "AAB93AE3D4735D22A3815858F16C0A1833EF9003985BEB3A86176FBA52450C99",
+      "baselineSha256": null,
+      "matchesFrozenArcherCreation": true
+    },
+    {
+      "staged": "proposed-dev/test/integration.test.mjs",
+      "destination": "dev/test/integration.test.mjs",
+      "sha256": "794B33605DF7F085BE03EA8B623C2715099F399F5E240C93EB1CCF250A2941EC",
+      "baselineSha256": "EA5A5DB1E0ACD0338D68B33F822F1F19C255AD112514A6F7FC5C2E5A376A65E4",
+      "scope": "Only exact injected-boundary allowlist adds four modules; inverse engine/UI import checks retained"
+    }
+  ],
+  "predecessorManifest": {
+    "path": "dev\\staging\\population-archer-composed\\PROMOTION-HASHES.json",
+    "sha256": "7A44B1F1909C3FC6072BBE2BEBE211F90575E3084EBBFAE08B6FAEDEFD33CF8F"
+  },
+  "toolParserDependency": {
+    "path": "dev/prototypes/closed-journal-audit/audit.py",
+    "sha256": "C4DC2BB4292E4845E308B5ACE3B0982C52BA054A26092A8B0CD95BF36F276257"
+  },
+  "actualCompiledTrust": null,
+  "compatibility": {
+    "tests": 165,
+    "pass": 165,
+    "fail": 0,
+    "durationMs": 1091.831,
+    "log": "compatibility-final.log"
+  },
+  "boundaryActualCentralHarness": {
+    "beforeFail": 1,
+    "beforeLog": "boundary-before.log",
+    "afterPass": 1,
+    "afterLog": "boundary-after.log",
+    "afterDurationMs": 327.2182
+  },
+  "preflightTests": {
+    "tests": 12,
+    "pass": 12,
+    "seconds": 0.271,
+    "log": "preflight-tests.log",
+    "syntheticOnly": true
+  },
+  "strictTypecheck": {
+    "exitCode": 0,
+    "log": "typecheck-final.log"
+  },
+  "nativeAcceptance": false,
+  "fullVerificationRun": false,
+  "evidenceFiles": {
+    "archer-creation.test.mjs": "0695AC12ADEDCEC19058C61EE7B7B854312FAC513E882BB6700BDCB40D9E514B",
+    "assets.test.mjs": "D4A8952C1CB238293C2FD7A301F71B8521658BDA0617F13F19B8F348F6C2A831",
+    "binding.test.mjs": "5669E60A1C35C20E7EEBD827CD0205F986BCB239B04A332932339C1AED513B6F",
+    "boundary-after.log": "3421824C718CB921391E0E8740FEE850E51B96678B3F719C37266F70D0B1282E",
+    "boundary-before.log": "7042C5CF14999AF55D6FE4E82FEE32DF81492BE07CAE10EBC6DF615D632D4584",
+    "closed-fixture-preflight.py": "CA6C6B4FE5136652F3B9119F8ACCA33EDD7CA68A72EA8717B41AAD190BC6753D",
+    "closed-fixture-preflight.test.py": "11A146CCBEEB96C243E5BD710C171ABF336FB8F350B3FCA3DBA7F8B9A7B8CE98",
+    "command-refusal.test.mjs": "34D37C017B8DBCBDD3727EE1B7C2FBB16AACAACF651E1B41774C72C779772033",
+    "compatibility-final.log": "C112A34DA8732F707882EEC4FEEF6ABCCC76EE83011E04301D11C6AC492B4EDF",
+    "composed.test.mjs": "143ECFA29A70B3C10B40B2C9254306BF1C5744B422421EC72411F5D8403279E2",
+    "fixture.test.mjs": "659CEFA4866D946A87BC48C604854040A7F7575872F07BC94A790A4DC4DCF7DC",
+    "loader.mjs": "2E125F06A515C173777AA3C3EAE2670543BD0C3D0EDE5D7CFFA4B8CB33123F1E",
+    "military-command.test.mjs": "1568C851DFF3BAE6E1A2633C9927F6EE648BBEA9589DC72D471CF1F29EEC4CFF",
+    "military-lifecycle-diagnostics.test.mjs": "84220BF5BF18FBB2CE0892B7D09413DAE931AB6843DD17F9C85AFABF27736879",
+    "military-selection.test.mjs": "9E1B476C95F41549508935AAFC1D27EF863F733441F19BE480BB105F5FD0EF0C",
+    "native-stub.mjs": "C8F1B54D1B1DF36FC3A0410F57A2CA710DD25D92264B8332DE8AEC883F58AE44",
+    "preflight-tests.log": "798802A6EE5983F4E71F9C52B01C66D281CA7DBA96B3E347A4220BEE361A1638",
+    "proposed.patch": "DAC7FD658A5B0018512807533A1C0DE8D376DD145B8C9A8FCFB9D38FE8500A61",
+    "readiness-only.patch": "9AFF42228629D3E91770382719792DFD1B5B139EE83CDFB642A834DAD2CC4BF4",
+    "README.md": "E28B0C453BF80E43B1EEE4588B47BB71A465BD8468918D1734914DE2C0E4C618",
+    "register.mjs": "38E39EA17DBFC362D6444B2D60EE2AF5FF1D19471D83AFC767767AAA8215ABC7",
+    "synthetic-trust.mjs": "F632A56FF1E900448F2E25FC11F3FF0F1E14BD385EC7A8B09A5CD1E95C327CBA",
+    "teardown.test.mjs": "C766435F620301A6C6634B9566E60A7DB9BF179204038AD91D942DDECF96B524",
+    "tsconfig.json": "220473726F5E715CD182EFA8BDE620B22D3B436107C04443D0FB9F0212897295",
+    "typecheck-final.log": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+  },
+  "nextConcreteGate": [
+    "Root genuinely creates vanilla marker world and closes Minecraft",
+    "Pin pristine closed backup, run staged preflight against actual plan",
+    "Independent exact Scoreboard FakePlayer ID/score/objective/receipt review; WAL is not SST/history proof",
+    "Centrally integrate21 production +1 harness change, full verification",
+    "Compile actual trust on disposable derivative only, native exact initial activation/lifecycle tests; separate military-source contract remains"
+  ]
+}

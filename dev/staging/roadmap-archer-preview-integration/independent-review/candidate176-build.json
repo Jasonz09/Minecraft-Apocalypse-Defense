@@ -1,0 +1,40 @@
+{
+  "kind": "CivilizationApocalypseDeveloperPreview",
+  "v": 1,
+  "label": "independent-bounded176",
+  "developerPreview": true,
+  "worldIncluded": false,
+  "releaseApproved": false,
+  "cleanStarterVerified": false,
+  "sourceFiles": 176,
+  "bindings": {
+    "world_behavior_packs": [
+      {
+        "pack_id": "fd04cb50-dddc-4ebe-83fc-5b5375819bcb",
+        "version": [
+          1,
+          0,
+          0
+        ]
+      }
+    ],
+    "world_resource_packs": [
+      {
+        "pack_id": "e634c636-7b98-49f7-81cd-13483bfa3f9f",
+        "version": [
+          1,
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "bindingStatus": {
+    "state": "NOT_CHECKED",
+    "scope": "No world supplied; examples are not installed bindings or clean-world proof"
+  },
+  "dryRun": false,
+  "output": "E:\\CivilizationApocalypse\\dev\\staging\\roadmap-archer-preview-integration\\independent-review\\runtime\\dist\\developer-previews\\independent-bounded176",
+  "receiptSha256": "00794FC14856E77904DFD9AE8727EBEE1411A87F522F28B846BE6DBB9C2EE403",
+  "archiveSha256": "30178704B9D13141FDF1444D1F2F1D2ABDA79E0BCF883B8D97579AC7C46AE379"
+}

@@ -3,7 +3,7 @@ import test from "node:test";
 import {register} from "node:module";
 import {readFileSync} from "node:fs";
 import {createMilitaryLifecycleDiagnostics,militaryActorSnapshot,registerMilitaryLifecycleSignals} from "../../CivilizationApocalypse_BP/scripts/integration/militaryLifecycleDiagnostics.js";
-import {decodeMilitarySelection,SWORDSMAN_TYPE} from "../../CivilizationApocalypse_BP/scripts/population/militarySelection.js";
+import {decodeMilitarySelection,SWORDSMAN_TYPE,ARCHER_TYPE} from "../../CivilizationApocalypse_BP/scripts/population/militarySelection.js";
 import {tagFor} from "../../CivilizationApocalypse_BP/scripts/population/identity.js";
 import {createPopWorld} from "../lib/poptharness.mjs";
 import {createInitialKingdom} from "../../CivilizationApocalypse_BP/scripts/kingdom/state.js";
@@ -52,7 +52,7 @@ test("actual 2.7 death/remove are type-filtered and hurt subscription supports e
     const signal=name=>({subscribe(callback,options){subscriptions.push({name,callback,options});}});
     const world={afterEvents:{entityDie:signal("die"),entityRemove:signal("remove"),entityHurt:signal("hurt")},getDynamicProperty(){throw Error("early read");}};
     registerMilitaryLifecycleSignals(world,t.d);assert.equal(t.reads(),0);
-    assert.deepEqual(subscriptions.map(s=>s.options),[{entityTypes:[SWORDSMAN_TYPE]},{entityTypes:[SWORDSMAN_TYPE]},undefined]);
+    assert.deepEqual(subscriptions.map(s=>s.options),[{entityTypes:[SWORDSMAN_TYPE,ARCHER_TYPE]},{entityTypes:[SWORDSMAN_TYPE,ARCHER_TYPE]},undefined]);
     const types=readFileSync(new URL("../../node_modules/@minecraft/server/index.d.ts",import.meta.url),"utf8");
     for(const name of ["EntityDieAfterEventSignal","EntityRemoveAfterEventSignal","EntityHurtAfterEventSignal"]){const section=types.slice(types.indexOf(`export class ${name}`));assert.match(section.slice(0,section.indexOf("unsubscribe(")),/can be called in early-execution mode/);}
 });
@@ -132,3 +132,5 @@ test("global unrelated event workload is session-capped and never becomes outgoi
     const reads=t.reads();t.at(1000001);t.d.onHurt(hurt(zombie(),actor(),4));assert.equal(t.reads(),reads);
     assert.match(t.lines(),/incoming 0, outgoing 0, held 0, budget-dropped 1/);assert.doesNotMatch(t.lines(),/hurt outgoing actor/);
 });
+
+test('sameboundeddiagnosticsbindsselectedarcher andrecordsphysicaldeath withoutcasualtydebit',()=>{const t=tracker(),archer=decodeMilitarySelection(JSON.stringify({...selection.selection,v:2,class:'archer',typeId:ARCHER_TYPE}));t.change(archer);t.d.command('diagnostics on');const h=actor('archer-one',{typeId:ARCHER_TYPE});t.d.observe(GROUP,[h]);assert.match(t.lines(),/verified canonical binding actor archer-one/);t.d.onDie({deadEntity:h,damageSource:{cause:'entityAttack',damagingEntity:{typeId:'minecraft:zombie'}}});assert.match(t.lines(),/fresh canonical death identity verified/);assert.match(t.lines(),/no casualty accounting/);});

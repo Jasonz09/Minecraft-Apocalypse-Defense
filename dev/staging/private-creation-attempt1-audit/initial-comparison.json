@@ -1,0 +1,604 @@
+[
+  {
+    "sequence": 587,
+    "keys": [
+      "civ:kingdom"
+    ],
+    "step": 0,
+    "initialRawExact": true,
+    "initialSemanticExact": true,
+    "rawBytes": 3981,
+    "rawSha256": "E2E8327899B4B13873AA4D36F831ACBA676545C88E930CFF73279D64E11E0D09",
+    "diff": []
+  },
+  {
+    "sequence": 704,
+    "keys": [
+      "civ:kingdom",
+      "civ_devgate"
+    ],
+    "step": 1,
+    "initialRawExact": false,
+    "initialSemanticExact": false,
+    "rawBytes": 5508,
+    "rawSha256": "EC0FC0C96D9F3CB85D5E3681C3209BB6F368091226B4305A7D09104EBCF18AC2",
+    "diff": [
+      {
+        "path": "$.battles",
+        "expected": [],
+        "actual": [
+          {
+            "atStep": 1,
+            "districtId": "district-3",
+            "districtName": "Whitethorn",
+            "assault": 14,
+            "standing": 22.8,
+            "integrityBefore": 99.1,
+            "integrityAfter": 99.1,
+            "integrityLoss": 0,
+            "attackerLosses": 14,
+            "defenderLosses": 0,
+            "outcome": "counterattack: raid broken"
+          },
+          {
+            "atStep": 1,
+            "districtId": "district-3",
+            "districtName": "Whitethorn",
+            "assault": 17,
+            "standing": 24,
+            "integrityBefore": 100,
+            "integrityAfter": 99.1,
+            "integrityLoss": 0.9,
+            "attackerLosses": 3,
+            "defenderLosses": 1,
+            "outcome": "held"
+          }
+        ]
+      },
+      {
+        "path": "$.districts[0].foodStress",
+        "expected": "<missing>",
+        "actual": 0
+      },
+      {
+        "path": "$.districts[0].growthBuffer",
+        "expected": "<missing>",
+        "actual": 0.36
+      },
+      {
+        "path": "$.districts[0].reinforcedBy",
+        "expected": "<missing>",
+        "actual": []
+      },
+      {
+        "path": "$.districts[0].reserves.food",
+        "expected": 240,
+        "actual": 241.52
+      },
+      {
+        "path": "$.districts[0].reserves.materials",
+        "expected": 180,
+        "actual": 181.6
+      },
+      {
+        "path": "$.districts[0].reserves.supplies",
+        "expected": 120,
+        "actual": 120.9
+      },
+      {
+        "path": "$.districts[0].sheltering",
+        "expected": "<missing>",
+        "actual": []
+      },
+      {
+        "path": "$.districts[1].foodStress",
+        "expected": "<missing>",
+        "actual": 0
+      },
+      {
+        "path": "$.districts[1].growthBuffer",
+        "expected": "<missing>",
+        "actual": 0.36
+      },
+      {
+        "path": "$.districts[1].reinforcedBy",
+        "expected": "<missing>",
+        "actual": []
+      },
+      {
+        "path": "$.districts[1].reserves.food",
+        "expected": 240,
+        "actual": 242.4
+      },
+      {
+        "path": "$.districts[1].reserves.materials",
+        "expected": 180,
+        "actual": 181.6
+      },
+      {
+        "path": "$.districts[1].reserves.supplies",
+        "expected": 120,
+        "actual": 120.9
+      },
+      {
+        "path": "$.districts[1].sheltering",
+        "expected": "<missing>",
+        "actual": []
+      },
+      {
+        "path": "$.districts[2].foodStress",
+        "expected": "<missing>",
+        "actual": 0
+      },
+      {
+        "path": "$.districts[2].garrison.front",
+        "expected": 24,
+        "actual": 23
+      },
+      {
+        "path": "$.districts[2].growthBuffer",
+        "expected": "<missing>",
+        "actual": 0.36
+      },
+      {
+        "path": "$.districts[2].reinforcedBy",
+        "expected": "<missing>",
+        "actual": []
+      },
+      {
+        "path": "$.districts[2].reserves.food",
+        "expected": 240,
+        "actual": 241.39
+      },
+      {
+        "path": "$.districts[2].reserves.materials",
+        "expected": 180,
+        "actual": 181.1
+      },
+      {
+        "path": "$.districts[2].reserves.supplies",
+        "expected": 120,
+        "actual": 120.9
+      },
+      {
+        "path": "$.districts[2].sheltering",
+        "expected": "<missing>",
+        "actual": []
+      },
+      {
+        "path": "$.districts[2].soldiers",
+        "expected": 30,
+        "actual": 29
+      },
+      {
+        "path": "$.districts[3].foodStress",
+        "expected": "<missing>",
+        "actual": 0
+      },
+      {
+        "path": "$.districts[3].growthBuffer",
+        "expected": "<missing>",
+        "actual": 0.36
+      },
+      {
+        "path": "$.districts[3].reinforcedBy",
+        "expected": "<missing>",
+        "actual": []
+      },
+      {
+        "path": "$.districts[3].reserves.food",
+        "expected": 240,
+        "actual": 242.88
+      },
+      {
+        "path": "$.districts[3].reserves.materials",
+        "expected": 180,
+        "actual": 181.6
+      },
+      {
+        "path": "$.districts[3].reserves.supplies",
+        "expected": 120,
+        "actual": 120.9
+      },
+      {
+        "path": "$.districts[3].sheltering",
+        "expected": "<missing>",
+        "actual": []
+      },
+      {
+        "path": "$.districts[4].foodStress",
+        "expected": "<missing>",
+        "actual": 0
+      },
+      {
+        "path": "$.districts[4].growthBuffer",
+        "expected": "<missing>",
+        "actual": 0.36
+      },
+      {
+        "path": "$.districts[4].reinforcedBy",
+        "expected": "<missing>",
+        "actual": []
+      },
+      {
+        "path": "$.districts[4].reserves.food",
+        "expected": 240,
+        "actual": 242.81
+      },
+      {
+        "path": "$.districts[4].reserves.materials",
+        "expected": 180,
+        "actual": 181.6
+      },
+      {
+        "path": "$.districts[4].reserves.supplies",
+        "expected": 120,
+        "actual": 120.9
+      },
+      {
+        "path": "$.districts[4].sheltering",
+        "expected": "<missing>",
+        "actual": []
+      },
+      {
+        "path": "$.log",
+        "expected": [],
+        "actual": [
+          {
+            "atStep": 1,
+            "text": "expansion survey reached its bound of 4 lands this step"
+          },
+          {
+            "atStep": 1,
+            "text": "Whitethorn: the district settles alert -> secure."
+          },
+          {
+            "atStep": 1,
+            "text": "Whitethorn: walls back to full integrity (0.5 materials spent this step)."
+          },
+          {
+            "atStep": 1,
+            "text": "Whitethorn: 23 defenders counterattack 14 raiders, breaking 14 of them (0 remain, 0 lost) - the district goes on the offensive."
+          },
+          {
+            "atStep": 1,
+            "text": "Whitethorn: assault 17 against 24 effective defenders - wall 100 -> 99, 3 raiders and 1 of our soldiers lost."
+          },
+          {
+            "atStep": 1,
+            "text": "Whitethorn: watch raised secure -> alert (assault 17, integrity 100)."
+          },
+          {
+            "atStep": 1,
+            "text": "Whitethorn: 17 raiders press the district (assault 17)."
+          }
+        ]
+      },
+      {
+        "path": "$.rngState",
+        "expected": 20261017,
+        "actual": 1723944436
+      },
+      {
+        "path": "$.step",
+        "expected": 0,
+        "actual": 1
+      },
+      {
+        "path": "$.territory[0].surveyProgress",
+        "expected": 0,
+        "actual": 1
+      },
+      {
+        "path": "$.territory[1].surveyProgress",
+        "expected": 0,
+        "actual": 4
+      },
+      {
+        "path": "$.territory[2].surveyProgress",
+        "expected": 0,
+        "actual": 1
+      },
+      {
+        "path": "$.territory[3].surveyProgress",
+        "expected": 0,
+        "actual": 1
+      }
+    ]
+  },
+  {
+    "sequence": 790,
+    "keys": [
+      "civ:kingdom",
+      "civ_devgate"
+    ],
+    "step": 1,
+    "initialRawExact": false,
+    "initialSemanticExact": false,
+    "rawBytes": 5508,
+    "rawSha256": "EC0FC0C96D9F3CB85D5E3681C3209BB6F368091226B4305A7D09104EBCF18AC2",
+    "diff": [
+      {
+        "path": "$.battles",
+        "expected": [],
+        "actual": [
+          {
+            "atStep": 1,
+            "districtId": "district-3",
+            "districtName": "Whitethorn",
+            "assault": 14,
+            "standing": 22.8,
+            "integrityBefore": 99.1,
+            "integrityAfter": 99.1,
+            "integrityLoss": 0,
+            "attackerLosses": 14,
+            "defenderLosses": 0,
+            "outcome": "counterattack: raid broken"
+          },
+          {
+            "atStep": 1,
+            "districtId": "district-3",
+            "districtName": "Whitethorn",
+            "assault": 17,
+            "standing": 24,
+            "integrityBefore": 100,
+            "integrityAfter": 99.1,
+            "integrityLoss": 0.9,
+            "attackerLosses": 3,
+            "defenderLosses": 1,
+            "outcome": "held"
+          }
+        ]
+      },
+      {
+        "path": "$.districts[0].foodStress",
+        "expected": "<missing>",
+        "actual": 0
+      },
+      {
+        "path": "$.districts[0].growthBuffer",
+        "expected": "<missing>",
+        "actual": 0.36
+      },
+      {
+        "path": "$.districts[0].reinforcedBy",
+        "expected": "<missing>",
+        "actual": []
+      },
+      {
+        "path": "$.districts[0].reserves.food",
+        "expected": 240,
+        "actual": 241.52
+      },
+      {
+        "path": "$.districts[0].reserves.materials",
+        "expected": 180,
+        "actual": 181.6
+      },
+      {
+        "path": "$.districts[0].reserves.supplies",
+        "expected": 120,
+        "actual": 120.9
+      },
+      {
+        "path": "$.districts[0].sheltering",
+        "expected": "<missing>",
+        "actual": []
+      },
+      {
+        "path": "$.districts[1].foodStress",
+        "expected": "<missing>",
+        "actual": 0
+      },
+      {
+        "path": "$.districts[1].growthBuffer",
+        "expected": "<missing>",
+        "actual": 0.36
+      },
+      {
+        "path": "$.districts[1].reinforcedBy",
+        "expected": "<missing>",
+        "actual": []
+      },
+      {
+        "path": "$.districts[1].reserves.food",
+        "expected": 240,
+        "actual": 242.4
+      },
+      {
+        "path": "$.districts[1].reserves.materials",
+        "expected": 180,
+        "actual": 181.6
+      },
+      {
+        "path": "$.districts[1].reserves.supplies",
+        "expected": 120,
+        "actual": 120.9
+      },
+      {
+        "path": "$.districts[1].sheltering",
+        "expected": "<missing>",
+        "actual": []
+      },
+      {
+        "path": "$.districts[2].foodStress",
+        "expected": "<missing>",
+        "actual": 0
+      },
+      {
+        "path": "$.districts[2].garrison.front",
+        "expected": 24,
+        "actual": 23
+      },
+      {
+        "path": "$.districts[2].growthBuffer",
+        "expected": "<missing>",
+        "actual": 0.36
+      },
+      {
+        "path": "$.districts[2].reinforcedBy",
+        "expected": "<missing>",
+        "actual": []
+      },
+      {
+        "path": "$.districts[2].reserves.food",
+        "expected": 240,
+        "actual": 241.39
+      },
+      {
+        "path": "$.districts[2].reserves.materials",
+        "expected": 180,
+        "actual": 181.1
+      },
+      {
+        "path": "$.districts[2].reserves.supplies",
+        "expected": 120,
+        "actual": 120.9
+      },
+      {
+        "path": "$.districts[2].sheltering",
+        "expected": "<missing>",
+        "actual": []
+      },
+      {
+        "path": "$.districts[2].soldiers",
+        "expected": 30,
+        "actual": 29
+      },
+      {
+        "path": "$.districts[3].foodStress",
+        "expected": "<missing>",
+        "actual": 0
+      },
+      {
+        "path": "$.districts[3].growthBuffer",
+        "expected": "<missing>",
+        "actual": 0.36
+      },
+      {
+        "path": "$.districts[3].reinforcedBy",
+        "expected": "<missing>",
+        "actual": []
+      },
+      {
+        "path": "$.districts[3].reserves.food",
+        "expected": 240,
+        "actual": 242.88
+      },
+      {
+        "path": "$.districts[3].reserves.materials",
+        "expected": 180,
+        "actual": 181.6
+      },
+      {
+        "path": "$.districts[3].reserves.supplies",
+        "expected": 120,
+        "actual": 120.9
+      },
+      {
+        "path": "$.districts[3].sheltering",
+        "expected": "<missing>",
+        "actual": []
+      },
+      {
+        "path": "$.districts[4].foodStress",
+        "expected": "<missing>",
+        "actual": 0
+      },
+      {
+        "path": "$.districts[4].growthBuffer",
+        "expected": "<missing>",
+        "actual": 0.36
+      },
+      {
+        "path": "$.districts[4].reinforcedBy",
+        "expected": "<missing>",
+        "actual": []
+      },
+      {
+        "path": "$.districts[4].reserves.food",
+        "expected": 240,
+        "actual": 242.81
+      },
+      {
+        "path": "$.districts[4].reserves.materials",
+        "expected": 180,
+        "actual": 181.6
+      },
+      {
+        "path": "$.districts[4].reserves.supplies",
+        "expected": 120,
+        "actual": 120.9
+      },
+      {
+        "path": "$.districts[4].sheltering",
+        "expected": "<missing>",
+        "actual": []
+      },
+      {
+        "path": "$.log",
+        "expected": [],
+        "actual": [
+          {
+            "atStep": 1,
+            "text": "expansion survey reached its bound of 4 lands this step"
+          },
+          {
+            "atStep": 1,
+            "text": "Whitethorn: the district settles alert -> secure."
+          },
+          {
+            "atStep": 1,
+            "text": "Whitethorn: walls back to full integrity (0.5 materials spent this step)."
+          },
+          {
+            "atStep": 1,
+            "text": "Whitethorn: 23 defenders counterattack 14 raiders, breaking 14 of them (0 remain, 0 lost) - the district goes on the offensive."
+          },
+          {
+            "atStep": 1,
+            "text": "Whitethorn: assault 17 against 24 effective defenders - wall 100 -> 99, 3 raiders and 1 of our soldiers lost."
+          },
+          {
+            "atStep": 1,
+            "text": "Whitethorn: watch raised secure -> alert (assault 17, integrity 100)."
+          },
+          {
+            "atStep": 1,
+            "text": "Whitethorn: 17 raiders press the district (assault 17)."
+          }
+        ]
+      },
+      {
+        "path": "$.rngState",
+        "expected": 20261017,
+        "actual": 1723944436
+      },
+      {
+        "path": "$.step",
+        "expected": 0,
+        "actual": 1
+      },
+      {
+        "path": "$.territory[0].surveyProgress",
+        "expected": 0,
+        "actual": 1
+      },
+      {
+        "path": "$.territory[1].surveyProgress",
+        "expected": 0,
+        "actual": 4
+      },
+      {
+        "path": "$.territory[2].surveyProgress",
+        "expected": 0,
+        "actual": 1
+      },
+      {
+        "path": "$.territory[3].surveyProgress",
+        "expected": 0,
+        "actual": 1
+      }
+    ]
+  }
+]

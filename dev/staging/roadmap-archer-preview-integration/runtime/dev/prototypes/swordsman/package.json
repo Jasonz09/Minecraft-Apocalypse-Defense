@@ -1,0 +1,11 @@
+{
+  "name": "civ-isolated-swordsman-prototype",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "node generate-assets.mjs",
+    "test": "node --test prototype.test.mjs",
+    "schema": "node validate-schemas.mjs"
+  },
+  "devDependencies": { "ajv": "8.17.1" }
+}

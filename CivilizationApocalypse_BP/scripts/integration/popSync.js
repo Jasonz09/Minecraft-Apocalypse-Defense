@@ -22,14 +22,16 @@ class MilitaryOwnerRefusal extends Error {}
  * Runtime boundary for the population representation layer (population/reconcile.js is the pure part).
  *
  * This file is thin on purpose. It reads the world into the reducer's observation, asks the reducer what to do,
- * and applies the result. It holds no rules of its own, and it is NOT wired into main.js: nothing here runs
- * until an integrator constructs it and calls reconcileOnce() on purpose. The pack default is off.
+ * and applies the result. Streets constructs it as the sole owner; this module registers no timer.
+ * The optional staged creationBindings protocol records issued instances separately from the advisory cursor.
  *
  * Safety rules enforced here, on top of the reducer's:
  *  - the cursor is written only AFTER the actions are applied. A crash in between leaves the cursor behind the
- *    world, and the next run adopts the representatives it finds (identity is the tag, not the cursor);
+ *    world. Loaded tagged actors can be adopted. Legacy tag-only ownership cannot exclude an UNLOADED
+ *    surviving actor; the isolated reproduction disproves the earlier unconditional no-duplicate claim.
+ *    Opt-in creation bindings hold an issued-but-unobserved generation instead of inferring death;
  *  - every spawn is re-checked against a dimension-wide tag query first, so a representative that wandered
- *    outside the observation window is adopted, not duplicated;
+ *    outside the observation window is adopted when LOADED. Unloaded absence is not death or removal;
  *  - every despawn and retag re-reads the entity's tags and requires the group it was planned for to still be
  *    claimed, and requires its chunk to be loaded at apply time;
  *  - only tags in the civpop: namespace are ever added or removed. Foreign tags and untagged units are never read
@@ -58,6 +60,7 @@ export function createPopSync(deps = {}) {
         throw new TypeError("createPopSync: a dimension with getEntities and spawnEntity is required");
     }
     const config = resolveConfig(deps.config ?? {});
+    const creationBindings=deps.creationBindings;
     const enabled = deps.enabled === true;
     /** Last owner plan only: diagnostic reads never reconcile or advance its cursor. @type {any} */
     let lastPlan;
@@ -229,9 +232,9 @@ export function createPopSync(deps = {}) {
         const posts = postsOf(kingdom);
         const snapshot=militaryPolicy(kingdom);
         const policy=snapshot?.selection?snapshot:null;
-        const session = observe(kingdom, anchors, posts,policy!==null);
+        const session = observe(kingdom, anchors, posts,policy!==null||!!creationBindings);
         if(policy?.selection){const found=findTagged(tagFor(policy.selection.groupId),true);diagnose("observe",policy.selection.groupId,found);for(const handle of found)session.admit(handle);}
-        let result = reconcile(prior, session.observation, tick, config,policy?.typeForGroup);
+        let result = reconcile(prior, session.observation, tick, config,policy?.typeForGroup??(creationBindings?(group=>POP_ENTITY_TYPES[group.kind]):undefined));
         if(policy!==null)chargeMilitaryWork(result.report.work??0);
         for (let pass = 0; pass < 2; pass += 1) {
             let discovered = 0;
@@ -250,7 +253,7 @@ export function createPopSync(deps = {}) {
             if (discovered === 0) {
                 break;
             }
-            result = reconcile(prior, session.observation, tick, config,policy?.typeForGroup);
+            result = reconcile(prior, session.observation, tick, config,policy?.typeForGroup??(creationBindings?(group=>POP_ENTITY_TYPES[group.kind]):undefined));
             if(policy!==null)chargeMilitaryWork(result.report.work??0);
         }
         lastPlan={tick,posts:Object.fromEntries(Object.entries(posts).map(([id,list])=>[id,{count:list.length,points:list.slice(0,9).map((/** @type {any} */p)=>({...p}))}])),
@@ -310,9 +313,14 @@ export function createPopSync(deps = {}) {
         if (!enabled) {
             return { refused: "population sync is disabled (the pack default); pass enabled: true to apply", actions: [], report: null, applied: [], skipped: [], failed: [], saved: false };
         }
+        if(creationBindings){try{creationBindings.recoverIssuance();}catch(error){return{refused:"creation issuance recovery held: "+String(error),actions:[],report:null,applied:[],skipped:[],failed:[],saved:false};}}
         const planned = planFromStore(tick);
         if (planned.plan === null || planned.refused !== null) {
             return { refused: planned.refused, actions: [], report: planned.plan?.result.report ?? null, applied: [], skipped: [], failed: [], saved: false };
+        }
+        if(creationBindings){
+            try{const rows=[];for(const handle of planned.plan.handles.values()){const d=describe(handle);if(!d)throw Error("creation observation unreadable");const read=classifyTags(d.tags);if(read.claims.length===1&&isCanonicalFor(read.ownTags,read.claims[0]))rows.push({groupId:read.claims[0],id:d.id,typeId:d.typeId,tags:d.tags});}creationBindings.observeLoaded(rows);}
+            catch(error){return{refused:"creation binding observation held: "+String(error),actions:[],report:planned.plan.result.report,applied:[],skipped:[],failed:[],saved:false};}
         }
         const outcome = applyActions(planned.plan.result.actions, planned.plan.handles,planned.plan.policy);
         const saved = outcome.militaryRefused===null?saveCursor(planned.plan.result.state):{saved:false,reason:outcome.militaryRefused};
@@ -357,7 +365,7 @@ export function createPopSync(deps = {}) {
                 if(policy?.selection?.groupId===action.groupId)diagnose("ownerOutcome",action,{ok:false,reason:String(error).slice(0,180)});
                 failed.push({ action, error: String(error) });
                 if(action.op==="spawn"&&lastPlan)lastPlan.outcomes.push({groupId:action.groupId,status:"failed",reason:String(error).slice(0,180),settled:null,entityId:null});
-                if(policy?.selection||error instanceof MilitaryOwnerRefusal){militaryRefused=String(error);break;}
+                if(creationBindings||policy?.selection||error instanceof MilitaryOwnerRefusal){militaryRefused=String(error);break;}
             }
         }
         if(policy!==null&&militaryRefused===null) {
@@ -421,7 +429,31 @@ export function createPopSync(deps = {}) {
             return { ok: false, reason: "chunk-unloaded" };
         }
         beforeWrite?.();
-        handle.remove();
+        const removal=creationBindings?.beginRemove({groupId:action.groupId,id:String(handle.id),typeId:handle.typeId,tags:[...handle.getTags()]});
+        beforeWrite?.();
+        if(removal){const live=findTagged(tagFor(action.groupId),true);if(live.length!==1||String(live[0].id)!==removal.actor)throw Error("owner removal uniqueness changed; all preserved");creationBindings.assertOwned({groupId:action.groupId,id:String(live[0].id),typeId:live[0].typeId,tags:[...live[0].getTags()]});}
+        // Binding metadata callbacks may change selection; check its existing live policy
+        // once more before the final native-only actor proof, never after removal.
+        beforeWrite?.();
+        // Metadata getters above may execute native/user code. Never reuse their earlier
+        // copied tags as permission to remove the handle. Finish all metadata work first,
+        // then prove the live actor twice around the final loaded-column probe.
+        if(removal){
+            const frame=()=>{const at=handle.location;return{id:String(handle.id),type:String(handle.typeId),valid:handle.isValid,
+                location:{x:at.x,y:at.y,z:at.z},tags:[...handle.getTags()].sort()};};
+            const first=frame();
+            if(!chunkLoadedAt(first.location))throw Error("owner removal final chunk unloaded; preserved");
+            const second=frame(),third=frame();
+            const valid=(/** @type {any} */f)=>f.id===removal.actor&&f.type===removal.type&&f.valid===true&&
+                Number.isFinite(f.location.x)&&Number.isFinite(f.location.y)&&Number.isFinite(f.location.z)&&
+                f.tags.length<=64&&f.tags.every((/** @type {any} */t)=>typeof t==="string"&&t.length<=256)&&
+                isCanonicalFor(classifyTags(f.tags).ownTags,action.groupId)&&
+                f.tags.filter((/** @type {string} */t)=>t.startsWith("civbirth:")).length===1&&
+                f.tags.includes(`civbirth:v2:${removal.epoch}:${removal.group}:${removal.generation}`);
+            if(!valid(first)||!valid(second)||!valid(third)||JSON.stringify(first)!==JSON.stringify(second)||JSON.stringify(second)!==JSON.stringify(third))throw Error("owner removal final live identity/location changed; preserved");
+        }
+        const removalId=removal?removal.actor:String(handle.id);handle.remove();
+        if(removal){if(handle.isValid!==false||removal.actor!==removalId)throw Error("owner removal not positively observed; binding held");creationBindings.commitRemoved(removal);}
         return { ok: true, reason: null };
     }
 
@@ -431,6 +463,7 @@ export function createPopSync(deps = {}) {
      * @param {()=>void} [beforeWrite]
      */
     function retagOne(action, handles,beforeWrite) {
+        if(creationBindings)return{ok:false,reason:"creation binding retag requires explicit protocol; representative preserved"};
         const handle = handles.get(action.entityId);
         if (handle === undefined || !isLive(handle)) {
             return { ok: false, reason: "gone" };
@@ -480,9 +513,10 @@ export function createPopSync(deps = {}) {
      */
     function spawnOne(action,beforeWrite) {
         const tag = tagFor(action.groupId);
-        if (findTagged(tag).length > 0) {
+        if (findTagged(tag,!!creationBindings).length > 0) {
             return { ok: false, reason: "representative-exists" };
         }
+        if(creationBindings){const permission=creationBindings.canBirth(action.groupId,action.typeId);if(!permission.allowed)return{ok:false,reason:permission.reason};}
         const at = settleSpot(action.at);
         if (at === undefined) {
             return { ok: false, reason: "no-safe-standing-spot" };
@@ -491,22 +525,29 @@ export function createPopSync(deps = {}) {
             return { ok: false, reason: "chunk-unloaded",settled:at };
         }
         beforeWrite?.();
-        const entity = dimension.spawnEntity(action.typeId, at);
+        const ticket=creationBindings?.prepare(action.groupId,action.typeId);
+        beforeWrite?.();
+        if(creationBindings&&findTagged(tag,true).length>0)throw Error("representative appeared after birth prepare; pending binding held");
+        const entity = dimension.spawnEntity(action.typeId, at),spawnedId=String(entity.id);
+        const rollbackNewborn=()=>{if(String(entity.id)!==spawnedId)throw Error("newborn identity changed; preserved");entity.remove();if(entity.isValid!==false)throw Error("newborn removal not positively observed");if(ticket)creationBindings.rollbackRemoved(ticket,spawnedId);};
+        if(ticket){try{creationBindings.recordSpawned(ticket,spawnedId);}catch(error){try{rollbackNewborn();}catch(_rollback){}throw error;}}
         let tagged = false;
         try {
             tagged = entity.addTag(tag) === true;
+            if(tagged&&ticket)tagged=entity.addTag(ticket.tag)===true;
         } catch (_error) {
             tagged = false;
         }
         if (!tagged) {
             // We created this unit a moment ago, so removing it is a rollback, not a removal of population.
             try {
-                entity.remove();
+                if(ticket)rollbackNewborn();else entity.remove();
                 return { ok: false, reason: "tag-failed-rolled-back" };
             } catch (_error) {
-                return { ok: false, reason: "tag-failed-stray-untagged" };
+                return { ok: false, reason: ticket?"tag-failed-rollback-unverified; pending binding held":"tag-failed-stray-untagged" };
             }
         }
+        if(ticket){const live=findTagged(tag,true);if(live.length!==1||String(live[0].id)!==spawnedId)throw Error("newborn canonical census changed; binding pending");creationBindings.confirmBorn(ticket,{groupId:action.groupId,id:String(live[0].id),typeId:live[0].typeId,tags:[...live[0].getTags()]});}
         diagnose("observe",action.groupId,[entity]);
         return { ok: true, reason: null, entityId: String(entity.id),settled:at };
     }
@@ -585,7 +626,27 @@ export function createPopSync(deps = {}) {
             ownerRefused:lastPlan.refused,admitted:lastPlan.admitted.includes(groupId),expectedType,postIndex,postCount:list?.count??0,post,requested,lastAttempt,
             settle:{point:settled,reason:settleReason,nativeBlockReads:reads,maxBlockReads:240,limited,unreadable},live};
     }
-    return { dryRun, reconcileOnce, status, config, enabled,inspectGroup };
+    /** Gate-off removes only already-issued loaded actors through removeOne, never a new owner.
+     * No planning, birth, retag, cursor reset, or absent-instance terminal inference.
+     * @param {any[]} found */
+    function teardownBound(found){
+        if(!creationBindings)throw Error("durable teardown requires creation bindings");
+        if(!Array.isArray(found)||found.length>config.maxPhysicalTotal)throw Error("bound teardown census cap");
+        militaryWork=0;creationBindings.recoverIssuance();
+        const policy=militaryPolicy(readKingdom()),seen=new Set(),handles=new Map(),actions=[];
+        // Full preflight before the first removal: unknown/legacy/duplicate identities hold all.
+        for(const h of found){const tags=h.getTags();if(!Array.isArray(tags)||tags.length>64)throw Error("bound teardown tags cap");
+            const read=classifyTags(tags),groupId=read.claims[0],id=String(h.id);
+            if(!parseGroupId(groupId)||!isCanonicalFor(read.ownTags,groupId)||seen.has(groupId)||handles.has(id)||h.isValid!==true)throw Error("bound teardown identity/duplicate conflict; preserved");
+            seen.add(groupId);handles.set(id,h);
+            const matches=findTagged(tagFor(groupId),true);if(matches.length!==1||String(matches[0].id)!==id)throw Error("bound teardown uniqueness conflict; preserved");
+            creationBindings.assertOwned({groupId,id,typeId:h.typeId,tags:[...tags]});
+            actions.push({op:"despawn",groupId,entityId:id,reason:"people gate-off exact owner removal"});
+        }
+        const result=applyActions(actions,handles,policy);
+        return{removed:result.applied.length,held:result.militaryRefused??result.failed[0]?.error??result.skipped[0]?.reason??null};
+    }
+    return { dryRun, reconcileOnce, status, config, enabled,inspectGroup,teardownBound };
 }
 
 /**

@@ -1,0 +1,151 @@
+{
+  "utc": "2026-11-07T23:03:12.555664+00:00",
+  "scope": "Pack-only developer previews, no world/database copy, source165/hash preservation and unchanged historicalrelease gate; no deployment/import/native/clean-starter acceptance",
+  "historicalPreservation": {
+    "allBaselineHashesAndSizesUnchanged": true,
+    "files": {
+      "dist/templates/civapoc-starter.mctemplate": {
+        "sha256": "19D3DDE36CC42A98DB2DDA05063DD308FE2B50D01A60E82F266270DD4567FC45",
+        "bytes": 17345764
+      },
+      "starter/build-receipt.json": {
+        "sha256": "F317A6C604B0159215627662F70C1D64CBC53AA9E8F077B9BE5B461AFCB9C2EB",
+        "bytes": 1203
+      },
+      "starter/template.json": {
+        "sha256": "E2B9FB8987457CA811AA0E9DDC16571E6126D35CABFBF773A7FCADAEE2F94B67",
+        "bytes": 4006
+      },
+      "dev/check-release.mjs": {
+        "sha256": "FDDEBD3A95ACA87439F0499108680B1003DA1B0544F846C46DA39A10068EA7AE",
+        "bytes": 4803
+      },
+      "dev/build-template.mjs": {
+        "sha256": "98D5200286DD17BF8BC0681646B537D59E99A1D34BF2883AC571E2C48025C2BC",
+        "bytes": 14035
+      },
+      "dev/validate-template.mjs": {
+        "sha256": "C354A38901B45EE29A7AB7AEE9C525C4D5A15434EA62FBF0C1D41136B21BC571",
+        "bytes": 21086
+      },
+      "CivilizationApocalypse_BP/manifest.json": {
+        "sha256": "D72C4320CE3A3FD404C81821042EB2DB163B8283E1A62533C5553A7B0E0B362D",
+        "bytes": 1406
+      },
+      "CivilizationApocalypse_RP/manifest.json": {
+        "sha256": "DD789999BB1893624D00C2A75A347F19AF74796917B36B3722D905E06B22BAA2",
+        "bytes": 671
+      }
+    }
+  },
+  "sourceFreeze": "dist/tree-streaming-pack-hashes-corrected-20261106.json",
+  "sourceFreezeSha256": "4797D3D2D6F5206BEE69DA8F1BC7DBE747A8A899F44E27F679C4DD5CA64D2EF6",
+  "all165CurrentSourceFilesMatchFreeze": true,
+  "developerPreviewArtifacts": [
+    {
+      "directory": "dist/developer-previews/source165-pack-preview-20261107",
+      "files": [
+        {
+          "path": "developer-preview.mcaddon",
+          "bytes": 818557,
+          "sha256": "40BF2EEFD3971112165C6A34B0B5D950B6BB1438825160E0AB0A7F8AB189927F"
+        },
+        {
+          "path": "DEVELOPER-PREVIEW.txt",
+          "bytes": 344,
+          "sha256": "A2DA90044A04BCF47A56AC6F7591F016A7C0D607A52F24E53AC3F967B8C40DFE"
+        },
+        {
+          "path": "packs/behavior.mcpack",
+          "bytes": 825630,
+          "sha256": "3B8DC2DC03692FFF400D9351A9FA81A6354209AD9D763D605173BB2C3B6861DF"
+        },
+        {
+          "path": "packs/resources.mcpack",
+          "bytes": 3578,
+          "sha256": "6017C2D561405843576B9B910DD25F7AA9ABC4C0900DB976B01A855651F70DBC"
+        },
+        {
+          "path": "preview-receipt.json",
+          "bytes": 33283,
+          "sha256": "AFE96DA75113E0C57C851A5438D5CF231F1C0597BADE5A48DB3DCA606352B540"
+        },
+        {
+          "path": "world-bindings/world_behavior_packs.json",
+          "bytes": 116,
+          "sha256": "01AF74386555C60D2E900BD9AC47F5DF1EBF128CA79B3C10F606C3BC8F0FFDD0"
+        },
+        {
+          "path": "world-bindings/world_resource_packs.json",
+          "bytes": 116,
+          "sha256": "C6D58F9C10A91AEAF20D18E14C12B7FD0F458598D59B35A99C704877658E5D81"
+        }
+      ],
+      "sourceFiles": 165,
+      "matchesFrozenSource165": true,
+      "sourceAndInstalledNativeAcceptanceNotInherited": true
+    },
+    {
+      "directory": "dist/developer-previews/source165-pack-preview-final-20261107",
+      "files": [
+        {
+          "path": "developer-preview.mcaddon",
+          "bytes": 818557,
+          "sha256": "40BF2EEFD3971112165C6A34B0B5D950B6BB1438825160E0AB0A7F8AB189927F"
+        },
+        {
+          "path": "DEVELOPER-PREVIEW.txt",
+          "bytes": 344,
+          "sha256": "A2DA90044A04BCF47A56AC6F7591F016A7C0D607A52F24E53AC3F967B8C40DFE"
+        },
+        {
+          "path": "packs/behavior.mcpack",
+          "bytes": 825630,
+          "sha256": "3B8DC2DC03692FFF400D9351A9FA81A6354209AD9D763D605173BB2C3B6861DF"
+        },
+        {
+          "path": "packs/resources.mcpack",
+          "bytes": 3578,
+          "sha256": "6017C2D561405843576B9B910DD25F7AA9ABC4C0900DB976B01A855651F70DBC"
+        },
+        {
+          "path": "preview-receipt.json",
+          "bytes": 33289,
+          "sha256": "AA46AFA000538E283330F1DD3C24A43CCB774753A34D391B05BC1E0215335222"
+        },
+        {
+          "path": "world-bindings/world_behavior_packs.json",
+          "bytes": 116,
+          "sha256": "01AF74386555C60D2E900BD9AC47F5DF1EBF128CA79B3C10F606C3BC8F0FFDD0"
+        },
+        {
+          "path": "world-bindings/world_resource_packs.json",
+          "bytes": 116,
+          "sha256": "C6D58F9C10A91AEAF20D18E14C12B7FD0F458598D59B35A99C704877658E5D81"
+        }
+      ],
+      "sourceFiles": 165,
+      "matchesFrozenSource165": true,
+      "sourceAndInstalledNativeAcceptanceNotInherited": true
+    }
+  ],
+  "actualFinalBuild": "actual-final-build.json",
+  "actualFinalValidation": "actual-final-validation.json",
+  "sameDeterministicAddonSha256": "40BF2EEFD3971112165C6A34B0B5D950B6BB1438825160E0AB0A7F8AB189927F",
+  "releaseCheck": {
+    "exitCode": 1,
+    "status": "BLOCKED",
+    "archiveParityProblems": 99,
+    "log": "release-still-blocked.log",
+    "logSha256": "0843F66E6B62F9214E631ADC3FD55089D72D3768149224566FB967A384B85E3B"
+  },
+  "mainPackEdits": false,
+  "existingReleaseToolEdits": false,
+  "bindingScope": "Generated examples checked against exact paired manifest graph; no actual worldbindings supplied for this actual build",
+  "nativeImportVerified": false,
+  "releaseApproved": false,
+  "sourceWorldDirectoryAccess": false,
+  "worldWrites": false,
+  "databaseParsing": false,
+  "historicalTemplateArchiveReadForPackParityOnly": true
+}

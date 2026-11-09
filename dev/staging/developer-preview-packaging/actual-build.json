@@ -1,0 +1,40 @@
+{
+  "kind": "CivilizationApocalypseDeveloperPreview",
+  "v": 1,
+  "label": "source165-pack-preview-20261107",
+  "developerPreview": true,
+  "worldIncluded": false,
+  "releaseApproved": false,
+  "cleanStarterVerified": false,
+  "sourceFiles": 165,
+  "bindings": {
+    "world_behavior_packs": [
+      {
+        "pack_id": "fd04cb50-dddc-4ebe-83fc-5b5375819bcb",
+        "version": [
+          1,
+          0,
+          0
+        ]
+      }
+    ],
+    "world_resource_packs": [
+      {
+        "pack_id": "e634c636-7b98-49f7-81cd-13483bfa3f9f",
+        "version": [
+          1,
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "bindingStatus": {
+    "state": "NOT_CHECKED",
+    "scope": "No world supplied; examples are not installed bindings or clean-world proof"
+  },
+  "dryRun": false,
+  "output": "E:\\CivilizationApocalypse\\dist\\developer-previews\\source165-pack-preview-20261107",
+  "receiptSha256": "AFE96DA75113E0C57C851A5438D5CF231F1C0597BADE5A48DB3DCA606352B540",
+  "archiveSha256": "40BF2EEFD3971112165C6A34B0B5D950B6BB1438825160E0AB0A7F8AB189927F"
+}

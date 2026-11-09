@@ -1,0 +1,56 @@
+{
+  "scope": "Staged disposable derivative only. Not in Minecraft world catalog; not opened/installed/activated.",
+  "fixtureId": "vanilla-nov8-cb327cebbd37",
+  "epoch": "owner-nov8-e814339298a94af69aa8444fe406aa98",
+  "identityChoices": "Fixture/epoch are new implementation identifiers, not surveyed world facts. Epoch randomly generated once.",
+  "pristineBackup": "E:\\CivilizationApocalypse\\dist\\backups\\vanilla-never-owner-20261108",
+  "sourceReceipt": "dist\\vanilla-never-owner-backup-20261108.json",
+  "sourceReceiptSha256": "BE44A5BA9E47C2AB890083B1FAD33657FEAF5B5B122C61A7C026CF0281EFA114",
+  "exactIdentityAudit": "dev\\staging\\population-archer-readiness\\native-evidence\\exact-scoreboard-identity-audit-20261108.json",
+  "exactIdentityAuditSha256": "784DFEEBD6F74B494B0F64E996AC360E1680B692557F478BB220F14387302230",
+  "derivative": "dev\\staging\\private-native-fixture-20261108\\derivative-world",
+  "derivativeOnlyChangedPaths": [
+    "world_behavior_packs.json",
+    "world_resource_packs.json"
+  ],
+  "bindings": {
+    "world_behavior_packs": [
+      {
+        "pack_id": "fd04cb50-dddc-4ebe-83fc-5b5375819bcb",
+        "version": [
+          1,
+          0,
+          0
+        ]
+      }
+    ],
+    "world_resource_packs": [
+      {
+        "pack_id": "e634c636-7b98-49f7-81cd-13483bfa3f9f",
+        "version": [
+          1,
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "gate": {
+    "mustKeepActiveTrustNullWhileFullRuns": true,
+    "mustReviewDescriptorAndFreezePrivatePackBeforeOpen": true,
+    "sameOriginalMainBPNamespaceRequired": true,
+    "neverOpenPristineSourceAgain": true,
+    "mustUseNewDerivativeOnFailedEvolvedAttempt": true
+  },
+  "nativeOpeningSequence": [
+    "Root reviews genuine receipt/closedNBT identity and proposed descriptor; do not silently install while current full verification runs.",
+    "Create closed-game backup of existing installed packs; prepare a separately reviewed176 candidate plus exactly this private trust module using the SAME original BP/RP UUID namespace.",
+    "Verify exact private pack inventory/hash and matching bindings before copying this disposable derivative into the native world catalog; original9file backup remains immutable.",
+    "First spawn seeds exact initial kingdom. Developer flag is initially absent, so private hook conservatively holds. Before first accepted hour, run /scriptevent civ:generate_devgate on, then /scriptevent civ:people creation fresh confirm.",
+    "Require positive activation reply/status, exact3durable writes/complete+core evidence and no error/hold; do not enable people earlier. Existing adapter checks native FakePlayer/id1/objective/score/caller/census/gates.",
+    "If kingdom advanced or proof refused, preserve logs and derivative; start a NEW pristine derivative rather than reset/rewind/bless it.",
+    "Save/close/rejoin and verify durable activation before separate owner birth/unload/gate-off tests. Public military selection still requires its separate reviewed Nov3 city-source adapter; no archers are promised from this blank world."
+  ],
+  "nativeAcceptance": false,
+  "compiledIntoActive": false
+}

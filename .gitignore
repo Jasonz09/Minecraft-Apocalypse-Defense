@@ -6,3 +6,4 @@ dist/
 
 # Local native-test world saves; source and test specifications remain versioned.
 dev/staging/**/worlds/
+dev/staging/private-native-fixture-*/derivative-world/

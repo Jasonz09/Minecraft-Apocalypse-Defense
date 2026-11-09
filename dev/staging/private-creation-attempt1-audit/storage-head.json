@@ -1,0 +1,43 @@
+{
+  "manifest": "MANIFEST-000004",
+  "crcVerifiedVersionEdits": [
+    [
+      {
+        "tag": 1,
+        "comparator": "leveldb.BytewiseComparator"
+      }
+    ],
+    [
+      {
+        "tag": 2,
+        "value": 6
+      },
+      {
+        "tag": 9,
+        "value": 0
+      },
+      {
+        "tag": 3,
+        "value": 7
+      },
+      {
+        "tag": 4,
+        "value": 465
+      },
+      {
+        "tag": 7,
+        "level": 0,
+        "number": 5,
+        "bytes": 113931,
+        "smallestKeyHex": "00000000000000002b0163000000000000",
+        "largestKeyHex": "fffffffff5ffffff31019d010000000000"
+      }
+    ]
+  ],
+  "walMutationRange": [
+    466,
+    1859
+  ],
+  "walMutations": 1394,
+  "walContiguous": true
+}

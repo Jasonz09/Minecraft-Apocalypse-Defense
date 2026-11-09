@@ -1,0 +1,15 @@
+{
+  "valid": true,
+  "kind": "CivilizationApocalypseDeveloperPreview",
+  "sourceFiles": 176,
+  "pairedPacks": 2,
+  "worldIncluded": false,
+  "releaseApproved": false,
+  "cleanStarterVerified": false,
+  "bindingStatus": {
+    "state": "NOT_CHECKED",
+    "scope": "No world supplied; examples are not installed bindings or clean-world proof"
+  },
+  "receiptSha256": "E66CBA3E70265FE58BCECC9A0166C708D33657AF3CE43C3903DEFE57C5501ECE",
+  "archiveSha256": "30178704B9D13141FDF1444D1F2F1D2ABDA79E0BCF883B8D97579AC7C46AE379"
+}

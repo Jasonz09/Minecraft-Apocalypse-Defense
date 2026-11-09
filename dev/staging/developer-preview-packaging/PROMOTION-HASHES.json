@@ -1,0 +1,102 @@
+{
+  "utc": "2026-11-07T23:05:43.921378+00:00",
+  "scope": "STAGING ONLY new developer pack-only preview/validator workflow; no main/runtime/releasegate edits or native/deploy/world writes",
+  "proposedFiles": [
+    {
+      "staged": "proposed/dev/lib/developer-preview.mjs",
+      "destination": "dev/lib/developer-preview.mjs",
+      "sha256": "19457035583EB58DFC124684440E29073F8CCD18C6EA4EDBCC73D9DBB65837C6",
+      "bytes": 15235,
+      "baselineSha256": null
+    },
+    {
+      "staged": "proposed/dev/preview-packs.mjs",
+      "destination": "dev/preview-packs.mjs",
+      "sha256": "6C236FD9305036A2991F3C7D6158D93058457DAE1E627145809352A3544A7C67",
+      "bytes": 1001,
+      "baselineSha256": null
+    },
+    {
+      "staged": "proposed/dev/validate-preview.mjs",
+      "destination": "dev/validate-preview.mjs",
+      "sha256": "ED2034984251B22B52760BA527C4D8340D42D3D165741D2E9EF846376D3A8FC3",
+      "bytes": 883,
+      "baselineSha256": null
+    },
+    {
+      "staged": "proposed-dev/test/developer-preview.test.mjs",
+      "destination": "dev/test/developer-preview.test.mjs",
+      "sha256": "8B612155F20811F602C8516748CD82993EB1DA774613A672B800CC0636FDA1E7",
+      "bytes": 12338,
+      "baselineSha256": null
+    }
+  ],
+  "focused": {
+    "tests": 15,
+    "pass": 15,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 3067.9336,
+    "log": "focused-complete.log"
+  },
+  "checks": {
+    "nodeSyntaxFiles": 4,
+    "exitCode": 0,
+    "evidence": "syntax-checks.json",
+    "TypeScript": "Not claimed; main project excludes Node devtools and @types/node is absent; no compiler flags/types relaxed"
+  },
+  "actualSource": {
+    "files": 165,
+    "behaviorFiles": 159,
+    "resourceFiles": 6,
+    "freeze": "dist/tree-streaming-pack-hashes-corrected-20261106.json",
+    "evidence": "ACTUAL-EVIDENCE.json",
+    "finalOutput": "dist/developer-previews/source165-pack-preview-final-20261107",
+    "archiveSha256": "40BF2EEFD3971112165C6A34B0B5D950B6BB1438825160E0AB0A7F8AB189927F",
+    "worldIncluded": false,
+    "releaseApproved": false,
+    "nativeImportVerified": false,
+    "actualWorldBindings": "NOT_CHECKED; generated expectedexamples only"
+  },
+  "historicalReleasePreserved": {
+    "archive": "dist/templates/civapoc-starter.mctemplate",
+    "receipt": "starter/build-receipt.json",
+    "sourceAndToolHashesUnchanged": true,
+    "originalCheckReleaseExit": 1,
+    "originalArchiveParityProblems": 99,
+    "log": "release-still-blocked.log"
+  },
+  "sharedDependencies": {
+    "dev/lib/zip.mjs": "069C49A1DE8A2F83C438897EA238E6A6F28EC8FC5582917ED6BEB4463A173AA8",
+    "dev/lib/content-packs.mjs": "C944122A2364CC2898E92AC84484FB612AF05FA3F66F7CD1B53399C784BC72A4"
+  },
+  "evidenceFiles": {
+    "ACTUAL-BEFORE.json": "A20723EBD2B43DC627B22B2A5AB18E399A6395FE08BE71AE2C25E511D8E4E5F1",
+    "actual-build.json": "C9271641186005BA7A2E5B4A74492C0E8A81D548C09D88F6ABEFA90CB3C66F3A",
+    "ACTUAL-EVIDENCE.json": "A0E016AC1FDF7CBF461840F6F518304FF51C2FF1AC36CE00D0DC25F055160037",
+    "actual-final-build.json": "9283E3FCBF1C6FD263D12608E0C0F775E0BA673A6F3332EE1425CD087E9B2E9F",
+    "actual-final-validation.json": "243154D4A7C14EC7DBEAE6C396D8FD9A04DDE517FCD8ADA36FD053E1CB824DFD",
+    "actual-source-dry-run.json": "B606EF2930B3DCCE26B0BC1387FEE2104C86FD267B2152329712F95816B1856A",
+    "actual-validation.json": "762A9D6E3D145D1DBBF6B49F515C5C52ACECBF5EB955D90DAA1E882886CBD4F6",
+    "focused-complete.log": "76ABA264F4B857A13DA50F7C631BE8F9E883360B4CA74765DC5FB4E87F87CBA8",
+    "focused-final.log": "5B544F9C187B7D25633F12287D531C1A1189022A60F889ED0CDB72562220F3F8",
+    "focused-initial.log": "30ED3297366E2AB558BD2D03FB1A054EEF548F05B0243EA0BAA3831A16E2C06E",
+    "focused-second.log": "66C85A05D431E913DDDF7CF603C98A16E52307E2E964A1DF5A4443E68C238252",
+    "loader.mjs": "A8727A7F969C856496867DF621AC72AFC1D38F9EC0CE501458EEC54EA0AD41EA",
+    "preview-before-cli-url-fix.test.mjs": "03D5E34790178652ED3FA0048BB6B66D74E14D9CAC523F1D40FF162CF952322B",
+    "preview.test.mjs": "BAD9EE5929BAC5716EF805F78A773A39FEDF09947C342EC510AA3CC14255ACF2",
+    "proposed.patch": "416B8AAC1F638222D21B40435502EB650DE77B5465F4F4F70B5469E7F3581334",
+    "README.md": "177823C0ED37B6B39A8AFD9D4A455C1E3DDD28A64D7F83C9018A83FE302401BA",
+    "register.mjs": "38E39EA17DBFC362D6444B2D60EE2AF5FF1D19471D83AFC767767AAA8215ABC7",
+    "release-still-blocked.log": "0843F66E6B62F9214E631ADC3FD55089D72D3768149224566FB967A384B85E3B",
+    "syntax-checks.json": "165BFA890D72123C3D8974AD1CE17C4AF4FE685DA972C6C21A64E347FDA72E22"
+  },
+  "centralTestAdaptation": "15identical assertions, normal production imports and actual CLI paths; syntaxchecked but not executed against unpromoted mainfiles. Stage15executed through explicit sharedhelper loader. Rootcentral test/full gate remains required.",
+  "remaining": [
+    "Independent code/safety review",
+    "Central tool/test promotion and actual default-import run",
+    "Optional disposable native MCADDON import only if root authorizes; no release starter proof inherited",
+    "Clean release world/receipt/template rebuild still blocked under unchanged existing gate"
+  ]
+}

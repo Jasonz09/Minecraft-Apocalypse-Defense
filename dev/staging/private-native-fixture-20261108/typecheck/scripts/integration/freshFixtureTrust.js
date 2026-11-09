@@ -1,0 +1,14 @@
+// STAGED PRIVATE NATIVE-FIXTURE PROPOSAL ONLY. Not installed or active.
+// Genuine source receipt/identity chain is pinned in this stage; native gates still apply.
+/** @type {null|{v:1,fixtureId:string,epoch:string,receiptSha256:string,levelSha256:string,nonce:string,participant:string,participantId:number,operatorKnownNewVanilla:true}} */
+export const REVIEWED_FRESH_FIXTURE=Object.freeze({
+  "v": 1,
+  "fixtureId": "vanilla-nov8-cb327cebbd37",
+  "epoch": "owner-nov8-e814339298a94af69aa8444fe406aa98",
+  "receiptSha256": "BE44A5BA9E47C2AB890083B1FAD33657FEAF5B5B122C61A7C026CF0281EFA114",
+  "levelSha256": "CB327CEBBD37FB02A40C87F4CCC59B3C1BB82DC559B6EA6FFE0CA386BA6A64C1",
+  "nonce": "CA_FRESH_8e17b80d8dc644d3",
+  "participant": "NEVER_PEOPLE_ON",
+  "participantId": 1,
+  "operatorKnownNewVanilla": true
+});

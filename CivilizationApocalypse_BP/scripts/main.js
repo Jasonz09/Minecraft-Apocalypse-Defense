@@ -1,3 +1,5 @@
+import { createCreationRuntime } from "./integration/creationRuntime.js";
+import { CIV } from "./config.js";
 import { system, world } from "@minecraft/server";
 import { registerDebugCommands } from "./commands/debug.js";
 import { registerInspectionCommands } from "./commands/inspect.js";
@@ -37,7 +39,7 @@ import { createKingdomStore } from "./kingdom/store.js";
 
 const kingdomStore = createKingdomStore(world);
 
-registerWelcomeOnJoin(kingdomStore);
+registerWelcomeOnJoin(kingdomStore,player=>{creation.onInitialSpawn(player);});
 registerStatusCommand(kingdomStore);
 registerInspectionCommands(kingdomStore);
 registerDebugCommands(kingdomStore);
@@ -57,14 +59,16 @@ const peopleRuntime = createPeopleRuntime(kingdomStore);
 const military=createMilitaryCommand({world,kingdomStore,isBusy:()=>isBusy()||getProgress()!==undefined});
 const militaryDiagnostics=createMilitaryLifecycleDiagnostics({readSelection:military.store.load,tick:()=>system.currentTick});
 registerMilitaryLifecycleSignals(world,militaryDiagnostics);
-const streets=createPeopleStreets({readMilitarySelection:military.store.load,militaryDiagnostics});
+const creation=createCreationRuntime({world,isPeopleOn:()=>peopleGateOn(world),isBusy,isDeveloper:()=>world.getDynamicProperty(CIV.devGateKey)===true,readKingdom:()=>kingdomStore.load().kingdom});
+creation.registerDeaths();
+const streets=createPeopleStreets({getCreationBindings:creation.activeStore,readMilitarySelection:military.store.load,militaryDiagnostics});
 const civilianTravel=createCivilianTravel({world,readKingdom:()=>kingdomStore.load().kingdom,
     admittedGroups:()=>streets.admittedGroups(world),isGateOn:()=>peopleGateOn(world),isBusy});
 const civilianDestinations=createCivilianDestinations({readKingdom:()=>kingdomStore.load().kingdom,
     loadSaved:(civ,index)=>loadSavedRunSteps(civ,newOps(),index),runJob:runJobAsync,reserveJob,finishJob,world,
     canPreviewRoute:()=>!isBusy()&&!civilianTravel.isActive()});
-registerPeopleCommand({statusLines:()=>[...peopleRuntime.statusLines(),...civilianTravel.statusLines(),...military.statusLines()],
-    destinationsCommand:civilianDestinations.command,routePreviewCommand:civilianDestinations.routePreviewCommand,inspectCommand:streets.inspectCommand,travelCommand:civilianTravel.command,stopTravel:civilianTravel.stop,
+registerPeopleCommand({statusLines:()=>[...creation.statusLines(),...peopleRuntime.statusLines(),...civilianTravel.statusLines(),...military.statusLines()],
+    creationCommand:creation.command,destinationsCommand:civilianDestinations.command,routePreviewCommand:civilianDestinations.routePreviewCommand,inspectCommand:streets.inspectCommand,travelCommand:civilianTravel.command,stopTravel:civilianTravel.stop,
     militaryCommand:(message,event)=>/^diagnostics(?:\s|$)/.test(message)?militaryDiagnostics.command(message):military.command(message,event)});
 peopleRuntime.register(streets);
 // One timer: ordinary trials throttle at4 ticks; only explicit cadence=1 setup opts in.

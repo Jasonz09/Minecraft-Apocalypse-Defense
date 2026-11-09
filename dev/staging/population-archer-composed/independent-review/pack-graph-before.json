@@ -1,0 +1,9 @@
+{
+  "scope": "Current central validator vs actual composed asset graph; not native",
+  "problems": [
+    "missing geometry geometry.arrow for civ_trial:guard_arrow",
+    "missing texture textures/entity/arrows for civ_trial:guard_arrow",
+    "missing animation animation.arrow.move for civ_trial:guard_arrow",
+    "missing render controller controller.render.arrow for civ_trial:guard_arrow"
+  ]
+}

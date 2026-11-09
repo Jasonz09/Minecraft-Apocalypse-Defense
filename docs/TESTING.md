@@ -2,6 +2,30 @@
 
 **Where we are — step2 of8 is current; the whole roadmap is unfinished.**
 
+**November 8 development update:** source176 is now installed with NULL fixture
+trust.2,240/2,240 tests, all5 gates and52/52headless stages pass (600,475.9531ms,
+0fail/cancel/skip). Root verifies352source/installed SHA+size checks and exact
+inventories; prior165pair retained. Native archer/activation/import acceptance
+remains OPEN. First full run's10 failures are retained; three test fixtures were
+corrected without changing any game-pack file or weakening guards. Independent
+harness, integration and installed independent reviews pass. The city loads and
+the read-only creation-status command reports legacyOFF; the whole closed1,713-byte
+smoke log has0warnings/errors/high-memory messages/exceptions. This is not fresh
+activation or archer combat acceptance.
+
+The actual vanilla `CA Never Owner Nov8` fixture was created with no behavior/local
+resource packs. Its witnessed unique scoreboard marker and9-file closed backup
+were independently audited (exact fake participant ID1/score0); a separate private
+configuration/derivative was reviewed and used for one native attempt. Activation
+refused because the clock advanced from exact initial step0 to step1 before
+confirmation. The failed10-file trial is preserved; regular176NULL packs are
+restored and verified. No activation is accepted. A deterministic pre-activation
+simulation hold is the next staged fix; no evolved-state relaxation/reset.
+Evidence: `dist/private-creation-refused-attempt1-20261108.json`. Cavalry remains
+staged with native births/seating disabled. Current evidence:
+`dist/archer-preview-installed-verification-20261108.json`,
+`dist/vanilla-never-owner-backup-20261108.json`.
+
 | Step | Roadmap milestone | Current position / next gate |
 |---|---|---|
 |1|Save, ownership and recovery foundations|Implemented and tested; final release/long-running recovery checks remain.|
@@ -13,8 +37,8 @@
 |7|Recurring war and physical expansion|Open: connect simulated war/reinforcement/expansion to accepted physical gameplay.|
 |8|Other civilizations and diplomacy|Partial: scouting/reports/envoys/alliances installed for native testing; physical settlements, allied support and conflict remain open.|
 
-**Latest result:**165-file development build installed;2,092tests/all5gates/52headless
-stages pass. Native testing is pending while the user retains computer control.
+**Latest result:**176-file development build installed;2,240tests/all5gates/52headless
+stages pass. Full computer control is authorized; native acceptance remains open.
 
 **Historical combat checkpoint:** the pillager trial was saved without engagement.
 The same original guard is full-health30 and unique1/1/1, but the owner refused all
@@ -64,7 +88,7 @@ barriers, and adds no physics/AI control. Full verification and closed deploymen
 now pass as recorded below. The previous progress-visibility162/1984 remains
 retained. No walking fix or native velocity acceptance is claimed.
 
-**Current installed development build:**165 files/schema3,2,092/2,092 tests,
+**Historical installed165 development build:**165 files/schema3,2,092/2,092 tests,
 all5 verification gates and52/52headless stages pass. Installed changes include
 confirmed Ledger scouting/envoy/alliance missions, exact short-grass body clearance,
 command-local immutable room decoding and bounded streamed readonly tree inspection.
@@ -108,7 +132,15 @@ refuses release:99pack mismatches, including missing RP content/binding. This is
 separate gate from the five development checks and cannot be treated as a finished
 release. Evidence: `dist/source165-release-readiness-20261106.log`.
 
-**Build now:** installed **165 files / 2,092 passing tests**, all **five gates green**
+**Build now:** installed **176 files / 2,240 passing tests**, all5gates/52headless
+stages pass. Closed deployment2026-11-08T23:49:10.671UTC (18:49local), nonce86e5c68c.
+Root352checks and exact165BP+11RP inventories pass; prior165pair retained outside
+scanned pack parents. Active trustNULL. Native activation/archer appearance,
+projectiles, combat and lifecycle acceptance remain unverified. The developer
+preview is validated at `dist/developer-previews/integrated176-nov8`; no world,
+clean-starter or release approval is included.
+
+**Historical installed165 checkpoint:** installed **165 files / 2,092 passing tests**, all **five gates green**
 and **52/52 headless stages passing**. Full session14580 exits0 with no failures,
 cancellations or skips in519,057.5998ms. Closed deployment was **November7,
 03:09:31.261UTC** (**November6,22:09local**), nonce406611fb. The previous162-file

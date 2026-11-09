@@ -1,0 +1,17 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Civ Swordsman Path Probe (Isolated)",
+    "description": "Controlled copied-world test only: complete melee path requirement disabled. Original owner and resource packs remain required.",
+    "uuid": "c8644dda-e2b4-46cc-b2cb-5b72f5d972c9",
+    "version": [0, 0, 1],
+    "min_engine_version": [1, 26, 20]
+  },
+  "modules": [
+    {"type": "data", "uuid": "ec45dd3f-06b1-4d47-8a3e-f0ef9604f356", "version": [0, 0, 1]}
+  ],
+  "dependencies": [
+    {"uuid": "fd04cb50-dddc-4ebe-83fc-5b5375819bcb", "version": [1, 0, 0]},
+    {"uuid": "e634c636-7b98-49f7-81cd-13483bfa3f9f", "version": [1, 0, 0]}
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "label": "CA Never Owner Nov8",
+  "objective": "ca_fresh_owner",
+  "displayName": "CA_FRESH_8e17b80d8dc644d3",
+  "participant": "NEVER_PEOPLE_ON",
+  "score": 0,
+  "nativeCommandsObservedSuccessful": true,
+  "scope": "Actual root-witnessed new vanilla source as instructed by root; no trust compilation or runtime activation",
+  "sourceReceiptSha256": "BE44A5BA9E47C2AB890083B1FAD33657FEAF5B5B122C61A7C026CF0281EFA114"
+}

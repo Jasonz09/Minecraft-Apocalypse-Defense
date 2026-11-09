@@ -1,0 +1,145 @@
+{
+  "utc": "2026-11-08T06:27:13.795149+00:00",
+  "status": "READY FOR ROOT REVIEW; STAGED ONLY",
+  "authorship": "Archer/creation composition independently reviewed; preview tooling is self-review by its author, not an independent third-party review.",
+  "findings": [
+    {
+      "id": "archer-content-graph",
+      "reproduced": true,
+      "beforeEvidence": "../population-archer-composed/independent-review/pack-graph-before.json",
+      "resolution": "Exact guard_arrow builtin mapping exception only, require all three custom entity pairs, reject missing custom shooter defs; six meaningful central tests."
+    },
+    {
+      "id": "preview-unbounded-hash-read",
+      "reproduced": "Source-ordering defect identified; no deliberately oversized allocation attempted against original.",
+      "resolution": "fstat descriptor bound before allocation/hash, exact-size bounded read+growth probe, cumulative limits; sparse oversized source/archive central regressions."
+    }
+  ],
+  "tests": {
+    "centralComposedAndPackaging": {
+      "pass": 188,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "durationMs": 9643.4959,
+      "log": "central-final.log"
+    },
+    "existingContracts": {
+      "pass": 43,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "durationMs": 1002.6288,
+      "log": "existing-contracts-final.log"
+    },
+    "strictCopiedProductionTSC": {
+      "exit": 0,
+      "log": "strict-tsc.log"
+    },
+    "retainedInitialFailures": [
+      "central-first.log:187/188; copied overlay lacked @minecraft/server declaration used by native-version test, no production defect",
+      "existing-contracts-first.log:42/43; exact-symbol owner-boundary allowlist needed reviewed read-only archer constants",
+      "candidate176-validation-relative-path-error.log: validator given CWD-relative directory; rerun used correct absolute path"
+    ]
+  },
+  "preservation": {
+    "main165SHAAndExactInventory": true,
+    "historicalArchiveReceiptSpecReleaseToolsSHA": true,
+    "sourceArcherTestNamesAllPreserved": true,
+    "productionTrust": "literal NULL; no genuine descriptor/provenance invented"
+  },
+  "outputs": {
+    "historical165": [
+      {
+        "path": "dist/developer-previews/source165-pack-preview-final-20261107/developer-preview.mcaddon",
+        "sha256": "40BF2EEFD3971112165C6A34B0B5D950B6BB1438825160E0AB0A7F8AB189927F",
+        "bytes": 818557
+      },
+      {
+        "path": "dist/developer-previews/source165-pack-preview-final-20261107/DEVELOPER-PREVIEW.txt",
+        "sha256": "A2DA90044A04BCF47A56AC6F7591F016A7C0D607A52F24E53AC3F967B8C40DFE",
+        "bytes": 344
+      },
+      {
+        "path": "dist/developer-previews/source165-pack-preview-final-20261107/packs/behavior.mcpack",
+        "sha256": "3B8DC2DC03692FFF400D9351A9FA81A6354209AD9D763D605173BB2C3B6861DF",
+        "bytes": 825630
+      },
+      {
+        "path": "dist/developer-previews/source165-pack-preview-final-20261107/packs/resources.mcpack",
+        "sha256": "6017C2D561405843576B9B910DD25F7AA9ABC4C0900DB976B01A855651F70DBC",
+        "bytes": 3578
+      },
+      {
+        "path": "dist/developer-previews/source165-pack-preview-final-20261107/preview-receipt.json",
+        "sha256": "AA46AFA000538E283330F1DD3C24A43CCB774753A34D391B05BC1E0215335222",
+        "bytes": 33289
+      },
+      {
+        "path": "dist/developer-previews/source165-pack-preview-final-20261107/world-bindings/world_behavior_packs.json",
+        "sha256": "01AF74386555C60D2E900BD9AC47F5DF1EBF128CA79B3C10F606C3BC8F0FFDD0",
+        "bytes": 116
+      },
+      {
+        "path": "dist/developer-previews/source165-pack-preview-final-20261107/world-bindings/world_resource_packs.json",
+        "sha256": "C6D58F9C10A91AEAF20D18E14C12B7FD0F458598D59B35A99C704877658E5D81",
+        "bytes": 116
+      }
+    ],
+    "candidate176": [
+      {
+        "path": "dev/staging/roadmap-archer-preview-integration/runtime/dist/developer-previews/candidate176-review/developer-preview.mcaddon",
+        "sha256": "30178704B9D13141FDF1444D1F2F1D2ABDA79E0BCF883B8D97579AC7C46AE379",
+        "bytes": 837417
+      },
+      {
+        "path": "dev/staging/roadmap-archer-preview-integration/runtime/dist/developer-previews/candidate176-review/DEVELOPER-PREVIEW.txt",
+        "sha256": "A2DA90044A04BCF47A56AC6F7591F016A7C0D607A52F24E53AC3F967B8C40DFE",
+        "bytes": 344
+      },
+      {
+        "path": "dev/staging/roadmap-archer-preview-integration/runtime/dist/developer-previews/candidate176-review/packs/behavior.mcpack",
+        "sha256": "5EBA59A5045C94793B3383CEC4441D67052456A791C480C0D98518B8395B6812",
+        "bytes": 842816
+      },
+      {
+        "path": "dev/staging/roadmap-archer-preview-integration/runtime/dist/developer-previews/candidate176-review/packs/resources.mcpack",
+        "sha256": "01F49FE07390AB80996CC7F14ACDC7A4E1CF81BF6722272C6C3FD275D806789B",
+        "bytes": 6226
+      },
+      {
+        "path": "dev/staging/roadmap-archer-preview-integration/runtime/dist/developer-previews/candidate176-review/preview-receipt.json",
+        "sha256": "E66CBA3E70265FE58BCECC9A0166C708D33657AF3CE43C3903DEFE57C5501ECE",
+        "bytes": 35342
+      },
+      {
+        "path": "dev/staging/roadmap-archer-preview-integration/runtime/dist/developer-previews/candidate176-review/world-bindings/world_behavior_packs.json",
+        "sha256": "01AF74386555C60D2E900BD9AC47F5DF1EBF128CA79B3C10F606C3BC8F0FFDD0",
+        "bytes": 116
+      },
+      {
+        "path": "dev/staging/roadmap-archer-preview-integration/runtime/dist/developer-previews/candidate176-review/world-bindings/world_resource_packs.json",
+        "sha256": "C6D58F9C10A91AEAF20D18E14C12B7FD0F458598D59B35A99C704877658E5D81",
+        "bytes": 116
+      }
+    ]
+  },
+  "native": {
+    "archerRenderingFiringFriendlyHPRejoin": "NOT RUN",
+    "freshCreationActivation": "NOT RUN; genuine root vanilla receipt/compiled descriptor absent",
+    "packImport": "NOT RUN",
+    "worldBindings": "NOT_CHECKED; generated examples only",
+    "cleanRelease": "NOT APPROVED; historical blocked release unchanged"
+  },
+  "manifestFiles": 42,
+  "packCounts": {
+    "behavior": 165,
+    "resource": 11,
+    "total": 176
+  },
+  "limitations": [
+    "The public military fixture selector still trusts the reviewed Nov3 D1 provenance; a new blank-world creation receipt is not automatically a valid military fixture.",
+    "Generated pack-only preview does not clean, migrate, install or validate a world database.",
+    "This does not implement cavalry/aggregate casualty credit or constitute whole-roadmap completion."
+  ]
+}

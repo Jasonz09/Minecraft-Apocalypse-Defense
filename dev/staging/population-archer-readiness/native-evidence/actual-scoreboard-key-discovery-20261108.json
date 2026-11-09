@@ -1,0 +1,99 @@
+{
+  "records": 465,
+  "scoreKeys": [
+    {
+      "sequence": 218,
+      "keyHex": "73636f7265626f617264",
+      "keyDisplay": "scoreboard",
+      "bytes": 198,
+      "sha256": "1545B510A39E3EFC71EB8F4D1F89A84DF16E3934822D9FB04B8BC8A56F98730C",
+      "nbt": [
+        "",
+        {
+          "Criteria": [],
+          "DisplayObjectives": [],
+          "Entries": [],
+          "LastUniqueID": 0,
+          "Objectives": [
+            {
+              "Criteria": "dummy",
+              "DisplayName": "CA_FRESH_8e17b80d8dc644d3",
+              "Name": "ca_fresh_owner",
+              "Scores": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sequence": 322,
+      "keyHex": "73636f7265626f617264",
+      "keyDisplay": "scoreboard",
+      "bytes": 308,
+      "sha256": "0F679144AE2B0ACEC9F5EF760E638F12D564DEAAA905AE1F5F935BC5390E256F",
+      "nbt": [
+        "",
+        {
+          "Criteria": [],
+          "DisplayObjectives": [],
+          "Entries": [
+            {
+              "FakePlayerName": "NEVER_PEOPLE_ON",
+              "IdentityType": 3,
+              "ScoreboardId": 1
+            }
+          ],
+          "LastUniqueID": 1,
+          "Objectives": [
+            {
+              "Criteria": "dummy",
+              "DisplayName": "CA_FRESH_8e17b80d8dc644d3",
+              "Name": "ca_fresh_owner",
+              "Scores": [
+                {
+                  "Score": 0,
+                  "ScoreboardId": 1
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sequence": 391,
+      "keyHex": "73636f7265626f617264",
+      "keyDisplay": "scoreboard",
+      "bytes": 308,
+      "sha256": "0F679144AE2B0ACEC9F5EF760E638F12D564DEAAA905AE1F5F935BC5390E256F",
+      "nbt": [
+        "",
+        {
+          "Criteria": [],
+          "DisplayObjectives": [],
+          "Entries": [
+            {
+              "FakePlayerName": "NEVER_PEOPLE_ON",
+              "IdentityType": 3,
+              "ScoreboardId": 1
+            }
+          ],
+          "LastUniqueID": 1,
+          "Objectives": [
+            {
+              "Criteria": "dummy",
+              "DisplayName": "CA_FRESH_8e17b80d8dc644d3",
+              "Name": "ca_fresh_owner",
+              "Scores": [
+                {
+                  "Score": 0,
+                  "ScoreboardId": 1
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

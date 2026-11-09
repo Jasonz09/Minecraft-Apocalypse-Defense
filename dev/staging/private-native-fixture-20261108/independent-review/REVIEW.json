@@ -1,0 +1,55 @@
+{
+  "utc": "2026-11-08T23:43:04.678430+00:00",
+  "scope": "Independent read-only native first-activation gate review; no world/main/trust/install writes",
+  "status": "CHAIN AND DERIVATIVE VERIFIED; fresh full and root controlled closed installation still required",
+  "sourceReceiptSha256": "BE44A5BA9E47C2AB890083B1FAD33657FEAF5B5B122C61A7C026CF0281EFA114",
+  "levelSha256": "CB327CEBBD37FB02A40C87F4CCC59B3C1BB82DC559B6EA6FFE0CA386BA6A64C1",
+  "backupSHABytesAndExactInventory": 9,
+  "CRCClosedWALRecheck": {
+    "latestScoreboardSequence": 391,
+    "objective": {
+      "Criteria": "dummy",
+      "DisplayName": "CA_FRESH_8e17b80d8dc644d3",
+      "Name": "ca_fresh_owner",
+      "Scores": [
+        {
+          "Score": 0,
+          "ScoreboardId": 1
+        }
+      ]
+    },
+    "entry": {
+      "FakePlayerName": "NEVER_PEOPLE_ON",
+      "IdentityType": 3,
+      "ScoreboardId": 1
+    },
+    "sst": [],
+    "noMainOwnerHistorySeenInReviewedWAL": true,
+    "evidence": "closed-wal-recheck.json"
+  },
+  "operatorProvenance": "Root created new vanilla Creative/cheats world via UI, observed no active behavior/local resource packs; no main BP ever attached or people enabled",
+  "private176AllSHABytesAndInventory": true,
+  "onlyPrivateOverride": "CivilizationApocalypse_BP/scripts/integration/freshFixtureTrust.js",
+  "active176FreezeAndNullTrustUnchanged": true,
+  "derivative9ExactInventory": true,
+  "onlyDerivativeChanges": [
+    "world_behavior_packs.json",
+    "world_resource_packs.json"
+  ],
+  "matchingOriginalPackUUIDsVersions": true,
+  "nativeAcceptance": false,
+  "requirements": [
+    "Fresh corrected central full PASS; initial failed94574 is not a pass",
+    "Minecraft closed, installed pack backup, verified private176 +matching derivative bindings before native opening",
+    "Native FakePlayer/id1/objective/nonce/sole score0/caller/dev/people-off/idle/initial-step/census must pass",
+    "Positive completion reply and durable3-write intent/core/complete evidence, then save/rejoin before lifecycle proof"
+  ],
+  "limits": [
+    "Closed storage audit cannot prove arbitrary erased/compacted history; root witnessed new vanilla creation is explicit operator provenance.",
+    "Live engine does not hash the DB; receipt/levelSHA are compile-time chain.",
+    "Derivative retains original LevelName; root must identify disposable copy and avoid opening pristine source.",
+    "Public military selector still requires separately reviewed Nov3 city fixture.",
+    "No activation, birth, rendering, firing, death, unloading or rejoin native acceptance."
+  ],
+  "tests": "Pinned author11PASS110.5762ms and strict TSC0; no tests/full/heavy repeated"
+}

@@ -1,0 +1,263 @@
+{
+  "utc": "2026-11-07T22:56:08.697066+00:00",
+  "scope": "STAGED ONLY archer54 + creation90 composition; no source/install/world/UI/deploy changes. Null trust.",
+  "proposedFiles": [
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/commands/people.js",
+      "destination": "CivilizationApocalypse_BP/scripts/commands/people.js",
+      "sha256": "B79FB7205A2F3186D08C7F0901053F2DC5872FD88B0B9CD8795853765BE7A448",
+      "baselineSha256": "61DBB52AF4C27D2DB75E0F6AD22296E150C88709C70610BB9F663EEC0387F559",
+      "sourceStage": "creation90",
+      "sourceStageSha256": "B79FB7205A2F3186D08C7F0901053F2DC5872FD88B0B9CD8795853765BE7A448",
+      "matchesSourceStage": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/events/welcome.js",
+      "destination": "CivilizationApocalypse_BP/scripts/events/welcome.js",
+      "sha256": "AAEBED353A1302D8D25B5D2300708C63333D1AB2FBE91ADA2EBC7FDBF1DC5AC0",
+      "baselineSha256": "DB13FB3B27163CE821A4962D9AF5771583534B534E93DE4CC15D6E415BAB4E55",
+      "sourceStage": "creation90",
+      "sourceStageSha256": "AAEBED353A1302D8D25B5D2300708C63333D1AB2FBE91ADA2EBC7FDBF1DC5AC0",
+      "matchesSourceStage": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/integration/creationBindings.js",
+      "destination": "CivilizationApocalypse_BP/scripts/integration/creationBindings.js",
+      "sha256": "717741BBBC0E7E42391C7C84802AE8E5172766BF2009FD897454F20576A01433",
+      "baselineSha256": null,
+      "sourceStage": "creation90",
+      "sourceStageSha256": "F334676FB356CA7532567FAA8D9BB5B1FE093CA594CCE725CC46036553A3FB52",
+      "matchesSourceStage": false
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/integration/creationRuntime.js",
+      "destination": "CivilizationApocalypse_BP/scripts/integration/creationRuntime.js",
+      "sha256": "C7E8F075D53DE71B9E240A4C7637C64082B687268A02B5867381B44DDF34C17A",
+      "baselineSha256": null,
+      "sourceStage": "creation90",
+      "sourceStageSha256": "307FEF10556CC2AF5A0409C83F8A0371F6A1FDCE5FC3667C514198D9C5A677F4",
+      "matchesSourceStage": false
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/integration/freshFixtureTrust.js",
+      "destination": "CivilizationApocalypse_BP/scripts/integration/freshFixtureTrust.js",
+      "sha256": "5914C01773380ED8DF19B8AB7A271251F65E5EA6EDC7128AB0110808ACA7EADF",
+      "baselineSha256": null,
+      "sourceStage": "creation90",
+      "sourceStageSha256": "5914C01773380ED8DF19B8AB7A271251F65E5EA6EDC7128AB0110808ACA7EADF",
+      "matchesSourceStage": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/integration/peopleStreets.js",
+      "destination": "CivilizationApocalypse_BP/scripts/integration/peopleStreets.js",
+      "sha256": "B0E2F279198203E015817104818FC4A7D52C30EADF96350C5B4CB58B67C180D0",
+      "baselineSha256": "FB3AAE2AD293B902E53A6DC87BEEA8E4EA17BEA6BCD0419927229CA5468D526E",
+      "sourceStage": "creation90",
+      "sourceStageSha256": "B0E2F279198203E015817104818FC4A7D52C30EADF96350C5B4CB58B67C180D0",
+      "matchesSourceStage": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/integration/popSync.js",
+      "destination": "CivilizationApocalypse_BP/scripts/integration/popSync.js",
+      "sha256": "ED93FC892FC19CC44DF865F98BF954058B7C5314D5961BDF36F0F13A767D58A7",
+      "baselineSha256": "4F658ABC6153DB289F73C3E987CE20C9FFE86EBA07C9F78F096783BD7EB86443",
+      "sourceStage": "creation90",
+      "sourceStageSha256": "ED93FC892FC19CC44DF865F98BF954058B7C5314D5961BDF36F0F13A767D58A7",
+      "matchesSourceStage": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/integration/privateFreshFixture.js",
+      "destination": "CivilizationApocalypse_BP/scripts/integration/privateFreshFixture.js",
+      "sha256": "558190D973E5D5230D7DF817990B488324586FF3613B4F07336A137BE760A2B2",
+      "baselineSha256": null,
+      "sourceStage": "creation90",
+      "sourceStageSha256": "F9F600D6D73151F5D2F1345EAB04440352D49DA76F68432D73A1A803F6AC96D0",
+      "matchesSourceStage": false
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/main.js",
+      "destination": "CivilizationApocalypse_BP/scripts/main.js",
+      "sha256": "11D3875F2F0FADD15B09226C10E80543123C25DE646A5E6F2317F45D2DD9C241",
+      "baselineSha256": "417E9C7181F9792CCAB013ED2BC48CA66AA05F169A8E8DF141A919554998AF62",
+      "sourceStage": "creation90",
+      "sourceStageSha256": "11D3875F2F0FADD15B09226C10E80543123C25DE646A5E6F2317F45D2DD9C241",
+      "matchesSourceStage": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/sim/starter.js",
+      "destination": "CivilizationApocalypse_BP/scripts/sim/starter.js",
+      "sha256": "50F751F967BCDA377329C3BABB61332A7402513F59C00A44A9DE18965CB59CB0",
+      "baselineSha256": "C343B6629D04C2121D2E13BF31A5941F5EFEE4C9459D5AC7C5D12A8E0FEA95E6",
+      "sourceStage": "creation90",
+      "sourceStageSha256": "50F751F967BCDA377329C3BABB61332A7402513F59C00A44A9DE18965CB59CB0",
+      "matchesSourceStage": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/entities/archer.json",
+      "destination": "CivilizationApocalypse_BP/entities/archer.json",
+      "sha256": "660C1D0665C97910DD4B6291A8222069A8CC23F6E94DC59EBA440157979B4F30",
+      "baselineSha256": null,
+      "sourceStage": "archer54",
+      "sourceStageSha256": "660C1D0665C97910DD4B6291A8222069A8CC23F6E94DC59EBA440157979B4F30",
+      "matchesSourceStage": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/entities/guard_arrow.json",
+      "destination": "CivilizationApocalypse_BP/entities/guard_arrow.json",
+      "sha256": "B3DEA57342313664AB1A66EE46806D75B1AA6697CA767CCDFE69508AC816F761",
+      "baselineSha256": null,
+      "sourceStage": "archer54",
+      "sourceStageSha256": "B3DEA57342313664AB1A66EE46806D75B1AA6697CA767CCDFE69508AC816F761",
+      "matchesSourceStage": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/commands/military.js",
+      "destination": "CivilizationApocalypse_BP/scripts/commands/military.js",
+      "sha256": "C7BC09BEE785E83EEF13F31E1105156179236D59DC0F815F4571E0A1AE96E044",
+      "baselineSha256": "D1CD0E06EDC68133BED9E593F4DEDC98B6F5DF0DE48C65115A21E75C758383BB",
+      "sourceStage": "archer54",
+      "sourceStageSha256": "C7BC09BEE785E83EEF13F31E1105156179236D59DC0F815F4571E0A1AE96E044",
+      "matchesSourceStage": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/integration/militaryLifecycleDiagnostics.js",
+      "destination": "CivilizationApocalypse_BP/scripts/integration/militaryLifecycleDiagnostics.js",
+      "sha256": "EA32B85E1642934434F9B355845F7194AB62C44B1E4FF640616E442E0BC9144D",
+      "baselineSha256": "527C1E7E6CE80F72561239787724C013090D06BC56827BB91C0C48FD9174BB4F",
+      "sourceStage": "archer54",
+      "sourceStageSha256": "EA32B85E1642934434F9B355845F7194AB62C44B1E4FF640616E442E0BC9144D",
+      "matchesSourceStage": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/integration/militarySelectionStore.js",
+      "destination": "CivilizationApocalypse_BP/scripts/integration/militarySelectionStore.js",
+      "sha256": "647C4A52ADE6B2DD18CAE4D989E068AB01DBECBFA440F0F5F81A61B291B050B4",
+      "baselineSha256": "8853226D9F5935C03D036A041C9B801622EA0E90D4B7E38470E41754451D58AE",
+      "sourceStage": "archer54",
+      "sourceStageSha256": "647C4A52ADE6B2DD18CAE4D989E068AB01DBECBFA440F0F5F81A61B291B050B4",
+      "matchesSourceStage": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/population/militarySelection.js",
+      "destination": "CivilizationApocalypse_BP/scripts/population/militarySelection.js",
+      "sha256": "63DEBCFE85CB69650707FFEDA5A98D5DCF585887A0D194556C66258035CC7C1D",
+      "baselineSha256": "852505EEEA88F549A92302B4C4EF28E51CA166B66DD759FD1EE497CBA1A16C7F",
+      "sourceStage": "archer54",
+      "sourceStageSha256": "63DEBCFE85CB69650707FFEDA5A98D5DCF585887A0D194556C66258035CC7C1D",
+      "matchesSourceStage": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_RP/animations/archer.animation.json",
+      "destination": "CivilizationApocalypse_RP/animations/archer.animation.json",
+      "sha256": "E68E2F2C90078B29C3A6B18DA98FBFE29C588466713D3D912F0DDE38C273E3D2",
+      "baselineSha256": null,
+      "sourceStage": "archer54",
+      "sourceStageSha256": "E68E2F2C90078B29C3A6B18DA98FBFE29C588466713D3D912F0DDE38C273E3D2",
+      "matchesSourceStage": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_RP/entity/archer.entity.json",
+      "destination": "CivilizationApocalypse_RP/entity/archer.entity.json",
+      "sha256": "D7888CF04760F270A5FE25EA4F913424AB2397B1396F7B6F53FA78825B1FF895",
+      "baselineSha256": null,
+      "sourceStage": "archer54",
+      "sourceStageSha256": "D7888CF04760F270A5FE25EA4F913424AB2397B1396F7B6F53FA78825B1FF895",
+      "matchesSourceStage": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_RP/entity/guard_arrow.entity.json",
+      "destination": "CivilizationApocalypse_RP/entity/guard_arrow.entity.json",
+      "sha256": "362EA8232F2A39C392E84621B3D43871B552C9D347CFA9EBA7A529984E27F217",
+      "baselineSha256": null,
+      "sourceStage": "archer54",
+      "sourceStageSha256": "362EA8232F2A39C392E84621B3D43871B552C9D347CFA9EBA7A529984E27F217",
+      "matchesSourceStage": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_RP/models/entity/archer.geo.json",
+      "destination": "CivilizationApocalypse_RP/models/entity/archer.geo.json",
+      "sha256": "992C234164367C9B45C96A83FD2D3FB086558472A9D9A0484D3091414A40B26A",
+      "baselineSha256": null,
+      "sourceStage": "archer54",
+      "sourceStageSha256": "992C234164367C9B45C96A83FD2D3FB086558472A9D9A0484D3091414A40B26A",
+      "matchesSourceStage": true
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_RP/render_controllers/archer.render_controllers.json",
+      "destination": "CivilizationApocalypse_RP/render_controllers/archer.render_controllers.json",
+      "sha256": "AAB93AE3D4735D22A3815858F16C0A1833EF9003985BEB3A86176FBA52450C99",
+      "baselineSha256": null,
+      "sourceStage": "archer54",
+      "sourceStageSha256": "AAB93AE3D4735D22A3815858F16C0A1833EF9003985BEB3A86176FBA52450C99",
+      "matchesSourceStage": true
+    }
+  ],
+  "sourceAndDependencyPins": {
+    "dev/staging/population-creation-composed/PROMOTION-HASHES.json": "9E506E5C430F2926F966E160BE3C5016F36AAE7DE43B748F7372477BA28A4236",
+    "dev/staging/military-archer/PROMOTION-HASHES.json": "7346E3468A7EC23DEA3FBD43E35B1A0B543A38645BC84E5C58950194215151AC",
+    "CivilizationApocalypse_BP/scripts/config.js": "5B6E5325C3EB32B6C41EB3456E39AB529FC96C11B69A62BCF4DC8080C6F8D816",
+    "CivilizationApocalypse_BP/scripts/kingdom/state.js": "D86F68AE94D64A41437096E9FFB569E63148001B5F72A5FCA8603330F21F4ABD",
+    "CivilizationApocalypse_BP/manifest.json": "D72C4320CE3A3FD404C81821042EB2DB163B8283E1A62533C5553A7B0E0B362D",
+    "CivilizationApocalypse_RP/manifest.json": "DD789999BB1893624D00C2A75A347F19AF74796917B36B3722D905E06B22BAA2"
+  },
+  "compositionOnlyChangedPaths": [
+    "CivilizationApocalypse_BP/scripts/integration/creationBindings.js",
+    "CivilizationApocalypse_BP/scripts/integration/creationRuntime.js",
+    "CivilizationApocalypse_BP/scripts/integration/privateFreshFixture.js"
+  ],
+  "sourceStageBytesUnchanged": 18,
+  "evidenceFiles": {
+    "archer-creation.test.mjs": "0695AC12ADEDCEC19058C61EE7B7B854312FAC513E882BB6700BDCB40D9E514B",
+    "assets.test.mjs": "D4A8952C1CB238293C2FD7A301F71B8521658BDA0617F13F19B8F348F6C2A831",
+    "BASELINE.json": "06D91652056044E35002E824B49CE7DC209501D40CD8CAEF324A9786A0FB8439",
+    "binding.test.mjs": "5669E60A1C35C20E7EEBD827CD0205F986BCB239B04A332932339C1AED513B6F",
+    "combined-initial.log": "7C2A8FE155FA65A416290778BD53813CAE78FC10DEFD17DFE6FBC3043617EDFE",
+    "combined-second.log": "17B1DD85F7837ED6510F93E8D1E7AED8B332CF0749563760AEC40E1CD8F49EA0",
+    "combined-third.log": "66616B7ADFBF7BF5356DD668AB6023A25B15049E4B0B5E49822BCC46E4535721",
+    "command-refusal.test.mjs": "34D37C017B8DBCBDD3727EE1B7C2FBB16AACAACF651E1B41774C72C779772033",
+    "compatibility-final.log": "05199844B5DB208E17C01A3FDAF9EF8F3C97051C371DC3E5190618BE1C43592C",
+    "compatibility-initial.log": "C7F223123AB2B730AAABEE00D78A8CC66D9B2F12D1186DFCDA54CCA0A3116CFF",
+    "compatibility-second.log": "A303C1BEC619DD795FFD7E19C0BB90432067705DFD87B195A4E3BE58C6104B3D",
+    "composed.test.mjs": "143ECFA29A70B3C10B40B2C9254306BF1C5744B422421EC72411F5D8403279E2",
+    "composition-only.patch": "B2E5880C7E42B8635F542BFEE998504ECFA345D9254FE48148D0DA0A9053BBE5",
+    "fixture.test.mjs": "659CEFA4866D946A87BC48C604854040A7F7575872F07BC94A790A4DC4DCF7DC",
+    "loader.mjs": "2E125F06A515C173777AA3C3EAE2670543BD0C3D0EDE5D7CFFA4B8CB33123F1E",
+    "military-command.test.mjs": "1568C851DFF3BAE6E1A2633C9927F6EE648BBEA9589DC72D471CF1F29EEC4CFF",
+    "military-lifecycle-diagnostics.test.mjs": "84220BF5BF18FBB2CE0892B7D09413DAE931AB6843DD17F9C85AFABF27736879",
+    "military-selection.test.mjs": "9E1B476C95F41549508935AAFC1D27EF863F733441F19BE480BB105F5FD0EF0C",
+    "native-stub.mjs": "C8F1B54D1B1DF36FC3A0410F57A2CA710DD25D92264B8332DE8AEC883F58AE44",
+    "proposed.patch": "D7B559DF02861DEFC1F1F2DD380C9FC6BCA70A6090DD66EC192B35540F70ABEC",
+    "README.md": "ECABB302E952875676FCB69D0A82EB2E9181E50E0225839429371A12DBD16231",
+    "register.mjs": "38E39EA17DBFC362D6444B2D60EE2AF5FF1D19471D83AFC767767AAA8215ABC7",
+    "SOURCE-PINS.json": "E293D45A897759945706A40897A16B2BED7C59FD9FEF97F888E214A6EE29908D",
+    "synthetic-trust.mjs": "F632A56FF1E900448F2E25FC11F3FF0F1E14BD385EC7A8B09A5CD1E95C327CBA",
+    "teardown.test.mjs": "C766435F620301A6C6634B9566E60A7DB9BF179204038AD91D942DDECF96B524",
+    "tsconfig.json": "220473726F5E715CD182EFA8BDE620B22D3B436107C04443D0FB9F0212897295",
+    "typecheck-final.log": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+    "typecheck-initial.log": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+  },
+  "compatibility": {
+    "tests": 165,
+    "pass": 165,
+    "fail": 0,
+    "skip": 0,
+    "cancelled": 0,
+    "durationMs": 681.2814,
+    "log": "compatibility-final.log"
+  },
+  "strictTypecheck": {
+    "exitCode": 0,
+    "log": "typecheck-final.log",
+    "unchangedRootOptions": true
+  },
+  "actualCompiledDescriptor": null,
+  "nativeAcceptance": false,
+  "fullVerificationRun": false,
+  "remaining": [
+    "Independent composed review and central full gates",
+    "Genuine private fixture receipt and witnessed preparation",
+    "Military selector separate Nov3 source contract must be satisfied/reviewed independently",
+    "Native archer projectile/friendly-fire/appearance and complete lifecycle acceptance",
+    "Cavalry/pair actors and aggregate casualty accounting excluded"
+  ]
+}

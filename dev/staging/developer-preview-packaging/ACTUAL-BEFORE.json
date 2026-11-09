@@ -1,0 +1,38 @@
+{
+  "scope": "READONLY preservation baseline before pack-only developer artifact; no world/DB/native proof",
+  "files": {
+    "dist/templates/civapoc-starter.mctemplate": {
+      "sha256": "19D3DDE36CC42A98DB2DDA05063DD308FE2B50D01A60E82F266270DD4567FC45",
+      "bytes": 17345764
+    },
+    "starter/build-receipt.json": {
+      "sha256": "F317A6C604B0159215627662F70C1D64CBC53AA9E8F077B9BE5B461AFCB9C2EB",
+      "bytes": 1203
+    },
+    "starter/template.json": {
+      "sha256": "E2B9FB8987457CA811AA0E9DDC16571E6126D35CABFBF773A7FCADAEE2F94B67",
+      "bytes": 4006
+    },
+    "dev/check-release.mjs": {
+      "sha256": "FDDEBD3A95ACA87439F0499108680B1003DA1B0544F846C46DA39A10068EA7AE",
+      "bytes": 4803
+    },
+    "dev/build-template.mjs": {
+      "sha256": "98D5200286DD17BF8BC0681646B537D59E99A1D34BF2883AC571E2C48025C2BC",
+      "bytes": 14035
+    },
+    "dev/validate-template.mjs": {
+      "sha256": "C354A38901B45EE29A7AB7AEE9C525C4D5A15434EA62FBF0C1D41136B21BC571",
+      "bytes": 21086
+    },
+    "CivilizationApocalypse_BP/manifest.json": {
+      "sha256": "D72C4320CE3A3FD404C81821042EB2DB163B8283E1A62533C5553A7B0E0B362D",
+      "bytes": 1406
+    },
+    "CivilizationApocalypse_RP/manifest.json": {
+      "sha256": "DD789999BB1893624D00C2A75A347F19AF74796917B36B3722D905E06B22BAA2",
+      "bytes": 671
+    }
+  },
+  "sourceFreeze": "dist/tree-streaming-pack-hashes-corrected-20261106.json"
+}

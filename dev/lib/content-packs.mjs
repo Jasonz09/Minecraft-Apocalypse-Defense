@@ -4,14 +4,14 @@ import { join } from "node:path";
 const triple = (v) => Array.isArray(v) && v.length === 3 && v.every(n => Number.isInteger(n) && n >= 0);
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const same = (a,b) => JSON.stringify(a) === JSON.stringify(b);
-export const REQUIRED_ENTITY_IDS=Object.freeze(["civ_trial:swordsman"]);
+export const REQUIRED_ENTITY_IDS=Object.freeze(["civ_trial:swordsman","civ_trial:archer","civ_trial:guard_arrow"]);
 const jsonFiles = (dir) => !existsSync(dir) ? [] : readdirSync(dir,{withFileTypes:true}).flatMap(e =>
     e.isDirectory() ? jsonFiles(join(dir,e.name)) : e.name.endsWith(".json") ? [join(dir,e.name)] : []);
 
 /** Validate the actual BP/RP graph and referenced custom rendering assets, not a native parser. */
-export function contentPackProblems(packs,{requiredEntities=REQUIRED_ENTITY_IDS}={}) {
+export function contentPackProblems(packs,{requiredEntities=REQUIRED_ENTITY_IDS,readFile=readFileSync,listJson=jsonFiles,fileExists=existsSync}={}) {
     const problems=[], loaded=[], identifiers=new Set();
-    const read=(file)=>{try{return JSON.parse(readFileSync(file,"utf8"));}catch(error){problems.push(`unreadable content JSON ${file}: ${String(error)}`);return {};}};
+    const read=(file)=>{try{return JSON.parse(readFile(file,"utf8"));}catch(error){problems.push(`unreadable content JSON ${file}: ${String(error)}`);return {};}};
     for(const pack of packs) {
         const manifest=read(join(pack.root,"manifest.json"));
         loaded.push({...pack,manifest});
@@ -25,7 +25,7 @@ export function contentPackProblems(packs,{requiredEntities=REQUIRED_ENTITY_IDS}
         if(!triple(manifest.header?.min_engine_version))problems.push(`missing content pack engine version in ${pack.root}`);
         const types=(manifest.modules??[]).map(m=>m.type);
         if(pack.kind==="resource_packs" && (types.length!==1||types[0]!=="resources"))problems.push(`resource pack ${pack.root} requires one resources module`);
-        if(pack.kind==="behavior_packs" && jsonFiles(join(pack.root,"entities")).length && !types.includes("data"))problems.push(`entity behavior pack ${pack.root} requires a data module`);
+        if(pack.kind==="behavior_packs" && listJson(join(pack.root,"entities")).length && !types.includes("data"))problems.push(`entity behavior pack ${pack.root} requires a data module`);
     }
     for(const pack of loaded)for(const dependency of pack.manifest.dependencies??[])if(dependency.uuid) {
         const matches=loaded.filter(p=>p.manifest.header?.uuid===dependency.uuid);
@@ -34,14 +34,14 @@ export function contentPackProblems(packs,{requiredEntities=REQUIRED_ENTITY_IDS}
     }
     const clients=new Map(), geometries=new Map(), animations=new Map(), controllers=new Map();
     for(const pack of loaded.filter(p=>p.kind==="resource_packs")) {
-        for(const file of jsonFiles(join(pack.root,"models","entity")))for(const geometry of read(file)["minecraft:geometry"]??[]) {
+        for(const file of listJson(join(pack.root,"models","entity")))for(const geometry of read(file)["minecraft:geometry"]??[]) {
             const id=geometry.description?.identifier;
             if(geometries.has(id))problems.push(`duplicate geometry ${id}`);
             geometries.set(id,geometry);
         }
-        for(const file of jsonFiles(join(pack.root,"animations")))for(const [id,animation] of Object.entries(read(file).animations??{}))animations.set(id,animation);
-        for(const file of jsonFiles(join(pack.root,"render_controllers")))for(const [id,controller] of Object.entries(read(file).render_controllers??{}))controllers.set(id,controller);
-        for(const file of jsonFiles(join(pack.root,"entity"))) {
+        for(const file of listJson(join(pack.root,"animations")))for(const [id,animation] of Object.entries(read(file).animations??{}))animations.set(id,animation);
+        for(const file of listJson(join(pack.root,"render_controllers")))for(const [id,controller] of Object.entries(read(file).render_controllers??{}))controllers.set(id,controller);
+        for(const file of listJson(join(pack.root,"entity"))) {
             const description=read(file)["minecraft:client_entity"]?.description;
             if(!description?.identifier){problems.push(`missing client entity identifier ${file}`);continue;}
             if(clients.has(description.identifier))problems.push(`duplicate client entity ${description.identifier}`);
@@ -49,23 +49,33 @@ export function contentPackProblems(packs,{requiredEntities=REQUIRED_ENTITY_IDS}
         }
     }
     for(const {description:d,root} of clients.values()) {
+        // Reviewed vanilla arrow references are implicit engine assets, not custom
+        // files. This exact profile cannot make any other missing asset benign.
+        const builtinArrow=d.identifier==="civ_trial:guard_arrow"
+            &&same(d.materials,{default:"arrow"})&&same(d.geometry,{default:"geometry.arrow"})
+            &&same(d.textures,{default:"textures/entity/arrows"})&&same(d.animations,{move:"animation.arrow.move"})
+            &&same(d.render_controllers,["controller.render.arrow"]);
         const bones=new Set();
         for(const id of Object.values(d.geometry??{})) {
+            if(builtinArrow&&id==="geometry.arrow")continue;
             if(!geometries.has(id))problems.push(`missing geometry ${id} for ${d.identifier}`);
             else for(const bone of geometries.get(id).bones??[])bones.add(bone.name);
         }
         for(const path of Object.values(d.textures??{})) {
+            if(builtinArrow&&path==="textures/entity/arrows")continue;
             if(typeof path!=="string"||!/^textures\/[A-Za-z0-9_/-]+$/.test(path)){problems.push(`unsafe texture reference for ${d.identifier}`);continue;}
             const file=join(root,`${path}.png`);
-            if(!existsSync(file)){problems.push(`missing texture ${path} for ${d.identifier}`);continue;}
-            const png=readFileSync(file);
+            if(!fileExists(file)){problems.push(`missing texture ${path} for ${d.identifier}`);continue;}
+            const png=readFile(file);
             if(png.length<24||!png.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])))problems.push(`invalid PNG texture ${path}`);
         }
         for(const id of Object.values(d.animations??{})) {
+            if(builtinArrow&&id==="animation.arrow.move")continue;
             if(!animations.has(id))problems.push(`missing animation ${id} for ${d.identifier}`);
             else for(const bone of Object.keys(animations.get(id).bones??{}))if(!bones.has(bone))problems.push(`unknown animation bone ${bone} for ${d.identifier}`);
         }
         for(const id of d.render_controllers??[]) {
+            if(builtinArrow&&id==="controller.render.arrow")continue;
             if(!controllers.has(id)){problems.push(`missing render controller ${id} for ${d.identifier}`);continue;}
             const controller=controllers.get(id);
             for(const [field,table,expressions] of [["geometry",d.geometry,[controller.geometry]],["texture",d.textures,controller.textures??[]],["material",d.materials,(controller.materials??[]).flatMap(m=>Object.values(m))]])
@@ -77,9 +87,13 @@ export function contentPackProblems(packs,{requiredEntities=REQUIRED_ENTITY_IDS}
         const aliases=new Set(Object.keys(d.animations??{}));
         for(const entry of d.scripts?.animate??[])for(const alias of typeof entry==="string"?[entry]:Object.keys(entry))if(!aliases.has(alias))problems.push(`unknown animation alias ${alias} for ${d.identifier}`);
     }
-    const behaviors=new Set();
-    for(const pack of loaded.filter(p=>p.kind==="behavior_packs"))for(const file of jsonFiles(join(pack.root,"entities"))) {
-        const id=read(file)["minecraft:entity"]?.description?.identifier;
+    const behaviors=new Set(),shooters=[];
+    for(const pack of loaded.filter(p=>p.kind==="behavior_packs"))for(const file of listJson(join(pack.root,"entities"))) {
+        const definition=read(file)["minecraft:entity"],id=definition?.description?.identifier;
+        for(const components of [definition?.components,...Object.values(definition?.component_groups??{})]){
+            const shooter=components?.["minecraft:shooter"];
+            if(shooter!==undefined)shooters.push({id,def:shooter?.def});
+        }
         if(!id)problems.push(`missing behavior entity identifier ${file}`);
         else if(!clients.has(id))problems.push(`missing client entity for ${id}`);
         else {
@@ -90,14 +104,15 @@ export function contentPackProblems(packs,{requiredEntities=REQUIRED_ENTITY_IDS}
         if(behaviors.has(id))problems.push(`duplicate behavior entity ${id}`);
         behaviors.add(id);
     }
+    for(const {id,def}of shooters)if(typeof def!=="string"||!def||(!def.startsWith("minecraft:")&&!behaviors.has(def)))problems.push(`missing custom projectile ${String(def)} for ${String(id)}`);
     for(const id of requiredEntities)if(!behaviors.has(id)||!clients.has(id))problems.push(`required entity pair is missing: ${id}`);
     return problems;
 }
 
 /** Build both world binding lists from shipped manifests, never stale source-world bindings. */
-export function packBindings(packs, kind) {
+export function packBindings(packs, kind, {readFile=readFileSync}={}) {
     return packs.filter(p=>p.kind===kind).map(p=>{
-        const m=JSON.parse(readFileSync(join(p.root,"manifest.json"),"utf8"));
+        const m=JSON.parse(readFile(join(p.root,"manifest.json"),"utf8"));
         return {pack_id:m.header.uuid,version:m.header.version};
     });
 }

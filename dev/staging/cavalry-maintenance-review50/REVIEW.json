@@ -1,0 +1,91 @@
+{
+  "utc": "2026-11-08T23:25:26.028683+00:00",
+  "scope": "Independent immutable cavalry50 maintenance checkpoint review; no main, author-stage, Git, UI or native mutations",
+  "reviewedCheckpoint": "dev/staging/cavalry-owner-composition/checkpoint50",
+  "manifestSha256": "67AD3E5848900C929C594D26A1B16A8B51E6EB443DE5E8473A86606546D371E9",
+  "pinnedFilesVerified": 42,
+  "status": "BLOCKED at checkpoint50; author current delta separately addressing findings",
+  "executed": [
+    {
+      "tests": 50,
+      "pass": 50,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "durationMs": 366.9327,
+      "log": "focused50-independent.log"
+    },
+    {
+      "tests": 1,
+      "pass": 0,
+      "fail": 1,
+      "durationMs": 228.7687,
+      "log": "cross-role-final-identity.log",
+      "expected": "no deletion after counterpart native getter revokes target canonical identity",
+      "observed": "both actors deleted (2)"
+    },
+    {
+      "tests": 1,
+      "pass": 0,
+      "fail": 1,
+      "durationMs": 179.127,
+      "log": "prepaid-cursor-revocation.log",
+      "expected": "maxOps1 remains bounded after late cursor revocation and same-tick restart",
+      "observed": "first cleanup1 +restart cleanup1 =2 on same tick"
+    }
+  ],
+  "findings": [
+    {
+      "id": "final-target-proof-order",
+      "severity": "blocker",
+      "source": "proposed/integration/popSync.js:376-383",
+      "detail": "Later mount block getters execute after final rider frames. They can revoke the rider identity before the rider deletion. Final target proof must be after all counterpart/metadata/block callbacks.",
+      "authorResponse": "Current next delta reportedly fixes; independent final repin retest pending."
+    },
+    {
+      "id": "prepaid-cursor-revocation",
+      "severity": "blocker",
+      "source": "proposed/integration/popSync.js:331-332,359,369-383",
+      "detail": "Prepayment reads back once, but metadata/policy callbacks can change cursor afterward before native deletion. Injected readMilitarySelection resets it to original valid cursor; same-tick restart gains another role action. Thread expected prepaid raw and check after callback work, before final target-native frames; never restore another writer bytes.",
+      "scope": "Actual injected callback/CAS race; not evidence of native Bedrock callback behavior or arbitrary malicious rollback integrity."
+    }
+  ],
+  "positiveContracts": [
+    "Birth remains disabled before role intent/spawn, so no native cavalry capabilities claimed.",
+    "Role issuance inventory and exact ticket authority are generation-bound; loaded absence never supplies removal/death.",
+    "Before-write failure/silent drop and after-write quota crash normal cases preserve actors or spent cursor.",
+    "Terminal-save failure preserves removing/unknown across restart; no absent-instance replacement.",
+    "Half-pair cleanup removes only positively bound actor and cancels only recorded never-created counterpart.",
+    "Costs share existing role/ordinary budget; unresolved pair cleanup defers ordinary births.",
+    "v2 delegation remains byte-pinned; no v2 migration or private fresh-v3 provenance exists."
+  ],
+  "typecheck": "Author checkpoint reports strict TSC0; not independently rerun because findings require new delta first.",
+  "artifacts": [
+    {
+      "path": "cross-role-final-identity.test.mjs",
+      "sha256": "5B8C693F80654C30DE567A853B5C7EB9B6C476A6DFD4C738341E6881C0DF5509",
+      "bytes": 4462
+    },
+    {
+      "path": "cross-role-final-identity.log",
+      "sha256": "E74FA1294F2A3078B7BFB3FBACD8BF5705676C05E5E709EE8568EC09E7AF4E9E",
+      "bytes": 1115
+    },
+    {
+      "path": "prepaid-cursor-revocation.test.mjs",
+      "sha256": "24778A41A526A875148406DA410DAA9715C88C94E21137BC6E269DB7B8A9AAAC",
+      "bytes": 4608
+    },
+    {
+      "path": "prepaid-cursor-revocation.log",
+      "sha256": "53376D279DC8C008684232BBD00320AC46111D05BBF8F2188663E657904021A1",
+      "bytes": 1111
+    },
+    {
+      "path": "focused50-independent.log",
+      "sha256": "4D4640794BFFB62FAF5C1079E8724DC24AF0C33F998B67A730CF79B67461FCDE",
+      "bytes": 5358
+    }
+  ],
+  "native": "NOT RUN; no births/seating/rendering/combat/rejoin native acceptance"
+}

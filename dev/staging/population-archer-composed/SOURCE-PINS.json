@@ -1,0 +1,128 @@
+[
+  {
+    "stage": "creation90",
+    "source": "dev\\staging\\population-creation-composed\\proposed\\commands\\people.js",
+    "target": "CivilizationApocalypse_BP/scripts/commands/people.js",
+    "sha256": "B79FB7205A2F3186D08C7F0901053F2DC5872FD88B0B9CD8795853765BE7A448"
+  },
+  {
+    "stage": "creation90",
+    "source": "dev\\staging\\population-creation-composed\\proposed\\events\\welcome.js",
+    "target": "CivilizationApocalypse_BP/scripts/events/welcome.js",
+    "sha256": "AAEBED353A1302D8D25B5D2300708C63333D1AB2FBE91ADA2EBC7FDBF1DC5AC0"
+  },
+  {
+    "stage": "creation90",
+    "source": "dev\\staging\\population-creation-composed\\proposed\\integration\\creationBindings.js",
+    "target": "CivilizationApocalypse_BP/scripts/integration/creationBindings.js",
+    "sha256": "F334676FB356CA7532567FAA8D9BB5B1FE093CA594CCE725CC46036553A3FB52"
+  },
+  {
+    "stage": "creation90",
+    "source": "dev\\staging\\population-creation-composed\\proposed\\integration\\creationRuntime.js",
+    "target": "CivilizationApocalypse_BP/scripts/integration/creationRuntime.js",
+    "sha256": "307FEF10556CC2AF5A0409C83F8A0371F6A1FDCE5FC3667C514198D9C5A677F4"
+  },
+  {
+    "stage": "creation90",
+    "source": "dev\\staging\\population-creation-composed\\proposed\\integration\\freshFixtureTrust.js",
+    "target": "CivilizationApocalypse_BP/scripts/integration/freshFixtureTrust.js",
+    "sha256": "5914C01773380ED8DF19B8AB7A271251F65E5EA6EDC7128AB0110808ACA7EADF"
+  },
+  {
+    "stage": "creation90",
+    "source": "dev\\staging\\population-creation-composed\\proposed\\integration\\peopleStreets.js",
+    "target": "CivilizationApocalypse_BP/scripts/integration/peopleStreets.js",
+    "sha256": "B0E2F279198203E015817104818FC4A7D52C30EADF96350C5B4CB58B67C180D0"
+  },
+  {
+    "stage": "creation90",
+    "source": "dev\\staging\\population-creation-composed\\proposed\\integration\\popSync.js",
+    "target": "CivilizationApocalypse_BP/scripts/integration/popSync.js",
+    "sha256": "ED93FC892FC19CC44DF865F98BF954058B7C5314D5961BDF36F0F13A767D58A7"
+  },
+  {
+    "stage": "creation90",
+    "source": "dev\\staging\\population-creation-composed\\proposed\\integration\\privateFreshFixture.js",
+    "target": "CivilizationApocalypse_BP/scripts/integration/privateFreshFixture.js",
+    "sha256": "F9F600D6D73151F5D2F1345EAB04440352D49DA76F68432D73A1A803F6AC96D0"
+  },
+  {
+    "stage": "creation90",
+    "source": "dev\\staging\\population-creation-composed\\proposed\\main.js",
+    "target": "CivilizationApocalypse_BP/scripts/main.js",
+    "sha256": "11D3875F2F0FADD15B09226C10E80543123C25DE646A5E6F2317F45D2DD9C241"
+  },
+  {
+    "stage": "creation90",
+    "source": "dev\\staging\\population-creation-composed\\proposed\\sim\\starter.js",
+    "target": "CivilizationApocalypse_BP/scripts/sim/starter.js",
+    "sha256": "50F751F967BCDA377329C3BABB61332A7402513F59C00A44A9DE18965CB59CB0"
+  },
+  {
+    "stage": "archer54",
+    "source": "dev\\staging\\military-archer\\proposed\\CivilizationApocalypse_BP\\entities\\archer.json",
+    "target": "CivilizationApocalypse_BP/entities/archer.json",
+    "sha256": "660C1D0665C97910DD4B6291A8222069A8CC23F6E94DC59EBA440157979B4F30"
+  },
+  {
+    "stage": "archer54",
+    "source": "dev\\staging\\military-archer\\proposed\\CivilizationApocalypse_BP\\entities\\guard_arrow.json",
+    "target": "CivilizationApocalypse_BP/entities/guard_arrow.json",
+    "sha256": "B3DEA57342313664AB1A66EE46806D75B1AA6697CA767CCDFE69508AC816F761"
+  },
+  {
+    "stage": "archer54",
+    "source": "dev\\staging\\military-archer\\proposed\\CivilizationApocalypse_BP\\scripts\\commands\\military.js",
+    "target": "CivilizationApocalypse_BP/scripts/commands/military.js",
+    "sha256": "C7BC09BEE785E83EEF13F31E1105156179236D59DC0F815F4571E0A1AE96E044"
+  },
+  {
+    "stage": "archer54",
+    "source": "dev\\staging\\military-archer\\proposed\\CivilizationApocalypse_BP\\scripts\\integration\\militaryLifecycleDiagnostics.js",
+    "target": "CivilizationApocalypse_BP/scripts/integration/militaryLifecycleDiagnostics.js",
+    "sha256": "EA32B85E1642934434F9B355845F7194AB62C44B1E4FF640616E442E0BC9144D"
+  },
+  {
+    "stage": "archer54",
+    "source": "dev\\staging\\military-archer\\proposed\\CivilizationApocalypse_BP\\scripts\\integration\\militarySelectionStore.js",
+    "target": "CivilizationApocalypse_BP/scripts/integration/militarySelectionStore.js",
+    "sha256": "647C4A52ADE6B2DD18CAE4D989E068AB01DBECBFA440F0F5F81A61B291B050B4"
+  },
+  {
+    "stage": "archer54",
+    "source": "dev\\staging\\military-archer\\proposed\\CivilizationApocalypse_BP\\scripts\\population\\militarySelection.js",
+    "target": "CivilizationApocalypse_BP/scripts/population/militarySelection.js",
+    "sha256": "63DEBCFE85CB69650707FFEDA5A98D5DCF585887A0D194556C66258035CC7C1D"
+  },
+  {
+    "stage": "archer54",
+    "source": "dev\\staging\\military-archer\\proposed\\CivilizationApocalypse_RP\\animations\\archer.animation.json",
+    "target": "CivilizationApocalypse_RP/animations/archer.animation.json",
+    "sha256": "E68E2F2C90078B29C3A6B18DA98FBFE29C588466713D3D912F0DDE38C273E3D2"
+  },
+  {
+    "stage": "archer54",
+    "source": "dev\\staging\\military-archer\\proposed\\CivilizationApocalypse_RP\\entity\\archer.entity.json",
+    "target": "CivilizationApocalypse_RP/entity/archer.entity.json",
+    "sha256": "D7888CF04760F270A5FE25EA4F913424AB2397B1396F7B6F53FA78825B1FF895"
+  },
+  {
+    "stage": "archer54",
+    "source": "dev\\staging\\military-archer\\proposed\\CivilizationApocalypse_RP\\entity\\guard_arrow.entity.json",
+    "target": "CivilizationApocalypse_RP/entity/guard_arrow.entity.json",
+    "sha256": "362EA8232F2A39C392E84621B3D43871B552C9D347CFA9EBA7A529984E27F217"
+  },
+  {
+    "stage": "archer54",
+    "source": "dev\\staging\\military-archer\\proposed\\CivilizationApocalypse_RP\\models\\entity\\archer.geo.json",
+    "target": "CivilizationApocalypse_RP/models/entity/archer.geo.json",
+    "sha256": "992C234164367C9B45C96A83FD2D3FB086558472A9D9A0484D3091414A40B26A"
+  },
+  {
+    "stage": "archer54",
+    "source": "dev\\staging\\military-archer\\proposed\\CivilizationApocalypse_RP\\render_controllers\\archer.render_controllers.json",
+    "target": "CivilizationApocalypse_RP/render_controllers/archer.render_controllers.json",
+    "sha256": "AAB93AE3D4735D22A3815858F16C0A1833EF9003985BEB3A86176FBA52450C99"
+  }
+]

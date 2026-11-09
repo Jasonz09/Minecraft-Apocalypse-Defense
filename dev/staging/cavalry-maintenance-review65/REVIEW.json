@@ -1,0 +1,41 @@
+{
+  "utc": "2026-11-08T23:46:03.486635+00:00",
+  "scope": "Independent frozen cavalry65 review; no main/author-stage/native writes",
+  "sourceManifestSha256": "4AC4CF35DF4C97BB1097AF8A93267671EBBC7FF0277CB4026FCD07CA73E28E59",
+  "original65FilePinsVerified": 50,
+  "focused": {
+    "tests": 67,
+    "pass": 67,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 365.5357,
+    "log": "focused67-independent.log",
+    "uniqueAuthorCases": 65,
+    "independentRepeats": 2
+  },
+  "priorBlockers": "Both exact failing50 regressions pass independently on65; old50 failures preserved unchanged.",
+  "status": "NEW metadata-only completion quota-return blocker; no native actor operations enabled",
+  "finding": {
+    "source": "proposed/integration/compoundCompletion.js:prepare",
+    "detail": "After helper final cursor check, core.prepareRole invokes metadata getters. A getter revokes prepaid cursor; helper still returns the private live ticket with pending role.",
+    "reproducer": "completion-late-quota-revocation.test.mjs",
+    "log": "completion-late-quota-revocation.log",
+    "pass": 0,
+    "fail": 1,
+    "durationMs": 130.7948,
+    "confirmed": "revoked=true; live rider birth ticket returned; role=pending; original unpaid cursor restored",
+    "suggestion": "After core pending transition, refuse to expose ticket unless admission/cursor still current. Any partially written pending intent remains held; never roll back/reset another writer bytes. Future native owner still needs fresh two-body clearance and own final quota/policy checks."
+  },
+  "positiveReview": [
+    "Cost2 reservation remains for unresolved pair even outside group table/unloaded.",
+    "Own reserved pair not double charged, caps charged before ordinary admission.",
+    "Pending/terminal counterparts do not issue another absence-based completion.",
+    "Private one-use completion jobs bind exact generation/record/tick; fake completion acrosshours reuses same issuance.",
+    "Metadata/source expected record is checked inside core.prepareRole.",
+    "Native compound spawn remains disabled; no actor callback/second owner/timer.",
+    "v2 legacy worlds delegate byte-pinned core, no new fresh-v3 trust/migration."
+  ],
+  "typecheck": "Author65 reports strict0; independent final TSC deferred until fixed successor",
+  "nativeAcceptance": false
+}

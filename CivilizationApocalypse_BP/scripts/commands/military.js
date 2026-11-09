@@ -2,7 +2,7 @@ import { CIV, PEOPLE } from "../config.js";
 import { createMilitarySelectionStore } from "../integration/militarySelectionStore.js";
 import { classifyTags } from "../population/identity.js";
 import { POP_CURSOR_KEY } from "../population/settings.js";
-import { SWORDSMAN_TYPE } from "../population/militarySelection.js";
+import { SWORDSMAN_TYPE, MILITARY_TYPES } from "../population/militarySelection.js";
 
 // This is an operator-selected, separately restored fixture, not a universal
 // freshness detector. Its reviewed closed-world source has SHA256 prefix672745b7.
@@ -34,7 +34,7 @@ export function createMilitaryCommand(deps) {
         if(first.length!==1||first[0].civ?.status!=="complete"||first[0].civ?.checksum!=="07515fcb"||first[0].civ?.centre?.x!==-69||first[0].civ?.centre?.z!==-599)throw new Error("Hearthgate does not match the reviewed Nov 3 fixture");
         for(let n=2;n<=5;n++) {
             const matches=districts.filter(d=>d.id===`district-${n}`);
-            if(matches.length!==1||matches[0].civ!==undefined||matches[0].physical!==undefined)throw new Error("districts 2–5 must be unbuilt in the reviewed fixture");
+            if(matches.length!==1||matches[0].civ!==undefined||matches[0].physical!==undefined)throw new Error("districts 2â€“5 must be unbuilt in the reviewed fixture");
         }
         if(districts.some(d=>d.physical!==undefined))throw new Error("prototype district state is incompatible with this fixture");
     }
@@ -46,7 +46,7 @@ export function createMilitaryCommand(deps) {
         const groupIds=[];
         for(const entity of entities) {
             if(!entity||entity.isValid===false)throw new Error("a loaded census handle is unreadable");
-            if(entity.typeId===SWORDSMAN_TYPE)throw new Error("a trial guard already exists; it is preserved");
+            if(MILITARY_TYPES.includes(entity.typeId))throw new Error("a trial guard already exists; it is preserved");
             const tags=entity.getTags();
             if(!Array.isArray(tags)||tags.length>256)throw new Error("a loaded census tag list is unreadable");
             const identity=classifyTags(tags);
@@ -62,28 +62,28 @@ export function createMilitaryCommand(deps) {
         isBusy:deps.isBusy,readCanonicalCensus:census,
         verifyFreshTrial:request=>{
             freshConditions();
-            return {verified:request.trialId===`${MILITARY_FIXTURE_ID}-swordsman`,fixtureId:MILITARY_FIXTURE_ID,dimension:"minecraft:overworld"};
+            return {verified:request.trialId===`${MILITARY_FIXTURE_ID}-${request.class??"swordsman"}`,fixtureId:MILITARY_FIXTURE_ID,dimension:"minecraft:overworld"};
         },
     });
     const statusLines=()=>{
         const read=store.load();
         if(read.status==="refused")return [`Military trial held: ${read.reason}. No selection changed.`];
-        return [read.selection?`Military trial selection: ${read.selection.groupId}, swordsman; fixture ${read.selection.fixtureId}.`:"Military trial selection: off.",
+        return [read.selection?`Military trial selection: ${read.selection.groupId}, ${read.selection.class}; fixture ${read.selection.fixtureId}.`:"Military trial selection: off.",
             "One opt-in stationary guard trial; native combat acceptance and casualty accounting are unfinished."];
     };
     /** @param {string} message @param {any} event */
     function command(message,event) {
         if(message.trim()==="status"||message.trim()==="")return statusLines();
-        const match=/^select district=([1-5]) group=(0|[1-9]\d{0,4}) fixture=([A-Za-z0-9_-]{1,64})( confirm)?$/.exec(message.trim());
-        if(!match)return ["Usage: civ:people military status | select district=N group=G fixture=nov3-d1-672745b7 [confirm]."];
+        const match=/^select district=([1-5]) group=(0|[1-9]\d{0,4}) fixture=([A-Za-z0-9_-]{1,64})(?: class=(archer))?( confirm)?$/.exec(message.trim());
+        if(!match)return ["Usage: civ:people military status | select district=N group=G fixture=nov3-d1-672745b7 [class=archer] [confirm]."];
         if(match[3]!==MILITARY_FIXTURE_ID)return ["Military trial refused: unknown fixture provenance; nothing changed."];
-        if(!match[4])return ["Selection preview only. Use a separately restored, SHA-verified Nov 3 D1 fixture before ever switching people on.",
+        if(!match[5])return ["Selection preview only. Use a separately restored, SHA-verified Nov 3 D1 fixture before ever switching people on.",
             "The fixture label is an operator provenance assertion; runtime checks cannot prove arbitrary unloaded-world absence.",
             "Append confirm to select one existing soldier group. No entity is spawned by selection."];
         source=event?.sourceEntity;
         try {
             freshConditions();
-            store.activate({groupId:`district-${match[1]}:sol:${match[2]}`,trialId:`${MILITARY_FIXTURE_ID}-swordsman`,dimension:"minecraft:overworld"});
+            store.activate({groupId:`district-${match[1]}:sol:${match[2]}`,trialId:`${MILITARY_FIXTURE_ID}-${match[4]??"swordsman"}`,class:match[4]?"archer":"swordsman",dimension:"minecraft:overworld"});
             return [...statusLines(),"Selection saved and read back. The existing people owner alone may later admit the guard."];
         } catch(error) {return [`Military trial refused: ${String(error instanceof Error?error.message:error)}.`];}
         finally {source=undefined;}

@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync,existsSync} from 'node:fs';
+import {resolve,join} from 'node:path';
+import {makeSetupPlan,readSetupOptions,inventory,assertMinecraftClosed} from '../setup.mjs';
+import {readLevelDat} from '../../../lib/nbt.mjs';
+const optionsURL=new URL('../OPTIONS-EXAMPLE.json',import.meta.url),options=readSetupOptions(optionsURL.pathname.replace(/^\/(?:([A-Za-z]:))/, '$1'));
+const absolute=file=>resolve(options.bundleRoot,file),read=file=>JSON.parse(readFileSync(file,'utf8'));
+test('independent: actual plan only reads regular176 targets and computes uniquely named9file derivative outside all scans',()=>{const bp=join(options.behaviorParent,'CivilizationApocalypse_BP'),rp=join(options.resourceParent,'CivilizationApocalypse_RP'),before=[inventory(bp),inventory(rp)],plan=makeSetupPlan(options);assert.equal(plan.packs[0].expected.length,165);assert.equal(plan.packs[1].expected.length,11);assert.equal(plan.world.expected.length,9);assert.equal(existsSync(plan.run),false);assert.equal(existsSync(plan.world.dest),false);assert.equal(plan.options.visibleName,'CA Creation Trial Nov8 e8143392');assert.notEqual(readLevelDat(readFileSync(absolute('derivative-world/level.dat'))).data.LevelName,plan.options.visibleName);assert.deepEqual(plan.world.expected.filter((f,i)=>f.sha256!==plan.world.sourceExpected[i].sha256).map(f=>f.path).sort(),['level.dat','levelname.txt']);assert.deepEqual([inventory(bp),inventory(rp)],before);assert.equal(existsSync(plan.run),false);assert.equal(existsSync(plan.world.dest),false);const nullTrust=readFileSync(join(bp,'scripts/integration/freshFixtureTrust.js'),'utf8');assert.match(nullTrust,/REVIEWED_FRESH_FIXTURE=null;/);});
+test('independent: default real closed-game check succeeds without any target or source mutation',()=>{const plan=makeSetupPlan(options),before=plan.packs.map(p=>inventory(p.dest));assert.doesNotThrow(()=>assertMinecraftClosed());assert.deepEqual(plan.packs.map(p=>inventory(p.dest)),before);assert.equal(existsSync(plan.run),false);assert.equal(existsSync(plan.world.dest),false);});

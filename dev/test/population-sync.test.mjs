@@ -144,14 +144,14 @@ test("default: only the gated people driver may reach the population sync", () =
     // not a blanket second population-creation door.
     const readOnlyImports = {
         "integration/militaryLifecycleDiagnostics.js": {
-            "identity.js": ["classifyTags", "isCanonicalFor"], "militarySelection.js": ["SWORDSMAN_TYPE"],
+            "identity.js": ["classifyTags", "isCanonicalFor"], "militarySelection.js": ["SWORDSMAN_TYPE", "MILITARY_TYPES"],
         },
         "commands/military.js": {
-            "identity.js": ["classifyTags"], "settings.js": ["POP_CURSOR_KEY"], "militarySelection.js": ["SWORDSMAN_TYPE"],
+            "identity.js": ["classifyTags"], "settings.js": ["POP_CURSOR_KEY"], "militarySelection.js": ["SWORDSMAN_TYPE", "MILITARY_TYPES"],
         },
         "integration/militarySelectionStore.js": {
             "groups.js": ["buildGroupTable", "parseGroupId"], "reconcile.js": ["resolveConfig"],
-            "militarySelection.js": ["MILITARY_SELECTION_KEY", "SWORDSMAN_TYPE", "decodeMilitarySelection", "encodeMilitarySelection"],
+            "militarySelection.js": ["MILITARY_SELECTION_KEY", "SWORDSMAN_TYPE", "ARCHER_TYPE", "decodeMilitarySelection", "encodeMilitarySelection"],
         },
         "integration/peopleOrders.js": {
             "groups.js": ["buildGroupTable"], "settings.js": ["POP_SYNC_DEFAULTS"],

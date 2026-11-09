@@ -1,0 +1,105 @@
+{
+  "scope": "Read-only pinned closed-copy CRC-WAL/NBT evidence ONLY; no trust grant or engine DB access",
+  "decision": "EVIDENCE_ONLY_REQUIRES_ROOT_REVIEW",
+  "backup": "E:\\CivilizationApocalypse\\dist\\backups\\vanilla-never-owner-20261108",
+  "files": {
+    "db/000003.log": {
+      "bytes": 652585,
+      "sha256": "6990DAB95731F88B8F20D79819C63BB2E2EFBCD1FD3A462E2C6CB14FF58AE5EE"
+    },
+    "db/CURRENT": {
+      "bytes": 16,
+      "sha256": "1005A525006F148C86EFCBFB36C6EAC091B311532448010F70F7DE9A68007167"
+    },
+    "db/MANIFEST-000002": {
+      "bytes": 50,
+      "sha256": "E292F241DAAFC3DF90F3E2D339C61C6E2787A0D0739AAC764E1EA9BB8544EE97"
+    },
+    "level.dat": {
+      "bytes": 3067,
+      "sha256": "CB327CEBBD37FB02A40C87F4CCC59B3C1BB82DC559B6EA6FFE0CA386BA6A64C1"
+    },
+    "level.dat_old": {
+      "bytes": 3067,
+      "sha256": "8731DB09138F846358C39D61591186ED37529814BD171426340C463987CAD7A8"
+    },
+    "levelname.txt": {
+      "bytes": 19,
+      "sha256": "3945BE28071A1F35C83266D7E47D91F1295384756E785F2975B92A83ABF50911"
+    },
+    "world_behavior_packs.json": {
+      "bytes": 3,
+      "sha256": "37517E5F3DC66819F61F5A7BB8ACE1921282415F10551D2DEFA5C3EB0985B570"
+    },
+    "world_icon.jpeg": {
+      "bytes": 67402,
+      "sha256": "DCD3AC6AB08F2522C8CB4F634B71AE6B4E8ED6AEAD86483B5FD9BBFABD7333D7"
+    },
+    "world_resource_packs.json": {
+      "bytes": 3,
+      "sha256": "37517E5F3DC66819F61F5A7BB8ACE1921282415F10551D2DEFA5C3EB0985B570"
+    }
+  },
+  "filesStableDuringAudit": true,
+  "packBindings": {
+    "world_behavior_packs.json": [],
+    "world_resource_packs.json": []
+  },
+  "levelDatSha256": "CB327CEBBD37FB02A40C87F4CCC59B3C1BB82DC559B6EA6FFE0CA386BA6A64C1",
+  "levelName": "CA Never Owner Nov8",
+  "parserSha256": "C4DC2BB4292E4845E308B5ACE3B0982C52BA054A26092A8B0CD95BF36F276257",
+  "walFiles": [
+    "db/000003.log"
+  ],
+  "mainOwnerHistorySeenInWal": false,
+  "sstFilesNotDecoded": [],
+  "scoreboard": {
+    "sequence": 391,
+    "rawSha256": "0F679144AE2B0ACEC9F5EF760E638F12D564DEAAA905AE1F5F935BC5390E256F",
+    "tree": {
+      "Criteria": [],
+      "DisplayObjectives": [],
+      "Entries": [
+        {
+          "FakePlayerName": "NEVER_PEOPLE_ON",
+          "IdentityType": 3,
+          "ScoreboardId": 1
+        }
+      ],
+      "LastUniqueID": 1,
+      "Objectives": [
+        {
+          "Criteria": "dummy",
+          "DisplayName": "CA_FRESH_8e17b80d8dc644d3",
+          "Name": "ca_fresh_owner",
+          "Scores": [
+            {
+              "Score": 0,
+              "ScoreboardId": 1
+            }
+          ]
+        }
+      ]
+    },
+    "plannedStringPaths": {
+      "objective": [
+        "$[\"Objectives\"][0][\"Name\"]"
+      ],
+      "displayName": [
+        "$[\"Objectives\"][0][\"DisplayName\"]"
+      ],
+      "participant": [
+        "$[\"Entries\"][0][\"FakePlayerName\"]"
+      ]
+    }
+  },
+  "runtimeParticipantIdentityAndExactScoreReviewed": false,
+  "operatorKnownNewVanillaAttested": false,
+  "compiledTrust": null,
+  "limitations": [
+    "WAL absence is not proof of SST/entity/owner-history absence.",
+    "Runtime FakePlayer ID, exactly-one objective/participant and score0 need review against actual NBT and native identity.",
+    "Root must witness genuine new vanilla creation and closed-copy chain; no retrospective blessing.",
+    "No private trust module or world property is written by this tool."
+  ]
+}

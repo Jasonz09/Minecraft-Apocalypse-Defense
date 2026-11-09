@@ -1,0 +1,55 @@
+--- source-stage/CivilizationApocalypse_BP/scripts/integration/creationBindings.js
++++ composed/CivilizationApocalypse_BP/scripts/integration/creationBindings.js
+@@ -9,7 +9,9 @@
+  * @typedef {{metaRaw:string,raw:string,group:string,epoch:string,generation:number,type:string,actor:string|null}} TicketContext
+  */
+ export const FAMILY='civ:pop_bind:',PREFIX=FAMILY+'v2:',META=PREFIX+'meta',MAX_RECORDS=2048,MAX_BYTES=1024,CHUNK_GROUPS=64,MAX_CHUNKS=32,MAX_CHUNK_BYTES=4096,MAX_META_BYTES=8192;
+-const TYPES=new Set(['minecraft:villager_v2','minecraft:iron_golem','civ_trial:swordsman']);
++export const CUSTOM_CREATION_ENTITY_TYPES=Object.freeze(['civ_trial:swordsman','civ_trial:archer']);
++export const CREATION_ENTITY_TYPES=Object.freeze(['minecraft:villager_v2','minecraft:iron_golem',...CUSTOM_CREATION_ENTITY_TYPES]);
++const TYPES=new Set(CREATION_ENTITY_TYPES);
+ const PHASES=new Set(['pending','alive','removing','retired','legacy','legacy-gone']);
+ /** @param {any} s */const ascii=s=>typeof s==='string'&&/^[A-Za-z0-9_-]{1,64}$/.test(s);
+ /** @param {any} s */const group=s=>typeof s==='string'&&/^district-(?:[1-9]|[12]\d|3[0-2]):(?:civ|sol):(?:0|[1-9]\d{0,5})$/.test(s);
+@@ -114,4 +116,4 @@
+ }
+ /** @type {WeakMap<object,object>} */const deathRegistrations=new WeakMap();
+ /** @param {WorldPort} world @param {ReturnType<typeof createCreationBindings>} store */
+-export function registerCreationDeaths(world,store){if(deathRegistrations.has(world)){if(deathRegistrations.get(world)!==store)throw Error('different death authority registered');return false;}world.afterEvents.entityDie.subscribe((/** @type {any} */event)=>{try{const h=event.deadEntity,tags=h.getTags(),claims=tags.filter((/** @type {string} */t)=>t.startsWith('civpop:v1:'));if(claims.length!==1)return;store.confirmDeath({groupId:claims[0].slice('civpop:v1:'.length),id:String(h.id),typeId:h.typeId,tags:[...tags]});}catch(_error){/* Hold; no loaded-absence fallback. */}},{entityTypes:['minecraft:villager_v2','minecraft:iron_golem','civ_trial:swordsman']});deathRegistrations.set(world,store);return true;}
++export function registerCreationDeaths(world,store){if(deathRegistrations.has(world)){if(deathRegistrations.get(world)!==store)throw Error('different death authority registered');return false;}world.afterEvents.entityDie.subscribe((/** @type {any} */event)=>{try{const h=event.deadEntity,tags=h.getTags(),claims=tags.filter((/** @type {string} */t)=>t.startsWith('civpop:v1:'));if(claims.length!==1)return;store.confirmDeath({groupId:claims[0].slice('civpop:v1:'.length),id:String(h.id),typeId:h.typeId,tags:[...tags]});}catch(_error){/* Hold; no loaded-absence fallback. */}},{entityTypes:[...CREATION_ENTITY_TYPES]});deathRegistrations.set(world,store);return true;}
+--- source-stage/CivilizationApocalypse_BP/scripts/integration/creationRuntime.js
++++ composed/CivilizationApocalypse_BP/scripts/integration/creationRuntime.js
+@@ -1,5 +1,5 @@
+ // @ts-check
+-import {FAMILY,META} from "./creationBindings.js";
++import {FAMILY,META,CREATION_ENTITY_TYPES} from "./creationBindings.js";
+ import {createPrivateFreshFixture,ACTIVATION_FAMILY} from "./privateFreshFixture.js";
+ import {REVIEWED_FRESH_FIXTURE} from "./freshFixtureTrust.js";
+ /** Lazy optional integration proposal. Construction does not read native world state.
+@@ -44,6 +44,6 @@
+    fixture.activate(player);last='private first-spawn fixture activation complete';return true;
+   }catch(error){last='private first-spawn activation held: '+String(error).slice(0,180);return false;}
+  }
+- function registerDeaths(){if(registered)return false;deps.world.afterEvents.entityDie.subscribe((/** @type {any} */e)=>{try{const s=activeStore();if(!s)return;const h=e.deadEntity,tags=h.getTags();if(!Array.isArray(tags)||tags.length>64)throw Error("death identity unreadable");const claims=tags.filter(t=>typeof t==="string"&&t.startsWith("civpop:v1:"));if(claims.length!==1)return;const accepted=s.confirmDeath({groupId:claims[0].slice(10),id:String(h.id),typeId:h.typeId,tags:[...tags]});last=accepted?"exact physical death recorded; aggregate unchanged":"duplicate/untracked death ignored";}catch(e){last=`death held: ${String(e).slice(0,180)}`;}},{entityTypes:["minecraft:villager_v2","minecraft:iron_golem","civ_trial:swordsman"]});registered=true;return true;}
++ function registerDeaths(){if(registered)return false;deps.world.afterEvents.entityDie.subscribe((/** @type {any} */e)=>{try{const s=activeStore();if(!s)return;const h=e.deadEntity,tags=h.getTags();if(!Array.isArray(tags)||tags.length>64)throw Error("death identity unreadable");const claims=tags.filter(t=>typeof t==="string"&&t.startsWith("civpop:v1:"));if(claims.length!==1)return;const accepted=s.confirmDeath({groupId:claims[0].slice(10),id:String(h.id),typeId:h.typeId,tags:[...tags]});last=accepted?"exact physical death recorded; aggregate unchanged":"duplicate/untracked death ignored";}catch(e){last=`death held: ${String(e).slice(0,180)}`;}},{entityTypes:[...CREATION_ENTITY_TYPES]});registered=true;return true;}
+  return{activeStore,statusLines,command,registerDeaths,onInitialSpawn};
+ }
+--- source-stage/CivilizationApocalypse_BP/scripts/integration/privateFreshFixture.js
++++ composed/CivilizationApocalypse_BP/scripts/integration/privateFreshFixture.js
+@@ -1,6 +1,6 @@
+ // @ts-check
+ import {REVIEWED_FRESH_FIXTURE} from './freshFixtureTrust.js';
+-import {createCreationBindings,FAMILY,META} from './creationBindings.js';
++import {createCreationBindings,FAMILY,META,CUSTOM_CREATION_ENTITY_TYPES} from './creationBindings.js';
+ import {createInitialKingdom,serializeKingdom} from '../kingdom/state.js';
+ export const ACTIVATION_FAMILY='civ:creation_activation:',ACTIVATION_KEY=ACTIVATION_FAMILY+'v1',OBJECTIVE='ca_fresh_owner';
+ const LIMITS=Object.freeze({allKeys:4096,entities:64,tags:64,tagChars:256,markerBytes:16384});
+@@ -47,7 +47,7 @@
+    const seen=new Set();for(const entity of rows){
+     const id=native(()=>entity.id),type=native(()=>entity.typeId),valid=native(()=>entity.isValid),tags=native(()=>entity.getTags());
+     if(typeof id!=='string'||!id||id.length>128||seen.has(id)||typeof type!=='string'||valid!==true||!Array.isArray(tags)||tags.length>LIMITS.tags||tags.some(t=>typeof t!=='string'||t.length>LIMITS.tagChars))fail('loaded census identity/tags unreadable');seen.add(id);
+-    if(type==='civ_trial:swordsman'||tags.some(t=>/^(?:civpop:|civbirth:|civbesiege:)/.test(t)))fail('loaded population/siege history exists');
++    if(CUSTOM_CREATION_ENTITY_TYPES.includes(type)||tags.some(t=>/^(?:civpop:|civbirth:|civbesiege:)/.test(t)))fail('loaded population/siege history exists');
+    }
+   }
+  }

@@ -1,0 +1,131 @@
+--- original42/dev/lib/content-packs.mjs
++++ review-overlay/dev/lib/content-packs.mjs
+@@ -9,9 +9,9 @@
+     e.isDirectory() ? jsonFiles(join(dir,e.name)) : e.name.endsWith(".json") ? [join(dir,e.name)] : []);
+ 
+ /** Validate the actual BP/RP graph and referenced custom rendering assets, not a native parser. */
+-export function contentPackProblems(packs,{requiredEntities=REQUIRED_ENTITY_IDS}={}) {
++export function contentPackProblems(packs,{requiredEntities=REQUIRED_ENTITY_IDS,readFile=readFileSync,listJson=jsonFiles,fileExists=existsSync}={}) {
+     const problems=[], loaded=[], identifiers=new Set();
+-    const read=(file)=>{try{return JSON.parse(readFileSync(file,"utf8"));}catch(error){problems.push(`unreadable content JSON ${file}: ${String(error)}`);return {};}};
++    const read=(file)=>{try{return JSON.parse(readFile(file,"utf8"));}catch(error){problems.push(`unreadable content JSON ${file}: ${String(error)}`);return {};}};
+     for(const pack of packs) {
+         const manifest=read(join(pack.root,"manifest.json"));
+         loaded.push({...pack,manifest});
+@@ -25,7 +25,7 @@
+         if(!triple(manifest.header?.min_engine_version))problems.push(`missing content pack engine version in ${pack.root}`);
+         const types=(manifest.modules??[]).map(m=>m.type);
+         if(pack.kind==="resource_packs" && (types.length!==1||types[0]!=="resources"))problems.push(`resource pack ${pack.root} requires one resources module`);
+-        if(pack.kind==="behavior_packs" && jsonFiles(join(pack.root,"entities")).length && !types.includes("data"))problems.push(`entity behavior pack ${pack.root} requires a data module`);
++        if(pack.kind==="behavior_packs" && listJson(join(pack.root,"entities")).length && !types.includes("data"))problems.push(`entity behavior pack ${pack.root} requires a data module`);
+     }
+     for(const pack of loaded)for(const dependency of pack.manifest.dependencies??[])if(dependency.uuid) {
+         const matches=loaded.filter(p=>p.manifest.header?.uuid===dependency.uuid);
+@@ -34,14 +34,14 @@
+     }
+     const clients=new Map(), geometries=new Map(), animations=new Map(), controllers=new Map();
+     for(const pack of loaded.filter(p=>p.kind==="resource_packs")) {
+-        for(const file of jsonFiles(join(pack.root,"models","entity")))for(const geometry of read(file)["minecraft:geometry"]??[]) {
++        for(const file of listJson(join(pack.root,"models","entity")))for(const geometry of read(file)["minecraft:geometry"]??[]) {
+             const id=geometry.description?.identifier;
+             if(geometries.has(id))problems.push(`duplicate geometry ${id}`);
+             geometries.set(id,geometry);
+         }
+-        for(const file of jsonFiles(join(pack.root,"animations")))for(const [id,animation] of Object.entries(read(file).animations??{}))animations.set(id,animation);
+-        for(const file of jsonFiles(join(pack.root,"render_controllers")))for(const [id,controller] of Object.entries(read(file).render_controllers??{}))controllers.set(id,controller);
+-        for(const file of jsonFiles(join(pack.root,"entity"))) {
++        for(const file of listJson(join(pack.root,"animations")))for(const [id,animation] of Object.entries(read(file).animations??{}))animations.set(id,animation);
++        for(const file of listJson(join(pack.root,"render_controllers")))for(const [id,controller] of Object.entries(read(file).render_controllers??{}))controllers.set(id,controller);
++        for(const file of listJson(join(pack.root,"entity"))) {
+             const description=read(file)["minecraft:client_entity"]?.description;
+             if(!description?.identifier){problems.push(`missing client entity identifier ${file}`);continue;}
+             if(clients.has(description.identifier))problems.push(`duplicate client entity ${description.identifier}`);
+@@ -65,8 +65,8 @@
+             if(builtinArrow&&path==="textures/entity/arrows")continue;
+             if(typeof path!=="string"||!/^textures\/[A-Za-z0-9_/-]+$/.test(path)){problems.push(`unsafe texture reference for ${d.identifier}`);continue;}
+             const file=join(root,`${path}.png`);
+-            if(!existsSync(file)){problems.push(`missing texture ${path} for ${d.identifier}`);continue;}
+-            const png=readFileSync(file);
++            if(!fileExists(file)){problems.push(`missing texture ${path} for ${d.identifier}`);continue;}
++            const png=readFile(file);
+             if(png.length<24||!png.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])))problems.push(`invalid PNG texture ${path}`);
+         }
+         for(const id of Object.values(d.animations??{})) {
+@@ -88,7 +88,7 @@
+         for(const entry of d.scripts?.animate??[])for(const alias of typeof entry==="string"?[entry]:Object.keys(entry))if(!aliases.has(alias))problems.push(`unknown animation alias ${alias} for ${d.identifier}`);
+     }
+     const behaviors=new Set(),shooters=[];
+-    for(const pack of loaded.filter(p=>p.kind==="behavior_packs"))for(const file of jsonFiles(join(pack.root,"entities"))) {
++    for(const pack of loaded.filter(p=>p.kind==="behavior_packs"))for(const file of listJson(join(pack.root,"entities"))) {
+         const definition=read(file)["minecraft:entity"],id=definition?.description?.identifier;
+         for(const components of [definition?.components,...Object.values(definition?.component_groups??{})]){
+             const shooter=components?.["minecraft:shooter"];
+@@ -110,9 +110,9 @@
+ }
+ 
+ /** Build both world binding lists from shipped manifests, never stale source-world bindings. */
+-export function packBindings(packs, kind) {
++export function packBindings(packs, kind, {readFile=readFileSync}={}) {
+     return packs.filter(p=>p.kind===kind).map(p=>{
+-        const m=JSON.parse(readFileSync(join(p.root,"manifest.json"),"utf8"));
++        const m=JSON.parse(readFile(join(p.root,"manifest.json"),"utf8"));
+         return {pack_id:m.header.uuid,version:m.header.version};
+     });
+ }
+--- original42/dev/lib/developer-preview.mjs
++++ review-overlay/dev/lib/developer-preview.mjs
+@@ -39,14 +39,21 @@
+  const root=realpathSync(resolve(projectRoot));noLinks(projectRoot);
+  const packs=PACKS.map(p=>({...p,root:join(root,p.source)}));let total=0;
+  for(const p of packs){p.files=tree(p.root).map(f=>{if(f.name==='level.dat'||f.name==='level.dat_old'||f.name==='levelname.txt'||f.name.startsWith('db/')||/\.(mcworld|mctemplate)$/i.test(f.name))refuse('world/database payload is not a pack preview: '+f.name);if(!canonicalName(f.name)||f.bytes>PREVIEW_LIMITS.fileBytes)refuse('unsafe/oversize source entry: '+f.name);total+=f.bytes;if(total>PREVIEW_LIMITS.totalBytes)refuse('source byte limit exceeded');const bytes=readBounded(f.path,PREVIEW_LIMITS.fileBytes);if(bytes.length!==f.bytes||bytes.length>PREVIEW_LIMITS.fileBytes)refuse('source changed/oversize during read');return{name:f.name,bytes:bytes.length,sha256:hash(bytes),data:bytes};});if(!p.files.length||p.files.length>PREVIEW_LIMITS.filesPerPack)refuse('source file-count limit');}
+- const identities=new Set();for(const p of packs){p.manifest=json(join(p.root,'manifest.json'));for(const entry of [p.manifest.header,...(p.manifest.modules??[])]){const id=String(entry?.uuid??'').toLowerCase();if(identities.has(id))refuse('duplicate canonical pack/module UUID');identities.add(id);}}
+- const problems=contentPackProblems(packs);if(problems.length)refuse('paired content preflight failed: '+problems.join('; '));
+- const behavior=json(join(packs[0].root,'manifest.json'));
++ // Graph/binding validation consumes ONLY the already bounded source snapshot.
++ // It must not reopen growing files or recursively discover new linked content.
++ const sourceFiles=new Map(packs.flatMap(p=>p.files.map(f=>[resolve(p.root,f.name),f.data])));
++ const readSource=(file,encoding)=>{const data=sourceFiles.get(resolve(file));if(!data)refuse('source preflight snapshot file missing: '+file);return encoding?data.toString(encoding):data;};
++ const listSourceJson=dir=>[...sourceFiles.keys()].filter(file=>inside(resolve(dir),file)&&file.endsWith('.json')).sort();
++ const sourceExists=file=>sourceFiles.has(resolve(file));
++ const sourceManifest=p=>JSON.parse(readSource(join(p.root,'manifest.json'),'utf8'));
++ const identities=new Set();for(const p of packs){p.manifest=sourceManifest(p);for(const entry of [p.manifest.header,...(p.manifest.modules??[])]){const id=String(entry?.uuid??'').toLowerCase();if(identities.has(id))refuse('duplicate canonical pack/module UUID');identities.add(id);}}
++ const problems=contentPackProblems(packs,{readFile:readSource,listJson:listSourceJson,fileExists:sourceExists});if(problems.length)refuse('paired content preflight failed: '+problems.join('; '));
++ const behavior=sourceManifest(packs[0]);
+  const scripts=(behavior.modules??[]).filter(m=>m.type==='script');
+  if(scripts.length!==1||scripts[0].language!=='javascript'||!canonicalName(scripts[0].entry)||!scripts[0].entry.endsWith('.js')||!packs[0].files.some(f=>f.name===scripts[0].entry))refuse('behavior script entry must resolve inside complete pack');
+  if(!(behavior.dependencies??[]).some(d=>d.module_name==='@minecraft/server'&&d.version==='2.7.0'))refuse('expected stable @minecraft/server2.7.0 dependency');
+- for(const p of packs)p.manifest=json(join(p.root,'manifest.json'));
+- const bindings={world_behavior_packs:packBindings(packs,'behavior_packs'),world_resource_packs:packBindings(packs,'resource_packs')};
++ for(const p of packs)p.manifest=sourceManifest(p);
++ const bindings={world_behavior_packs:packBindings(packs,'behavior_packs',{readFile:readSource}),world_resource_packs:packBindings(packs,'resource_packs',{readFile:readSource})};
+  for(const p of packs)equalInventory(inventory(p.root),p.files.map(({data,...f})=>f),'source changed during preflight');
+  return{root,packs,bindings,total};
+ }
+--- original42/dev/test/developer-preview.test.mjs
++++ review-overlay/dev/test/developer-preview.test.mjs
+@@ -1,3 +1,5 @@
++import fs from 'node:fs';
++import {syncBuiltinESMExports} from 'node:module';
+ import test from 'node:test';
+ import assert from 'node:assert/strict';
+ import {copyFileSync,openSync,ftruncateSync,closeSync,existsSync,lstatSync,mkdirSync,mkdtempSync,readFileSync,readdirSync,realpathSync,rmSync,symlinkSync,unlinkSync,writeFileSync} from 'node:fs';
+@@ -37,3 +39,19 @@
+ function resizeSparse(path,size){const fd=openSync(path,'r+');try{ftruncateSync(fd,size);}finally{closeSync(fd);}}
+ test('oversized existing addon is refused before hashing, preserving original preview and historical files',t=>{const f=fixture(t),r=f.build(),history=f.historical(),path=join(r.output,'developer-preview.mcaddon');resizeSparse(path,80*1024*1024+1);assert.throws(()=>f.validate(r.output),/inventory byte limit exceeded before hashing/);assert.equal(lstatSync(path).size,80*1024*1024+1);assert.deepEqual(f.historical(),history);});
+ test('source growth beyond file cap during publish is refused before hashing without undoing concurrent edit',t=>{const f=fixture(t),history=f.historical(),path=join(f.root,'CivilizationApocalypse_BP/scripts/main.js');assert.throws(()=>f.build('grow',{hooks:{beforePublish(){resizeSparse(path,16*1024*1024+1);}}}),/inventory byte limit exceeded before hashing/);assert.equal(lstatSync(path).size,16*1024*1024+1);assert.deepEqual(readdirSync(join(f.root,'dist/developer-previews')),[]);assert.deepEqual(f.historical(),history);});
++
++
++test('independent: graph and bindings consume bounded source snapshots without raw source reopen',t=>{
++ const f=fixture(t),original=fs.readFileSync,raw=[];
++ fs.readFileSync=function(path,...args){const text=typeof path==='string'?resolve(path):'';if(text.startsWith(join(f.root,'CivilizationApocalypse_BP'))||text.startsWith(join(f.root,'CivilizationApocalypse_RP'))){raw.push(text);throw Error('UNBOUNDED_SOURCE_REOPEN: '+text);}return original.call(this,path,...args);};syncBuiltinESMExports();
++ try{assert.doesNotThrow(()=>buildDeveloperPreview({projectRoot:f.root,label:'snapshot'}));assert.deepEqual(raw,[]);}finally{fs.readFileSync=original;syncBuiltinESMExports();}
++ assert.equal(existsSync(join(f.root,'dist/developer-previews')),false);
++});
++
++test('independent: a source growing immediately after descriptor size check is refused by growth probe',t=>{
++ const f=fixture(t),target=join(f.root,'CivilizationApocalypse_BP/scripts/main.js'),open=fs.openSync,stat=fs.fstatSync,descriptors=new Map();let grew=false;
++ fs.openSync=function(path,...args){const fd=open.call(this,path,...args);descriptors.set(fd,typeof path==='string'?resolve(path):'');return fd;};
++ fs.fstatSync=function(fd,...args){const before=stat.call(this,fd,...args);if(!grew&&descriptors.get(fd)===target){grew=true;const write=open(target,'r+');try{ftruncateSync(write,16*1024*1024+1);}finally{closeSync(write);}}return before;};syncBuiltinESMExports();
++ try{assert.throws(()=>buildDeveloperPreview({projectRoot:f.root,label:'grow-at-fstat'}),/file grew during bounded read/);}finally{fs.openSync=open;fs.fstatSync=stat;syncBuiltinESMExports();}
++ assert.equal(grew,true);assert.equal(lstatSync(target).size,16*1024*1024+1);assert.equal(existsSync(join(f.root,'dist/developer-previews')),false);
++});

@@ -1,0 +1,228 @@
+{
+  "utc": "2026-11-08T23:25:51.966564+00:00",
+  "decision": "READY FOR CENTRAL PROMOTION using corrected independent42 manifest ONLY; root full/native gates still required",
+  "scope": "Independent exact source/baseline/artifact review and focused/lightcases; all fixes confined new independent-review/overlay. Original42 author freeze untouched.",
+  "finding": {
+    "id": "bounded-source-reopen",
+    "severity": "blocker until corrected overlay used",
+    "before": "bounded-before.log: intercepted raw source reopen fails without large allocation",
+    "description": "contentPackProblems and packBindings reopened bounded source JSON/PNG using unbounded readFileSync after snapshot capture, bypassing descriptor cap for concurrent growth.",
+    "resolution": "Graph and binding evaluation receive read/list/existence capabilities backed only by captured bounded snapshot; manifests reuse snapshot too. Existing default content/release validation API preserved. Final source inventory still revalidates through bounded reads.",
+    "after": "bounded-after.log:2/2 PASS202.0773ms; also immediate post-fstat sparse growth refuses via growth probe"
+  },
+  "correctedManifest": {
+    "path": "independent-review/PROMOTION-HASHES.json",
+    "sha256": "FC2B03A2848A3A8330F8577A5AE736815D3800C4BED2BE7C4B52BC7BD9EDD222",
+    "paths": 42,
+    "changedPaths": [
+      "dev/lib/content-packs.mjs",
+      "dev/lib/developer-preview.mjs",
+      "dev/test/developer-preview.test.mjs"
+    ],
+    "allRuntimeBytesMatch": true,
+    "allOriginalMainBaselinesMatch": true
+  },
+  "originalManifest": {
+    "sha256": "5154512B6829274D56DC58F25F5891B31EF61B8D012FBD7A91DCDDBEAE8C8214",
+    "all42StagePinsVerified": true,
+    "unchanged": true
+  },
+  "tests": {
+    "focused": {
+      "pass": 190,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "durationMs": 5683.607,
+      "log": "focused-final.log"
+    },
+    "existingContracts": {
+      "pass": 43,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "durationMs": 1515.1148,
+      "log": "contracts-final.log"
+    },
+    "strictProductionTSC": {
+      "exitCode": 0,
+      "log": "strict-tsc.log",
+      "nodeToolsNotCoveredByTSC": true
+    }
+  },
+  "preservation": {
+    "main165AndEntireRPMatchCorrectedFreeze": true,
+    "all14HistoricalArtifactFilesMatchOriginalPins": [
+      {
+        "group": "historical165",
+        "path": "dist/developer-previews/source165-pack-preview-final-20261107/developer-preview.mcaddon",
+        "sha256": "40BF2EEFD3971112165C6A34B0B5D950B6BB1438825160E0AB0A7F8AB189927F",
+        "bytes": 818557
+      },
+      {
+        "group": "historical165",
+        "path": "dist/developer-previews/source165-pack-preview-final-20261107/DEVELOPER-PREVIEW.txt",
+        "sha256": "A2DA90044A04BCF47A56AC6F7591F016A7C0D607A52F24E53AC3F967B8C40DFE",
+        "bytes": 344
+      },
+      {
+        "group": "historical165",
+        "path": "dist/developer-previews/source165-pack-preview-final-20261107/packs/behavior.mcpack",
+        "sha256": "3B8DC2DC03692FFF400D9351A9FA81A6354209AD9D763D605173BB2C3B6861DF",
+        "bytes": 825630
+      },
+      {
+        "group": "historical165",
+        "path": "dist/developer-previews/source165-pack-preview-final-20261107/packs/resources.mcpack",
+        "sha256": "6017C2D561405843576B9B910DD25F7AA9ABC4C0900DB976B01A855651F70DBC",
+        "bytes": 3578
+      },
+      {
+        "group": "historical165",
+        "path": "dist/developer-previews/source165-pack-preview-final-20261107/preview-receipt.json",
+        "sha256": "AA46AFA000538E283330F1DD3C24A43CCB774753A34D391B05BC1E0215335222",
+        "bytes": 33289
+      },
+      {
+        "group": "historical165",
+        "path": "dist/developer-previews/source165-pack-preview-final-20261107/world-bindings/world_behavior_packs.json",
+        "sha256": "01AF74386555C60D2E900BD9AC47F5DF1EBF128CA79B3C10F606C3BC8F0FFDD0",
+        "bytes": 116
+      },
+      {
+        "group": "historical165",
+        "path": "dist/developer-previews/source165-pack-preview-final-20261107/world-bindings/world_resource_packs.json",
+        "sha256": "C6D58F9C10A91AEAF20D18E14C12B7FD0F458598D59B35A99C704877658E5D81",
+        "bytes": 116
+      },
+      {
+        "group": "candidate176",
+        "path": "dev/staging/roadmap-archer-preview-integration/runtime/dist/developer-previews/candidate176-review/developer-preview.mcaddon",
+        "sha256": "30178704B9D13141FDF1444D1F2F1D2ABDA79E0BCF883B8D97579AC7C46AE379",
+        "bytes": 837417
+      },
+      {
+        "group": "candidate176",
+        "path": "dev/staging/roadmap-archer-preview-integration/runtime/dist/developer-previews/candidate176-review/DEVELOPER-PREVIEW.txt",
+        "sha256": "A2DA90044A04BCF47A56AC6F7591F016A7C0D607A52F24E53AC3F967B8C40DFE",
+        "bytes": 344
+      },
+      {
+        "group": "candidate176",
+        "path": "dev/staging/roadmap-archer-preview-integration/runtime/dist/developer-previews/candidate176-review/packs/behavior.mcpack",
+        "sha256": "5EBA59A5045C94793B3383CEC4441D67052456A791C480C0D98518B8395B6812",
+        "bytes": 842816
+      },
+      {
+        "group": "candidate176",
+        "path": "dev/staging/roadmap-archer-preview-integration/runtime/dist/developer-previews/candidate176-review/packs/resources.mcpack",
+        "sha256": "01F49FE07390AB80996CC7F14ACDC7A4E1CF81BF6722272C6C3FD275D806789B",
+        "bytes": 6226
+      },
+      {
+        "group": "candidate176",
+        "path": "dev/staging/roadmap-archer-preview-integration/runtime/dist/developer-previews/candidate176-review/preview-receipt.json",
+        "sha256": "E66CBA3E70265FE58BCECC9A0166C708D33657AF3CE43C3903DEFE57C5501ECE",
+        "bytes": 35342
+      },
+      {
+        "group": "candidate176",
+        "path": "dev/staging/roadmap-archer-preview-integration/runtime/dist/developer-previews/candidate176-review/world-bindings/world_behavior_packs.json",
+        "sha256": "01AF74386555C60D2E900BD9AC47F5DF1EBF128CA79B3C10F606C3BC8F0FFDD0",
+        "bytes": 116
+      },
+      {
+        "group": "candidate176",
+        "path": "dev/staging/roadmap-archer-preview-integration/runtime/dist/developer-previews/candidate176-review/world-bindings/world_resource_packs.json",
+        "sha256": "C6D58F9C10A91AEAF20D18E14C12B7FD0F458598D59B35A99C704877658E5D81",
+        "bytes": 116
+      }
+    ],
+    "releaseToolsNotAmongProposedChanges": [
+      {
+        "path": "dev/build-template.mjs",
+        "currentSha256": "98D5200286DD17BF8BC0681646B537D59E99A1D34BF2883AC571E2C48025C2BC"
+      },
+      {
+        "path": "dev/check-release.mjs",
+        "currentSha256": "FDDEBD3A95ACA87439F0499108680B1003DA1B0544F846C46DA39A10068EA7AE"
+      },
+      {
+        "path": "dev/validate-template.mjs",
+        "currentSha256": "C354A38901B45EE29A7AB7AEE9C525C4D5A15434EA62FBF0C1D41136B21BC571"
+      }
+    ],
+    "originalRuntimeTwoEOLOnlyDifferences": "content-packs.mjs and integration.test.mjs; independent runtime synchronized to exact proposed pins"
+  },
+  "corrected176Artifact": {
+    "files": [
+      {
+        "path": "dev/staging/roadmap-archer-preview-integration/independent-review/runtime/dist/developer-previews/independent-bounded176/developer-preview.mcaddon",
+        "sha256": "30178704B9D13141FDF1444D1F2F1D2ABDA79E0BCF883B8D97579AC7C46AE379",
+        "bytes": 837417
+      },
+      {
+        "path": "dev/staging/roadmap-archer-preview-integration/independent-review/runtime/dist/developer-previews/independent-bounded176/DEVELOPER-PREVIEW.txt",
+        "sha256": "A2DA90044A04BCF47A56AC6F7591F016A7C0D607A52F24E53AC3F967B8C40DFE",
+        "bytes": 344
+      },
+      {
+        "path": "dev/staging/roadmap-archer-preview-integration/independent-review/runtime/dist/developer-previews/independent-bounded176/packs/behavior.mcpack",
+        "sha256": "5EBA59A5045C94793B3383CEC4441D67052456A791C480C0D98518B8395B6812",
+        "bytes": 842816
+      },
+      {
+        "path": "dev/staging/roadmap-archer-preview-integration/independent-review/runtime/dist/developer-previews/independent-bounded176/packs/resources.mcpack",
+        "sha256": "01F49FE07390AB80996CC7F14ACDC7A4E1CF81BF6722272C6C3FD275D806789B",
+        "bytes": 6226
+      },
+      {
+        "path": "dev/staging/roadmap-archer-preview-integration/independent-review/runtime/dist/developer-previews/independent-bounded176/preview-receipt.json",
+        "sha256": "00794FC14856E77904DFD9AE8727EBEE1411A87F522F28B846BE6DBB9C2EE403",
+        "bytes": 35345
+      },
+      {
+        "path": "dev/staging/roadmap-archer-preview-integration/independent-review/runtime/dist/developer-previews/independent-bounded176/world-bindings/world_behavior_packs.json",
+        "sha256": "01AF74386555C60D2E900BD9AC47F5DF1EBF128CA79B3C10F606C3BC8F0FFDD0",
+        "bytes": 116
+      },
+      {
+        "path": "dev/staging/roadmap-archer-preview-integration/independent-review/runtime/dist/developer-previews/independent-bounded176/world-bindings/world_resource_packs.json",
+        "sha256": "C6D58F9C10A91AEAF20D18E14C12B7FD0F458598D59B35A99C704877658E5D81",
+        "bytes": 116
+      }
+    ],
+    "validation": {
+      "valid": true,
+      "kind": "CivilizationApocalypseDeveloperPreview",
+      "sourceFiles": 176,
+      "pairedPacks": 2,
+      "worldIncluded": false,
+      "releaseApproved": false,
+      "cleanStarterVerified": false,
+      "bindingStatus": {
+        "state": "NOT_CHECKED",
+        "scope": "No world supplied; examples are not installed bindings or clean-world proof"
+      },
+      "receiptSha256": "00794FC14856E77904DFD9AE8727EBEE1411A87F522F28B846BE6DBB9C2EE403",
+      "archiveSha256": "30178704B9D13141FDF1444D1F2F1D2ABDA79E0BCF883B8D97579AC7C46AE379"
+    },
+    "archiveMatchesOriginalAuthor176": true
+  },
+  "retainedIntermediateEvidence": [
+    "bounded-before.log",
+    "focused-before-api-fixture.log",
+    "focused-before-message-fix.log"
+  ],
+  "intermediateFixtureFixes": [
+    "Copied genuine server2.7 API declaration to isolated test runtime",
+    "Missing captured-source manifest reason retains preflight wording; existing assertion unchanged"
+  ],
+  "limitations": [
+    "Central full suite not rerun; root must integrate corrected42 then run all required gates",
+    "No import/install/native archer rendering/firing/friendlyHP/rejoin acceptance performed",
+    "Private compiled trust remains literal null; genuine source identity/receipt review separate",
+    "Pack binding examples NOT_CHECKED; no database or clean-starter proof",
+    "No release-gate bypass; cavalry and aggregate casualty authority unfinished"
+  ]
+}

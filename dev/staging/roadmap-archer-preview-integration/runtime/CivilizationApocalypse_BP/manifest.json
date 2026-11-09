@@ -1,0 +1,58 @@
+{
+    "format_version": 2,
+    "header": {
+        "name": "Civilization Apocalypse Behavior Pack",
+        "description": "Autonomous kingdom simulation with generated districts, gates, population representatives and a development-gated Commander's Ledger.",
+        "uuid": "fd04cb50-dddc-4ebe-83fc-5b5375819bcb",
+        "version": [
+            1,
+            0,
+            0
+        ],
+        "min_engine_version": [
+            1,
+            26,
+            20
+        ]
+    },
+    "modules": [
+        {
+            "type": "script",
+            "language": "javascript",
+            "uuid": "eeb1f41d-2811-4f68-9d0b-7303188f3867",
+            "version": [
+                1,
+                0,
+                0
+            ],
+            "entry": "scripts/main.js"
+        },
+        {
+            "type": "data",
+            "uuid": "23b4598a-4af6-4158-ae9d-8126464a63d1",
+            "version": [
+                1,
+                0,
+                0
+            ]
+        }
+    ],
+    "dependencies": [
+        {
+            "module_name": "@minecraft/server",
+            "version": "2.7.0"
+        },
+        {
+            "module_name": "@minecraft/server-ui",
+            "version": "2.1.0"
+        },
+        {
+            "uuid": "e634c636-7b98-49f7-81cd-13483bfa3f9f",
+            "version": [
+                1,
+                0,
+                0
+            ]
+        }
+    ]
+}

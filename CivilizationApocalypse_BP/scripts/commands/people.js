@@ -15,7 +15,7 @@ import { reply } from "./reply.js";
  */
 
 /**
- * @param {{ statusLines: () => string[], inspectCommand?:(message:string)=>string[],travelCommand?:(message:string)=>string[],militaryCommand?:(message:string,event:any)=>string[],destinationsCommand?:(message:string,event:any)=>Promise<string[]>,routePreviewCommand?:(message:string,event:any)=>Promise<string[]>,stopTravel?:()=>void }} runtime the runtime created in main.js, so the counters the
+ * @param {{ statusLines: () => string[],creationCommand?:(message:string,player:any)=>string[], inspectCommand?:(message:string)=>string[],travelCommand?:(message:string)=>string[],militaryCommand?:(message:string,event:any)=>string[],destinationsCommand?:(message:string,event:any)=>Promise<string[]>,routePreviewCommand?:(message:string,event:any)=>Promise<string[]>,stopTravel?:()=>void }} runtime the runtime created in main.js, so the counters the
  *   command prints are the ones the engine keeps.
  * @returns {boolean} true the first time it is called
  */
@@ -30,6 +30,12 @@ export function registerPeopleCommand(runtime) {
                 return;
             }
             try {
+                if(/^creation(?:\s|$)/.test(event.message.trim())){
+                    let lines;
+                    try {lines=runtime.creationCommand?.(event.message.trim().slice(8).trim(),event.sourceEntity)??["Creation history is unavailable."];}
+                    catch(error){lines=[`Creation history refused: ${String(error)}`];}
+                    reply(lines,event);return;
+                }
                 if(/^inspect(?:\s|$)/.test(event.message.trim())){
                     reply(runtime.inspectCommand?.(event.message.trim().slice(7).trim())??["Population inspection is unavailable."],event);return;
                 }

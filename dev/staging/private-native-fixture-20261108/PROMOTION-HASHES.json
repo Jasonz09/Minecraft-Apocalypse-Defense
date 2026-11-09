@@ -1,0 +1,133 @@
+{
+  "utc": "2026-11-08T23:34:15.900570+00:00",
+  "scope": "STAGED PRIVATE PROPOSAL ONLY; genuine source-derived descriptor, private176 candidate and unopened derivative; no active/install/native writes",
+  "proposedTrust": {
+    "source": "proposed/freshFixtureTrust.js",
+    "destination": "CivilizationApocalypse_BP\\scripts\\integration\\freshFixtureTrust.js",
+    "sha256": "FF54A9A934AC852DA80309FCB4A951C955E6443DEBF4BE7BEBCEC8A5292ED827",
+    "activeNullBaselineSha256": "5914C01773380ED8DF19B8AB7A271251F65E5EA6EDC7128AB0110808ACA7EADF"
+  },
+  "genuineSourceChain": [
+    {
+      "path": "dist\\vanilla-never-owner-backup-20261108.json",
+      "sha256": "BE44A5BA9E47C2AB890083B1FAD33657FEAF5B5B122C61A7C026CF0281EFA114"
+    },
+    {
+      "path": "dev\\staging\\population-archer-readiness\\native-evidence\\witnessed-plan-20261108.json",
+      "sha256": "DD513023209D6333A394DF06EE191AB5E16B4C40CDC703E0158FD36150E29621"
+    },
+    {
+      "path": "dev\\staging\\population-archer-readiness\\native-evidence\\closed-source-evidence-20261108.json",
+      "sha256": "14324CC415D652399A68F75997FEC19D311B972912DF2EDE8F14165831F03261"
+    },
+    {
+      "path": "dev\\staging\\population-archer-readiness\\native-evidence\\exact-scoreboard-identity-audit-20261108.json",
+      "sha256": "784DFEEBD6F74B494B0F64E996AC360E1680B692557F478BB220F14387302230"
+    },
+    {
+      "path": "dev\\staging\\population-archer-readiness\\closed-fixture-preflight-v2.py",
+      "sha256": "752AFA1E03C5228C0AB22020CA2265E3331E34F79435FF62C876F4110DFB239C"
+    },
+    {
+      "path": "dev\\staging\\population-archer-readiness\\closed-fixture-preflight-v2.test.py",
+      "sha256": "439A805E369182B73A4043EEA875D71478BC8961012AAB08F015885B71E58A32"
+    },
+    {
+      "path": "dev\\staging\\population-archer-readiness\\native-evidence\\preflight-v2-tests.log",
+      "sha256": "216FA3B151FAF2F36CA9B6D4E2F0708A113EE7E1B91910F326D6B6BBFA853E6A"
+    }
+  ],
+  "pristineSourceAll9FilesStillExact": true,
+  "stagedPrivatePack": {
+    "files": 176,
+    "plan": "PRIVATE-PACK-PLAN.json",
+    "sha256": "4A716D5F25D740CC4B04B12B99B7665BF0D7F694C380A7C21996F0A7D26EFA67",
+    "onlyOverride": {
+      "destination": "CivilizationApocalypse_BP/scripts/integration/freshFixtureTrust.js",
+      "baselineSha256": "5914C01773380ED8DF19B8AB7A271251F65E5EA6EDC7128AB0110808ACA7EADF",
+      "proposedSha256": "FF54A9A934AC852DA80309FCB4A951C955E6443DEBF4BE7BEBCEC8A5292ED827"
+    }
+  },
+  "derivative": {
+    "plan": "DERIVATIVE-PLAN.json",
+    "sha256": "4C28209E224640F1DB5B9D541FA6668AE3E8E4711673F3AD3272E6BEEF079F6F",
+    "files": [
+      {
+        "path": "db/000003.log",
+        "sha256": "6990DAB95731F88B8F20D79819C63BB2E2EFBCD1FD3A462E2C6CB14FF58AE5EE"
+      },
+      {
+        "path": "db/CURRENT",
+        "sha256": "1005A525006F148C86EFCBFB36C6EAC091B311532448010F70F7DE9A68007167"
+      },
+      {
+        "path": "db/MANIFEST-000002",
+        "sha256": "E292F241DAAFC3DF90F3E2D339C61C6E2787A0D0739AAC764E1EA9BB8544EE97"
+      },
+      {
+        "path": "level.dat",
+        "sha256": "CB327CEBBD37FB02A40C87F4CCC59B3C1BB82DC559B6EA6FFE0CA386BA6A64C1"
+      },
+      {
+        "path": "level.dat_old",
+        "sha256": "8731DB09138F846358C39D61591186ED37529814BD171426340C463987CAD7A8"
+      },
+      {
+        "path": "levelname.txt",
+        "sha256": "3945BE28071A1F35C83266D7E47D91F1295384756E785F2975B92A83ABF50911"
+      },
+      {
+        "path": "world_behavior_packs.json",
+        "sha256": "78F697891E871196A7B220ECE95B6D4D4AE46F6B90FF212450BA34A7694D6C1D"
+      },
+      {
+        "path": "world_icon.jpeg",
+        "sha256": "DCD3AC6AB08F2522C8CB4F634B71AE6B4E8ED6AEAD86483B5FD9BBFABD7333D7"
+      },
+      {
+        "path": "world_resource_packs.json",
+        "sha256": "B96D0E838EF7545FA6C8FF9732942954575C4AD27D1F192C669C450C1F12B227"
+      }
+    ],
+    "changedOnly": [
+      "world_behavior_packs.json",
+      "world_resource_packs.json"
+    ],
+    "nativeCatalog": false,
+    "opened": false
+  },
+  "focused": {
+    "tests": 11,
+    "pass": 11,
+    "fail": 0,
+    "durationMs": 110.5762,
+    "log": "focused.log",
+    "fakeWorldOnly": true
+  },
+  "strictTypecheck": {
+    "exitCode": 0,
+    "log": "typecheck.log",
+    "privateScriptsMatchOverlay": true
+  },
+  "evidenceFiles": {
+    "DERIVATIVE-PLAN.json": "4C28209E224640F1DB5B9D541FA6668AE3E8E4711673F3AD3272E6BEEF079F6F",
+    "descriptor.json": "C170AE902447081BAE1619121336F769A68EE5E7596A507EAA251172B1ED68A1",
+    "descriptor.test.mjs": "EA551A27E4EA426BB41E287362084ED6814CFDBA7A01843E9CC04DDE7BD65C2A",
+    "focused.log": "415E978200149576C66746B050C0CCE9787713FB8E19309B7D7E31D70335D398",
+    "PRIVATE-PACK-PLAN.json": "4A716D5F25D740CC4B04B12B99B7665BF0D7F694C380A7C21996F0A7D26EFA67",
+    "README.md": "52F2C6008E113E57D69C8902E8D6213FB69ED7A187C05C4E02972A749ACC3B86",
+    "tsconfig.json": "220473726F5E715CD182EFA8BDE620B22D3B436107C04443D0FB9F0212897295",
+    "typecheck.log": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+  },
+  "activeTrustRemainsNull": true,
+  "compiledIntoActive": false,
+  "nativeAcceptance": false,
+  "fullVerificationNotRepeated": true,
+  "limitations": [
+    "Current storage evidence plus operator witness; not arbitrary erased/fullhistorical absence proof",
+    "Runtime native FakePlayer/id1/objective/score/caller/gate/source/census checks remain mandatory",
+    "First-hour initial-state gate; refused/evolved attempts require new pristine derivative",
+    "Public military city-source contract remains separate",
+    "Root review/full pass/closed-game install/native activation still pending"
+  ]
+}

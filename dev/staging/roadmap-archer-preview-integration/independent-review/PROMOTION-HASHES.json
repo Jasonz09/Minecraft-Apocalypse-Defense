@@ -1,0 +1,350 @@
+{
+  "utc": "2026-11-08T23:25:08.813140+00:00",
+  "scope": "Independent corrected42-path overlay; original42 unchanged. Use39 original sources +3 review-overlay sources.",
+  "expectedPackFiles": 176,
+  "proposedFiles": [
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/entities/archer.json",
+      "destination": "CivilizationApocalypse_BP/entities/archer.json",
+      "sha256": "660C1D0665C97910DD4B6291A8222069A8CC23F6E94DC59EBA440157979B4F30",
+      "bytes": 5578,
+      "baselineSha256": null,
+      "baselineBytes": null
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/entities/guard_arrow.json",
+      "destination": "CivilizationApocalypse_BP/entities/guard_arrow.json",
+      "sha256": "B3DEA57342313664AB1A66EE46806D75B1AA6697CA767CCDFE69508AC816F761",
+      "bytes": 1715,
+      "baselineSha256": null,
+      "baselineBytes": null
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/commands/military.js",
+      "destination": "CivilizationApocalypse_BP/scripts/commands/military.js",
+      "sha256": "C7BC09BEE785E83EEF13F31E1105156179236D59DC0F815F4571E0A1AE96E044",
+      "bytes": 6976,
+      "baselineSha256": "D1CD0E06EDC68133BED9E593F4DEDC98B6F5DF0DE48C65115A21E75C758383BB",
+      "baselineBytes": 6735
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/commands/people.js",
+      "destination": "CivilizationApocalypse_BP/scripts/commands/people.js",
+      "sha256": "B79FB7205A2F3186D08C7F0901053F2DC5872FD88B0B9CD8795853765BE7A448",
+      "bytes": 5046,
+      "baselineSha256": "61DBB52AF4C27D2DB75E0F6AD22296E150C88709C70610BB9F663EEC0387F559",
+      "baselineBytes": 4579
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/events/welcome.js",
+      "destination": "CivilizationApocalypse_BP/scripts/events/welcome.js",
+      "sha256": "AAEBED353A1302D8D25B5D2300708C63333D1AB2FBE91ADA2EBC7FDBF1DC5AC0",
+      "bytes": 1383,
+      "baselineSha256": "DB13FB3B27163CE821A4962D9AF5771583534B534E93DE4CC15D6E415BAB4E55",
+      "baselineBytes": 1201
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/integration/creationBindings.js",
+      "destination": "CivilizationApocalypse_BP/scripts/integration/creationBindings.js",
+      "sha256": "717741BBBC0E7E42391C7C84802AE8E5172766BF2009FD897454F20576A01433",
+      "bytes": 21505,
+      "baselineSha256": null,
+      "baselineBytes": null
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/integration/creationRuntime.js",
+      "destination": "CivilizationApocalypse_BP/scripts/integration/creationRuntime.js",
+      "sha256": "C7E8F075D53DE71B9E240A4C7637C64082B687268A02B5867381B44DDF34C17A",
+      "bytes": 5161,
+      "baselineSha256": null,
+      "baselineBytes": null
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/integration/freshFixtureTrust.js",
+      "destination": "CivilizationApocalypse_BP/scripts/integration/freshFixtureTrust.js",
+      "sha256": "5914C01773380ED8DF19B8AB7A271251F65E5EA6EDC7128AB0110808ACA7EADF",
+      "bytes": 386,
+      "baselineSha256": null,
+      "baselineBytes": null
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/integration/militaryLifecycleDiagnostics.js",
+      "destination": "CivilizationApocalypse_BP/scripts/integration/militaryLifecycleDiagnostics.js",
+      "sha256": "EA32B85E1642934434F9B355845F7194AB62C44B1E4FF640616E442E0BC9144D",
+      "bytes": 9507,
+      "baselineSha256": "527C1E7E6CE80F72561239787724C013090D06BC56827BB91C0C48FD9174BB4F",
+      "baselineBytes": 9367
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/integration/militarySelectionStore.js",
+      "destination": "CivilizationApocalypse_BP/scripts/integration/militarySelectionStore.js",
+      "sha256": "647C4A52ADE6B2DD18CAE4D989E068AB01DBECBFA440F0F5F81A61B291B050B4",
+      "bytes": 5382,
+      "baselineSha256": "8853226D9F5935C03D036A041C9B801622EA0E90D4B7E38470E41754451D58AE",
+      "baselineBytes": 5091
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/integration/peopleStreets.js",
+      "destination": "CivilizationApocalypse_BP/scripts/integration/peopleStreets.js",
+      "sha256": "B0E2F279198203E015817104818FC4A7D52C30EADF96350C5B4CB58B67C180D0",
+      "bytes": 29638,
+      "baselineSha256": "FB3AAE2AD293B902E53A6DC87BEEA8E4EA17BEA6BCD0419927229CA5468D526E",
+      "baselineBytes": 28007
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/integration/popSync.js",
+      "destination": "CivilizationApocalypse_BP/scripts/integration/popSync.js",
+      "sha256": "ED93FC892FC19CC44DF865F98BF954058B7C5314D5961BDF36F0F13A767D58A7",
+      "bytes": 47358,
+      "baselineSha256": "4F658ABC6153DB289F73C3E987CE20C9FFE86EBA07C9F78F096783BD7EB86443",
+      "baselineBytes": 39530
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/integration/privateFreshFixture.js",
+      "destination": "CivilizationApocalypse_BP/scripts/integration/privateFreshFixture.js",
+      "sha256": "558190D973E5D5230D7DF817990B488324586FF3613B4F07336A137BE760A2B2",
+      "bytes": 9846,
+      "baselineSha256": null,
+      "baselineBytes": null
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/main.js",
+      "destination": "CivilizationApocalypse_BP/scripts/main.js",
+      "sha256": "11D3875F2F0FADD15B09226C10E80543123C25DE646A5E6F2317F45D2DD9C241",
+      "bytes": 7104,
+      "baselineSha256": "417E9C7181F9792CCAB013ED2BC48CA66AA05F169A8E8DF141A919554998AF62",
+      "baselineBytes": 6525
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/population/militarySelection.js",
+      "destination": "CivilizationApocalypse_BP/scripts/population/militarySelection.js",
+      "sha256": "63DEBCFE85CB69650707FFEDA5A98D5DCF585887A0D194556C66258035CC7C1D",
+      "bytes": 4333,
+      "baselineSha256": "852505EEEA88F549A92302B4C4EF28E51CA166B66DD759FD1EE497CBA1A16C7F",
+      "baselineBytes": 4054
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_BP/scripts/sim/starter.js",
+      "destination": "CivilizationApocalypse_BP/scripts/sim/starter.js",
+      "sha256": "50F751F967BCDA377329C3BABB61332A7402513F59C00A44A9DE18965CB59CB0",
+      "bytes": 14013,
+      "baselineSha256": "C343B6629D04C2121D2E13BF31A5941F5EFEE4C9459D5AC7C5D12A8E0FEA95E6",
+      "baselineBytes": 13380
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_RP/animations/archer.animation.json",
+      "destination": "CivilizationApocalypse_RP/animations/archer.animation.json",
+      "sha256": "E68E2F2C90078B29C3A6B18DA98FBFE29C588466713D3D912F0DDE38C273E3D2",
+      "bytes": 406,
+      "baselineSha256": null,
+      "baselineBytes": null
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_RP/entity/archer.entity.json",
+      "destination": "CivilizationApocalypse_RP/entity/archer.entity.json",
+      "sha256": "D7888CF04760F270A5FE25EA4F913424AB2397B1396F7B6F53FA78825B1FF895",
+      "bytes": 858,
+      "baselineSha256": null,
+      "baselineBytes": null
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_RP/entity/guard_arrow.entity.json",
+      "destination": "CivilizationApocalypse_RP/entity/guard_arrow.entity.json",
+      "sha256": "362EA8232F2A39C392E84621B3D43871B552C9D347CFA9EBA7A529984E27F217",
+      "bytes": 808,
+      "baselineSha256": null,
+      "baselineBytes": null
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_RP/models/entity/archer.geo.json",
+      "destination": "CivilizationApocalypse_RP/models/entity/archer.geo.json",
+      "sha256": "992C234164367C9B45C96A83FD2D3FB086558472A9D9A0484D3091414A40B26A",
+      "bytes": 33281,
+      "baselineSha256": null,
+      "baselineBytes": null
+    },
+    {
+      "staged": "proposed/CivilizationApocalypse_RP/render_controllers/archer.render_controllers.json",
+      "destination": "CivilizationApocalypse_RP/render_controllers/archer.render_controllers.json",
+      "sha256": "AAB93AE3D4735D22A3815858F16C0A1833EF9003985BEB3A86176FBA52450C99",
+      "bytes": 305,
+      "baselineSha256": null,
+      "baselineBytes": null
+    },
+    {
+      "staged": "proposed/dev/fixtures/creation-native-stub.mjs",
+      "destination": "dev/fixtures/creation-native-stub.mjs",
+      "sha256": "C8F1B54D1B1DF36FC3A0410F57A2CA710DD25D92264B8332DE8AEC883F58AE44",
+      "bytes": 167,
+      "baselineSha256": null,
+      "baselineBytes": null
+    },
+    {
+      "staged": "proposed/dev/fixtures/synthetic-creation-trust.mjs",
+      "destination": "dev/fixtures/synthetic-creation-trust.mjs",
+      "sha256": "F632A56FF1E900448F2E25FC11F3FF0F1E14BD385EC7A8B09A5CD1E95C327CBA",
+      "bytes": 367,
+      "baselineSha256": null,
+      "baselineBytes": null
+    },
+    {
+      "staged": "independent-review/overlay/dev/lib/content-packs.mjs",
+      "destination": "dev/lib/content-packs.mjs",
+      "sha256": "F37AAF956D97D5E6D0FDC975D3E51F07FBB288A32FF600436B7624DF3BEEBFBD",
+      "bytes": 9969,
+      "baselineSha256": "C944122A2364CC2898E92AC84484FB612AF05FA3F66F7CD1B53399C784BC72A4",
+      "baselineBytes": 8458
+    },
+    {
+      "staged": "proposed/dev/lib/creation-test-loader.mjs",
+      "destination": "dev/lib/creation-test-loader.mjs",
+      "sha256": "29674BD4B46ED9B4462F3019895D8CDB4563169F9A2168686F1489C956C3E7DC",
+      "bytes": 730,
+      "baselineSha256": null,
+      "baselineBytes": null
+    },
+    {
+      "staged": "independent-review/overlay/dev/lib/developer-preview.mjs",
+      "destination": "dev/lib/developer-preview.mjs",
+      "sha256": "519A11FCF71ADEF4062185E57453C672084BFB7B59FC4A08DC805FCEA8D9017D",
+      "bytes": 17348,
+      "baselineSha256": null,
+      "baselineBytes": null
+    },
+    {
+      "staged": "proposed/dev/preview-packs.mjs",
+      "destination": "dev/preview-packs.mjs",
+      "sha256": "6C236FD9305036A2991F3C7D6158D93058457DAE1E627145809352A3544A7C67",
+      "bytes": 1001,
+      "baselineSha256": null,
+      "baselineBytes": null
+    },
+    {
+      "staged": "proposed/dev/test/archer-content-packs.test.mjs",
+      "destination": "dev/test/archer-content-packs.test.mjs",
+      "sha256": "A475426470428D4F5AC0DD954D4751CD12D3E8F5CB9A2A849A8C751AC45646A4",
+      "bytes": 3190,
+      "baselineSha256": null,
+      "baselineBytes": null
+    },
+    {
+      "staged": "independent-review/overlay/dev/test/developer-preview.test.mjs",
+      "destination": "dev/test/developer-preview.test.mjs",
+      "sha256": "999339D9C8228ECC7DDBE1C0B7CF7205C7AE081D3B1D1DE473A925BAB521D52E",
+      "bytes": 15736,
+      "baselineSha256": null,
+      "baselineBytes": null
+    },
+    {
+      "staged": "proposed/dev/test/integration.test.mjs",
+      "destination": "dev/test/integration.test.mjs",
+      "sha256": "86CAC0DE3413D7724C177AA06D53D4FE8F6E3377B24FCF8029DA13EA194D4919",
+      "bytes": 16356,
+      "baselineSha256": "EA5A5DB1E0ACD0338D68B33F822F1F19C255AD112514A6F7FC5C2E5A376A65E4",
+      "baselineBytes": 16213
+    },
+    {
+      "staged": "proposed/dev/test/military-archer-assets.test.mjs",
+      "destination": "dev/test/military-archer-assets.test.mjs",
+      "sha256": "68A6EEC141B1BA6FCF656F0C3A37D43A0A8678086CFADE7A14EBF067BA91C5F9",
+      "bytes": 5029,
+      "baselineSha256": null,
+      "baselineBytes": null
+    },
+    {
+      "staged": "proposed/dev/test/military-command.test.mjs",
+      "destination": "dev/test/military-command.test.mjs",
+      "sha256": "B6B130BB3B82CBD965A67F3849DE8F6E0D45DB21B4BA981B0F0F6EF438CBF203",
+      "bytes": 7296,
+      "baselineSha256": "27C1911BCB1F2E7491A104DD998030C38BF805541A8B425E9B5B281A21FD0F1A",
+      "baselineBytes": 6160
+    },
+    {
+      "staged": "proposed/dev/test/military-lifecycle-diagnostics.test.mjs",
+      "destination": "dev/test/military-lifecycle-diagnostics.test.mjs",
+      "sha256": "E44F12B4CDB26567D7E0A4CE42A8E5477BC8C608B13C0B865879E86257661E70",
+      "bytes": 14387,
+      "baselineSha256": "5F34A5010DD85378D5F28E0937F9B32087E1282BA869226CF8FF0CDBAEFBE78D",
+      "baselineBytes": 13573
+    },
+    {
+      "staged": "proposed/dev/test/military-selection.test.mjs",
+      "destination": "dev/test/military-selection.test.mjs",
+      "sha256": "29901D7087CC23332E543C2BD2AC20852906BF266C888CBF4FCA3BA27DA035EC",
+      "bytes": 24070,
+      "baselineSha256": "E8E4117CBA0D420F1B27C7BDF29815C215672FF8A845D195B53EB31593348531",
+      "baselineBytes": 21503
+    },
+    {
+      "staged": "proposed/dev/test/population-archer-creation.test.mjs",
+      "destination": "dev/test/population-archer-creation.test.mjs",
+      "sha256": "F757C99D52760C85516AF4CF667BD64D8B7DDD9431BD9678E9131746A1D62C25",
+      "bytes": 12637,
+      "baselineSha256": null,
+      "baselineBytes": null
+    },
+    {
+      "staged": "proposed/dev/test/population-bound-teardown.test.mjs",
+      "destination": "dev/test/population-bound-teardown.test.mjs",
+      "sha256": "1F27DAC3D1BDDAC8B3235188D21C22D457BD34C0C8A0ADA603FA00CC64EB5026",
+      "bytes": 7450,
+      "baselineSha256": null,
+      "baselineBytes": null
+    },
+    {
+      "staged": "proposed/dev/test/population-creation-bindings.test.mjs",
+      "destination": "dev/test/population-creation-bindings.test.mjs",
+      "sha256": "293ABF0E04651E95D9474121F01A013B9A7B2AB1BC2C4F8BB54129472768266A",
+      "bytes": 18634,
+      "baselineSha256": null,
+      "baselineBytes": null
+    },
+    {
+      "staged": "proposed/dev/test/population-creation-command-refusal.test.mjs",
+      "destination": "dev/test/population-creation-command-refusal.test.mjs",
+      "sha256": "DC6F82A1F9F6A6DDB5651D20648C8F4AC094B1301CA7BDDE5C545E4758B54BC8",
+      "bytes": 2420,
+      "baselineSha256": null,
+      "baselineBytes": null
+    },
+    {
+      "staged": "proposed/dev/test/population-creation-runtime.test.mjs",
+      "destination": "dev/test/population-creation-runtime.test.mjs",
+      "sha256": "30D46138D51A5C917FC9A98A1EF947C5E78FC1BD42D478A3C514C45A406C0A5E",
+      "bytes": 13881,
+      "baselineSha256": null,
+      "baselineBytes": null
+    },
+    {
+      "staged": "proposed/dev/test/population-sync.test.mjs",
+      "destination": "dev/test/population-sync.test.mjs",
+      "sha256": "973243E578DD9512DEBC485750BC241ED9A5DB05D64A79146157E11176B02357",
+      "bytes": 37568,
+      "baselineSha256": "B7586695FE5DEB33BF0EECA5753F2BC292D3292AA19AF1DD54CF70B8AD68A3CC",
+      "baselineBytes": 37517
+    },
+    {
+      "staged": "proposed/dev/test/private-creation-fixture.test.mjs",
+      "destination": "dev/test/private-creation-fixture.test.mjs",
+      "sha256": "7AE5B75983115AA96D199961942AA554A637B482DF388A7432215970D478DC60",
+      "bytes": 7056,
+      "baselineSha256": null,
+      "baselineBytes": null
+    },
+    {
+      "staged": "proposed/dev/validate-preview.mjs",
+      "destination": "dev/validate-preview.mjs",
+      "sha256": "ED2034984251B22B52760BA527C4D8340D42D3D165741D2E9EF846376D3A8FC3",
+      "bytes": 883,
+      "baselineSha256": null,
+      "baselineBytes": null
+    }
+  ],
+  "originalManifestSha256": "5154512B6829274D56DC58F25F5891B31EF61B8D012FBD7A91DCDDBEAE8C8214",
+  "reviewOverlayChangedPaths": [
+    "dev/lib/content-packs.mjs",
+    "dev/lib/developer-preview.mjs",
+    "dev/test/developer-preview.test.mjs"
+  ],
+  "independentReview": "independent-review/REVIEW.json"
+}

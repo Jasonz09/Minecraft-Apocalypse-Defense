@@ -1,0 +1,11 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import{compoundReservations,planCompoundCompletion}from './proposed/population/compoundPlanning.js';
+import{createCompoundCompletion}from './proposed/integration/compoundCompletion.js';
+import{planLevels}from './proposed/population/lod.js';import{createUnifiedStore}from './unifiedStore.mjs';
+const G='district-1:sol:0';
+const limits={maxPhysicalTotal:24,maxPhysicalPerDistrict:8,physicalFloorPerKind:0,physicalRadius:64,holdRadius:80,coarseRadius:128,maxOpsPerTick:1,maxSpawnsPerTick:1};
+function fixture(){const props=new Map(),world={getDynamicPropertyIds:()=>[...props.keys()],getDynamicProperty:k=>props.get(k),setDynamicProperty:(k,v)=>props.set(k,v)};const d={format:3,verifyFreshWorld:()=>({verified:true,fixtureId:'one',dimension:'minecraft:overworld',ownerHistory:'never-started'})};let store=createUnifiedStore(world,d);store.initialize({mode:'fresh',epoch:'epoch-one',fixture:'one'});store.compound().reservePair(G);props.set('civ_pop',JSON.stringify({v:1,t:null,n:0,s:0,o:0,p:[G]}));let allowed=true;const adapter=()=>createCompoundCompletion(world,store.compound(),limits,{currentAllowed:()=>allowed});return{props,world,get core(){return store.compound();},adapter,setAllowed:v=>allowed=v,rejoin(){store=createUnifiedStore(world,d);}};}
+function complete(f,t,id){f.core.recordSpawned(t,id);f.core.confirmBorn(t,{groupId:G,role:t.role,id,typeId:t.role==='rider'?'civ_trial:cavalry':'civ_trial:cavalry_mount',tags:[t.tag,...(t.role==='rider'?['civpop:v1:'+G]:[])]});}
+const input=(id,d='district-1',cost=1)=>({id,district:d,headcount:5,hasSpot:true,distance:0,spotLoaded:true,bound:false,physicalCost:cost});
+
+test('independent: core metadata cannot revoke final prepaid cursor and still return a role ticket',()=>{const f=fixture(),a=f.adapter(),job=a.plan([G],10).jobs[0],initial=f.props.get('civ_pop'),get=f.world.getDynamicProperty;let newReads=0,afterFinalCursor=false,revoked=false;f.world.getDynamicProperty=k=>{const raw=get(k);if(k==='civ_pop'&&typeof raw==='string'&&JSON.parse(raw).t===10&&++newReads===2)afterFinalCursor=true;else if(afterFinalCursor&&!revoked&&k==='civ:pop_bind:v3:meta'){revoked=true;f.props.set('civ_pop',initial);}return raw;};assert.throws(()=>a.prepare(job,10),/quota|cursor|changed/);assert.equal(revoked,true);});

@@ -1,5 +1,5 @@
 import {classifyTags,isCanonicalFor} from "../population/identity.js";
-import {SWORDSMAN_TYPE} from "../population/militarySelection.js";
+import {SWORDSMAN_TYPE,MILITARY_TYPES} from "../population/militarySelection.js";
 
 /** Live read only. Missing/throwing fields are unknown, never replaced by spawn coordinates.
  * @param {any} handle */
@@ -21,7 +21,7 @@ export function createMilitaryLifecycleDiagnostics(deps){
     let hurtTick=/** @type {number|null} */(null),hurtUsed=0,hurtDropped=0,hurtProcessed=0,hurtHeld=0,incoming=0,outgoing=0;
     const hurtLimits={perTick:32,session:1000000,rows:16};
     const clipped=(/** @type {any} */v)=>String(v??"unknown").slice(0,160);
-    function selected(){if(!enabled)return null;try{const r=deps.readSelection();return r?.status==="ok"&&r.selection?.typeId===SWORDSMAN_TYPE?{...r.selection,stamp:r.stamp}:null;}catch(_error){return null;}}
+    function selected(){if(!enabled)return null;try{const r=deps.readSelection();return r?.status==="ok"&&MILITARY_TYPES.includes(r.selection?.typeId)?{...r.selection,stamp:r.stamp}:null;}catch(_error){return null;}}
     const tick=()=>{try{const t=deps.tick();return Number.isFinite(t)?t:null;}catch(_error){return null;}};
     /** @param {any} row */
     function append(row){events.push({tick:tick(),...row});if(events.length>16)events.shift();}
@@ -105,7 +105,7 @@ export function createMilitaryLifecycleDiagnostics(deps){
  * @param {import("@minecraft/server").World} world
  * @param {ReturnType<typeof createMilitaryLifecycleDiagnostics>} diagnostics */
 export function registerMilitaryLifecycleSignals(world,diagnostics){
-    world.afterEvents.entityDie?.subscribe(event=>diagnostics.onDie(event),{entityTypes:[SWORDSMAN_TYPE]});
-    world.afterEvents.entityRemove?.subscribe(event=>diagnostics.onRemove(event),{entityTypes:[SWORDSMAN_TYPE]});
+    world.afterEvents.entityDie?.subscribe(event=>diagnostics.onDie(event),{entityTypes:[...MILITARY_TYPES]});
+    world.afterEvents.entityRemove?.subscribe(event=>diagnostics.onRemove(event),{entityTypes:[...MILITARY_TYPES]});
     world.afterEvents.entityHurt?.subscribe(event=>diagnostics.onHurt(event));
 }

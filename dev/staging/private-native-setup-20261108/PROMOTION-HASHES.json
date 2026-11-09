@@ -1,0 +1,94 @@
+{
+  "utc": "2026-11-08T23:53:36.686464+00:00",
+  "scope": "STAGED helper only. Tests mutate temporary directories only. No actual install/worldcatalog/main/source-backup writes. No apply CLI.",
+  "files": {
+    "focused-before-scan-check.log": "835A5691F91D538796143836424645D1BAA6308F64A23ECD37B740BD941AD5A5",
+    "focused-final.log": "F42AEDA33535E70A6893770AAECA0E2D9978EFFAE80F596B2B98A80DF9BEC666",
+    "focused-initial.log": "5D4958505B58B459CD78186882B98401C44BB6D382B0F2D245F01F3FCBDE568B",
+    "last-preflight-check.log": "D80DC787356BF16CCB45556369C6719AD4D76B41A29E15E454C8AF812DF2CDA8",
+    "OPTIONS-EXAMPLE.json": "660A42D44584E99DA87AF36562E98710CB9DFE02C415CE76D0EC26E1FC17CA6E",
+    "plan.mjs": "40E4197E1E89A4A1515E8E06808B89DB60BF995CA6CC32D03953F0EAA56196DB",
+    "README.md": "5DD11E7947FD2D1E2B7F272310722F555192C1C6964F33AAB7928C027AD2C3CE",
+    "RELEASE-FIRSTJOIN.md": "58B773A5EF681E7DB3624D91D11A18FA8DFF4FE9931A0A3385EAB4D809E3153E",
+    "setup.mjs": "15B6A6EE75EAA2A39156C7553E83BF6164FA15D684D4FFC873C7ACA2378EA865",
+    "setup.test.mjs": "8C662394484775702C114777EC89589FE66D1B5C222FBA9A0CD9D1809DF2A8D0"
+  },
+  "dependencies": [
+    {
+      "path": "dev\\deploy.mjs",
+      "sha256": "CD379571A4D44883E4728FCB26BF3696F9C1E35F53B0C8C80069C407EA5AE248"
+    },
+    {
+      "path": "dev\\lib\\nbt.mjs",
+      "sha256": "DD8062011E03EAACAC632631DFC70E27B10AA862E8791B23294D0717AB51B3D7"
+    },
+    {
+      "path": "dev\\staging\\private-native-fixture-20261108\\PROMOTION-HASHES.json",
+      "sha256": "9C65C1943A4A8580B889DDBF07428FEA3CBD487EA522A742D955348EB11ABE89"
+    },
+    {
+      "path": "dev\\staging\\private-native-fixture-20261108\\PRIVATE-PACK-PLAN.json",
+      "sha256": "4A716D5F25D740CC4B04B12B99B7665BF0D7F694C380A7C21996F0A7D26EFA67"
+    },
+    {
+      "path": "dev\\staging\\private-native-fixture-20261108\\DERIVATIVE-PLAN.json",
+      "sha256": "4C28209E224640F1DB5B9D541FA6668AE3E8E4711673F3AD3272E6BEEF079F6F"
+    },
+    {
+      "path": "dist\\vanilla-never-owner-backup-20261108.json",
+      "sha256": "BE44A5BA9E47C2AB890083B1FAD33657FEAF5B5B122C61A7C026CF0281EFA114"
+    },
+    {
+      "path": "dist\\archer-preview-pack-hashes-20261108.json",
+      "sha256": "DD6DCCC7697FE5F64C543F9D76E3746912ED6CA2E7CDC9C5DE1319A35702F84D"
+    }
+  ],
+  "focused": {
+    "tests": 12,
+    "pass": 12,
+    "fail": 0,
+    "skipped": 0,
+    "durationMs": 25159.6012,
+    "log": "focused-final.log",
+    "testedSetupBodySha256BeforeFinalReadOnlyAdditions": "E342FF51345D3D4760559B0B195F0A5301E0F8F283723D8AD974F52DA4918C44"
+  },
+  "finalReadOnlyAdditions": {
+    "changes": [
+      "bounded readSetupOptions export for plan CLI",
+      "reject existing non-directory backup root"
+    ],
+    "targetedTests": 2,
+    "pass": 2,
+    "durationMs": 1565.1178,
+    "log": "last-preflight-check.log",
+    "writerAlgorithmByteUnchangedFrom12CaseSuite": true
+  },
+  "syntaxChecks": [
+    "node --check setup.mjs PASS",
+    "node --check plan.mjs PASS"
+  ],
+  "typescript": "No Node ambient typecheck claimed; existing game-script TSC outside this helper unchanged",
+  "plannedVisibleName": "CA Creation Trial Nov8 e8143392",
+  "plannedWorldFolder": "CA_Creation_e8143392",
+  "source176AndActiveNullUnchanged": true,
+  "all9PristineSourceFilesUnchanged": true,
+  "nativeTargetsTouched": false,
+  "metadataScope": [
+    "two preexisting explicit bindings in pinned staged source derivative",
+    "setup changes only levelname.txt +actual LevelName string/payloadlength in level.dat",
+    "full typed NBT walk and independent full semantic reparse; DB and level.dat_old unchanged"
+  ],
+  "failureContract": [
+    "verified staging of whole pair+world outside native scan roots",
+    "both previous packs backed up before first new pack; originals retained outside scan roots on success/rollback",
+    "nooverwrite and repeated hash/containment/closed checks before rename",
+    "restore verified copies while preserving original backups; no recursive deletion",
+    "if game opens or unknown edits block safe rollback, HOLD/manualRecovery with all available bytes retained; not multi-directory atomicity"
+  ],
+  "remaining": [
+    "Independent helper/paths review before root executes read-only native plan",
+    "Root closed-game process/inventory check then deliberate private setup application",
+    "Native initial activation before accepted hour; exact marker/caller/gates remain",
+    "General clean-starter firstjoin profile documented in RELEASE-FIRSTJOIN.md, not implemented or authorized"
+  ]
+}

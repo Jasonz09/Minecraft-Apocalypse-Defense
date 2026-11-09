@@ -1,0 +1,21 @@
+{
+  "scope": "Node syntax checks only; no fake TypeScript/native acceptance",
+  "results": [
+    {
+      "file": "proposed/dev/lib/developer-preview.mjs",
+      "exitCode": 0
+    },
+    {
+      "file": "proposed/dev/preview-packs.mjs",
+      "exitCode": 0
+    },
+    {
+      "file": "proposed/dev/validate-preview.mjs",
+      "exitCode": 0
+    },
+    {
+      "file": "proposed-dev/test/developer-preview.test.mjs",
+      "exitCode": 0
+    }
+  ]
+}

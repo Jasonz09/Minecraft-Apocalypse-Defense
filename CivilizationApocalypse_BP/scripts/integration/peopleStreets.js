@@ -36,8 +36,8 @@ import { standableNear, surfaceAtOf } from "../people/columns.js";
 //  - it does not invent a budget: the caps come from `resolveConfig` (population/settings.js POP_SYNC_DEFAULTS), the
 //    same ones the reducer enforces. The naming and teardown passes reuse `maxPhysicalTotal` as their ceiling, and the
 //    spawn/despawn budget is exactly one `reconcileOnce` per hour - never several passes dressed up as one.
-//  - it does not duplicate: identity is the `civpop:v1:<groupId>` tag, so a representative the cursor forgot is
-//    adopted by popSync's own census rather than spawned a second time.
+//  - tags identify loaded representatives. Legacy loaded-only absence can produce duplicates;
+//    opt-in durable creation bindings hold unseen previously issued actors instead of replacing them.
 
 /** The nameTag label per group kind. A player reads the district and the role, nothing else. */
 const STREET_LABELS = Object.freeze({ civ: "folk", sol: "levy" });
@@ -58,6 +58,7 @@ const STREET_LABELS = Object.freeze({ civ: "folk", sol: "levy" });
  *   homes?: (kingdom: any) => Record<string, { x: number, y: number, z: number }>,
  *   posts?: (kingdom: any) => Record<string, Array<{ x: number, y: number, z: number }>>,
  *   anchors?: () => Array<{ x: number, y: number, z: number }>,
+ *   getCreationBindings?:()=>any,
  *   readMilitarySelection?:()=>import("../population/militarySelection.js").MilitarySelectionRead,
  *   militaryDiagnostics?:ReturnType<typeof import("./militaryLifecycleDiagnostics.js").createMilitaryLifecycleDiagnostics>,
  * }} [deps]
@@ -117,10 +118,23 @@ export function createPeopleStreets(deps = {}) {
             throw new TypeError("the streets driver needs a ctx whose dimension exposes getEntities and spawnEntity");
         }
         const world = ctx.world;
+        let creationBindings;
+        try {creationBindings=deps.getCreationBindings?.();}
+        catch(error){done.refused=String(error);return 0;}
         done.hours += 1;
 
         // Gate off: nothing is created, and everything the driver made goes back out of the world.
         if (gateOn(world) !== true) {
+            if(creationBindings){
+                try{const owner=createPopSync({world,dimension,readKingdom:()=>ctx.kingdom,enabled:false,
+                    creationBindings,config:deps.config??{},readMilitarySelection:deps.readMilitarySelection,militaryDiagnostics:deps.militaryDiagnostics});
+                    lastSync=owner;const result=owner.teardownBound(censusOurs(ctx,true));
+                    done.cleared+=result.removed;done.removed+=result.removed;done.refused=result.held;
+                    done.births="gate-off bound teardown; no birth requested";
+                    if(!result.held){done.admittedCiv=0;done.admittedSol=0;done.lod="gate off; only positively removed instances retired";done.hold=null;}
+                    return result.removed;
+                }catch(error){done.refused=String(error);return 0;}
+            }
             let removed=0;
             try {removed=clearStreets(ctx);}
             catch(error){done.refused=String(error);return 0;}
@@ -151,6 +165,7 @@ export function createPeopleStreets(deps = {}) {
             config: deps.config ?? {},
             readMilitarySelection:deps.readMilitarySelection,
             militaryDiagnostics:deps.militaryDiagnostics,
+            creationBindings,
         });
         lastSync=sync;
         const run = sync.reconcileOnce(tickOf(ctx.tick, liveTick()));
@@ -413,7 +428,7 @@ export function createPeopleStreets(deps = {}) {
         return[`=== Read-only population ${info.groupId} ===`,`Cached owner tick ${info.ownerTick}; now ${info.currentTick} (${age}).`,
             `Admitted intent: ${info.admitted?"yes":"no"}; fresh loaded canonical: ${info.live.canonicalLoaded??"unknown"}; expected-type matches: ${info.live.expectedTypeLoaded??"unknown"}; tag matches: ${info.live.queryMatches??"unknown"}.`,
             `Cached expected type: ${info.expectedType}.`,`Cached post ${info.postIndex??"?"}/${info.postCount}: ${point(info.post)}; requested spot ${point(info.requested)}.`,
-            `Cached owner result: ${info.lastAttempt.status}${info.lastAttempt.reason&&info.lastAttempt.reason!==info.ownerRefused?" — "+info.lastAttempt.reason:""}; actual settled spot ${point(info.lastAttempt.settled)}.`,
+            `Cached owner result: ${info.lastAttempt.status}${info.lastAttempt.reason&&info.lastAttempt.reason!==info.ownerRefused?" â€” "+info.lastAttempt.reason:""}; actual settled spot ${point(info.lastAttempt.settled)}.`,
             ...(info.ownerRefused?[`Owner plan refusal (all observed groups): ${info.ownerRefused}`]:[]),
             `Fresh settle: ${info.settle.reason}; ${point(info.settle.point)}.`,`Native block reads: ${info.settle.nativeBlockReads}/${info.settle.maxBlockReads}; one loaded tag query, at most two entity identities inspected.`,
             ...(info.live.reason?[`Census held: ${info.live.reason}`]:[]),...info.live.entities.map((/** @type {any} */e)=>`Loaded actor ${e.id}: ${e.typeId}; canonical ${e.canonical?"yes":"no"}; live position ${point(e.location)}; health ${e.health??"unknown"}.`),

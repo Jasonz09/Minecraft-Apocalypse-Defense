@@ -1,0 +1,24 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.civ_trial.archer.bow_hold": {
+      "loop": true,
+      "bones": {
+        "right_arm": {
+          "rotation": [
+            -65,
+            0,
+            0
+          ]
+        },
+        "left_arm": {
+          "rotation": [
+            -65,
+            35,
+            0
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "utc": "2026-11-08T23:57:07.451059+00:00",
+  "scope": "Independent read-only setup-helper review +temporary-directory fault suite; no actual apply/install/catalog/world/source/trust writes",
+  "status": "NO BLOCKER for exact pinned bundle/options/plan; root may independently review/apply only while game remains closed",
+  "helperManifestSha256": "DEC537E79DCF1FA38288F2DC84FB482145F60B4C6115A2549ED76A9C79D8CD3A",
+  "helperSha256": "15B6A6EE75EAA2A39156C7553E83BF6164FA15D684D4FFC873C7ACA2378EA865",
+  "all10AuthorPinsAnd7DependenciesMatch": true,
+  "reviewedPlan": "dev/staging/private-native-setup-20261108/plan-evidence/independent-reviewed-plan.json",
+  "planSha256": "9FF1465B665C25041A0989A354509FAFE762D5828BEFD506665C41A9158D21BF",
+  "actualPrior176PairMatchesSourceFreeze": true,
+  "actualTransactionAndWorldTargetsAbsent": true,
+  "visibleName": "CA Creation Trial Nov8 e8143392",
+  "worldFolder": "CA_Creation_e8143392",
+  "newWorldFiles": 9,
+  "onlyNamingChangesVersusReviewedDerivative": [
+    "level.dat",
+    "levelname.txt"
+  ],
+  "onlyChangesVersusPristine": [
+    "world_behavior_packs.json",
+    "world_resource_packs.json",
+    "level.dat",
+    "levelname.txt"
+  ],
+  "tests": {
+    "tests": 14,
+    "pass": 14,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 27322.3671,
+    "log": "focused14.log",
+    "temporaryMutationCases": 12,
+    "additionalActualReadOnlyCases": 2
+  },
+  "reviewedSafety": [
+    "Exact private bundle manifest/pack/world hashes bound to reviewed descriptor chain.",
+    "Absolute contained/disjoint paths and no-link ancestors/content; source copied to same-volume staging outside scanned roots.",
+    "Both complete previous packs retained before installing either new pack; world published last.",
+    "Each move repeats game-closed/nooverwrite/containment/source-SHA checks after fault seam.",
+    "No recursive removal/overwrite; partial failures retain new/original bytes and restore verified prior copies while closed.",
+    "Unknown concurrent target or opened game stops recovery, records manualRecovery, preserves available bytes.",
+    "Typed bounded full NBT walk +independent semantic reparse changes only actual LevelName string/payload header and levelname.txt; DB bytes untouched.",
+    "Distinct visible disposable name avoids opening immutable source accidentally.",
+    "Actual default hidden process gate passed during read-only test; apply rechecks each move."
+  ],
+  "limits": [
+    "Multiple directory moves are not atomic against arbitrary process/filesystem races. Root must inspect append-only receipts after any failure and must not load partial pair/world.",
+    "Closed process check is an execution prerequisite, not a future guarantee.",
+    "Operator-pinned source provenance does not cryptographically prove erased history or native activation success.",
+    "No native first activation/birth/seating/render/combat/rejoin acceptance.",
+    "This tool is not a release installer or clean-world release approval."
+  ],
+  "activeSourceAndInstalledTrust": "Regular176 NULL, not modified by this review",
+  "nativeApplyExecuted": false
+}

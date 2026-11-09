@@ -1,0 +1,410 @@
+{
+  "utc": "2026-11-09T00:04:58.182397+00:00",
+  "decision": "Freshness refusal is correct for evolved step1 save; exact initial bytes were present at first seed. No reset/relaxation performed.",
+  "scope": "Read-only actual10file immutable closed failed-attempt backup; source never opened/written by this audit",
+  "receipt": {
+    "path": "dist\\private-creation-refused-attempt1-20261108.json",
+    "sha256": "99A6F9E65F143CFE65C34C6F844A75BB2BD2DF53A8699737A1405D7F6A4C2FA6",
+    "all10FilesStillExact": true
+  },
+  "rawProof": {
+    "expectedSource": "serializeKingdom(createInitialKingdom()) from unchanged actual176 source",
+    "expectedBytes": 3981,
+    "expectedSha256": "E2E8327899B4B13873AA4D36F831ACBA676545C88E930CFF73279D64E11E0D09",
+    "seedSequence": 587,
+    "seedRawExactlyExpected": true,
+    "seedStep": 0,
+    "nextObservedSequence": 704,
+    "nextStep": 1,
+    "latestSequence": 790,
+    "latestStep": 1,
+    "latestBytes": 5508,
+    "latestSha256": "EC0FC0C96D9F3CB85D5E3681C3209BB6F368091226B4305A7D09104EBCF18AC2",
+    "firstRawDifferenceOffset": 79,
+    "firstDifferenceExpected": "eed\":20261017,\"rngState\":20261017,\"step\":0,\"policy\":{\"expansion\":",
+    "firstDifferenceActual": "eed\":20261017,\"rngState\":1723944436,\"step\":1,\"policy\":{\"expansion",
+    "allCommonObjectKeyOrderingPreserved": true,
+    "differenceFieldCount": 45,
+    "allExactFieldDifferences": [
+      {
+        "path": "$.battles",
+        "expected": [],
+        "actual": [
+          {
+            "atStep": 1,
+            "districtId": "district-3",
+            "districtName": "Whitethorn",
+            "assault": 14,
+            "standing": 22.8,
+            "integrityBefore": 99.1,
+            "integrityAfter": 99.1,
+            "integrityLoss": 0,
+            "attackerLosses": 14,
+            "defenderLosses": 0,
+            "outcome": "counterattack: raid broken"
+          },
+          {
+            "atStep": 1,
+            "districtId": "district-3",
+            "districtName": "Whitethorn",
+            "assault": 17,
+            "standing": 24,
+            "integrityBefore": 100,
+            "integrityAfter": 99.1,
+            "integrityLoss": 0.9,
+            "attackerLosses": 3,
+            "defenderLosses": 1,
+            "outcome": "held"
+          }
+        ]
+      },
+      {
+        "path": "$.districts[0].foodStress",
+        "expected": "<missing>",
+        "actual": 0
+      },
+      {
+        "path": "$.districts[0].growthBuffer",
+        "expected": "<missing>",
+        "actual": 0.36
+      },
+      {
+        "path": "$.districts[0].reinforcedBy",
+        "expected": "<missing>",
+        "actual": []
+      },
+      {
+        "path": "$.districts[0].reserves.food",
+        "expected": 240,
+        "actual": 241.52
+      },
+      {
+        "path": "$.districts[0].reserves.materials",
+        "expected": 180,
+        "actual": 181.6
+      },
+      {
+        "path": "$.districts[0].reserves.supplies",
+        "expected": 120,
+        "actual": 120.9
+      },
+      {
+        "path": "$.districts[0].sheltering",
+        "expected": "<missing>",
+        "actual": []
+      },
+      {
+        "path": "$.districts[1].foodStress",
+        "expected": "<missing>",
+        "actual": 0
+      },
+      {
+        "path": "$.districts[1].growthBuffer",
+        "expected": "<missing>",
+        "actual": 0.36
+      },
+      {
+        "path": "$.districts[1].reinforcedBy",
+        "expected": "<missing>",
+        "actual": []
+      },
+      {
+        "path": "$.districts[1].reserves.food",
+        "expected": 240,
+        "actual": 242.4
+      },
+      {
+        "path": "$.districts[1].reserves.materials",
+        "expected": 180,
+        "actual": 181.6
+      },
+      {
+        "path": "$.districts[1].reserves.supplies",
+        "expected": 120,
+        "actual": 120.9
+      },
+      {
+        "path": "$.districts[1].sheltering",
+        "expected": "<missing>",
+        "actual": []
+      },
+      {
+        "path": "$.districts[2].foodStress",
+        "expected": "<missing>",
+        "actual": 0
+      },
+      {
+        "path": "$.districts[2].garrison.front",
+        "expected": 24,
+        "actual": 23
+      },
+      {
+        "path": "$.districts[2].growthBuffer",
+        "expected": "<missing>",
+        "actual": 0.36
+      },
+      {
+        "path": "$.districts[2].reinforcedBy",
+        "expected": "<missing>",
+        "actual": []
+      },
+      {
+        "path": "$.districts[2].reserves.food",
+        "expected": 240,
+        "actual": 241.39
+      },
+      {
+        "path": "$.districts[2].reserves.materials",
+        "expected": 180,
+        "actual": 181.1
+      },
+      {
+        "path": "$.districts[2].reserves.supplies",
+        "expected": 120,
+        "actual": 120.9
+      },
+      {
+        "path": "$.districts[2].sheltering",
+        "expected": "<missing>",
+        "actual": []
+      },
+      {
+        "path": "$.districts[2].soldiers",
+        "expected": 30,
+        "actual": 29
+      },
+      {
+        "path": "$.districts[3].foodStress",
+        "expected": "<missing>",
+        "actual": 0
+      },
+      {
+        "path": "$.districts[3].growthBuffer",
+        "expected": "<missing>",
+        "actual": 0.36
+      },
+      {
+        "path": "$.districts[3].reinforcedBy",
+        "expected": "<missing>",
+        "actual": []
+      },
+      {
+        "path": "$.districts[3].reserves.food",
+        "expected": 240,
+        "actual": 242.88
+      },
+      {
+        "path": "$.districts[3].reserves.materials",
+        "expected": 180,
+        "actual": 181.6
+      },
+      {
+        "path": "$.districts[3].reserves.supplies",
+        "expected": 120,
+        "actual": 120.9
+      },
+      {
+        "path": "$.districts[3].sheltering",
+        "expected": "<missing>",
+        "actual": []
+      },
+      {
+        "path": "$.districts[4].foodStress",
+        "expected": "<missing>",
+        "actual": 0
+      },
+      {
+        "path": "$.districts[4].growthBuffer",
+        "expected": "<missing>",
+        "actual": 0.36
+      },
+      {
+        "path": "$.districts[4].reinforcedBy",
+        "expected": "<missing>",
+        "actual": []
+      },
+      {
+        "path": "$.districts[4].reserves.food",
+        "expected": 240,
+        "actual": 242.81
+      },
+      {
+        "path": "$.districts[4].reserves.materials",
+        "expected": 180,
+        "actual": 181.6
+      },
+      {
+        "path": "$.districts[4].reserves.supplies",
+        "expected": 120,
+        "actual": 120.9
+      },
+      {
+        "path": "$.districts[4].sheltering",
+        "expected": "<missing>",
+        "actual": []
+      },
+      {
+        "path": "$.log",
+        "expected": [],
+        "actual": [
+          {
+            "atStep": 1,
+            "text": "expansion survey reached its bound of 4 lands this step"
+          },
+          {
+            "atStep": 1,
+            "text": "Whitethorn: the district settles alert -> secure."
+          },
+          {
+            "atStep": 1,
+            "text": "Whitethorn: walls back to full integrity (0.5 materials spent this step)."
+          },
+          {
+            "atStep": 1,
+            "text": "Whitethorn: 23 defenders counterattack 14 raiders, breaking 14 of them (0 remain, 0 lost) - the district goes on the offensive."
+          },
+          {
+            "atStep": 1,
+            "text": "Whitethorn: assault 17 against 24 effective defenders - wall 100 -> 99, 3 raiders and 1 of our soldiers lost."
+          },
+          {
+            "atStep": 1,
+            "text": "Whitethorn: watch raised secure -> alert (assault 17, integrity 100)."
+          },
+          {
+            "atStep": 1,
+            "text": "Whitethorn: 17 raiders press the district (assault 17)."
+          }
+        ]
+      },
+      {
+        "path": "$.rngState",
+        "expected": 20261017,
+        "actual": 1723944436
+      },
+      {
+        "path": "$.step",
+        "expected": 0,
+        "actual": 1
+      },
+      {
+        "path": "$.territory[0].surveyProgress",
+        "expected": 0,
+        "actual": 1
+      },
+      {
+        "path": "$.territory[1].surveyProgress",
+        "expected": 0,
+        "actual": 4
+      },
+      {
+        "path": "$.territory[2].surveyProgress",
+        "expected": 0,
+        "actual": 1
+      },
+      {
+        "path": "$.territory[3].surveyProgress",
+        "expected": 0,
+        "actual": 1
+      }
+    ]
+  },
+  "activationProof": {
+    "allObservedWorldMainPropertyKeys": [
+      {
+        "sequence": 587,
+        "keys": [
+          "civ:kingdom"
+        ]
+      },
+      {
+        "sequence": 704,
+        "keys": [
+          "civ:kingdom",
+          "civ_devgate"
+        ]
+      },
+      {
+        "sequence": 790,
+        "keys": [
+          "civ:kingdom",
+          "civ_devgate"
+        ]
+      }
+    ],
+    "activationFamilyKeys": [],
+    "bindingFamilyKeys": [],
+    "latestDeveloperGate": 1,
+    "intentAndHeaderAbsentFromLatestCompleteWorldMainSnapshot": true,
+    "codePath": "activate calls verify(null,null); properties detects changed kingdom and throws before first setDynamicProperty(ACTIVATION_KEY,intent). No reset/fallback write exists in that refusal path."
+  },
+  "storageCoverage": {
+    "crcVerifiedHead": {
+      "manifest": "MANIFEST-000004",
+      "crcVerifiedVersionEdits": [
+        [
+          {
+            "tag": 1,
+            "comparator": "leveldb.BytewiseComparator"
+          }
+        ],
+        [
+          {
+            "tag": 2,
+            "value": 6
+          },
+          {
+            "tag": 9,
+            "value": 0
+          },
+          {
+            "tag": 3,
+            "value": 7
+          },
+          {
+            "tag": 4,
+            "value": 465
+          },
+          {
+            "tag": 7,
+            "level": 0,
+            "number": 5,
+            "bytes": 113931,
+            "smallestKeyHex": "00000000000000002b0163000000000000",
+            "largestKeyHex": "fffffffff5ffffff31019d010000000000"
+          }
+        ]
+      ],
+      "walMutationRange": [
+        466,
+        1859
+      ],
+      "walMutations": 1394,
+      "walContiguous": true
+    },
+    "sstFilesPresent": [
+      "db/000005.ldb"
+    ],
+    "sstCheckpointBoundFromManifest": 465,
+    "newWalContiguousRange": [
+      466,
+      1859
+    ],
+    "latestWorldPropertySnapshot790SupersedesCheckpoint465": true,
+    "sstPayloadIndependentlyDecoded": false,
+    "interpretation": "Under the valid closed LevelDB manifest/log checkpoint, complete DynamicProperties value from newer WAL supersedes older SST value. Not an independent full SST/entity/history census; no general absence claim."
+  },
+  "causeLimits": [
+    "This proves initial serialization/storage byte equality and genuine step1 state evolution, including rng/reserves/battle/log/territory changes. It is not a JSON ordering/roundtrip mismatch.",
+    "Closed save writes do not timestamp every UI command or in-memory tick; do not infer exact wall-clock race duration from these sequences.",
+    "Root observed freshness refusal before any retry/reset/people-on; no activation acceptance is claimed."
+  ],
+  "preparationDirection": "After checkpoint only: separately reviewed fixture-only pre-step simulation HOLD before first transaction. NULL baseline must keep existing advance behavior/zero extra reads; exact evolved-state check must remain unchanged. No gate code written in this audit.",
+  "evidenceFiles": {
+    "closed-wal-main-snapshots.json": "DEC320C8CA117CEE01581178353715D5D1378485C4DA9AA53BE51166E39EA9D8",
+    "expected-initial.json": "E2E8327899B4B13873AA4D36F831ACBA676545C88E930CFF73279D64E11E0D09",
+    "initial-comparison.json": "490E8EB53FA4FA4432FAB2B3119A495133E041B282DE677D5B252ADE4A79988E",
+    "storage-head.json": "EC76C2093D90EF717FC310744448C1E72C7ED779CAABBAAD78AC56F2997B8B07"
+  },
+  "compiledTrustOrMainEdited": false
+}

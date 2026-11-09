@@ -1,7 +1,7 @@
 import { buildGroupTable, parseGroupId } from "../population/groups.js";
 import { findValidationProblems } from "../kingdom/state.js";
 import { resolveConfig } from "../population/reconcile.js";
-import { MILITARY_SELECTION_KEY, SWORDSMAN_TYPE, decodeMilitarySelection, encodeMilitarySelection } from "../population/militarySelection.js";
+import { MILITARY_SELECTION_KEY, SWORDSMAN_TYPE, ARCHER_TYPE, decodeMilitarySelection, encodeMilitarySelection } from "../population/militarySelection.js";
 
 /**
  * Injected storage boundary. Fresh provenance and successful canonical census are
@@ -24,7 +24,7 @@ export function createMilitarySelectionStore(world,deps={}) {
         if(census?.complete!==true||!Array.isArray(census.groupIds)||census.groupIds.some(id=>parseGroupId(id)===null)||new Set(census.groupIds).size!==census.groupIds.length)throw new Error("canonical military census is incomplete or ambiguous");
         return census;
     }
-    /** @param {{groupId:string,trialId:string,dimension:string}} request */
+    /** @param {{groupId:string,trialId:string,dimension:string,class?:"swordsman"|"archer"}} request */
     function activate(request) {
         const prior=load();if(prior.status!=="absent")throw new Error(prior.reason??"military selection already exists; clear it explicitly before activation");
         const census=context();
@@ -36,7 +36,8 @@ export function createMilitarySelectionStore(world,deps={}) {
         const config=resolveConfig(deps.config??{}),table=buildGroupTable(kingdom,config);
         if(table.problems.length||table.groups.filter(g=>g.id===request.groupId&&g.kind==="sol"&&g.headcount>0).length!==1)throw new Error("select exactly one existing canonical soldier group");
         if(census.groupIds.includes(request.groupId))throw new Error("selected group already has a representative; live replacement is forbidden");
-        const raw=encodeMilitarySelection(/** @type {import("../population/militarySelection.js").MilitarySelection} */({v:1,trialId:request.trialId,fixtureId:proof.fixtureId,groupId:request.groupId,class:"swordsman",typeId:SWORDSMAN_TYPE,dimension:"minecraft:overworld"}));
+        const classId=request.class??"swordsman";if(!["swordsman","archer"].includes(classId))throw new Error("unsupported military class");
+        const raw=encodeMilitarySelection(/** @type {import("../population/militarySelection.js").MilitarySelection} */({v:classId==="archer"?2:1,trialId:request.trialId,fixtureId:proof.fixtureId,groupId:request.groupId,class:classId,typeId:classId==="archer"?ARCHER_TYPE:SWORDSMAN_TYPE,dimension:"minecraft:overworld"}));
         // Callbacks must not yield; root owns the fresh-fixture/census proof. Detect
         // a selection changed by an injected read before committing this value.
         if(load().status!=="absent")throw new Error("military selection changed during activation");
