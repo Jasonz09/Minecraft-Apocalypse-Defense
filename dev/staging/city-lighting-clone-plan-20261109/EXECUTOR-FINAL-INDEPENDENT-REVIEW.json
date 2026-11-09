@@ -1,0 +1,15 @@
+{
+  "decision": "APPROVE_LATEST_E65_FINAL_EXECUTOR_FOR_ROOT_APPLY",
+  "executorSha256": "E65F0E1BC57456BC2B6A2DECBABD7B557821B5F1504ADB499C35879A3C68D2AA",
+  "supersedesIntermediateReview": "01D865C5EF9F95A321E8CED7A53ADD58DFA0793267A2FAADED09E538193C6665",
+  "planSha256": "BD427F9052FC63C0D2091647631BAC030AB5B31EA9B07112514437C2F1976042",
+  "reviewedHelperPinChecked": true,
+  "diffReview": "Only reviewedhelperhashassertion, lstatexists rejectingdanglinglinks, receipt includedinentry/finalnoLinks andexists preflights; originalsourcecopy/NBT/inventory/closedguard/publishlogic preserved.",
+  "targetStageAndReceiptAbsentByLstat": true,
+  "priorReviewStillApplies": "EXECUTOR-INDEPENDENT-REVIEW.json",
+  "executionPerformed": false,
+  "limits": [
+    "No actor/gameplay/native lighting acceptance.",
+    "Failureafterpublishmayleaveverifiedcopywithoutreceipt; inspectandpreserve, noblindrerun."
+  ]
+}

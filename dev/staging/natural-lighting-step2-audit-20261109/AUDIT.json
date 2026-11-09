@@ -1,0 +1,167 @@
+{
+  "scope": "Read-only current source/docs and pinned historical city evidence; no current screenshot/world inspection or source/native/Git edits",
+  "userDirection": "Natural attractive city; sparse varied lighting at useful paths/entrances/gathering areas, no blanket lamp grid or spawn-proof target",
+  "currentBuildState": "Parent reports installed176; active191 full2 pending. This audit did not inspect installed pack directories or current UI.",
+  "sourceFacts": {
+    "newPlannerLightingOption": "natural",
+    "legacyLatticeStep": 5,
+    "naturalLatticeStep": 18,
+    "relocationRadius": 2,
+    "caveat": "Lattice step, not guaranteed18-block minimum physical spacing; positions relocate up to2 blocks. No current world light/fixture count inferred.",
+    "pathProximity": "within3 X/Z cells of surfaced path, never road column itself",
+    "naturalExclusions": [
+      "water",
+      "vegetated target",
+      "lot/apron reservations",
+      "protected rectangles",
+      "walls/gates/stairs",
+      "unusable/hollow ground"
+    ],
+    "variation": "Every third admitted outdoor fixture is1-block mossy cobblestone stand+torch; other fixtures are2-block fence post+lantern. Torch/lantern total fixture heights2/3 above ground.",
+    "wallPolicy": "Natural merlon wall-light selector uses column.first %18==0; tower passage/roof lights remain. This is path-index selection, not a guaranteed physical distance.",
+    "interiors": "Versioned anchored-v1 keeps fixture counts, supports existing lanterns using planned solid furniture or roof; no added support post count.",
+    "farms": "Versioned frontage-v1 replaces exactly4 original corner lanterns with1 frontage fixture for blueprint width<=13, otherwise2; source checks gate/fence anchors.",
+    "noClaim": "No all-five current day/night aesthetic acceptance, whole-map brightness or fixture census."
+  },
+  "sourcePolicyTension": {
+    "file": "CivilizationApocalypse_BP/scripts/civ/districtplan.js",
+    "fact": "Natural target rejects its own vegetated column, but lampClears still includes vegetated adjacent columns within1; generic clear stage can then remove a proven whole tree. Existing outdoor retrofit executes only fixture groups, not that clear stage.",
+    "status": "Potential future-generation natural-tree preservation design gap; not proof any actual current city tree was removed by a lamp. Requires a reproducible/version-compatible change before altering saved natural layout checksums."
+  },
+  "historicalNativeAcceptance": {
+    "D1Nov2Authoring": {
+      "source": "docs/PROGRESS.md",
+      "fixturesProcessed": [
+        2312,
+        2312
+      ],
+      "oldBlocksRemoved": 6451,
+      "newBlocksPlaced": 100,
+      "preservedFixtures": 89,
+      "dayNightViewsObserved": true,
+      "scope": "Historical authoring copy, not a fresh count of current city."
+    },
+    "D2Nov2Authoring": {
+      "source": "docs/PROGRESS.md",
+      "fixturesProcessed": [
+        2322,
+        2322
+      ],
+      "resumedRunOldBlocksRemoved": 3276,
+      "resumedRunNewBlocksPlaced": 89,
+      "preservedFixtures": 742,
+      "scope": "Counters from resumed run exclude work before its loading pause; not a total-city count."
+    },
+    "D4FarmNov5": {
+      "source": "dist/native-farm-d4-kitchen-20261105.json",
+      "kitchenChanged": 5,
+      "placed": 1,
+      "removed": 4,
+      "rejoinRepeatChanges": 0,
+      "fernPreserved": true,
+      "scope": "One kitchen migration/rejoin plus sampled source checks, not all farms/all districts."
+    },
+    "D4D5Nov6Rejoin": {
+      "source": "dist/native161-city-rejoin-checks-20261106.json",
+      "sampledLampAndSupportChecks": [
+        {
+          "label": "watchtower-standing-lantern-and-spruce-support",
+          "command": "/execute if block -344 58 -457 minecraft:lantern [\"hanging\"=false] run testforblock -344 57 -457 minecraft:spruce_planks",
+          "result": "PASS observed by parent in native UI",
+          "observerCommandExecuted": "/tp @s -340 64 -460",
+          "writes": 0
+        },
+        {
+          "label": "warehouse-two-standing-lanterns-and-barrel-hay-supports",
+          "command": "/execute if block -265 72 -605 minecraft:lantern [\"hanging\"=false] if block -265 71 -605 minecraft:barrel if block -258 72 -609 minecraft:lantern [\"hanging\"=false] run testforblock -258 71 -609 minecraft:hay_block",
+          "result": "PASS observed by parent in native UI",
+          "observerCommandExecuted": "/tp @s -252 77 -610",
+          "writes": 0
+        },
+        {
+          "label": "chapel-two-standing-lanterns-birch-supports-and-oak-leaf-contact",
+          "command": "/execute if block -216 69 -537 minecraft:lantern [\"hanging\"=false] if block -216 68 -537 minecraft:birch_planks if block -216 69 -535 minecraft:lantern [\"hanging\"=false] if block -216 68 -535 minecraft:birch_planks run testforblock -217 69 -536 minecraft:oak_leaves",
+          "result": "PASS observed by parent in native UI",
+          "observerActual": {
+            "x": -210.5,
+            "y": 72,
+            "z": -529.5
+          },
+          "writes": 0
+        }
+      ],
+      "scope": "Historical sampled states/IDs; no current city density acceptance."
+    },
+    "D5ChapelObstruction": {
+      "source": "dist/native-room-census-161-20261106.json",
+      "loadedCells": 475,
+      "discrepancies": 39,
+      "page1Logs": 22,
+      "page1OakLeaves": 10,
+      "cleanupDone": false,
+      "scope": "Non-atomic read-only census; unknown log/leaf origin, not removal authority."
+    },
+    "Latest176City": {
+      "source": "dist\\native176-city-smoke-20261108.json",
+      "all16ClosedBackupPinsVerifiedNow": true,
+      "scope": "Startup and read-only command smoke only; no archer actor/combat/freshactivation/lifecycle acceptance",
+      "sourceInvariantAudit": "Not yet run; no block/receipt preservation inference from startup alone"
+    }
+  },
+  "observedCodeBugs": {
+    "repro": "runtime-race.test.mjs",
+    "log": "runtime-race.log",
+    "cases": 3,
+    "observations": "Actual unchanged production outdoor runtime under synthetic ports deletes a bookshelf inserted on final reread, and deletes same-ID changed lantern hanging state. Pure readiness also accepts changed hanging state. No real world modified.",
+    "sourceCause": "removalReadiness checked IDs only; runtime reread deleted any non-AIR without rechecking expected ID/states.",
+    "fixStage": "dev/staging/natural-lighting-final-read-fix-20261109",
+    "deployed": false
+  },
+  "commandsCurrentlyAvailableReadOnly": [
+    "/scriptevent civ:lights_status",
+    "/scriptevent civ:generate_status",
+    "/scriptevent civ:generate_plan district=all",
+    "/scriptevent civ:interior_lights district=4 building=building-d4-watchtower-3",
+    "/scriptevent civ:interior_lights district=4 building=building-d4-warehouse-4",
+    "/scriptevent civ:interior_lights district=5 building=building-d5-chapel-1",
+    "/scriptevent civ:farm_lights district=4 farm=building-d4-farm_kitchen-1",
+    "/scriptevent civ:farm_lights_status district=4",
+    "/scriptevent civ:generate_diag roompreview district=5 building=building-d5-chapel-1 page=1",
+    "/scriptevent civ:people status"
+  ],
+  "commandCaveats": [
+    "Generation/interior/farm/room diagnostics require current development gate; status of outdoor lighting is outside it. Turning the gate on is a clone preparation property change, not a read-only observation.",
+    "Existing civ:lights/civ:lights_natural with no preview are immediate mutators; do not run bulk cleanup before fix review. Current preview token is rejected by old parser.",
+    "New outdoor ...preview exists ONLY in the staged fix until reviewed/promoted; it reports known source fixture proposal counts, not a whole-map light-level census; AIR can count as safely repeatable obsolete fixture.",
+    "Do not append confirm to farm/interior commands in the readonly gate. Do not run heavy tree inspector or any leafrepair confirm.",
+    "Historical coordinate commands must be preceded by current clone saved-source identity verification. Old screenshot is not the current state."
+  ],
+  "candidateClone": {
+    "receipt": "dist\\native176-city-smoke-20261108.json",
+    "sha256": "2E407D82DE7DE69837C72C817371F5E4564E69F7B673836C7A5AAE51B99A86A8",
+    "backup": "E:\\CivilizationApocalypse\\dist\\backups\\native176-city-smoke-20261108",
+    "files": 16,
+    "allPinsMatch": true,
+    "visibleNameRule": "Choose NEW distinct Natural Lights Review label and folder; retain exact source/prior worlds. Clone preparation only, no clone created by this audit."
+  },
+  "sourcePins": {
+    "CivilizationApocalypse_BP/scripts/civ/districtplan.js": "BAE2D199DE6ABADB33C15CD7EA2BA07DFDD856018C3E3B57B4B48EB1CFDB663A",
+    "CivilizationApocalypse_BP/scripts/civ/walls.js": "FD689A52712410A646C3FF13D2FFD7719B828FEDA449B06DBD3F6A7AE174C292",
+    "CivilizationApocalypse_BP/scripts/civ/interiorlights.js": "E70C0A0E99DAD431814AC7B52B5EA0EAAD24A37355C67A02AF01725CFFA7EDD6",
+    "CivilizationApocalypse_BP/scripts/civ/farmfixtures.js": "50E13BB6B3CE2D1C1C058F9FECBA851B32DD3ACD6EA25AEFA7771F5E5C636244",
+    "CivilizationApocalypse_BP/scripts/civ/lightingRevision.js": "9C1726B6E30E905BE9C64F3A8E3CECCF816BCA114BD0244595B114D95E08D4D0",
+    "CivilizationApocalypse_BP/scripts/integration/lightingRevision.js": "8C99306C32B91E81AB63B33D95357E710DD367DFF7F5B003509D7FC58F0F7855",
+    "CivilizationApocalypse_BP/scripts/commands/civ.js": "099848A07F44D6FCA73D286962216FEF739BDBC13A3D544AD214204225893475",
+    "docs/ROADMAP.md": "2221F256B83BBE847592CC48BB406C3489A5D19E142C7E6FDFC883B98C78D5E0",
+    "docs/PROGRESS.md": "667053DECE74BFD333B891B3F008810F0EFA36A1664855ACBDD1C6EFDA1F8A04"
+  },
+  "evidencePins": {
+    "dist/native-city-targeted-lights-20261106.json": "32FBA5CF08C3B324FDA5D4DCC426F30EBB44120D27113D7C748E9AEC3286A7ED",
+    "dist/native161-city-rejoin-checks-20261106.json": "C830B788E42109AE4266E5D3EED45981335B0C3111C0BA360594668A0D263400",
+    "dist/native-farm-d4-kitchen-20261105.json": "AC066B9561B52DAA634FC643B86B52EA81832B11744B72E229A3100AEBB744A4",
+    "dist/native-room-census-161-20261106.json": "72722573444738F30CC57A16880B487ABEEB80D4DD34E957E8BC7342360B2E33",
+    "dist/d4-interior-light-saved-coordinates-20261106.json": "BBC1A6FCB2E6715FE7E0362907C49AA0714B30FE1C745D184363F3ADF18CB0FF",
+    "dist/native176-city-smoke-20261108.json": "2E407D82DE7DE69837C72C817371F5E4564E69F7B673836C7A5AAE51B99A86A8"
+  },
+  "nativeAcceptanceOfFix": false
+}

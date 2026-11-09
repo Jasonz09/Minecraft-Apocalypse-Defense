@@ -153,7 +153,8 @@ function dispatchGeneration(kingdomStore, event) {
     if (LAMP_EVENT_IDS.includes(id)) {
         // Before the generation gate: a released world (gate off) still gets its built districts lit.
         if (id === CIV_EVENT_IDS.lights || id === CIV_EVENT_IDS.lightsNatural) {
-            handleNaturalLights(kingdomStore, parseCivArgs(parseArgs(event.message)), event);
+            const lightArgs=parseArgs(event.message),preview=lightArgs.includes("preview");if(lightArgs.filter(a=>a==="preview").length>1){reply(["Use preview once; nothing changed."],event);return;}
+            handleNaturalLights(kingdomStore, parseCivArgs(lightArgs.filter(a=>a!=="preview")), event,preview);
         } else if (id === CIV_EVENT_IDS.lightsStatus) {
             handleLampStatus(event);
         } else {
@@ -227,8 +228,8 @@ async function handleFarmLights(kingdomStore,event) {
 // ---------------------------------------------------------------------------------------------
 // civ:lights / civ:lights_status / civ:lights_abort - additive lighting for built districts
 
-/** @param {KingdomStore} kingdomStore @param {ReturnType<typeof parseCivArgs>} options @param {ScriptEvent} event */
-function handleNaturalLights(kingdomStore, options, event) {
+/** @param {KingdomStore} kingdomStore @param {ReturnType<typeof parseCivArgs>} options @param {ScriptEvent} event @param {boolean} [preview] */
+function handleNaturalLights(kingdomStore, options, event,preview=false) {
     if (options.error) { reply([options.error], event); return; }
     const player = playerOf(event);
     const loaded = kingdomStore.load();
@@ -239,7 +240,9 @@ function handleNaturalLights(kingdomStore, options, event) {
         if (index === undefined) return;
         const district = districtById(loaded.kingdom, districtIdFor(index));
         if (district?.civ?.status !== "complete") { reply([`${districtTitle(index)} is unfinished; its lights were left alone.`], event); step(); return; }
-        const result = startLightingRevision({ index, civ: district.civ, dimension: player?.dimension ?? world.getDimension("overworld"),
+        const master=loadMasterPlan();if(master.status!=="ok"||!master.plan){reply(["Saved master protection cannot be verified; lighting left unchanged."],event);return;}
+        const protectedAreas=protectedRects(loaded.kingdom,1,master.plan,WRITE_PROTECT_GROW,index);
+        const result = startLightingRevision({ index, civ: district.civ, preview,protectedRects:protectedAreas,dimension: player?.dimension ?? world.getDimension("overworld"),
             say: (lines) => reply(lines, event), onEnd: (complete) => { if (complete) step(); } });
         if (!result.ok) reply([`Lighting was not started: ${String(result.reason)}.`], event);
     };

@@ -1,0 +1,57 @@
+{
+  "format_version": "1.26.20",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "civ_trial:cavalry_mount",
+      "is_spawnable": false,
+      "is_summonable": true
+    },
+    "components": {
+      "minecraft:type_family": {
+        "family": [
+          "civ_cavalry_mount",
+          "civ_guard",
+          "mob"
+        ]
+      },
+      "minecraft:health": {
+        "value": 30,
+        "max": 30
+      },
+      "minecraft:collision_box": {
+        "width": 1.4,
+        "height": 1.6
+      },
+      "minecraft:physics": {},
+      "minecraft:pushable_by_entity": {},
+      "minecraft:pushable_by_block": {},
+      "minecraft:movement": {
+        "value": 0.22
+      },
+      "minecraft:movement.basic": {},
+      "minecraft:navigation.walk": {
+        "avoid_water": true,
+        "avoid_damage_blocks": true
+      },
+      "minecraft:jump.static": {},
+      "minecraft:rideable": {
+        "seat_count": 1,
+        "family_types": [
+          "civ_cavalry_rider"
+        ],
+        "pull_in_entities": false,
+        "seats": [
+          {
+            "position": [
+              0,
+              1.35,
+              0
+            ]
+          }
+        ]
+      },
+      "minecraft:nameable": {},
+      "minecraft:persistent": {}
+    }
+  }
+}

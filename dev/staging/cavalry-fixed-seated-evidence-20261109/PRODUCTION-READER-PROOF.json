@@ -1,0 +1,337 @@
+{
+  "decision": "ACTUAL_PRODUCTION_V3_PARSER_ACCEPTS_ALL_OBSERVED_CLOSED_MAIN_SNAPSHOTS",
+  "writesForbidden": true,
+  "proof": [
+    {
+      "sequence": 3134,
+      "step": 2,
+      "record": null,
+      "compoundCount": 0,
+      "cursor": {
+        "v": 1,
+        "t": 11187,
+        "n": 1,
+        "s": 0,
+        "o": 0,
+        "p": [
+          "district-1:sol:0"
+        ]
+      }
+    },
+    {
+      "sequence": 3144,
+      "step": 3,
+      "record": {
+        "v": 3,
+        "epoch": "cavalry-owner-c69474372d104b22a33e1f5af93ef748",
+        "group": "district-1:sol:0",
+        "generation": 1,
+        "kind": "compound",
+        "single": null,
+        "rider": {
+          "phase": "never",
+          "type": "civ_trial:cavalry",
+          "actor": null,
+          "terminal": "none"
+        },
+        "mount": {
+          "phase": "never",
+          "type": "civ_trial:cavalry_mount",
+          "actor": null,
+          "terminal": "none"
+        }
+      },
+      "compoundCount": 1,
+      "cursor": {
+        "v": 1,
+        "t": 13114,
+        "n": 2,
+        "s": 1,
+        "o": 1,
+        "p": [
+          "district-1:sol:0"
+        ]
+      }
+    },
+    {
+      "sequence": 3166,
+      "step": 3,
+      "record": {
+        "v": 3,
+        "epoch": "cavalry-owner-c69474372d104b22a33e1f5af93ef748",
+        "group": "district-1:sol:0",
+        "generation": 1,
+        "kind": "compound",
+        "single": null,
+        "rider": {
+          "phase": "never",
+          "type": "civ_trial:cavalry",
+          "actor": null,
+          "terminal": "none"
+        },
+        "mount": {
+          "phase": "never",
+          "type": "civ_trial:cavalry_mount",
+          "actor": null,
+          "terminal": "none"
+        }
+      },
+      "compoundCount": 1,
+      "cursor": {
+        "v": 1,
+        "t": 13114,
+        "n": 2,
+        "s": 1,
+        "o": 1,
+        "p": [
+          "district-1:sol:0"
+        ]
+      }
+    },
+    {
+      "sequence": 3176,
+      "step": 4,
+      "record": {
+        "v": 3,
+        "epoch": "cavalry-owner-c69474372d104b22a33e1f5af93ef748",
+        "group": "district-1:sol:0",
+        "generation": 1,
+        "kind": "compound",
+        "single": null,
+        "rider": {
+          "phase": "alive",
+          "type": "civ_trial:cavalry",
+          "actor": "-21474836479",
+          "terminal": "none"
+        },
+        "mount": {
+          "phase": "never",
+          "type": "civ_trial:cavalry_mount",
+          "actor": null,
+          "terminal": "none"
+        }
+      },
+      "compoundCount": 1,
+      "cursor": {
+        "v": 1,
+        "t": 14114,
+        "n": 3,
+        "s": 1,
+        "o": 1,
+        "p": [
+          "district-1:sol:0"
+        ]
+      }
+    },
+    {
+      "sequence": 3193,
+      "step": 5,
+      "record": {
+        "v": 3,
+        "epoch": "cavalry-owner-c69474372d104b22a33e1f5af93ef748",
+        "group": "district-1:sol:0",
+        "generation": 1,
+        "kind": "compound",
+        "single": null,
+        "rider": {
+          "phase": "alive",
+          "type": "civ_trial:cavalry",
+          "actor": "-21474836479",
+          "terminal": "none"
+        },
+        "mount": {
+          "phase": "alive",
+          "type": "civ_trial:cavalry_mount",
+          "actor": "-21474836478",
+          "terminal": "none"
+        }
+      },
+      "compoundCount": 1,
+      "cursor": {
+        "v": 1,
+        "t": 15114,
+        "n": 4,
+        "s": 1,
+        "o": 1,
+        "p": [
+          "district-1:sol:0"
+        ]
+      }
+    },
+    {
+      "sequence": 3209,
+      "step": 5,
+      "record": {
+        "v": 3,
+        "epoch": "cavalry-owner-c69474372d104b22a33e1f5af93ef748",
+        "group": "district-1:sol:0",
+        "generation": 1,
+        "kind": "compound",
+        "single": null,
+        "rider": {
+          "phase": "alive",
+          "type": "civ_trial:cavalry",
+          "actor": "-21474836479",
+          "terminal": "none"
+        },
+        "mount": {
+          "phase": "alive",
+          "type": "civ_trial:cavalry_mount",
+          "actor": "-21474836478",
+          "terminal": "none"
+        }
+      },
+      "compoundCount": 1,
+      "cursor": {
+        "v": 1,
+        "t": 15114,
+        "n": 4,
+        "s": 1,
+        "o": 1,
+        "p": [
+          "district-1:sol:0"
+        ]
+      }
+    },
+    {
+      "sequence": 3224,
+      "step": 6,
+      "record": {
+        "v": 3,
+        "epoch": "cavalry-owner-c69474372d104b22a33e1f5af93ef748",
+        "group": "district-1:sol:0",
+        "generation": 1,
+        "kind": "compound",
+        "single": null,
+        "rider": {
+          "phase": "alive",
+          "type": "civ_trial:cavalry",
+          "actor": "-21474836479",
+          "terminal": "none"
+        },
+        "mount": {
+          "phase": "alive",
+          "type": "civ_trial:cavalry_mount",
+          "actor": "-21474836478",
+          "terminal": "none"
+        }
+      },
+      "compoundCount": 1,
+      "cursor": {
+        "v": 1,
+        "t": 16114,
+        "n": 5,
+        "s": 0,
+        "o": 1,
+        "p": [
+          "district-1:sol:0"
+        ]
+      }
+    },
+    {
+      "sequence": 3228,
+      "step": 6,
+      "record": {
+        "v": 3,
+        "epoch": "cavalry-owner-c69474372d104b22a33e1f5af93ef748",
+        "group": "district-1:sol:0",
+        "generation": 1,
+        "kind": "compound",
+        "single": null,
+        "rider": {
+          "phase": "alive",
+          "type": "civ_trial:cavalry",
+          "actor": "-21474836479",
+          "terminal": "none"
+        },
+        "mount": {
+          "phase": "alive",
+          "type": "civ_trial:cavalry_mount",
+          "actor": "-21474836478",
+          "terminal": "none"
+        }
+      },
+      "compoundCount": 1,
+      "cursor": {
+        "v": 1,
+        "t": 16114,
+        "n": 5,
+        "s": 0,
+        "o": 1,
+        "p": [
+          "district-1:sol:0"
+        ]
+      }
+    },
+    {
+      "sequence": 3240,
+      "step": 7,
+      "record": {
+        "v": 3,
+        "epoch": "cavalry-owner-c69474372d104b22a33e1f5af93ef748",
+        "group": "district-1:sol:0",
+        "generation": 1,
+        "kind": "compound",
+        "single": null,
+        "rider": {
+          "phase": "alive",
+          "type": "civ_trial:cavalry",
+          "actor": "-21474836479",
+          "terminal": "none"
+        },
+        "mount": {
+          "phase": "alive",
+          "type": "civ_trial:cavalry_mount",
+          "actor": "-21474836478",
+          "terminal": "none"
+        }
+      },
+      "compoundCount": 1,
+      "cursor": {
+        "v": 1,
+        "t": 17114,
+        "n": 6,
+        "s": 0,
+        "o": 1,
+        "p": [
+          "district-1:sol:0"
+        ]
+      }
+    },
+    {
+      "sequence": 3255,
+      "step": 7,
+      "record": {
+        "v": 3,
+        "epoch": "cavalry-owner-c69474372d104b22a33e1f5af93ef748",
+        "group": "district-1:sol:0",
+        "generation": 1,
+        "kind": "compound",
+        "single": null,
+        "rider": {
+          "phase": "alive",
+          "type": "civ_trial:cavalry",
+          "actor": "-21474836479",
+          "terminal": "none"
+        },
+        "mount": {
+          "phase": "alive",
+          "type": "civ_trial:cavalry_mount",
+          "actor": "-21474836478",
+          "terminal": "none"
+        }
+      },
+      "compoundCount": 1,
+      "cursor": {
+        "v": 1,
+        "t": 17114,
+        "n": 6,
+        "s": 0,
+        "o": 1,
+        "p": [
+          "district-1:sol:0"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,117 @@
+{
+  "decision": "PASS_CLOSED_REJOIN_IDENTITIES_GENERATION_ISSUANCE_RAW_UNCHANGED",
+  "receipt": "dist/cavalry-fixed-seated-rejoin-20261109.json",
+  "files": {
+    "db/000021.log": {
+      "bytes": 557307,
+      "sha256": "049027F5EFC030037AD8E18253BD7F5AA61C6B6832E26E0C09D2C3FFEB52C0A8"
+    },
+    "db/000022.ldb": {
+      "bytes": 240800,
+      "sha256": "AB8D959DD8101E49D4FE907D22EFD41701BF5FF51016EC6766FE1CFAEEBE0F78"
+    },
+    "db/CURRENT": {
+      "bytes": 16,
+      "sha256": "300FEB3870E7D5E43B28BD6B7826D9E0C21E0E81AC1B44E9C4E35957AD0FA023"
+    },
+    "db/MANIFEST-000019": {
+      "bytes": 239,
+      "sha256": "30C71151FDB7F5C2AA5563B09596AB5CD54AFC05BF53632CEB1BB5D40C6F343D"
+    },
+    "level.dat": {
+      "bytes": 3074,
+      "sha256": "18897AC139EE29ED3A0A610FD3683AD5265F38E24D89875D43255E43EB2AC04D"
+    },
+    "level.dat_old": {
+      "bytes": 3074,
+      "sha256": "89FB8E99045F2C0B79F5661B1C3667847F22E238AF45B5DC5C223137453C850C"
+    },
+    "levelname.txt": {
+      "bytes": 26,
+      "sha256": "2F7F4BC0A1A9793D10CF87523666D89EACBC844CDE1B48750135436FFECFC434"
+    },
+    "world_behavior_packs.json": {
+      "bytes": 93,
+      "sha256": "077B3AB7AFF3F0DF44324397897EA3D31AD40D9020193BB561468534F2C44A50"
+    },
+    "world_icon.jpeg": {
+      "bytes": 64141,
+      "sha256": "A1F85DABF089A38B482879105BE974ADCA0A025BA8C236F2AE411E5BE88DEC8A"
+    },
+    "world_resource_packs.json": {
+      "bytes": 93,
+      "sha256": "369934E4A54E66671DC8672C3E53135CEC7F0CDF6D7FDE80794B85AF9416AEAD"
+    }
+  },
+  "exactTenFileInventorySizeShaStable": true,
+  "crcWal": {
+    "first": 4236,
+    "last": 5244,
+    "mutations": 1009,
+    "contiguous": true,
+    "previousLast": 4235
+  },
+  "rawUnchangedAcrossAllObservedMainSnapshots": [
+    "civ:creation_activation:v3",
+    "civ:pop_bind:v3:meta",
+    "civ:pop_bind:v3:index:0",
+    "civ:pop_bind:v3:district-1:sol:0"
+  ],
+  "newGenerationOrIssuanceObserved": false,
+  "mainSnapshots": [
+    {
+      "sequence": 4255,
+      "step": 7,
+      "cursor": {
+        "v": 1,
+        "t": 17114,
+        "n": 6,
+        "s": 0,
+        "o": 1,
+        "p": [
+          "district-1:sol:0"
+        ]
+      }
+    },
+    {
+      "sequence": 4260,
+      "step": 8,
+      "cursor": {
+        "v": 1,
+        "t": 18860,
+        "n": 7,
+        "s": 0,
+        "o": 1,
+        "p": [
+          "district-1:sol:0"
+        ]
+      }
+    }
+  ],
+  "closedLog": {
+    "source": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\logs\\ContentLog2026-11-08_21-15-23_1.txt",
+    "bytes": 1535,
+    "sha256": "7183D7646525884B54CCA0C7FEFA4EAC7A0332A49A66E675DFF4B51659266323",
+    "counts": {
+      "errors": 0,
+      "warnings": 0,
+      "highMemory": 0,
+      "Molang": 0,
+      "scriptExceptions": 0
+    }
+  },
+  "parentNativeRejoinObservation": {
+    "tick": 18757,
+    "generation": 1,
+    "rider": "-21474836479",
+    "mount": "-21474836478",
+    "riderRidingOnMount": true,
+    "mountRidersExactlyRider": true,
+    "manualNpcWrites": false
+  },
+  "limits": [
+    "Observed WAL only, no SST/entity census.",
+    "Two-way riding relation is live inspector evidence supplied by root, not derived from metadata.",
+    "Private pad lifecycle proof only; unload/death/combat/production selector/city acceptance open."
+  ]
+}

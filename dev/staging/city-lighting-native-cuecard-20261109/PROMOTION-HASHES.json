@@ -1,0 +1,13 @@
+{
+  "scope": "immutable-source coordinate extraction/read-only cuecard; no native or permission change",
+  "sourceSnapshot": 457089,
+  "districts": 5,
+  "wallRepairPoints": 14,
+  "protectedLeafHistoricalPoints": 3,
+  "newLiveCloneDbRead": false,
+  "artifacts": {
+    "COORDINATES.json": "140863C3FDBE4881A6E73AA3E7EE4B5AE168F425E73F74F5CF3CF6A34381EB9C",
+    "CUECARD.md": "7B88F17D62C12020D7D639FD2A9E1ACB1F40BFD52FD4695731CD5FEDE50E974F",
+    "extract.py": "C584C60AAB0C09A957963B83E1EA44071A630FC0CF2EB16FF145E09516C53A01"
+  }
+}

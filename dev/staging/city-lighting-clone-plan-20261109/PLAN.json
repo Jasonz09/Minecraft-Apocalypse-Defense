@@ -1,0 +1,891 @@
+{
+  "v": 1,
+  "purpose": "DISPOSABLE_PLAYED_CITY_LIGHTING_READONLY_FIRST; NOT fresh ownership or release template",
+  "sourceReceipt": {
+    "path": "E:\\CivilizationApocalypse\\dist\\native176-city-smoke-20261108.json",
+    "sha256": "2E407D82DE7DE69837C72C817371F5E4564E69F7B673836C7A5AAE51B99A86A8"
+  },
+  "sourceAudit": {
+    "path": "E:\\CivilizationApocalypse\\dev\\staging\\city-lighting-clone-plan-20261109\\SOURCE-AUDIT.json",
+    "sha256": "FF3109248DCDC14C9DFDA2FD9A22BBF9085BEE343FA12C4BCA0544E5A4DAA901"
+  },
+  "sourceBackup": "E:\\CivilizationApocalypse\\dist\\backups\\native176-city-smoke-20261108",
+  "sourceExpectedInventory": [
+    {
+      "path": "db/001256.ldb",
+      "bytes": 192182,
+      "sha256": "F2B9D6C61592526803268425676818DD080D5B5081B3031181DBBE687AC7641E"
+    },
+    {
+      "path": "db/001304.ldb",
+      "bytes": 32798,
+      "sha256": "AF74ECBFF2C411856DFC2619343D0DA9F9FB1F17C353B00570DBA901935BB612"
+    },
+    {
+      "path": "db/001762.ldb",
+      "bytes": 2130449,
+      "sha256": "7CD40129235F6309A20FCF5B46A75999706B46BDDC75C7FC8A1C5991A8B62D58"
+    },
+    {
+      "path": "db/001772.log",
+      "bytes": 1459282,
+      "sha256": "C498D1E37F4E01EE165BD0119475A62244E0101A9D6D9C7D23962D90DD89586C"
+    },
+    {
+      "path": "db/001774.ldb",
+      "bytes": 2115874,
+      "sha256": "BD6EDF91F4E6A25BF7EED3223FEB6C667DA5BF2D4486230A0C5DE2C44D88A3D7"
+    },
+    {
+      "path": "db/001775.ldb",
+      "bytes": 2112850,
+      "sha256": "62BCB74645492DE9AE504651C593B5588B1C1EE50ED41C0FA7FD4D77FEC01D09"
+    },
+    {
+      "path": "db/001776.ldb",
+      "bytes": 2120444,
+      "sha256": "A10FF2D3877A7F8F33D43F9E96FA24CE55783CDA9AF5922C0EB31EB966433282"
+    },
+    {
+      "path": "db/CURRENT",
+      "bytes": 16,
+      "sha256": "A9017EFCA250C9C4810496B64D9B78339F8978B370A03A3F3DF3F261431DFBB8"
+    },
+    {
+      "path": "db/MANIFEST-001770",
+      "bytes": 755,
+      "sha256": "D206677E9B3E9FCD0300B6764345FEBE609979627260ED7D1D6D15AFD7F83425"
+    },
+    {
+      "path": "level.dat",
+      "bytes": 3067,
+      "sha256": "D7D18F684E985E2CE48F524A90789942003A2BEA7F318FD5AF1D342525728B1A"
+    },
+    {
+      "path": "level.dat_old",
+      "bytes": 3067,
+      "sha256": "7BA1E0E8B55B7A9C16B14AEF2C5C11B33BAD8B4FEE484C3EEF33607AEF890DD8"
+    },
+    {
+      "path": "levelname.txt",
+      "bytes": 19,
+      "sha256": "DB705B9AC09E4CB44393D0724D01B173A482C05B1602C51D899EB46786960621"
+    },
+    {
+      "path": "world_behavior_pack_history.json",
+      "bytes": 154,
+      "sha256": "E278AEB51F6C2BB8123BE7ABB5E62F4A5AF4B2AD0C6EC62F29CE7543EF8E6197"
+    },
+    {
+      "path": "world_behavior_packs.json",
+      "bytes": 93,
+      "sha256": "077B3AB7AFF3F0DF44324397897EA3D31AD40D9020193BB561468534F2C44A50"
+    },
+    {
+      "path": "world_icon.jpeg",
+      "bytes": 105398,
+      "sha256": "A76BE81D549062158E97D6238ACBCDF6A80002D933ABB8F369EBA2546A245858"
+    },
+    {
+      "path": "world_resource_packs.json",
+      "bytes": 93,
+      "sha256": "369934E4A54E66671DC8672C3E53135CEC7F0CDF6D7FDE80794B85AF9416AEAD"
+    }
+  ],
+  "target": {
+    "worldParent": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\16044254735791270272\\games\\com.mojang\\minecraftWorlds",
+    "worldFolder": "CA_LightingReview_Nov9_78a94a0c",
+    "visibleName": "CA Natural Lights Nov9 78a94a0c",
+    "absolutePath": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\16044254735791270272\\games\\com.mojang\\minecraftWorlds\\CA_LightingReview_Nov9_78a94a0c",
+    "mustNotExist": true,
+    "created": false
+  },
+  "namingOnlyChanges": [
+    "level.dat",
+    "levelname.txt"
+  ],
+  "expectedCloneInventory": [
+    {
+      "path": "db/001256.ldb",
+      "bytes": 192182,
+      "sha256": "F2B9D6C61592526803268425676818DD080D5B5081B3031181DBBE687AC7641E"
+    },
+    {
+      "path": "db/001304.ldb",
+      "bytes": 32798,
+      "sha256": "AF74ECBFF2C411856DFC2619343D0DA9F9FB1F17C353B00570DBA901935BB612"
+    },
+    {
+      "path": "db/001762.ldb",
+      "bytes": 2130449,
+      "sha256": "7CD40129235F6309A20FCF5B46A75999706B46BDDC75C7FC8A1C5991A8B62D58"
+    },
+    {
+      "path": "db/001772.log",
+      "bytes": 1459282,
+      "sha256": "C498D1E37F4E01EE165BD0119475A62244E0101A9D6D9C7D23962D90DD89586C"
+    },
+    {
+      "path": "db/001774.ldb",
+      "bytes": 2115874,
+      "sha256": "BD6EDF91F4E6A25BF7EED3223FEB6C667DA5BF2D4486230A0C5DE2C44D88A3D7"
+    },
+    {
+      "path": "db/001775.ldb",
+      "bytes": 2112850,
+      "sha256": "62BCB74645492DE9AE504651C593B5588B1C1EE50ED41C0FA7FD4D77FEC01D09"
+    },
+    {
+      "path": "db/001776.ldb",
+      "bytes": 2120444,
+      "sha256": "A10FF2D3877A7F8F33D43F9E96FA24CE55783CDA9AF5922C0EB31EB966433282"
+    },
+    {
+      "path": "db/CURRENT",
+      "bytes": 16,
+      "sha256": "A9017EFCA250C9C4810496B64D9B78339F8978B370A03A3F3DF3F261431DFBB8"
+    },
+    {
+      "path": "db/MANIFEST-001770",
+      "bytes": 755,
+      "sha256": "D206677E9B3E9FCD0300B6764345FEBE609979627260ED7D1D6D15AFD7F83425"
+    },
+    {
+      "path": "level.dat",
+      "bytes": 3079,
+      "sha256": "D9BA6F2C3694C68519B6743BED590A5797D3504E06C627454F36C2D9F3867068"
+    },
+    {
+      "path": "level.dat_old",
+      "bytes": 3067,
+      "sha256": "7BA1E0E8B55B7A9C16B14AEF2C5C11B33BAD8B4FEE484C3EEF33607AEF890DD8"
+    },
+    {
+      "path": "levelname.txt",
+      "bytes": 32,
+      "sha256": "52638FB0B7D0B7B003F2AFA52D69827A983E2D1894FDD7D3801E4E9223D42E5B"
+    },
+    {
+      "path": "world_behavior_pack_history.json",
+      "bytes": 154,
+      "sha256": "E278AEB51F6C2BB8123BE7ABB5E62F4A5AF4B2AD0C6EC62F29CE7543EF8E6197"
+    },
+    {
+      "path": "world_behavior_packs.json",
+      "bytes": 93,
+      "sha256": "077B3AB7AFF3F0DF44324397897EA3D31AD40D9020193BB561468534F2C44A50"
+    },
+    {
+      "path": "world_icon.jpeg",
+      "bytes": 105398,
+      "sha256": "A76BE81D549062158E97D6238ACBCDF6A80002D933ABB8F369EBA2546A245858"
+    },
+    {
+      "path": "world_resource_packs.json",
+      "bytes": 93,
+      "sha256": "369934E4A54E66671DC8672C3E53135CEC7F0CDF6D7FDE80794B85AF9416AEAD"
+    }
+  ],
+  "reviewedNamingHelper": {
+    "path": "dev/staging/private-native-setup-20261108/setup.mjs",
+    "sha256": "15B6A6EE75EAA2A39156C7553E83BF6164FA15D684D4FFC873C7ACA2378EA865",
+    "api": "renameWorldLevel; computed in memory only, full NBT walk/reparse verifies all other fields unchanged"
+  },
+  "allDbBytesAndOldLevelBackupUnchanged": true,
+  "packBindingsPreserved": {
+    "world_behavior_packs.json": {
+      "rawSha256": "077B3AB7AFF3F0DF44324397897EA3D31AD40D9020193BB561468534F2C44A50",
+      "value": [
+        {
+          "pack_id": "fd04cb50-dddc-4ebe-83fc-5b5375819bcb",
+          "version": [
+            1,
+            0,
+            0
+          ]
+        }
+      ],
+      "ordinaryManifestSha256": "D72C4320CE3A3FD404C81821042EB2DB163B8283E1A62533C5553A7B0E0B362D"
+    },
+    "world_resource_packs.json": {
+      "rawSha256": "369934E4A54E66671DC8672C3E53135CEC7F0CDF6D7FDE80794B85AF9416AEAD",
+      "value": [
+        {
+          "pack_id": "e634c636-7b98-49f7-81cd-13483bfa3f9f",
+          "version": [
+            1,
+            0,
+            0
+          ]
+        }
+      ],
+      "ordinaryManifestSha256": "DD789999BB1893624D00C2A75A347F19AF74796917B36B3722D905E06B22BAA2"
+    }
+  },
+  "protectedMetadata": {
+    "planJobRawPins": [
+      {
+        "key": "civ:jobs:b:0",
+        "bytes": 2364,
+        "sha256": "E6BD4B33FD7D35D9C683614793CE2FDC68A5EDB3AED70F23820521F201227FB7"
+      },
+      {
+        "key": "civ:jobs:d2:b:0",
+        "bytes": 2268,
+        "sha256": "3F59CC9AEF9839C540C91B3CCEC4800190D2ADC31B84DBC79B28A0A508AAD62F"
+      },
+      {
+        "key": "civ:jobs:d2:meta",
+        "bytes": 106,
+        "sha256": "54CBA293804A64464CA419BFF870EFCCE88CEF274CA04D12B36D810EE81DA1A4"
+      },
+      {
+        "key": "civ:jobs:d3:b:0",
+        "bytes": 2506,
+        "sha256": "ECE04E39464870B34BB0FE6C23A378AFFB5D1BB86A2EEE500941B17E2A937331"
+      },
+      {
+        "key": "civ:jobs:d3:meta",
+        "bytes": 106,
+        "sha256": "0E4A59F1251B5F2BEC95A8FEBF4487A8E577F515B610A5F38671959ACCA9CC0B"
+      },
+      {
+        "key": "civ:jobs:d4:a:0",
+        "bytes": 2484,
+        "sha256": "EC86AAFDBE7CE94F319E7E1469912268E6B9FFA86EEC0A94BFC9103BAA8C2E23"
+      },
+      {
+        "key": "civ:jobs:d4:meta",
+        "bytes": 106,
+        "sha256": "01701078F6DC135E2A6208A6747B3721DE5A85229956E3C0471E85AED6838068"
+      },
+      {
+        "key": "civ:jobs:d5:a:0",
+        "bytes": 2738,
+        "sha256": "DA7C18BA57D7A1D037775E6607AA67F515803DAB00E1CA7BA2F4862D51FFB568"
+      },
+      {
+        "key": "civ:jobs:d5:meta",
+        "bytes": 107,
+        "sha256": "ACA544B31FED05BC9545CFBAA574699683302BB0610A8573E539C08E1BF9312E"
+      },
+      {
+        "key": "civ:jobs:meta",
+        "bytes": 105,
+        "sha256": "C3CEBA1DADAEDD464EEA3A31A228A11974F41D4E2C2A97647858737989EED039"
+      },
+      {
+        "key": "civ:jobs:repair:d1:b:0",
+        "bytes": 2364,
+        "sha256": "E6BD4B33FD7D35D9C683614793CE2FDC68A5EDB3AED70F23820521F201227FB7"
+      },
+      {
+        "key": "civ:jobs:repair:d1:meta",
+        "bytes": 105,
+        "sha256": "99B4402B8B2032CFD914768744E972E08E166959BDDFE629B9BA7D8ACE182A74"
+      },
+      {
+        "key": "civ:jobs:repair:d2:b:0",
+        "bytes": 2268,
+        "sha256": "3F59CC9AEF9839C540C91B3CCEC4800190D2ADC31B84DBC79B28A0A508AAD62F"
+      },
+      {
+        "key": "civ:jobs:repair:d2:meta",
+        "bytes": 105,
+        "sha256": "A8AE471D2398FA548DA162A924514C493ED2E1CB52AD4A13C4F6697F5117950C"
+      },
+      {
+        "key": "civ:jobs:repair:d4:b:0",
+        "bytes": 2484,
+        "sha256": "EC86AAFDBE7CE94F319E7E1469912268E6B9FFA86EEC0A94BFC9103BAA8C2E23"
+      },
+      {
+        "key": "civ:jobs:repair:d4:meta",
+        "bytes": 105,
+        "sha256": "55182BAB0B2473C6EB6E64C9945CCA6E1049BC54BBEA7BB585B4037B9B5095C1"
+      },
+      {
+        "key": "civ:jobs:repair:d5:a:0",
+        "bytes": 2738,
+        "sha256": "DA7C18BA57D7A1D037775E6607AA67F515803DAB00E1CA7BA2F4862D51FFB568"
+      },
+      {
+        "key": "civ:jobs:repair:d5:meta",
+        "bytes": 105,
+        "sha256": "665442440ED78A725C32EBD3337FC89A2D6C6651A4B977A40CDF4C4934D51B01"
+      },
+      {
+        "key": "civ:plan:a:0",
+        "bytes": 22639,
+        "sha256": "FA06ACC05D5C59E7EAC504B2F1F8AC91B610491D7AC0AD8629BC6253B757DF8D"
+      },
+      {
+        "key": "civ:plan:meta",
+        "bytes": 105,
+        "sha256": "08514E68D68048E8FE0B19CE0B1A04ECB9299B1EB410F851030C4C18D748B963"
+      },
+      {
+        "key": "civ:plan:site:d1:a:0",
+        "bytes": 30000,
+        "sha256": "86652112ED298961A7A093F7988B49C0A62E2B4714767E19ACAF93E0C1A1430F"
+      },
+      {
+        "key": "civ:plan:site:d1:a:1",
+        "bytes": 15724,
+        "sha256": "2A84B6B7F3832F3987D6DD81E6CAD4BDB6C3C80CDD11A95A0CBDB95F04090D47"
+      },
+      {
+        "key": "civ:plan:site:d1:meta",
+        "bytes": 105,
+        "sha256": "6D7783C70E404EC12D2B6951801CAAA493837CBAE859C75EC3C5ADFDFD678BEA"
+      },
+      {
+        "key": "civ:plan:site:d2:a:0",
+        "bytes": 30000,
+        "sha256": "92E83029C7EE2CF75743871EDA8105A114584A6795479268A04BE6985B5C8B12"
+      },
+      {
+        "key": "civ:plan:site:d2:a:1",
+        "bytes": 12186,
+        "sha256": "FC3A08C670EFFB29F3CF6CC04307B08F70225A7F3D72CE15835DC4A06A0825E4"
+      },
+      {
+        "key": "civ:plan:site:d2:meta",
+        "bytes": 105,
+        "sha256": "7317E3E948640993FDE36C30A9754ACE4B50F0FEA2286AC99ADF5486B3FD9768"
+      },
+      {
+        "key": "civ:plan:site:d3:a:0",
+        "bytes": 30000,
+        "sha256": "D1CBD3D909633CCF5205845F65E2E721F2040E1AE90F32414D77FBA30F6C2319"
+      },
+      {
+        "key": "civ:plan:site:d3:a:1",
+        "bytes": 11218,
+        "sha256": "F81F8940F240BA631222EDB51A774C32B70B037C89792B5F29C4B67BC742BEE2"
+      },
+      {
+        "key": "civ:plan:site:d3:meta",
+        "bytes": 105,
+        "sha256": "38351DA23C379C66807B357ADA1C606E639A044AADCCE7516CC09C422B7A1847"
+      },
+      {
+        "key": "civ:plan:site:d4:a:0",
+        "bytes": 30000,
+        "sha256": "9F19B3C264181FECD509816D4569BE2798F2B2517778D28C70DFA29EC3186BAC"
+      },
+      {
+        "key": "civ:plan:site:d4:a:1",
+        "bytes": 23833,
+        "sha256": "487B55BA4E4A4AF9E96B1FF2A86C8071F2D009A0645A68A036C2117E9B45A0E5"
+      },
+      {
+        "key": "civ:plan:site:d4:meta",
+        "bytes": 105,
+        "sha256": "B68193116D07080CD4319AAF7C656520DF342177A5D57D5A07E069FF4645011E"
+      },
+      {
+        "key": "civ:plan:site:d5:a:0",
+        "bytes": 30000,
+        "sha256": "E7ACC63F0812914235C4FD5CA2A9E5ADBA961884CA87F46341C9FFC6B88FAA15"
+      },
+      {
+        "key": "civ:plan:site:d5:a:1",
+        "bytes": 18869,
+        "sha256": "BB41840A101833964D57D833EE6DD8122338C46ED619544959861DD55E826752"
+      },
+      {
+        "key": "civ:plan:site:d5:meta",
+        "bytes": 105,
+        "sha256": "908A7C956C9CE9BBB453AD813380C86D79EF5AC338406C59284C91AC0505A851"
+      }
+    ],
+    "wallReceiptRawPin": {
+      "key": "civ:wall_leaf_trim:v1:d4:c835b06e",
+      "bytes": 3964,
+      "sha256": "3467EF6F75F2E51595B1246E23B2D8701B4FA56C1638A47D79F6CFFE8F9E3818"
+    },
+    "wallReceipt": {
+      "v": 2,
+      "policy": "wall-leaves-trim-v1",
+      "planId": "c835b06e",
+      "index": 4,
+      "checksum": "35635162",
+      "masterHash": "9e5e307e",
+      "dimension": "minecraft:overworld",
+      "sources": [
+        {
+          "index": 1,
+          "checksum": "07515fcb"
+        },
+        {
+          "index": 2,
+          "checksum": "e6d55467"
+        },
+        {
+          "index": 3,
+          "checksum": "6b9f8114"
+        },
+        {
+          "index": 4,
+          "checksum": "35635162"
+        },
+        {
+          "index": 5,
+          "checksum": "23a6aeca"
+        }
+      ],
+      "requested": [
+        {
+          "x": -323,
+          "y": 55,
+          "z": -455
+        },
+        {
+          "x": -323,
+          "y": 56,
+          "z": -455
+        },
+        {
+          "x": -324,
+          "y": 51,
+          "z": -456
+        },
+        {
+          "x": -324,
+          "y": 55,
+          "z": -456
+        },
+        {
+          "x": -324,
+          "y": 56,
+          "z": -456
+        },
+        {
+          "x": -323,
+          "y": 55,
+          "z": -456
+        },
+        {
+          "x": -323,
+          "y": 56,
+          "z": -456
+        },
+        {
+          "x": -323,
+          "y": 57,
+          "z": -456
+        },
+        {
+          "x": -322,
+          "y": 55,
+          "z": -456
+        },
+        {
+          "x": -322,
+          "y": 56,
+          "z": -456
+        },
+        {
+          "x": -322,
+          "y": 57,
+          "z": -456
+        },
+        {
+          "x": -322,
+          "y": 58,
+          "z": -456
+        },
+        {
+          "x": -322,
+          "y": 55,
+          "z": -455
+        },
+        {
+          "x": -322,
+          "y": 56,
+          "z": -455
+        }
+      ],
+      "requestedDigest": "57411888",
+      "entries": [
+        {
+          "target": "-323,55,-455",
+          "desired": {
+            "id": "minecraft:cracked_stone_bricks"
+          },
+          "before": {
+            "typeId": "minecraft:jungle_leaves",
+            "states": {
+              "old_leaf_type": "jungle",
+              "persistent_bit": false,
+              "update_bit": false
+            },
+            "persistent": false
+          },
+          "done": true
+        },
+        {
+          "target": "-323,56,-455",
+          "desired": {
+            "id": "minecraft:stone_bricks"
+          },
+          "before": {
+            "typeId": "minecraft:jungle_leaves",
+            "states": {
+              "old_leaf_type": "jungle",
+              "persistent_bit": false,
+              "update_bit": false
+            },
+            "persistent": false
+          },
+          "done": true
+        },
+        {
+          "target": "-324,51,-456",
+          "desired": {
+            "id": "minecraft:stone_bricks"
+          },
+          "before": {
+            "typeId": "minecraft:oak_leaves",
+            "states": {
+              "old_leaf_type": "oak",
+              "persistent_bit": false,
+              "update_bit": false
+            },
+            "persistent": false
+          },
+          "done": true
+        },
+        {
+          "target": "-324,55,-456",
+          "desired": {
+            "id": "minecraft:stone_bricks"
+          },
+          "before": {
+            "typeId": "minecraft:jungle_leaves",
+            "states": {
+              "old_leaf_type": "jungle",
+              "persistent_bit": false,
+              "update_bit": false
+            },
+            "persistent": false
+          },
+          "done": true
+        },
+        {
+          "target": "-324,56,-456",
+          "desired": {
+            "id": "minecraft:stone_bricks"
+          },
+          "before": {
+            "typeId": "minecraft:jungle_leaves",
+            "states": {
+              "old_leaf_type": "jungle",
+              "persistent_bit": false,
+              "update_bit": false
+            },
+            "persistent": false
+          },
+          "done": true
+        },
+        {
+          "target": "-323,55,-456",
+          "desired": {
+            "id": "minecraft:stone_bricks"
+          },
+          "before": {
+            "typeId": "minecraft:jungle_leaves",
+            "states": {
+              "old_leaf_type": "jungle",
+              "persistent_bit": false,
+              "update_bit": false
+            },
+            "persistent": false
+          },
+          "done": true
+        },
+        {
+          "target": "-323,56,-456",
+          "desired": {
+            "id": "minecraft:mossy_stone_bricks"
+          },
+          "before": {
+            "typeId": "minecraft:jungle_leaves",
+            "states": {
+              "old_leaf_type": "jungle",
+              "persistent_bit": false,
+              "update_bit": false
+            },
+            "persistent": false
+          },
+          "done": true
+        },
+        {
+          "target": "-323,57,-456",
+          "desired": {
+            "id": "minecraft:stone_bricks"
+          },
+          "before": {
+            "typeId": "minecraft:jungle_leaves",
+            "states": {
+              "old_leaf_type": "jungle",
+              "persistent_bit": false,
+              "update_bit": false
+            },
+            "persistent": false
+          },
+          "done": true
+        },
+        {
+          "target": "-322,55,-456",
+          "desired": {
+            "id": "minecraft:cracked_stone_bricks"
+          },
+          "before": {
+            "typeId": "minecraft:jungle_leaves",
+            "states": {
+              "old_leaf_type": "jungle",
+              "persistent_bit": false,
+              "update_bit": false
+            },
+            "persistent": false
+          },
+          "done": true
+        },
+        {
+          "target": "-322,56,-456",
+          "desired": {
+            "id": "minecraft:mossy_stone_bricks"
+          },
+          "before": {
+            "typeId": "minecraft:jungle_leaves",
+            "states": {
+              "old_leaf_type": "jungle",
+              "persistent_bit": false,
+              "update_bit": false
+            },
+            "persistent": false
+          },
+          "done": true
+        },
+        {
+          "target": "-322,57,-456",
+          "desired": {
+            "id": "minecraft:stone_bricks"
+          },
+          "before": {
+            "typeId": "minecraft:jungle_leaves",
+            "states": {
+              "old_leaf_type": "jungle",
+              "persistent_bit": false,
+              "update_bit": false
+            },
+            "persistent": false
+          },
+          "done": true
+        },
+        {
+          "target": "-322,58,-456",
+          "desired": {
+            "id": "minecraft:stone_bricks"
+          },
+          "before": {
+            "typeId": "minecraft:jungle_leaves",
+            "states": {
+              "old_leaf_type": "jungle",
+              "persistent_bit": false,
+              "update_bit": false
+            },
+            "persistent": false
+          },
+          "done": true
+        },
+        {
+          "target": "-322,55,-455",
+          "desired": {
+            "id": "minecraft:cracked_stone_bricks"
+          },
+          "before": {
+            "typeId": "minecraft:jungle_leaves",
+            "states": {
+              "old_leaf_type": "jungle",
+              "persistent_bit": false,
+              "update_bit": false
+            },
+            "persistent": false
+          },
+          "done": true
+        },
+        {
+          "target": "-322,56,-455",
+          "desired": {
+            "id": "minecraft:mossy_stone_bricks"
+          },
+          "before": {
+            "typeId": "minecraft:jungle_leaves",
+            "states": {
+              "old_leaf_type": "jungle",
+              "persistent_bit": false,
+              "update_bit": false
+            },
+            "persistent": false
+          },
+          "done": true
+        }
+      ],
+      "entriesDigest": "440979a4",
+      "complete": true
+    },
+    "receipt14Done": true,
+    "protected3SeparateReceiptPresent": false,
+    "protected3HistoricalWitness": {
+      "path": "E:\\CivilizationApocalypse\\dist\\native161-city-rejoin-checks-20261106.json",
+      "sha256": "C830B788E42109AE4266E5D3EED45981335B0C3111C0BA360594668A0D263400",
+      "check": {
+        "label": "protected3-jungle-leaf-IDs",
+        "command": "/execute if block -321 56 -456 minecraft:jungle_leaves if block -321 56 -455 minecraft:jungle_leaves run testforblock -320 56 -456 minecraft:jungle_leaves",
+        "result": "PASS observed by parent in native UI",
+        "observerCommandExecuted": "/tp @s -340 64 -460",
+        "writes": 0
+      },
+      "coordinates": [
+        {
+          "x": -321,
+          "y": 56,
+          "z": -456
+        },
+        {
+          "x": -321,
+          "y": 56,
+          "z": -455
+        },
+        {
+          "x": -320,
+          "y": 56,
+          "z": -456
+        }
+      ],
+      "expectedHistoricalId": "minecraft:jungle_leaves",
+      "notCurrentBlockOrStateProof": true
+    },
+    "wall14HistoricalNativeChecks": [
+      {
+        "label": "repaired-masonry-first7",
+        "command": "/execute if block -323 55 -455 minecraft:cracked_stone_bricks if block -323 56 -455 minecraft:stone_bricks if block -324 51 -456 minecraft:stone_bricks if block -324 55 -456 minecraft:stone_bricks if block -324 56 -456 minecraft:stone_bricks if block -323 55 -456 minecraft:stone_bricks run testforblock -323 56 -456 minecraft:mossy_stone_bricks",
+        "result": "PASS observed by parent in native UI",
+        "observerCommandExecuted": "/tp @s -340 64 -460",
+        "writes": 0
+      },
+      {
+        "label": "repaired-masonry-second7",
+        "command": "/execute if block -323 57 -456 minecraft:stone_bricks if block -322 55 -456 minecraft:cracked_stone_bricks if block -322 56 -456 minecraft:mossy_stone_bricks if block -322 57 -456 minecraft:stone_bricks if block -322 58 -456 minecraft:stone_bricks if block -322 55 -455 minecraft:cracked_stone_bricks run testforblock -322 56 -455 minecraft:mossy_stone_bricks",
+        "result": "PASS observed by parent in native UI",
+        "observerCommandExecuted": "/tp @s -340 64 -460",
+        "writes": 0
+      }
+    ]
+  },
+  "peopleGate": {
+    "key": "civ_people",
+    "nbtTag": 1,
+    "nbtValue": 1,
+    "semantic": "ON (stored Boolean Byte1); do not confuse with numeric native1",
+    "notReadFromLiveWorld": true
+  },
+  "populationHistory": {
+    "cursorKey": "civ_pop",
+    "cursorRawPin": {
+      "key": "civ_pop",
+      "bytes": 371,
+      "sha256": "A77A780F107764E2B83B6F05B0FD40A164437CAF3EE7DD993EBF6B7898EA5F91"
+    },
+    "cursor": {
+      "v": 1,
+      "t": 1970575,
+      "n": 1481,
+      "s": 2,
+      "o": 2,
+      "p": [
+        "district-3:civ:152",
+        "district-3:civ:206",
+        "district-3:civ:215",
+        "district-3:civ:259",
+        "district-3:civ:268",
+        "district-3:civ:277",
+        "district-3:civ:321",
+        "district-3:civ:330",
+        "district-5:civ:1",
+        "district-5:civ:10",
+        "district-5:civ:13",
+        "district-5:civ:19",
+        "district-5:civ:22",
+        "district-5:civ:31",
+        "district-5:civ:4",
+        "district-5:sol:1"
+      ]
+    },
+    "previousPhysicalGroupIds": 16,
+    "notActorCensus": true,
+    "latestMainCreationOrBindingKeys": [],
+    "absenceMeaning": "No such keys in this latest main snapshot; not proof of never-owned/no-history or no living actors."
+  },
+  "rootDecision": "Root explicitly accepts ordinary population+simulation evolution on NEW CITY CLONE ONLY under reviewed ordinary NULL build; no new owner/HOLD bypass or actor lifecycle proof. No OFF/DP patch/reset/manual NPC removal/teleport/adoption commands. Preserve original16source, before/after clone receipts; lighting commands remain readonly until actual preview/protection separate gate. This is a project testing decision record, not a freshness or authorization certificate.",
+  "noImplicitAuthorizationCertificate": true,
+  "ordinaryLightingGate": {
+    "expectedProductionPaths": [
+      {
+        "path": "CivilizationApocalypse_BP/scripts/civ/lightingRevision.js",
+        "expectedSha256": "5BC07A61174184E3D4C446F1C06012E7E926D9534C86DE62747AA411ECACAD98",
+        "currentSourceSha256": "5BC07A61174184E3D4C446F1C06012E7E926D9534C86DE62747AA411ECACAD98",
+        "installedAcceptance": false
+      },
+      {
+        "path": "CivilizationApocalypse_BP/scripts/commands/civ.js",
+        "expectedSha256": "87D0466FC9301483E550119EA68349EDED0DE4584A8E43AE8456B8F1F1CCB5FA",
+        "currentSourceSha256": "87D0466FC9301483E550119EA68349EDED0DE4584A8E43AE8456B8F1F1CCB5FA",
+        "installedAcceptance": false
+      },
+      {
+        "path": "CivilizationApocalypse_BP/scripts/integration/lightingRevision.js",
+        "expectedSha256": "84256D9CBD50E55EA889DFB7400D9F9EAF0DE964B87EF121708469DB21061EFC",
+        "currentSourceSha256": "84256D9CBD50E55EA889DFB7400D9F9EAF0DE964B87EF121708469DB21061EFC",
+        "installedAcceptance": false
+      }
+    ],
+    "expectedNullSources": [
+      {
+        "path": "CivilizationApocalypse_BP/scripts/integration/freshFixtureTrust.js",
+        "sha256": "5914C01773380ED8DF19B8AB7A271251F65E5EA6EDC7128AB0110808ACA7EADF",
+        "constant": "REVIEWED_FRESH_FIXTURE",
+        "value": null
+      },
+      {
+        "path": "CivilizationApocalypse_BP/scripts/integration/cavalryFreshTrust.js",
+        "sha256": "299384D6802EBCC41C10A14E4226C8A79CEAC86D7040451E110355D57C701604",
+        "constant": "REVIEWED_CAVALRY_FIXTURE",
+        "value": null
+      },
+      {
+        "path": "CivilizationApocalypse_BP/scripts/integration/cavalryMicrotrialTrust.js",
+        "sha256": "4E21322BA738A5CCBDEDE847496335ED1901658B67F590E67AC8BF069C02C6BE",
+        "constant": "PRIVATE_CAVALRY_TRIAL",
+        "value": null
+      }
+    ],
+    "requiredBeforeOpening": "Root successful full191 lighting verification + full ordinary installed-pair hash receipt for same3source changes; no private descriptors or actor-pad profile. Still pending here.",
+    "installedVerified": false
+  },
+  "nativeFirstEntry": {
+    "readonlyPreviewCommand": "/scriptevent civ:lights_natural district=1 preview",
+    "onlyAfterLightingInstallGate": true,
+    "manualCleanupAuthorized": false,
+    "rootAcceptsOrdinaryPopulationSimulationOnThisCloneOnly": true,
+    "noOffOrOfflineDpPatch": true,
+    "noClockResetOrManualNpcRemoveTeleportAdopt": true,
+    "originalWorldMustRemainClosed": true,
+    "beforeAfterReceiptsRequired": true,
+    "readOnlyDoesNotFreezeExistingWorldOwners": true
+  },
+  "executeStatus": "PLAN_ONLY; no copy, named-world write, deploy, UI or native command performed"
+}

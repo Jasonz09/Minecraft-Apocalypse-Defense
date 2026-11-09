@@ -1,0 +1,49 @@
+--- natural-lighting-final-read-fix/integration/lightingRevision.js
++++ natural-lighting-final-barrier-delta/integration/lightingRevision.js
+@@ -106,7 +106,7 @@
+         /** @param {number} cursor @param {boolean} [done] */
+         const save = (cursor, done = false) => {
+             const view = { signature, cursor, total: work.length, complete: done, removed, placed, preserved };
+-            world.setDynamicProperty(key, JSON.stringify(view));
++            sources.assert();world.setDynamicProperty(key, JSON.stringify(view));sources.assert();
+             state.view = view;
+         };
+         save(progress.cursor);
+@@ -137,6 +137,7 @@
+                     if(block.typeId==="minecraft:air")continue;
+                     if(!matches(block,op)){preserved+=1;break;}
+                     sources.assert();if(!matches(block,op)){preserved+=1;break;}
++                    sources.assert();
+                     setter.call(block,air);removed+=1;sources.assert();
+                 }
+             } else {
+@@ -152,11 +153,19 @@
+                     const bottom = item.group.reduce((a, b) => a.y < b.y ? a : b);
+                     const support = read({ x: bottom.x, y: bottom.y - 1, z: bottom.z });
+                     if (!support) throw new Error("light support is unreadable");
++                const supportId=support.typeId;
+                     if (["minecraft:air", "minecraft:water", "minecraft:flowing_water", "minecraft:lava", "minecraft:flowing_lava"].includes(support.typeId)||isPlant(support.typeId)||isTreePart(support.typeId)) preserved += 1;
+                     else for (let at = item.group.length - 1; at >= 0; at -= 1) {
+                         const op=item.group[at],permutation=BlockPermutation.resolve(op.id,op.states??{}),block=read(op);if(!block)throw Error("new fixture final read unavailable");const setter=block.setPermutation;sources.assert();if(matches(block,op))continue;
+                         if(block.typeId!=="minecraft:air"){preserved++;break;}
+                         sources.assert();if(block.typeId!=="minecraft:air"){preserved++;break;}
++                        const finalSupport=read({x:bottom.x,y:bottom.y-1,z:bottom.z});if(!finalSupport)throw Error("light support final read is unavailable");
++                        sources.assert();
++                        // Existing writes are per-cell, never atomic for a whole post.
++                        // Recheck footing after target and metadata callbacks. A late
++                        // footing HOLD retains verified cells/cursor for explicit resume.
++                        if(block.typeId!=="minecraft:air"){preserved++;break;}
++                        if(finalSupport.isValid===false||finalSupport.typeId!==supportId)throw Error("light footing changed during fixture; verified partial cells retained");
+                         setter.call(block,permutation);placed++;sources.assert();
+                     }
+                 }
+@@ -165,8 +174,8 @@
+             if (progress.cursor % 40 === 0) { options.say([`Lighting: ${progress.cursor + 1}/${work.length} fixtures; ${removed} old blocks removed, ${placed} new blocks placed.`]); await nextTick(); }
+         }
+         if (!token.cancelled) {
++            save(work.length, true);
+             complete = true;
+-            save(work.length, true);
+             options.say([`Natural lighting complete: ${removed} old lighting blocks removed, ${placed} new blocks placed; ${preserved} obstructed fixtures preserved. Open land is intentionally darker.`]);
+         }
+     } catch (error) {

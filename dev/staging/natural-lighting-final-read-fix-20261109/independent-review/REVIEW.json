@@ -1,0 +1,51 @@
+{
+  "decision": "BLOCKED_TWO_ACTUAL_RUNTIME_SAFETY_REGRESSIONS",
+  "manifestSha256": "D1C4A9BB965120D7F66855414807869C23190B1AC6A2635EDE4515459290D9A0",
+  "proposedPinsVerified": [
+    {
+      "path": "dev/staging/natural-lighting-final-read-fix-20261109/proposed/civ/lightingRevision.js",
+      "expected": "5BC07A61174184E3D4C446F1C06012E7E926D9534C86DE62747AA411ECACAD98",
+      "actual": "5BC07A61174184E3D4C446F1C06012E7E926D9534C86DE62747AA411ECACAD98"
+    },
+    {
+      "path": "dev/staging/natural-lighting-final-read-fix-20261109/proposed/commands/civ.js",
+      "expected": "87D0466FC9301483E550119EA68349EDED0DE4584A8E43AE8456B8F1F1CCB5FA",
+      "actual": "87D0466FC9301483E550119EA68349EDED0DE4584A8E43AE8456B8F1F1CCB5FA"
+    },
+    {
+      "path": "dev/staging/natural-lighting-final-read-fix-20261109/proposed/integration/lightingRevision.js",
+      "expected": "3892C5B180FA335CDC868E608B19E1269DE2B4213F15379DDB9892C8C80668AD",
+      "actual": "3892C5B180FA335CDC868E608B19E1269DE2B4213F15379DDB9892C8C80668AD"
+    },
+    {
+      "path": "dev/staging/natural-lighting-final-read-fix-20261109/proposed-dev/lib/civharness.mjs",
+      "expected": "779DE5280CA068CAF5AA25671F702D9E46B9CB209D528A0E38BB93403C534E78",
+      "actual": "779DE5280CA068CAF5AA25671F702D9E46B9CB209D528A0E38BB93403C534E78"
+    }
+  ],
+  "tests": {
+    "pass": 15,
+    "fail": 2,
+    "durationMs": 1487.7568,
+    "test": "late-support-race.test.mjs",
+    "log": "late-support-race.log"
+  },
+  "blockers": [
+    {
+      "trigger": "Final bottom-target getBlock callback changes earlier checked support stone to AIR",
+      "observed": "Fence+lantern2writes remain; expected0",
+      "scope": "Actual proposed runtime with synthetic native ports"
+    },
+    {
+      "trigger": "Final expected-state comparison native getState callback revokes saved plan property",
+      "observed": "Lantern deletion1write occurs before source revocation detected; expected0",
+      "scope": "Actual proposed runtime with synthetic native ports"
+    }
+  ],
+  "otherLimits": [
+    "Whole-fixture snapshot is preflight only; per-cell mutation may partially finish before later conflict. Do not describe atomic whole-fixture update.",
+    "Staged runtime tests use loader/mock ports; central promotion must adapt to actual production imports, no staging fallback.",
+    "Read-only preview no holds/journal writes covered by passing baseline tests; no native performance/geometry acceptance."
+  ],
+  "changes": "Independent review files only; original frozen production proposals unchanged."
+}

@@ -1,0 +1,53 @@
+{
+  "actualProductionV3ParserAcceptedEveryRejoinSnapshot": true,
+  "unchangedFromBeforeRejoin": true,
+  "writesForbidden": true,
+  "proof": [
+    {
+      "sequence": 4255,
+      "record": {
+        "v": 3,
+        "epoch": "cavalry-owner-c69474372d104b22a33e1f5af93ef748",
+        "group": "district-1:sol:0",
+        "generation": 1,
+        "kind": "compound",
+        "single": null,
+        "rider": {
+          "phase": "alive",
+          "type": "civ_trial:cavalry",
+          "actor": "-21474836479",
+          "terminal": "none"
+        },
+        "mount": {
+          "phase": "alive",
+          "type": "civ_trial:cavalry_mount",
+          "actor": "-21474836478",
+          "terminal": "none"
+        }
+      }
+    },
+    {
+      "sequence": 4260,
+      "record": {
+        "v": 3,
+        "epoch": "cavalry-owner-c69474372d104b22a33e1f5af93ef748",
+        "group": "district-1:sol:0",
+        "generation": 1,
+        "kind": "compound",
+        "single": null,
+        "rider": {
+          "phase": "alive",
+          "type": "civ_trial:cavalry",
+          "actor": "-21474836479",
+          "terminal": "none"
+        },
+        "mount": {
+          "phase": "alive",
+          "type": "civ_trial:cavalry_mount",
+          "actor": "-21474836478",
+          "terminal": "none"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,219 @@
+{
+  "decision": "EXPECTED_IN_FIGHT_BIRTH_DEFERRAL_ZERO_PAIR_RESERVATIONS_OBSERVED",
+  "receipt": "dist/cavalry-fixed-no-reservation-20261109.json",
+  "exactTenFileInventoryShaSizeStable": true,
+  "files": {
+    "db/000013.log": {
+      "bytes": 611021,
+      "sha256": "E6A775318D561B20DF33F7A5E6A42C0B7F656D0DE71C13F53A46A0104381D231"
+    },
+    "db/000014.ldb": {
+      "bytes": 238443,
+      "sha256": "0E1C347EF019FE49E2232C405F55B2C2231E04D9C49A000FD4B4CA12CB211E01"
+    },
+    "db/CURRENT": {
+      "bytes": 16,
+      "sha256": "A197CC479C3BC03EF7B8D2B228F02A9BFC8C7CC6343719C5E26BEBC0CA4ECF06"
+    },
+    "db/MANIFEST-000011": {
+      "bytes": 239,
+      "sha256": "6666077D583D0B5E37B80CF2328396D62345B01D501A5C32B5CD33D261A3F310"
+    },
+    "level.dat": {
+      "bytes": 3074,
+      "sha256": "736362B56973ED7B237B786372971A8CB954534138D24DDB63BE287065F3F2F5"
+    },
+    "level.dat_old": {
+      "bytes": 3074,
+      "sha256": "6D888AB3B447F09372863C8755FD5CC9F8996278A477DDAB283A426638E44539"
+    },
+    "levelname.txt": {
+      "bytes": 26,
+      "sha256": "2F7F4BC0A1A9793D10CF87523666D89EACBC844CDE1B48750135436FFECFC434"
+    },
+    "world_behavior_packs.json": {
+      "bytes": 93,
+      "sha256": "077B3AB7AFF3F0DF44324397897EA3D31AD40D9020193BB561468534F2C44A50"
+    },
+    "world_icon.jpeg": {
+      "bytes": 14807,
+      "sha256": "17168C6421F63DDFCDEA3ACE265F5D13458F915A4FFE520CF4EFD43E87972B47"
+    },
+    "world_resource_packs.json": {
+      "bytes": 93,
+      "sha256": "369934E4A54E66671DC8672C3E53135CEC7F0CDF6D7FDE80794B85AF9416AEAD"
+    }
+  },
+  "crcWal": {
+    "first": 2100,
+    "last": 3114,
+    "mutations": 1015,
+    "contiguous": true,
+    "previousLast": 2099
+  },
+  "mainSnapshots": [
+    {
+      "sequence": 2114,
+      "keys": [
+        "civ:creation_activation:v3",
+        "civ:kingdom",
+        "civ:pop_bind:v3:meta",
+        "civ_devgate"
+      ],
+      "step": 0
+    },
+    {
+      "sequence": 2123,
+      "keys": [
+        "civ:creation_activation:v3",
+        "civ:kingdom",
+        "civ:pop_bind:v3:meta",
+        "civ_devgate",
+        "civ_people"
+      ],
+      "step": 1
+    },
+    {
+      "sequence": 2132,
+      "keys": [
+        "civ:creation_activation:v3",
+        "civ:kingdom",
+        "civ:pop_bind:v3:meta",
+        "civ_devgate",
+        "civ_people"
+      ],
+      "step": 1
+    },
+    {
+      "sequence": 2136,
+      "keys": [
+        "civ:creation_activation:v3",
+        "civ:kingdom",
+        "civ:pop_bind:v3:meta",
+        "civ_devgate",
+        "civ_people",
+        "civ_pop"
+      ],
+      "step": 2
+    },
+    {
+      "sequence": 2141,
+      "keys": [
+        "civ:creation_activation:v3",
+        "civ:kingdom",
+        "civ:pop_bind:v3:meta",
+        "civ_devgate",
+        "civ_people",
+        "civ_pop"
+      ],
+      "step": 2
+    }
+  ],
+  "finalSequence": 2141,
+  "header": {
+    "v": 3,
+    "epoch": "cavalry-owner-c69474372d104b22a33e1f5af93ef748",
+    "mode": "fresh",
+    "fixture": "cavalry-pad-fixed-20261109-b61e",
+    "dimension": "minecraft:overworld",
+    "chunks": [],
+    "issued": 0,
+    "pending": null
+  },
+  "activationAndHeaderRawUnchanged": true,
+  "peopleGate": 1,
+  "cursor": {
+    "v": 1,
+    "t": 11187,
+    "n": 1,
+    "s": 0,
+    "o": 0,
+    "p": [
+      "district-1:sol:0"
+    ]
+  },
+  "noGroupOrRoleIntentReferencesObserved": true,
+  "actualReducerReproduction": {
+    "scope": "Pure production reducer over actual closed saved kingdom; no native writes, movement or tick changes.",
+    "actual": {
+      "savedStep": 2,
+      "d1": {
+        "assault": 16,
+        "security": "alert",
+        "soldiers": 29
+      },
+      "admitted": [
+        "district-1:sol:0"
+      ],
+      "actions": [],
+      "deferred": [
+        {
+          "entityId": null,
+          "groupId": "district-1:sol:0",
+          "reason": "spawn-in-fight"
+        }
+      ]
+    },
+    "counterfactualGuardIsolation": {
+      "onlyChanged": [
+        "district-1.assault=0",
+        "district-1.security=secure"
+      ],
+      "actions": [
+        {
+          "op": "spawn",
+          "groupId": "district-1:sol:0",
+          "district": "district-1",
+          "kind": "sol",
+          "index": 0,
+          "at": {
+            "x": 8,
+            "y": 301,
+            "z": 8
+          },
+          "typeId": "civ_trial:cavalry"
+        }
+      ]
+    },
+    "naturalSimulationForecast": {
+      "mode": "production advanceKingdom, default approach; not future native prediction",
+      "hours": [
+        {
+          "step": 3,
+          "assault": 0,
+          "security": "secure",
+          "soldiers": 29,
+          "inFight": false
+        }
+      ],
+      "firstQuiet": {
+        "step": 3,
+        "assault": 0,
+        "security": "secure",
+        "soldiers": 29,
+        "inFight": false
+      }
+    }
+  },
+  "closedLog": {
+    "source": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\logs\\ContentLog2026-11-08_21-00-50_1.txt",
+    "copy": "whole-closed-content-log.txt",
+    "bytes": 1535,
+    "sha256": "FA30F0B57333211E67F8222C37D1CFDBA0DB3A08619C2C52F4DA9457E0A2FBB1",
+    "counts": {
+      "errors": 0,
+      "warnings": 0,
+      "highMemory": 0,
+      "Molang": 0,
+      "scriptExceptions": 0
+    },
+    "wholeFileStable": true
+  },
+  "recommendation": "Preserve same world/epoch; let normal simulation progress, recheck fresh fight state before normal owner reservation. No reset, force spawn or weakened guard.",
+  "diagnosticProposal": "Read-only status should distinguish admitted from live and show bounded reducer deferred reason spawn-in-fight; queued-birth-only string conceals expected hold.",
+  "limits": [
+    "No SST/entity census or universal actor absence proof.",
+    "Forecast uses pure default approach only, not native outcome guarantee.",
+    "No pair reservation/nativebirth/seating/combat acceptance."
+  ]
+}

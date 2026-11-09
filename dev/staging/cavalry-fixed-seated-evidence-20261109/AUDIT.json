@@ -1,0 +1,398 @@
+{
+  "decision": "PASS_ACTUAL_CLOSED_GEN1_PAIR_RECORD_AND_ZERO_ERROR_LOAD_LOG",
+  "receipt": "dist/cavalry-fixed-seated-20261109.json",
+  "files": {
+    "db/000017.log": {
+      "bytes": 820412,
+      "sha256": "3DDA9B21E837D080360988227C43AE60B9075B0D70BE38E6D4EBFD99E1BF3691"
+    },
+    "db/000018.ldb": {
+      "bytes": 239824,
+      "sha256": "B34B83282831DF3128F78F30D3ADC8186E0C0FE8CF48544DAB8ECE2953CD9785"
+    },
+    "db/CURRENT": {
+      "bytes": 16,
+      "sha256": "F6A28E2E41D451B4DE8597A14916D7A3058EBDD8046A89109658321142660D69"
+    },
+    "db/MANIFEST-000015": {
+      "bytes": 239,
+      "sha256": "1B69A746387A94CA0BDE434E0EDD9D630F3EAD6525161E57A8E5756A5D05811B"
+    },
+    "level.dat": {
+      "bytes": 3074,
+      "sha256": "B23ED747C819F143FA65E84C00696C0B2C558FD2EEA3111688160869FBDFAAD8"
+    },
+    "level.dat_old": {
+      "bytes": 3074,
+      "sha256": "A87C4FEBED94EC7E9769F3DDC96FC86031B2C9F946B95416B1E77B61ACD3A7CB"
+    },
+    "levelname.txt": {
+      "bytes": 26,
+      "sha256": "2F7F4BC0A1A9793D10CF87523666D89EACBC844CDE1B48750135436FFECFC434"
+    },
+    "world_behavior_packs.json": {
+      "bytes": 93,
+      "sha256": "077B3AB7AFF3F0DF44324397897EA3D31AD40D9020193BB561468534F2C44A50"
+    },
+    "world_icon.jpeg": {
+      "bytes": 48083,
+      "sha256": "B8CC74641EBA46A56EED9D5247BC03779C81A9D52A70E5836B2BA1C2E2AEF9B0"
+    },
+    "world_resource_packs.json": {
+      "bytes": 93,
+      "sha256": "369934E4A54E66671DC8672C3E53135CEC7F0CDF6D7FDE80794B85AF9416AEAD"
+    }
+  },
+  "exactTenFilesInventoryShaSizeStable": true,
+  "CRC_WAL": {
+    "first": 3115,
+    "last": 4235,
+    "mutations": 1121,
+    "contiguous": true,
+    "previousLast": 3114
+  },
+  "finalMainSequence": 3255,
+  "finalStep": 7,
+  "header": {
+    "v": 3,
+    "epoch": "cavalry-owner-c69474372d104b22a33e1f5af93ef748",
+    "mode": "fresh",
+    "fixture": "cavalry-pad-fixed-20261109-b61e",
+    "dimension": "minecraft:overworld",
+    "chunks": [
+      {
+        "index": 0,
+        "count": 1,
+        "hash": "e18289ab"
+      }
+    ],
+    "issued": 1,
+    "pending": null
+  },
+  "activationRawUnchanged": true,
+  "peopleGate": 1,
+  "record": {
+    "v": 3,
+    "epoch": "cavalry-owner-c69474372d104b22a33e1f5af93ef748",
+    "group": "district-1:sol:0",
+    "generation": 1,
+    "kind": "compound",
+    "single": null,
+    "rider": {
+      "phase": "alive",
+      "type": "civ_trial:cavalry",
+      "actor": "-21474836479",
+      "terminal": "none"
+    },
+    "mount": {
+      "phase": "alive",
+      "type": "civ_trial:cavalry_mount",
+      "actor": "-21474836478",
+      "terminal": "none"
+    }
+  },
+  "index": {
+    "v": 3,
+    "epoch": "cavalry-owner-c69474372d104b22a33e1f5af93ef748",
+    "index": 0,
+    "groups": [
+      "district-1:sol:0"
+    ]
+  },
+  "productionReaderAcceptsAllTenObservedMainSnapshotsWithWritesForbidden": true,
+  "phases": [
+    {
+      "sequence": 3134,
+      "step": 2,
+      "generation": null,
+      "rider": null,
+      "mount": null,
+      "cursor": {
+        "v": 1,
+        "t": 11187,
+        "n": 1,
+        "s": 0,
+        "o": 0,
+        "p": [
+          "district-1:sol:0"
+        ]
+      }
+    },
+    {
+      "sequence": 3144,
+      "step": 3,
+      "generation": 1,
+      "rider": {
+        "phase": "never",
+        "type": "civ_trial:cavalry",
+        "actor": null,
+        "terminal": "none"
+      },
+      "mount": {
+        "phase": "never",
+        "type": "civ_trial:cavalry_mount",
+        "actor": null,
+        "terminal": "none"
+      },
+      "cursor": {
+        "v": 1,
+        "t": 13114,
+        "n": 2,
+        "s": 1,
+        "o": 1,
+        "p": [
+          "district-1:sol:0"
+        ]
+      }
+    },
+    {
+      "sequence": 3166,
+      "step": 3,
+      "generation": 1,
+      "rider": {
+        "phase": "never",
+        "type": "civ_trial:cavalry",
+        "actor": null,
+        "terminal": "none"
+      },
+      "mount": {
+        "phase": "never",
+        "type": "civ_trial:cavalry_mount",
+        "actor": null,
+        "terminal": "none"
+      },
+      "cursor": {
+        "v": 1,
+        "t": 13114,
+        "n": 2,
+        "s": 1,
+        "o": 1,
+        "p": [
+          "district-1:sol:0"
+        ]
+      }
+    },
+    {
+      "sequence": 3176,
+      "step": 4,
+      "generation": 1,
+      "rider": {
+        "phase": "alive",
+        "type": "civ_trial:cavalry",
+        "actor": "-21474836479",
+        "terminal": "none"
+      },
+      "mount": {
+        "phase": "never",
+        "type": "civ_trial:cavalry_mount",
+        "actor": null,
+        "terminal": "none"
+      },
+      "cursor": {
+        "v": 1,
+        "t": 14114,
+        "n": 3,
+        "s": 1,
+        "o": 1,
+        "p": [
+          "district-1:sol:0"
+        ]
+      }
+    },
+    {
+      "sequence": 3193,
+      "step": 5,
+      "generation": 1,
+      "rider": {
+        "phase": "alive",
+        "type": "civ_trial:cavalry",
+        "actor": "-21474836479",
+        "terminal": "none"
+      },
+      "mount": {
+        "phase": "alive",
+        "type": "civ_trial:cavalry_mount",
+        "actor": "-21474836478",
+        "terminal": "none"
+      },
+      "cursor": {
+        "v": 1,
+        "t": 15114,
+        "n": 4,
+        "s": 1,
+        "o": 1,
+        "p": [
+          "district-1:sol:0"
+        ]
+      }
+    },
+    {
+      "sequence": 3209,
+      "step": 5,
+      "generation": 1,
+      "rider": {
+        "phase": "alive",
+        "type": "civ_trial:cavalry",
+        "actor": "-21474836479",
+        "terminal": "none"
+      },
+      "mount": {
+        "phase": "alive",
+        "type": "civ_trial:cavalry_mount",
+        "actor": "-21474836478",
+        "terminal": "none"
+      },
+      "cursor": {
+        "v": 1,
+        "t": 15114,
+        "n": 4,
+        "s": 1,
+        "o": 1,
+        "p": [
+          "district-1:sol:0"
+        ]
+      }
+    },
+    {
+      "sequence": 3224,
+      "step": 6,
+      "generation": 1,
+      "rider": {
+        "phase": "alive",
+        "type": "civ_trial:cavalry",
+        "actor": "-21474836479",
+        "terminal": "none"
+      },
+      "mount": {
+        "phase": "alive",
+        "type": "civ_trial:cavalry_mount",
+        "actor": "-21474836478",
+        "terminal": "none"
+      },
+      "cursor": {
+        "v": 1,
+        "t": 16114,
+        "n": 5,
+        "s": 0,
+        "o": 1,
+        "p": [
+          "district-1:sol:0"
+        ]
+      }
+    },
+    {
+      "sequence": 3228,
+      "step": 6,
+      "generation": 1,
+      "rider": {
+        "phase": "alive",
+        "type": "civ_trial:cavalry",
+        "actor": "-21474836479",
+        "terminal": "none"
+      },
+      "mount": {
+        "phase": "alive",
+        "type": "civ_trial:cavalry_mount",
+        "actor": "-21474836478",
+        "terminal": "none"
+      },
+      "cursor": {
+        "v": 1,
+        "t": 16114,
+        "n": 5,
+        "s": 0,
+        "o": 1,
+        "p": [
+          "district-1:sol:0"
+        ]
+      }
+    },
+    {
+      "sequence": 3240,
+      "step": 7,
+      "generation": 1,
+      "rider": {
+        "phase": "alive",
+        "type": "civ_trial:cavalry",
+        "actor": "-21474836479",
+        "terminal": "none"
+      },
+      "mount": {
+        "phase": "alive",
+        "type": "civ_trial:cavalry_mount",
+        "actor": "-21474836478",
+        "terminal": "none"
+      },
+      "cursor": {
+        "v": 1,
+        "t": 17114,
+        "n": 6,
+        "s": 0,
+        "o": 1,
+        "p": [
+          "district-1:sol:0"
+        ]
+      }
+    },
+    {
+      "sequence": 3255,
+      "step": 7,
+      "generation": 1,
+      "rider": {
+        "phase": "alive",
+        "type": "civ_trial:cavalry",
+        "actor": "-21474836479",
+        "terminal": "none"
+      },
+      "mount": {
+        "phase": "alive",
+        "type": "civ_trial:cavalry_mount",
+        "actor": "-21474836478",
+        "terminal": "none"
+      },
+      "cursor": {
+        "v": 1,
+        "t": 17114,
+        "n": 6,
+        "s": 0,
+        "o": 1,
+        "p": [
+          "district-1:sol:0"
+        ]
+      }
+    }
+  ],
+  "closedLog": {
+    "source": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\logs\\ContentLog2026-11-08_21-07-45_1.txt",
+    "copy": "whole-closed-content-log.txt",
+    "bytes": 1535,
+    "sha256": "DF99EC599FD7475A253A6E81643570534CE30C222B9F322B78E4A76C8869DF6F",
+    "counts": {
+      "errors": 0,
+      "warnings": 0,
+      "highMemory": 0,
+      "Molang": 0,
+      "scriptExceptions": 0
+    }
+  },
+  "nativeInspectorObservationsFromParent": {
+    "source": "Root manually observed existing read-only two-way inspector; separate from WAL metadata proof",
+    "initialTick15618": "both alive/unseated NO",
+    "twoWayTicks": [
+      16874,
+      17601
+    ],
+    "riderID": "-21474836479",
+    "mountID": "-21474836478",
+    "riderRidingOnMount": true,
+    "mountRidersExactlyRider": true,
+    "manualActorSpawnTeleportHealRideOrClockChange": false,
+    "observerOnly": "@s sameposition8.5,307,8.5 viewrotation60"
+  },
+  "limits": [
+    "WAL proves durable identity/phase/budget records; riding relation itself is parent native inspector evidence, not a persisted field.",
+    "No SST decoding/universal entity census.",
+    "Rejoin identity/seating, LOD/off cleanup, death, combat/render/gameplay/city acceptance remain separate gates.",
+    "Private actor-test pad only, not normal city selector or release world."
+  ]
+}

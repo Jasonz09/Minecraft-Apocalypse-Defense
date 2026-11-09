@@ -1,0 +1,32 @@
+{
+  "decision": "APPROVE_CORRECTED_LIMITED_LIGHTING_BARRIERS_CENTRAL_TEST_ADAPTATION_REQUIRED",
+  "manifestSha256": "9FF8A227DEA0F4BA40F49F3B42CB115CE2D6CCC97FB3F4760C0472D9E73EB13E",
+  "parentManifestSha256": "D1C4A9BB965120D7F66855414807869C23190B1AC6A2635EDE4515459290D9A0",
+  "allParentAndDeltaProductionPinsMatch": true,
+  "runtimeUnderTestEqualsProposed": true,
+  "focused": {
+    "pass": 47,
+    "fail": 0,
+    "durationMs": 338.6031,
+    "scope": "Author30 distinct cases plus reviewer unchanged old17-case regression body; repeated15 baseline tests not47unique."
+  },
+  "originalTwoActualRegressionsNowPass": true,
+  "review": [
+    "Final deletion stategetter source revocation now held before setter.",
+    "Fresh per-placement footing proof catches actual late AIR/support replacement and unloaded cases.",
+    "Late later-cell support change leaves verified first post and holds current cursor; explicit resume tested.",
+    "Source-revoked no-op or failed final journal save cannot chain next district.",
+    "Read-only preview retains no holds/block/journal writes; state/protection/dimension cases pass."
+  ],
+  "centralTestReadiness": {
+    "productionResolution": "Parent civ/lightingRevision.js +commands/civ.js +civharness.mjs; replace parent runtime with delta runtime only.",
+    "remaining": "Promote/adapt30 distinct safety/command/port cases to actual central production imports. Current tests reference runtime copies and harness-defaults imports parent staging project; do not copy as-is into dev/test.",
+    "doNotDrop": "Two exact review regressions, cursor/save failure, partial resume, preview0writes, source/protection/native-state coverage."
+  },
+  "limits": [
+    "Per-cell writes only; never atomic whole fixture.",
+    "Not atomic against arbitrary mutually side-effecting final getters; no unlimited hardening claim.",
+    "Fullcentral/planner/nativeclone/performance/day-night gates remain pending.",
+    "No active source/world/install edits by reviewer."
+  ]
+}

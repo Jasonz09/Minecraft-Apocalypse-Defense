@@ -1,0 +1,74 @@
+{
+  "decision": "SCOPED_NATIVE_PRIVATE_PAD_PAIR_BIRTH_SEATING_AND_FULL_REJOIN_ACCEPTED",
+  "fixture": "cavalry-pad-fixed-20261109-b61e",
+  "epoch": "cavalry-owner-c69474372d104b22a33e1f5af93ef748",
+  "group": "district-1:sol:0",
+  "generation": 1,
+  "rider": "-21474836479",
+  "mount": "-21474836478",
+  "evidence": [
+    {
+      "path": "dev/staging/cavalry-fixed-native-evidence-20261109/AUDIT.json",
+      "sha256": "81679BD15790667DBFE058A85DE31A73204E84B20C69CAB5071C3C6F007535EB"
+    },
+    {
+      "path": "dev/staging/cavalry-fixed-no-reservation-evidence-20261109/AUDIT.json",
+      "sha256": "AB3EBEB298DF23D380E66E26D825BD430417EC9F021E1158537FC0DA37E1B9C6"
+    },
+    {
+      "path": "dev/staging/cavalry-fixed-seated-evidence-20261109/AUDIT.json",
+      "sha256": "EEBE67D770DAD0F73F7D99D8728D12B22317FCD2FBEDB13556E1A7CB1A07A2AD"
+    },
+    {
+      "path": "dev/staging/cavalry-fixed-seated-evidence-20261109/PRODUCTION-READER-PROOF.json",
+      "sha256": "530264A47592ADC4C360111B1A08E4CCA9667687B242B3B88C1E704604AE903A"
+    },
+    {
+      "path": "dev/staging/cavalry-fixed-seated-rejoin-evidence-20261109/AUDIT.json",
+      "sha256": "ED6399165D5C5768B0E59952BA281BEF664144287B5B99867E10545FB374FED1"
+    },
+    {
+      "path": "dev/staging/cavalry-fixed-seated-rejoin-evidence-20261109/PRODUCTION-READER-PROOF.json",
+      "sha256": "D6C274D7DBD76768A0E03F09E73FDA4C3160AA368B1A0054D0890DB60A5621DE"
+    }
+  ],
+  "observedPhases": {
+    "step2": "expected spawn-in-fight defer; noreservation",
+    "step3": "normalquiet reservationnever/never",
+    "step4": "rideralive",
+    "step5": "mountalive, tick15618unseated",
+    "step6": "two-wayseatYES tick16874",
+    "step7": "sameIDs/twowayYES tick17601",
+    "fullRestart": "samegen1/IDs/twowayYES tick18757; durablepoststep8pairunchanged"
+  },
+  "walChain": [
+    [
+      1038,
+      2099
+    ],
+    [
+      2100,
+      3114
+    ],
+    [
+      3115,
+      4235
+    ],
+    [
+      4236,
+      5244
+    ]
+  ],
+  "metadata": "Actual production reader accepts pair record before and after full rejoin; activation/header/index/group rawunchanged on rejoin, issued1pendingnull.",
+  "nativeProofSource": "Root existing read-only inspector, not manual mount/ride commands. No NPC summon/teleport/heal/clock manipulation.",
+  "logs": "Each relevant wholeclosed1535Bfixedsession log audited0errors/warnings/highmem/Molang/scriptException.",
+  "history": "Earlier pushable parse failure and peopleON halted trial preserved separate; not retroactively accepted.",
+  "openGates": [
+    "Far unload/return identity",
+    "Gate-off two-part cleanup",
+    "Positive role death/remaining survivor handling",
+    "Cavalry combat/render/terrain navigation",
+    "Normal city military selection and release template integration"
+  ],
+  "limits": "Private deliberatelyprepared testpad only; no universal SST/entitycensus, fullmilitary or wholeprojectcompletion claim."
+}

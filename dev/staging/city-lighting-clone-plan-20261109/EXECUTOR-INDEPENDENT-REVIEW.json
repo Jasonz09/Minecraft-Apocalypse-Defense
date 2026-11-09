@@ -1,0 +1,24 @@
+{
+  "decision": "APPROVE_FINAL_EXECUTOR_FOR_ROOT_EXPLICIT_CLOSED_GAME_APPLY",
+  "executorSha256": "01D865C5EF9F95A321E8CED7A53ADD58DFA0793267A2FAADED09E538193C6665",
+  "priorC4NotExecutedByReviewer": true,
+  "planSha256": "BD427F9052FC63C0D2091647631BAC030AB5B31EA9B07112514437C2F1976042",
+  "installedVerificationSha256": "79FF12659FF5CC608A2AF73CC1E2A8CECEE53702728BADEA356B84F89094B19E",
+  "sourceFreezeSha256": "9A6CAB8A27544FB39C6C83C180334B9EBF7703AD5CC008686CBA426028ABAAA6",
+  "reviewedNamingInventoryClosedGuardHelperHashMatchesPlan": true,
+  "checked": [
+    "Exactplan+installedreceipt+sourcefreeze191pins",
+    "Twoinstalledinventorypass191rows=382checks",
+    "Realclosedguardsbeforeandbeforepublicationandafter",
+    "Source16inventorybeforeandafter; only2namedmetadatachanges",
+    "ExternalCstaging/newcontainedcatalogtarget/noLinks/nooverwritechecks",
+    "Createdreceiptabsentbeforecopyandpublication, exclusivefinalreceipt",
+    "Nootherworldsource/DP/population/clock/NPC/packwrites"
+  ],
+  "executionPerformed": false,
+  "limitations": [
+    "No guaranteed atomicity across gameprocessstart/concurrentfilesystemmutation; explicitpre/postguardsandpreservedfailurestage, no destructivecleanup.",
+    "Failureafterpublicationbeforereceiptmayleaveverifiednewcopy; inspectactualstateandpreserve, neverblindrerun/reset.",
+    "Ordinaryowner/simulationevolutiononnewcloneacceptedbyroot, notlightingoractorinvarianceproof."
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "decision": "APPROVE_THREE_CENTRAL_READY_TESTS_WITH_REVIEWED_SOURCE_COMPOSITION",
+  "manifestSha256": "F57C42F20FBFA16EA720BFE8A99CCD200C3CCC0A02381AC4BF8CE97A29F3D3D7",
+  "allFrozenPinsVerified": true,
+  "actualProductionRelativeImports": true,
+  "noFilesystemStagingOrDistFallbacks": true,
+  "syntheticSDKAndKnownCollaboratorsExplicit": true,
+  "threeProposedTestsByteExactBothValidationProjects": true,
+  "composedActualRuntimeAndCommandAndPortPinsVerified": true,
+  "onlyThreePackSourceChanges": [
+    "CivilizationApocalypse_BP/scripts/civ/lightingRevision.js",
+    "CivilizationApocalypse_BP/scripts/commands/civ.js",
+    "CivilizationApocalypse_BP/scripts/integration/lightingRevision.js"
+  ],
+  "focusedComposed": {
+    "tests": 30,
+    "pass": 30,
+    "fail": 0,
+    "durationMs": 563.5794
+  },
+  "baselineNegativeControl": {
+    "tests": 2,
+    "pass": 0,
+    "fail": 2,
+    "durationMs": 195.7681,
+    "actual": "Changed-ID bookshelf and changed-state same-ID each wronglydeleted1 as expected on old baseline"
+  },
+  "oldPrebarrierTwoRegressionNegativeEvidencePinsVerified": true,
+  "testCounts": {
+    "runtime": 25,
+    "commands": 3,
+    "nativePort": 2,
+    "unique": 30
+  },
+  "limits": [
+    "No fullsuite/native/performance or wholemap lighting proof.",
+    "Requires exact3source+1sharedport correction separately reviewed.",
+    "Inline fakeports are synthetic; actualruntime and dispatcher imported directly."
+  ],
+  "changes": "Independent review receipt only; no production/test/installed/world changes."
+}

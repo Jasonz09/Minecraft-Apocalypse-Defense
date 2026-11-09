@@ -1,0 +1,220 @@
+--- a/CivilizationApocalypse_BP/scripts/civ/lightingRevision.js
++++ b/CivilizationApocalypse_BP/scripts/civ/lightingRevision.js
+@@ -26,12 +26,18 @@
+ /** Check the whole known fixture before changing any of it. A changed player block preserves the fixture.
+  * Air is accepted for a safely repeated removal after a crash.
+  * @param {any[]} group @param {(op: any) => any} read
++ * @param {((op:any)=>Record<string,boolean|number|string>)|undefined} [expectedStates]
+  * @returns {"ready" | "foreign" | "unloaded"} */
+-export function removalReadiness(group, read) {
++export function removalReadiness(group, read, expectedStates=undefined) {
+     for (const op of group) {
+         const block = read(op);
+         if (!block) return "unloaded";
+-        if (block.typeId !== "minecraft:air" && block.typeId !== op.id) return "foreign";
++        if (block.typeId !== "minecraft:air" && !lightingFixtureMatches(block,op,expectedStates?.(op))) return "foreign";
+     }
+     return "ready";
+ }
++
++/** Expected planned states only in pure calls. Runtime supplies all native resolved
++ * permutation states; missing/unreadable state proof never grants deletion.
++ * @param {any} block @param {any} op @param {Record<string,boolean|number|string>} [states] */
++export function lightingFixtureMatches(block,op,states=undefined){try{if(!block||block.isValid===false||block.typeId!==op.id)return false;const expected=states??{...(op.id==="minecraft:lantern"?{hanging:false}:{}),...(op.states??{})};return Object.entries(expected).every(([k,v])=>block.permutation?.getState(k)===v);}catch{return false;}}
+--- a/CivilizationApocalypse_BP/scripts/commands/civ.js
++++ b/CivilizationApocalypse_BP/scripts/commands/civ.js
+@@ -153,7 +153,8 @@
+     if (LAMP_EVENT_IDS.includes(id)) {
+         // Before the generation gate: a released world (gate off) still gets its built districts lit.
+         if (id === CIV_EVENT_IDS.lights || id === CIV_EVENT_IDS.lightsNatural) {
+-            handleNaturalLights(kingdomStore, parseCivArgs(parseArgs(event.message)), event);
++            const lightArgs=parseArgs(event.message),preview=lightArgs.includes("preview");if(lightArgs.filter(a=>a==="preview").length>1){reply(["Use preview once; nothing changed."],event);return;}
++            handleNaturalLights(kingdomStore, parseCivArgs(lightArgs.filter(a=>a!=="preview")), event,preview);
+         } else if (id === CIV_EVENT_IDS.lightsStatus) {
+             handleLampStatus(event);
+         } else {
+@@ -227,8 +228,8 @@
+ // ---------------------------------------------------------------------------------------------
+ // civ:lights / civ:lights_status / civ:lights_abort - additive lighting for built districts
+ 
+-/** @param {KingdomStore} kingdomStore @param {ReturnType<typeof parseCivArgs>} options @param {ScriptEvent} event */
+-function handleNaturalLights(kingdomStore, options, event) {
++/** @param {KingdomStore} kingdomStore @param {ReturnType<typeof parseCivArgs>} options @param {ScriptEvent} event @param {boolean} [preview] */
++function handleNaturalLights(kingdomStore, options, event,preview=false) {
+     if (options.error) { reply([options.error], event); return; }
+     const player = playerOf(event);
+     const loaded = kingdomStore.load();
+@@ -239,7 +240,9 @@
+         if (index === undefined) return;
+         const district = districtById(loaded.kingdom, districtIdFor(index));
+         if (district?.civ?.status !== "complete") { reply([`${districtTitle(index)} is unfinished; its lights were left alone.`], event); step(); return; }
+-        const result = startLightingRevision({ index, civ: district.civ, dimension: player?.dimension ?? world.getDimension("overworld"),
++        const master=loadMasterPlan();if(master.status!=="ok"||!master.plan){reply(["Saved master protection cannot be verified; lighting left unchanged."],event);return;}
++        const protectedAreas=protectedRects(loaded.kingdom,1,master.plan,WRITE_PROTECT_GROW,index);
++        const result = startLightingRevision({ index, civ: district.civ, preview,protectedRects:protectedAreas,dimension: player?.dimension ?? world.getDimension("overworld"),
+             say: (lines) => reply(lines, event), onEnd: (complete) => { if (complete) step(); } });
+         if (!result.ok) reply([`Lighting was not started: ${String(result.reason)}.`], event);
+     };
+--- a/CivilizationApocalypse_BP/scripts/integration/lightingRevision.js
++++ b/CivilizationApocalypse_BP/scripts/integration/lightingRevision.js
+@@ -1,8 +1,10 @@
++import {createWallLeafSourceGuard} from "../civ/wallLeafRepair.js";
++import {isPlant,isTreePart} from "../structures/terrain.js";
+ import { BlockPermutation, system, world } from "@minecraft/server";
+ import { rehydrateSiteSteps } from "../civ/districtplan.js";
+-import { outdoorLightGroups, removalReadiness } from "../civ/lightingRevision.js";
++import { outdoorLightGroups, removalReadiness, lightingFixtureMatches } from "../civ/lightingRevision.js";
+ import { newOps } from "../civ/regions.js";
+-import { loadSavedRunSteps } from "./civBuilder.js";
++import { loadSavedRunSteps,inProtectedArea } from "./civBuilder.js";
+ import { createChunkLoader } from "./chunkLeases.js";
+ import { runJobAsync } from "./civScan.js";
+ import { activeKind, activeToken, cancelActiveJob, finishJob, isBusy, reserveJob } from "./districtBuilder.js";
+@@ -30,10 +32,11 @@
+     } catch (_error) { return undefined; }
+ }
+ 
+-/** @param {{ index: number, civ: any, dimension: any, say: (lines: string[]) => void, onEnd?: (complete: boolean) => void }} options */
++/** @param {{ index: number, civ: any, dimension: any, say: (lines: string[]) => void, preview?:boolean, protectedRects:any[], onEnd?: (complete: boolean) => void }} options */
+ export function startLightingRevision(options) {
+     if (isBusy()) return { ok: false, reason: `another job (${String(activeKind())}) is running` };
+     if (options.civ?.status !== "complete") return { ok: false, reason: "finish the district before revising its lights" };
++    if(options.dimension?.id!=="minecraft:overworld"||options.civ.dimension!==options.dimension.id)return{ok:false,reason:"lighting needs its verified saved Overworld dimension"};
+     const token = reserveJob("lighting-revision");
+     if (!token) return { ok: false, reason: "another job is running" };
+     const state = { token, index: options.index, view: { cursor: 0, phase: "preparing" }, lease: /** @type {ReturnType<typeof loader.acquire> | undefined} */ (undefined) };
+@@ -61,20 +64,33 @@
+         try { return options.dimension.getBlock(op); } catch (_error) { return undefined; }
+     };
+     try {
+-        loader.recover();
++        if(!Array.isArray(options.protectedRects)||options.protectedRects.length>32)throw Error("verified player/neighbor protection is required");
++        const protection=options.protectedRects.map(a=>{if(!a||![a.x0,a.z0,a.x1,a.z1].every(Number.isSafeInteger)||a.x0>a.x1||a.z0>a.z1)throw Error("player/neighbor protection invalid");if(a.polygon!==undefined&&(!Array.isArray(a.polygon)||a.polygon.length<3||a.polygon.length>512||a.polygon.some((/** @type {any} */p)=>!Array.isArray(p)||p.length!==2||!p.every(Number.isSafeInteger))))throw Error("protected polygon invalid");return Object.freeze({...a,...(a.polygon?{polygon:Object.freeze(a.polygon.map((/** @type {number[]} */p)=>Object.freeze([...p])))}:{})});});
++        const blocked=(/** @type {any[]} */group)=>group.some(op=>inProtectedArea(protection,op.x,op.z));
++        const readKingdom=()=>JSON.parse(String(world.getDynamicProperty("civ:kingdom")));
++        const sources=createWallLeafSourceGuard(world,readKingdom,()=>token.cancelled);
++        const owner=readKingdom().districts.find((/** @type {any} */d)=>d.id==="district-"+options.index)?.civ;
++        if(owner?.status!=="complete"||owner?.checksum!==options.civ.checksum||owner?.dimension!==options.dimension.id)throw Error("current completed district source identity differs");
++        function* checked(/** @type {Generator<any,any,any>} */generator){for(;;){sources.assert();const n=generator.next();sources.assert();if(n.done)return n.value;yield;}}
+         options.say(["Preparing a quieter lighting layout from this district's saved plan. Buildings and interiors stay in place."]);
+-        const saved = await runJobAsync(token, loadSavedRunSteps(options.civ, newOps(), options.index));
++        const saved = await runJobAsync(token, checked(loadSavedRunSteps(options.civ, newOps(), options.index)));
+         if (token.cancelled) return;
+         if (!saved?.ok) throw new Error(saved?.reasons.join("; ") ?? "the saved plan could not be read");
+-        const natural = await runJobAsync(token, rehydrateSiteSteps(saved.plan, options.index, saved.payload.ground, { ...saved.payload.siteOptions, lighting: "natural" }));
++        if(saved.district!==options.index||saved.record?.checksum!==options.civ.checksum||saved.queue?.state!=="complete")throw Error("completed saved fixture source proof differs");
++        const natural = await runJobAsync(token, checked(rehydrateSiteSteps(saved.plan, options.index, saved.payload.ground, { ...saved.payload.siteOptions, lighting: "natural" })));
+         if (token.cancelled) return;
+         if (!natural?.ok) throw new Error(natural?.problems.join("; ") ?? "the new layout could not be planned");
+         const signature = `${saved.record.checksum}:${natural.record.checksum}`;
+         let progress = { signature, cursor: 0 };
+         const raw = world.getDynamicProperty(key);
+         if (typeof raw === "string") { const old = JSON.parse(raw); if (old.signature === signature && Number.isInteger(old.cursor) && old.cursor >= 0) progress = old; }
+-        const remove = outdoorLightGroups(saved.record);
+-        const add = outdoorLightGroups(natural.record);
++        const bound=saved.region;if(!bound||![bound.x0,bound.z0,bound.x1,bound.z1].every(Number.isSafeInteger))throw Error("saved fixture bounds unavailable");
++        const detach=(/** @type {any[][]} */groups)=>groups.map(group=>group.map(op=>{if(![op.x,op.y,op.z].every(Number.isSafeInteger)||op.x<bound.x0||op.x>bound.x1||op.z<bound.z0||op.z>bound.z1||op.y< -64||op.y>319)throw Error("generated fixture outside verified saved region");return Object.freeze({...op,states:Object.freeze({...op.states})});}));
++        const remove = detach(outdoorLightGroups(saved.record));
++        const add = detach(outdoorLightGroups(natural.record));
++        const permutations=new Map();const expectedStates=(/** @type {any} */op)=>{const id=JSON.stringify([op.id,op.states]);let p=permutations.get(id);if(!p){p=BlockPermutation.resolve(op.id,op.states??{});permutations.set(id,p);}return p.getAllStates();};
++        const matches=(/** @type {any} */block,/** @type {any} */op)=>lightingFixtureMatches(block,op,expectedStates(op));
++        const air=BlockPermutation.resolve("minecraft:air");sources.assert();
+         const desired = new Map(add.flat().map((op) => [`${op.x},${op.y},${op.z}`, op.id]));
+         // Identical fixtures (including hanging tower lanterns) stay untouched.
+         const obsolete = remove.filter((group) => !group.every((op) => desired.get(`${op.x},${op.y},${op.z}`) === op.id));
+@@ -82,6 +98,11 @@
+         const byChunk = (groups) => groups.sort((a, b) => Math.floor(a[0].z / 16) - Math.floor(b[0].z / 16) || Math.floor(a[0].x / 16) - Math.floor(b[0].x / 16));
+         const work = [...byChunk(obsolete).map((group) => ({ group, remove: true })), ...byChunk(add).map((group) => ({ group, remove: false }))];
+         if (progress.cursor > work.length) throw new Error("saved lighting cursor is outside this plan");
++        if(options.preview){const counts={obsoleteFixtures:obsolete.length,desiredFixtures:add.length,ready:0,preserved:0,unloaded:0,lanterns:add.flat().filter(op=>op.id==="minecraft:lantern").length,torches:add.flat().filter(op=>op.id==="minecraft:torch").length};
++            function* inspect(){for(let i=0;i<obsolete.length;i++){const verdict=blocked(obsolete[i])?"foreign":removalReadiness(obsolete[i],read,expectedStates);counts[verdict==="foreign"?"preserved":verdict]++;if(i%40===39)yield;}}
++            await runJobAsync(token,checked(inspect()));sources.assert();state.view={phase:"preview",...counts};options.say(["Natural lighting READ-ONLY preview: "+Object.entries(counts).map(([k,v])=>k+" "+v).join(", "),"Known generated fixture proposal only; loaded snapshot, not a whole-map light-level census. No blocks, journal properties or chunk holds changed."]);complete=true;return;
++        }
++        loader.recover();sources.assert();
+         /** @param {number} cursor @param {boolean} [done] */
+         const save = (cursor, done = false) => {
+             const view = { signature, cursor, total: work.length, complete: done, removed, placed, preserved };
+@@ -92,7 +113,7 @@
+         // Save after every fixture, never a guessed or unreadable cell. Unique chunk ids make late callbacks safe.
+         let heldChunk = "";
+         for (; progress.cursor < work.length && !token.cancelled; progress.cursor += 1) {
+-            const item = work[progress.cursor], first = item.group[0];
++            sources.assert();const item = work[progress.cursor], first = item.group[0];
+             const cx = Math.floor(first.x / 16) * 16, cz = Math.floor(first.z / 16) * 16;
+             const chunk = `${cx},${cz}`;
+             if (chunk !== heldChunk) {
+@@ -105,35 +126,42 @@
+                 if (loaded.state !== "ready") throw new Error(`chunk ${chunk}, fixture (${first.x}, ${first.y}, ${first.z}): ${loaded.reason ?? "did not load"}`);
+                 heldChunk = chunk;
+             }
++            if(blocked(item.group)){preserved++;sources.assert();save(progress.cursor+1);continue;}
+             if (item.remove) {
+-                const verdict = removalReadiness(item.group, read);
++                const verdict = removalReadiness(item.group, read,expectedStates);sources.assert();
+                 if (verdict === "unloaded") throw new Error(`fixture at ${first.x},${first.z} is unreadable`);
+                 if (verdict === "foreign") preserved += 1;
+                 else for (const op of item.group) {
+-                    const block = read(op);
+-                    if (block.typeId !== "minecraft:air") { block.setPermutation(BlockPermutation.resolve("minecraft:air")); removed += 1; }
++                    const block = read(op);if(!block)throw Error("fixture final read is unavailable");
++                    const setter=block.setPermutation;sources.assert();
++                    if(block.typeId==="minecraft:air")continue;
++                    if(!matches(block,op)){preserved+=1;break;}
++                    sources.assert();if(!matches(block,op)){preserved+=1;break;}
++                    setter.call(block,air);removed+=1;sources.assert();
+                 }
+             } else {
+                 // Whole fixtures are all-or-nothing when obstructed; never place through plants, water or a player's build.
+                 const cells = item.group.map(read);
+                 if (cells.some((block) => !block)) throw new Error(`new fixture at ${first.x},${first.z} is unreadable`);
+-                if (cells.every((block, at) => block.typeId === item.group[at].id)) {
++                if (cells.every((block, at) => matches(block,item.group[at]))) {
+                     save(progress.cursor + 1);
+                     continue;
+                 }
+-                if (cells.some((block, at) => block.typeId !== "minecraft:air" && block.typeId !== item.group[at].id)) preserved += 1;
++                if (cells.some((block, at) => block.typeId !== "minecraft:air" && !matches(block,item.group[at]))) preserved += 1;
+                 else {
+                     const bottom = item.group.reduce((a, b) => a.y < b.y ? a : b);
+                     const support = read({ x: bottom.x, y: bottom.y - 1, z: bottom.z });
+                     if (!support) throw new Error("light support is unreadable");
+-                    if (["minecraft:air", "minecraft:water", "minecraft:flowing_water", "minecraft:lava"].includes(support.typeId)) preserved += 1;
++                    if (["minecraft:air", "minecraft:water", "minecraft:flowing_water", "minecraft:lava", "minecraft:flowing_lava"].includes(support.typeId)||isPlant(support.typeId)||isTreePart(support.typeId)) preserved += 1;
+                     else for (let at = item.group.length - 1; at >= 0; at -= 1) {
+-                        const op = item.group[at], block = cells[at];
+-                        if (block.typeId !== op.id) { block.setPermutation(BlockPermutation.resolve(op.id, op.states ?? {})); placed += 1; }
++                        const op=item.group[at],permutation=BlockPermutation.resolve(op.id,op.states??{}),block=read(op);if(!block)throw Error("new fixture final read unavailable");const setter=block.setPermutation;sources.assert();if(matches(block,op))continue;
++                        if(block.typeId!=="minecraft:air"){preserved++;break;}
++                        sources.assert();if(block.typeId!=="minecraft:air"){preserved++;break;}
++                        setter.call(block,permutation);placed++;sources.assert();
+                     }
+                 }
+             }
+-            save(progress.cursor + 1);
++            sources.assert();save(progress.cursor + 1);
+             if (progress.cursor % 40 === 0) { options.say([`Lighting: ${progress.cursor + 1}/${work.length} fixtures; ${removed} old blocks removed, ${placed} new blocks placed.`]); await nextTick(); }
+         }
+         if (!token.cancelled) {
+--- a/dev/lib/civharness.mjs
++++ b/dev/lib/civharness.mjs
+@@ -129,7 +129,8 @@
+         permutation: { getState: (name) => {
+             const saved = mc.blockStates.get(key(x,y,z));
+             const states = saved && saved.id === mc.placed.get(key(x,y,z)) ? saved.states : undefined;
+-            return name === "persistent_bit" ? mc.persistent(x,y,z) || states?.persistent_bit === true : states?.[name];
++            const nativeLightDefaults=typeAt(x,y,z)==="minecraft:lantern"?{hanging:false}:typeAt(x,y,z)==="minecraft:torch"?{torch_facing_direction:"top"}:undefined;
++            return name === "persistent_bit" ? mc.persistent(x,y,z) || states?.persistent_bit === true : states?.[name]??nativeLightDefaults?.[name];
+         } },
+         setPermutation(permutation) {
+             if (mc.dieAtWrites !== null && mc.writes >= mc.dieAtWrites) mc.dead = true;
+@@ -316,7 +317,9 @@
+ mc.BlockPermutation = {
+     resolve(id, states) {
+         if (states !== undefined && mc.rejectStates(id, states)) throw new Error("invalid state");
+-        return { id, states };
++        const defaults=id==="minecraft:lantern"?{hanging:false}:id==="minecraft:torch"?{torch_facing_direction:"top"}:undefined;
++        const resolved=defaults?{...defaults,...states}:states;
++        return {id,states:resolved,getAllStates:()=>({...resolved})};
+     },
+ };
+ 

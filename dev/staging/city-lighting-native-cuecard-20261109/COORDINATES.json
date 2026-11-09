@@ -1,0 +1,246 @@
+{
+  "scope": "Immutable source WAL+actual saved payloads only; new/live clone DB not read",
+  "sourceAuditSha256": "FF3109248DCDC14C9DFDA2FD9A22BBF9085BEE343FA12C4BCA0544E5A4DAA901",
+  "sourceSnapshot": 457089,
+  "all35SourcePinsVerified": true,
+  "masterChunkEnvelopeAndUtf8HashVerified": true,
+  "all16SourceFilesUnchangedAfter": true,
+  "createdCloneReceipt": {
+    "path": "dist\\lighting-city-copy-created-20261109.json",
+    "sha256": "8CC2B9506DD2CC4BFAB49D155D64C5717795C025CD66E8B08C6DFEC48A24F9BE",
+    "visibleName": "CA Natural Lights Nov9 78a94a0c"
+  },
+  "districts": [
+    {
+      "district": 1,
+      "id": "district-1",
+      "name": "Hearthgate",
+      "checksum": "07515fcb",
+      "status": "complete",
+      "savedPhysicalOrigin": null,
+      "savedCivAnchor": {
+        "x": -187,
+        "z": -621
+      },
+      "savedCivCentre": {
+        "x": -69,
+        "z": -599
+      },
+      "savedCivHQ": {
+        "x": 26,
+        "z": -574
+      },
+      "savedMasterCentroid": {
+        "x": -69,
+        "z": -599
+      },
+      "savedMasterBBox": {
+        "x0": -232,
+        "z0": -700,
+        "x1": 67,
+        "z1": -489
+      },
+      "savedSurveyBounds": {
+        "x0": -252,
+        "z0": -720,
+        "x1": 87,
+        "z1": -468
+      },
+      "observerOnlySuggestion": {
+        "command": "/tp @s -69 110 -599",
+        "y110Meaning": "chosen aerial observer height, NOT saved floor/camera/navigation proof"
+      }
+    },
+    {
+      "district": 2,
+      "id": "district-2",
+      "name": "Ironquarry",
+      "checksum": "e6d55467",
+      "status": "complete",
+      "savedPhysicalOrigin": null,
+      "savedCivAnchor": {
+        "x": -187,
+        "z": -621
+      },
+      "savedCivCentre": {
+        "x": -56,
+        "z": -772
+      },
+      "savedCivHQ": {
+        "x": 10,
+        "z": -766
+      },
+      "savedMasterCentroid": {
+        "x": -56,
+        "z": -772
+      },
+      "savedMasterBBox": {
+        "x0": -180,
+        "z0": -884,
+        "x1": 71,
+        "z1": -645
+      },
+      "savedSurveyBounds": {
+        "x0": -200,
+        "z0": -904,
+        "x1": 91,
+        "z1": -625
+      },
+      "observerOnlySuggestion": {
+        "command": "/tp @s -56 110 -772",
+        "y110Meaning": "chosen aerial observer height, NOT saved floor/camera/navigation proof"
+      }
+    },
+    {
+      "district": 3,
+      "id": "district-3",
+      "name": "Whitethorn",
+      "checksum": "6b9f8114",
+      "status": "complete",
+      "savedPhysicalOrigin": null,
+      "savedCivAnchor": {
+        "x": -187,
+        "z": -621
+      },
+      "savedCivCentre": {
+        "x": -266,
+        "z": -733
+      },
+      "savedCivHQ": {
+        "x": -266,
+        "z": -814
+      },
+      "savedMasterCentroid": {
+        "x": -266,
+        "z": -733
+      },
+      "savedMasterBBox": {
+        "x0": -396,
+        "z0": -848,
+        "x1": -157,
+        "z1": -625
+      },
+      "savedSurveyBounds": {
+        "x0": -416,
+        "z0": -868,
+        "x1": -136,
+        "z1": -604
+      },
+      "observerOnlySuggestion": {
+        "command": "/tp @s -266 110 -733",
+        "y110Meaning": "chosen aerial observer height, NOT saved floor/camera/navigation proof"
+      }
+    },
+    {
+      "district": 4,
+      "id": "district-4",
+      "name": "Saltmere",
+      "checksum": "35635162",
+      "status": "complete",
+      "savedPhysicalOrigin": null,
+      "savedCivAnchor": {
+        "x": -187,
+        "z": -621
+      },
+      "savedCivCentre": {
+        "x": -368,
+        "z": -554
+      },
+      "savedCivHQ": {
+        "x": -386,
+        "z": -574
+      },
+      "savedMasterCentroid": {
+        "x": -368,
+        "z": -554
+      },
+      "savedMasterBBox": {
+        "x0": -488,
+        "z0": -656,
+        "x1": -221,
+        "z1": -413
+      },
+      "savedSurveyBounds": {
+        "x0": -508,
+        "z0": -676,
+        "x1": -200,
+        "z1": -393
+      },
+      "observerOnlySuggestion": {
+        "command": "/tp @s -368 110 -554",
+        "y110Meaning": "chosen aerial observer height, NOT saved floor/camera/navigation proof"
+      }
+    },
+    {
+      "district": 5,
+      "id": "district-5",
+      "name": "Ashfall",
+      "checksum": "23a6aeca",
+      "status": "complete",
+      "savedPhysicalOrigin": null,
+      "savedCivAnchor": {
+        "x": -187,
+        "z": -621
+      },
+      "savedCivCentre": {
+        "x": -207,
+        "z": -473
+      },
+      "savedCivHQ": {
+        "x": -258,
+        "z": -446
+      },
+      "savedMasterCentroid": {
+        "x": -207,
+        "z": -473
+      },
+      "savedMasterBBox": {
+        "x0": -320,
+        "z0": -600,
+        "x1": -77,
+        "z1": -365
+      },
+      "savedSurveyBounds": {
+        "x0": -340,
+        "z0": -620,
+        "x1": -57,
+        "z1": -345
+      },
+      "observerOnlySuggestion": {
+        "command": "/tp @s -207 110 -473",
+        "y110Meaning": "chosen aerial observer height, NOT saved floor/camera/navigation proof"
+      }
+    }
+  ],
+  "wall14AndProtected3Checks": [
+    {
+      "label": "repaired-masonry-first7",
+      "command": "/execute if block -323 55 -455 minecraft:cracked_stone_bricks if block -323 56 -455 minecraft:stone_bricks if block -324 51 -456 minecraft:stone_bricks if block -324 55 -456 minecraft:stone_bricks if block -324 56 -456 minecraft:stone_bricks if block -323 55 -456 minecraft:stone_bricks run testforblock -323 56 -456 minecraft:mossy_stone_bricks",
+      "result": "PASS observed by parent in native UI",
+      "observerCommandExecuted": "/tp @s -340 64 -460",
+      "writes": 0
+    },
+    {
+      "label": "repaired-masonry-second7",
+      "command": "/execute if block -323 57 -456 minecraft:stone_bricks if block -322 55 -456 minecraft:cracked_stone_bricks if block -322 56 -456 minecraft:mossy_stone_bricks if block -322 57 -456 minecraft:stone_bricks if block -322 58 -456 minecraft:stone_bricks if block -322 55 -455 minecraft:cracked_stone_bricks run testforblock -322 56 -455 minecraft:mossy_stone_bricks",
+      "result": "PASS observed by parent in native UI",
+      "observerCommandExecuted": "/tp @s -340 64 -460",
+      "writes": 0
+    },
+    {
+      "label": "protected3-jungle-leaf-IDs",
+      "command": "/execute if block -321 56 -456 minecraft:jungle_leaves if block -321 56 -455 minecraft:jungle_leaves run testforblock -320 56 -456 minecraft:jungle_leaves",
+      "result": "PASS observed by parent in native UI",
+      "observerCommandExecuted": "/tp @s -340 64 -460",
+      "writes": 0
+    }
+  ],
+  "historicalNativeWitness": {
+    "path": "dist\\native161-city-rejoin-checks-20261106.json",
+    "sha256": "C830B788E42109AE4266E5D3EED45981335B0C3111C0BA360594668A0D263400",
+    "scope": "These exact commands were accepted historically; recheck loaded NEW clone, not current acceptance by this extraction."
+  },
+  "sourceCivCameraFields": "No camera pose or Y coordinate is stored in these civ records. No physical.origin exists in any of these5district records; shared anchor is not an origin substitute.",
+  "newPermission": false,
+  "worldOrSourceChanged": false
+}

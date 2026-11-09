@@ -1,0 +1,69 @@
+{
+  "scope": "sparse outdoor lighting safety and loaded readonly preview; not deployed",
+  "proposedFiles": [
+    {
+      "destination": "CivilizationApocalypse_BP/scripts/civ/lightingRevision.js",
+      "source": "dev/staging/natural-lighting-final-read-fix-20261109/proposed/civ/lightingRevision.js",
+      "sha256": "5BC07A61174184E3D4C446F1C06012E7E926D9534C86DE62747AA411ECACAD98",
+      "baselineSha256": "9C1726B6E30E905BE9C64F3A8E3CECCF816BCA114BD0244595B114D95E08D4D0",
+      "kind": "production"
+    },
+    {
+      "destination": "CivilizationApocalypse_BP/scripts/commands/civ.js",
+      "source": "dev/staging/natural-lighting-final-read-fix-20261109/proposed/commands/civ.js",
+      "sha256": "87D0466FC9301483E550119EA68349EDED0DE4584A8E43AE8456B8F1F1CCB5FA",
+      "baselineSha256": "099848A07F44D6FCA73D286962216FEF739BDBC13A3D544AD214204225893475",
+      "kind": "production"
+    },
+    {
+      "destination": "CivilizationApocalypse_BP/scripts/integration/lightingRevision.js",
+      "source": "dev/staging/natural-lighting-final-read-fix-20261109/proposed/integration/lightingRevision.js",
+      "sha256": "3892C5B180FA335CDC868E608B19E1269DE2B4213F15379DDB9892C8C80668AD",
+      "baselineSha256": "8C99306C32B91E81AB63B33D95357E710DD367DFF7F5B003509D7FC58F0F7855",
+      "kind": "production"
+    },
+    {
+      "destination": "dev/lib/civharness.mjs",
+      "source": "dev/staging/natural-lighting-final-read-fix-20261109/proposed-dev/lib/civharness.mjs",
+      "sha256": "779DE5280CA068CAF5AA25671F702D9E46B9CB209D528A0E38BB93403C534E78",
+      "baselineSha256": "EA0FDDF1BC6A8B1EBB24A2D17ADC16E1576DF00300C1ED1886181D8F8254D4A0",
+      "kind": "test-port"
+    }
+  ],
+  "auditParent": {
+    "path": "dev/staging/natural-lighting-step2-audit-20261109/PROMOTION-HASHES.json",
+    "sha256": "B3EBFEBA85FEF876D5CB37C65C8154C03821F66BCC1C1BC2F5169C1236CE9E8F"
+  },
+  "validation": {
+    "pass": 20,
+    "fail": 0,
+    "durationMs": 380.4345,
+    "strictTscExitCode": 0,
+    "runtimeJs": 170,
+    "fullPlannerRun": false,
+    "native": false
+  },
+  "artifacts": {
+    "BEFORE.json": "C69C8317D10A085E9BD51E30793D05B7F5378C2D6225A72A699A4E4E1B365906",
+    "command-preview.test.mjs": "07B3666A2F12B1B580C974569F16242DA8ABBE1800BC720786689D7FAC084BC8",
+    "focused-final.log": "0792E3C3E0EAE52CC6BA3700C25772A495588BD2AA1D8218412891402F95C0CD",
+    "focused-first.log": "4FE8F40B499B124CC03C16A87F1A2F2C443BA550A3F1E5FA857B9EA50040B352",
+    "focused-fourth.log": "7EDA8DD2303F852E7CCCFE6AA7E92F29B42071C8E847456125C1FFE15AF6C6E8",
+    "focused-second.log": "7A3D67DD690F68462BA94EC545D72E0D2E8AAAAD050D037FADD5A3DB6D2710BE",
+    "focused-third.log": "A686C356E585C5B1B4D604138A9A60C4724BB0875892C645365616D5702E026D",
+    "harness-defaults.test.mjs": "64E4C1C6A181708A82A0419E945962DE6173E4DEE9D760ADCC3A7A0D943E79FB",
+    "loader.mjs": "0B1C1FE8449CCB194E6ED12D556986DC219D5541B87D01D09716B5DE0F68B72E",
+    "proposed/civ/lightingRevision.js": "5BC07A61174184E3D4C446F1C06012E7E926D9534C86DE62747AA411ECACAD98",
+    "proposed/commands/civ.js": "87D0466FC9301483E550119EA68349EDED0DE4584A8E43AE8456B8F1F1CCB5FA",
+    "proposed/integration/lightingRevision.js": "3892C5B180FA335CDC868E608B19E1269DE2B4213F15379DDB9892C8C80668AD",
+    "proposed-dev/lib/civharness.mjs": "779DE5280CA068CAF5AA25671F702D9E46B9CB209D528A0E38BB93403C534E78",
+    "proposed.patch": "7BFF070EC2DF5D827C6A09196AD43DD4F2F1042C73A5C4E5D0F9A3F3E9BACBF4",
+    "README.md": "8D475C065AD42F5048BBAD71D756D089F636576DBB1BB4D4CBC7009DD5C663DB",
+    "register.mjs": "949279B1E2D9DAC2C90968175C28C86DF6341EAD21EFAB382EDE84B1F2803401",
+    "runtime-safety.test.mjs": "4292AFA69A4C6F1D4B1B0086471AEA84171A8B8264548D52143513110D9FA86E",
+    "strict-final.log": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+    "strict-first.log": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+    "strict-second.log": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+    "tsconfig.json": "A8E572ED47C9B5AFC17E550105096E2C0DC9A0EF5DFFB48E72F37B62AE168B83"
+  }
+}

@@ -1,0 +1,176 @@
+{
+  "utc": "2026-11-09T02:00:30.669160+00:00",
+  "decision": "PASS_CLOSED_FIXED_NATIVE_ACTIVATION_AND_ZERO_ERROR_LOAD_GATE_ONLY",
+  "receipt": "dist/cavalry-fixed-v3-activated-20261109.json",
+  "files": {
+    "db/000005.ldb": {
+      "bytes": 113931,
+      "sha256": "B1A225BEC7A731EB30099E6AD4011B4B281AD9E0AAF02A8BF0DB37DA26D4C310"
+    },
+    "db/000008.ldb": {
+      "bytes": 94876,
+      "sha256": "2867F2842C50540BB816D15D8D49DAF0B16737AD24E2ACE444659C88B2CCFE84"
+    },
+    "db/000009.log": {
+      "bytes": 607811,
+      "sha256": "083B2431C846FEAE915F6BB51969C8A965036BFB0735D16ED353F51F53ADD1CF"
+    },
+    "db/000010.ldb": {
+      "bytes": 175742,
+      "sha256": "078DC3AA2A46D060E0D84B58ED21B00D6B7077EA7705BD7BB719BE81BB0C9103"
+    },
+    "db/CURRENT": {
+      "bytes": 16,
+      "sha256": "8AF72F43857550B01EAB1019335772B367A17A9884A7A759FDF4FE6F272B90AA"
+    },
+    "db/MANIFEST-000007": {
+      "bytes": 219,
+      "sha256": "F04614657343A11C2893F1CF3F78ACDCD9E9FE2DFCED0B51E3C7AB50685F2641"
+    },
+    "level.dat": {
+      "bytes": 3074,
+      "sha256": "A30D3F3457780BD6A0D02E6E6ABBC991297AE6F4A1867A263E07BD6D4A90E75F"
+    },
+    "level.dat_old": {
+      "bytes": 3074,
+      "sha256": "DA7C52F59EC6FC5F19100A05CE4F01934B4F1F2F24C45372FD561B99883790E7"
+    },
+    "levelname.txt": {
+      "bytes": 26,
+      "sha256": "2F7F4BC0A1A9793D10CF87523666D89EACBC844CDE1B48750135436FFECFC434"
+    },
+    "world_behavior_packs.json": {
+      "bytes": 93,
+      "sha256": "077B3AB7AFF3F0DF44324397897EA3D31AD40D9020193BB561468534F2C44A50"
+    },
+    "world_icon.jpeg": {
+      "bytes": 51256,
+      "sha256": "021D10AA22D41FD935BF23B1C746A72711B53057A303FFF5F95F26335452FAEA"
+    },
+    "world_resource_packs.json": {
+      "bytes": 93,
+      "sha256": "369934E4A54E66671DC8672C3E53135CEC7F0CDF6D7FDE80794B85AF9416AEAD"
+    }
+  },
+  "exact12FileInventoryHashSizeMatch": true,
+  "stableDuringRead": true,
+  "parserSha256": "C4DC2BB4292E4845E308B5ACE3B0982C52BA054A26092A8B0CD95BF36F276257",
+  "wal": {
+    "logicalRecords": 10,
+    "mutations": 1062,
+    "first": 1038,
+    "last": 2099,
+    "contiguous": true
+  },
+  "mainSnapshots": [
+    {
+      "sequence": 1085,
+      "keys": [
+        "civ:kingdom",
+        "civ_devgate"
+      ],
+      "step": 0
+    },
+    {
+      "sequence": 1102,
+      "keys": [
+        "civ:kingdom",
+        "civ_devgate"
+      ],
+      "step": 0
+    },
+    {
+      "sequence": 1112,
+      "keys": [
+        "civ:creation_activation:v3",
+        "civ:kingdom",
+        "civ:pop_bind:v3:meta",
+        "civ_devgate"
+      ],
+      "step": 0
+    },
+    {
+      "sequence": 1119,
+      "keys": [
+        "civ:creation_activation:v3",
+        "civ:kingdom",
+        "civ:pop_bind:v3:meta",
+        "civ_devgate"
+      ],
+      "step": 0
+    }
+  ],
+  "header": {
+    "v": 3,
+    "epoch": "cavalry-owner-c69474372d104b22a33e1f5af93ef748",
+    "mode": "fresh",
+    "fixture": "cavalry-pad-fixed-20261109-b61e",
+    "dimension": "minecraft:overworld",
+    "chunks": [],
+    "issued": 0,
+    "pending": null
+  },
+  "activation": {
+    "v": 3,
+    "bindingVersion": 3,
+    "fixture": "cavalry-pad-fixed-20261109-b61e",
+    "epoch": "cavalry-owner-c69474372d104b22a33e1f5af93ef748",
+    "receiptSha256": "538CE473748B300EDC4A2B09A5C43E7E46E01B1E8179853ECCC69526193508E7",
+    "levelSha256": "42FFB51160BF4799746AF1E3AC413D2CA2831702DE6A135A584A2D56FDF9A896",
+    "objective": "ca_fresh_owner",
+    "nonce": "CA_FRESH_8e17b80d8dc644d3",
+    "participant": "NEVER_PEOPLE_ON",
+    "participantId": 1,
+    "phase": "complete"
+  },
+  "peopleGateCursorGroupOrRoleIntentObserved": false,
+  "scoreboard": {
+    "sequence": 1123,
+    "rawSha256": "0F679144AE2B0ACEC9F5EF760E638F12D564DEAAA905AE1F5F935BC5390E256F",
+    "tree": {
+      "Criteria": [],
+      "DisplayObjectives": [],
+      "Entries": [
+        {
+          "FakePlayerName": "NEVER_PEOPLE_ON",
+          "IdentityType": 3,
+          "ScoreboardId": 1
+        }
+      ],
+      "LastUniqueID": 1,
+      "Objectives": [
+        {
+          "Criteria": "dummy",
+          "DisplayName": "CA_FRESH_8e17b80d8dc644d3",
+          "Name": "ca_fresh_owner",
+          "Scores": [
+            {
+              "Score": 0,
+              "ScoreboardId": 1
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "closedLog": {
+    "source": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\logs\\ContentLog2026-11-08_20-57-10_1.txt",
+    "copy": "whole-closed-content-log.txt",
+    "bytes": 1535,
+    "sha256": "FE4733EE7BEC3B9ECAD314F0A87036D69B0D4C8B6CDFE6C1E1DE64C758C4D2C7",
+    "counts": {
+      "errors": 0,
+      "warnings": 0,
+      "highMemory": 0,
+      "Molang": 0,
+      "scriptExceptions": 0
+    },
+    "wholeExplicitFileStable": true
+  },
+  "limits": [
+    "Observed CRC WAL and NBT only; SST files not decoded.",
+    "No universal entity/owner history absence proof.",
+    "No role birth, mounting/seating, rendering or combat acceptance.",
+    "Dependency promotion server2.7 requested to2.11 observed; not native2.7 execution claim."
+  ]
+}

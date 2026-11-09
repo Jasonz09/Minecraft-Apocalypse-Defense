@@ -129,7 +129,8 @@ function makeBlock(x, y, z) {
         permutation: { getState: (name) => {
             const saved = mc.blockStates.get(key(x,y,z));
             const states = saved && saved.id === mc.placed.get(key(x,y,z)) ? saved.states : undefined;
-            return name === "persistent_bit" ? mc.persistent(x,y,z) || states?.persistent_bit === true : states?.[name];
+            const nativeLightDefaults=typeAt(x,y,z)==="minecraft:lantern"?{hanging:false}:typeAt(x,y,z)==="minecraft:torch"?{torch_facing_direction:"top"}:undefined;
+            return name === "persistent_bit" ? mc.persistent(x,y,z) || states?.persistent_bit === true : states?.[name]??nativeLightDefaults?.[name];
         } },
         setPermutation(permutation) {
             if (mc.dieAtWrites !== null && mc.writes >= mc.dieAtWrites) mc.dead = true;
@@ -316,7 +317,9 @@ mc.system = {
 mc.BlockPermutation = {
     resolve(id, states) {
         if (states !== undefined && mc.rejectStates(id, states)) throw new Error("invalid state");
-        return { id, states };
+        const defaults=id==="minecraft:lantern"?{hanging:false}:id==="minecraft:torch"?{torch_facing_direction:"top"}:undefined;
+        const resolved=defaults?{...defaults,...states}:states;
+        return {id,states:resolved,getAllStates:()=>({...resolved})};
     },
 };
 

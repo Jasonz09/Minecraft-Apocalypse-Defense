@@ -1,0 +1,57 @@
+{
+  "scope": "onepath final native support/source/cursor barrier correction; not deployed",
+  "parentManifest": {
+    "path": "dev\\staging\\natural-lighting-final-read-fix-20261109\\PROMOTION-HASHES.json",
+    "sha256": "D1C4A9BB965120D7F66855414807869C23190B1AC6A2635EDE4515459290D9A0"
+  },
+  "proposedFiles": [
+    {
+      "destination": "CivilizationApocalypse_BP/scripts/integration/lightingRevision.js",
+      "source": "dev\\staging\\natural-lighting-final-barrier-delta-20261109\\proposed\\integration\\lightingRevision.js",
+      "sha256": "84256D9CBD50E55EA889DFB7400D9F9EAF0DE964B87EF121708469DB21061EFC",
+      "replacesParentSha256": "3892C5B180FA335CDC868E608B19E1269DE2B4213F15379DDB9892C8C80668AD"
+    }
+  ],
+  "retainParentProposalPaths": [
+    "civ/lightingRevision.js",
+    "commands/civ.js",
+    "proposed-dev/lib/civharness.mjs"
+  ],
+  "independentFailedEvidence": [
+    {
+      "path": "dev\\staging\\natural-lighting-final-read-fix-20261109\\independent-review\\late-support-race.test.mjs",
+      "sha256": "01115AE646AE4BE0F60C7DB722362A38537D9360C08841AFED06B22435F40705"
+    },
+    {
+      "path": "dev\\staging\\natural-lighting-final-read-fix-20261109\\independent-review\\late-support-race.log",
+      "sha256": "C770D99E8603958E0662D50D23ABA845CE2DC8D49F1E138808258ED83EA28969"
+    }
+  ],
+  "validation": {
+    "pass": 30,
+    "fail": 0,
+    "durationMs": 344.5409,
+    "priorCompatibilityCases": 20,
+    "independentRegressions": 2,
+    "newCases": 8,
+    "strictTscExitCode": 0,
+    "native": false,
+    "fullRun": false
+  },
+  "artifacts": {
+    "BEFORE.json": "3225BBA2C96BB7B37A6FCA63AB295E2EEB664F0A3BA31F316C9862888725C80D",
+    "command-preview.test.mjs": "07B3666A2F12B1B580C974569F16242DA8ABBE1800BC720786689D7FAC084BC8",
+    "focused-final.log": "1D137AB077BD2C9D9BE41B3164D210D1133461B4C37A328CBC1784D47A2AD758",
+    "focused-first.log": "6F5AABA0EAA08C0F986052ECA7155C4F5C71E9397D6A6237570118B47A2149B7",
+    "harness-defaults.test.mjs": "EDAE76DA2C33987AEF7D0AED5AB603464AA4D8C95573D2061EB17D7B7B09E56A",
+    "loader.mjs": "0B1C1FE8449CCB194E6ED12D556986DC219D5541B87D01D09716B5DE0F68B72E",
+    "proposed/integration/lightingRevision.js": "84256D9CBD50E55EA889DFB7400D9F9EAF0DE964B87EF121708469DB21061EFC",
+    "proposed.patch": "38FDC8E3BDC10912A94E559BDFFDF14D4A99AE8B07DF7DFA870E791D86A2C6E2",
+    "README.md": "D9FAAF8B1D3C9AEB231EEC01923BC03F5CB71DE7852DC92E14FF1D4089113DA6",
+    "register.mjs": "949279B1E2D9DAC2C90968175C28C86DF6341EAD21EFAB382EDE84B1F2803401",
+    "runtime-safety.test.mjs": "A41C2A6800EAF3948D9A1033FAADB1A95C6C59AABB2D41327DB1E304C5F00D04",
+    "strict-final.log": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+    "strict-first.log": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+    "tsconfig.json": "A8E572ED47C9B5AFC17E550105096E2C0DC9A0EF5DFFB48E72F37B62AE168B83"
+  }
+}

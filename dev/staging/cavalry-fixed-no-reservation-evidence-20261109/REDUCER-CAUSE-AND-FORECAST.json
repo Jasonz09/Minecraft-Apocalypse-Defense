@@ -1,0 +1,62 @@
+{
+  "scope": "Pure production reducer over actual closed saved kingdom; no native writes, movement or tick changes.",
+  "actual": {
+    "savedStep": 2,
+    "d1": {
+      "assault": 16,
+      "security": "alert",
+      "soldiers": 29
+    },
+    "admitted": [
+      "district-1:sol:0"
+    ],
+    "actions": [],
+    "deferred": [
+      {
+        "entityId": null,
+        "groupId": "district-1:sol:0",
+        "reason": "spawn-in-fight"
+      }
+    ]
+  },
+  "counterfactualGuardIsolation": {
+    "onlyChanged": [
+      "district-1.assault=0",
+      "district-1.security=secure"
+    ],
+    "actions": [
+      {
+        "op": "spawn",
+        "groupId": "district-1:sol:0",
+        "district": "district-1",
+        "kind": "sol",
+        "index": 0,
+        "at": {
+          "x": 8,
+          "y": 301,
+          "z": 8
+        },
+        "typeId": "civ_trial:cavalry"
+      }
+    ]
+  },
+  "naturalSimulationForecast": {
+    "mode": "production advanceKingdom, default approach; not future native prediction",
+    "hours": [
+      {
+        "step": 3,
+        "assault": 0,
+        "security": "secure",
+        "soldiers": 29,
+        "inFight": false
+      }
+    ],
+    "firstQuiet": {
+      "step": 3,
+      "assault": 0,
+      "security": "secure",
+      "soldiers": 29,
+      "inFight": false
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "frozenTests": {
+    "runtime-safety.test.mjs": "A41C2A6800EAF3948D9A1033FAADB1A95C6C59AABB2D41327DB1E304C5F00D04",
+    "command-preview.test.mjs": "07B3666A2F12B1B580C974569F16242DA8ABBE1800BC720786689D7FAC084BC8",
+    "harness-defaults.test.mjs": "EDAE76DA2C33987AEF7D0AED5AB603464AA4D8C95573D2061EB17D7B7B09E56A"
+  },
+  "sourceComposition": {
+    "CivilizationApocalypse_BP/scripts/civ/lightingRevision.js": {
+      "destination": "CivilizationApocalypse_BP/scripts/civ/lightingRevision.js",
+      "source": "dev/staging/natural-lighting-final-read-fix-20261109/proposed/civ/lightingRevision.js",
+      "sha256": "5BC07A61174184E3D4C446F1C06012E7E926D9534C86DE62747AA411ECACAD98",
+      "baselineSha256": "9C1726B6E30E905BE9C64F3A8E3CECCF816BCA114BD0244595B114D95E08D4D0",
+      "kind": "production"
+    },
+    "CivilizationApocalypse_BP/scripts/commands/civ.js": {
+      "destination": "CivilizationApocalypse_BP/scripts/commands/civ.js",
+      "source": "dev/staging/natural-lighting-final-read-fix-20261109/proposed/commands/civ.js",
+      "sha256": "87D0466FC9301483E550119EA68349EDED0DE4584A8E43AE8456B8F1F1CCB5FA",
+      "baselineSha256": "099848A07F44D6FCA73D286962216FEF739BDBC13A3D544AD214204225893475",
+      "kind": "production"
+    },
+    "CivilizationApocalypse_BP/scripts/integration/lightingRevision.js": {
+      "destination": "CivilizationApocalypse_BP/scripts/integration/lightingRevision.js",
+      "source": "dev\\staging\\natural-lighting-final-barrier-delta-20261109\\proposed\\integration\\lightingRevision.js",
+      "sha256": "84256D9CBD50E55EA889DFB7400D9F9EAF0DE964B87EF121708469DB21061EFC",
+      "replacesParentSha256": "3892C5B180FA335CDC868E608B19E1269DE2B4213F15379DDB9892C8C80668AD"
+    },
+    "dev/lib/civharness.mjs": {
+      "destination": "dev/lib/civharness.mjs",
+      "source": "dev/staging/natural-lighting-final-read-fix-20261109/proposed-dev/lib/civharness.mjs",
+      "sha256": "779DE5280CA068CAF5AA25671F702D9E46B9CB209D528A0E38BB93403C534E78",
+      "baselineSha256": "EA0FDDF1BC6A8B1EBB24A2D17ADC16E1576DF00300C1ED1886181D8F8254D4A0",
+      "kind": "test-port"
+    }
+  },
+  "centralImports": "../../CivilizationApocalypse_BP/scripts and ../lib only; Node builtins",
+  "testOnlySDKFixtures": "Explicit inline Node loader intercepts fake server/known injected collaborators; no stage/dist/runtime fallback",
+  "assertionAdaptation": "The ordinary-command test treats absent preview as false, preserving semantic default and avoiding implementation-field coupling; all other assertions retained."
+}

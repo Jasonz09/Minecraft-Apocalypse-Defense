@@ -1,0 +1,15 @@
+# Central active-source lighting regressions
+
+Three NEW central test proposals,30 unique cases: lighting-revision-safety25, lighting-preview-command3, lighting-native-port2. All imports reference ACTUAL ../../CivilizationApocalypse_BP/scripts or ../lib/civharness.mjs plus Node builtins. No stage/dist/runtime filesystem fallback or genuine private receipt/profile/trust exists in proposed tests. Inline synthetic SDK/native fixtures remain explicit and inject only known collaborators; the actual production lighting runtime/dispatcher and actual shared test port are the targets.
+
+The current active191 pack pair is copied exactly for baseline proof, then exactly3production lighting changes plus1shared test-port correction are composed from frozen D1C4 +9FF8 stages in a separate validation project. Current source remains unchanged. The original two changed-ID/state bugs fail against current-active baseline0/2 (both1unexpected native write). Exact independent late-support/source cases fail against the prebarrier D1C4 runtime0/2. The exact final runtime is restored and all30central source-relative cases pass342.1825ms. These are targeted negative controls, not a failed default whole suite. The old15 copied normal cases are included ONCE; duplicate peer reruns are not counted as new coverage.
+
+The original case assertions/bodies are preserved except active relative import paths and one clarified dispatcher assertion: absent preview is semantically false, so the ordinary mutation-default test checks preview===true is false instead of requiring a false-valued implementation field. This preserves default behavior and prevents a fixture shape requirement from masquerading as a bug. No safety assertion or negative case was disabled.
+
+Coverage includes exact live fixture IDs/allnativeexpected states, player replacement/orientation, source revocation, fresh support, partial writes/explicit safe resume, unreadable bounds/state/terrain, protected neighboring land, water/plants/log preservation, no-op and cancellation, readonly preview0block/property/hold writes, dimension/source identity, no-op source revocation, failed completion publication preventing chaining, and accurate detached fake native permutation defaults.
+
+Promotion: only the3 files under proposed/dev/test. They need the already separately reviewed4path production/test-port composition; adding tests alone to unfixed main intentionally fails. Source composition manifest remains independent of these test-only paths. No production/Git/UI/install/native changes here. Central full suite/typecheck, expensive legacy-grid integration and actual clone-only lighting day/night/native checks remain OPEN.
+
+After both source+test promotion: node --test dev/test/lighting-revision-safety.test.mjs dev/test/lighting-preview-command.test.mjs dev/test/lighting-native-port.test.mjs
+
+Validation copies/negative logs are evidence only, never deployment or central fallback code. See VALIDATION.json for exact191 inventory delta and active import proofs.

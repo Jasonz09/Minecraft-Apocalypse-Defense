@@ -1,0 +1,57 @@
+{
+  "scope": "three NEW central active-source lighting regression files only",
+  "proposedFiles": [
+    {
+      "destination": "dev/test/lighting-native-port.test.mjs",
+      "source": "dev/staging/lighting-central-regressions-20261109/proposed/dev/test/lighting-native-port.test.mjs",
+      "sha256": "A6559190DA6E5BBEFF91BC31D7F6425E0F2CC6F267758655A404908508210FDB",
+      "baselineSha256": null
+    },
+    {
+      "destination": "dev/test/lighting-preview-command.test.mjs",
+      "source": "dev/staging/lighting-central-regressions-20261109/proposed/dev/test/lighting-preview-command.test.mjs",
+      "sha256": "0179E46AFDD2ADE00D8A3C3226C98E441A6D1BBC86CFD3F1A91EF79E8CBDA39F",
+      "baselineSha256": null
+    },
+    {
+      "destination": "dev/test/lighting-revision-safety.test.mjs",
+      "source": "dev/staging/lighting-central-regressions-20261109/proposed/dev/test/lighting-revision-safety.test.mjs",
+      "sha256": "BE043FA84634B7C267B43940251A65A21403CE81D8C6861408FCF7E926BEB748",
+      "baselineSha256": null
+    }
+  ],
+  "requiresSourceManifests": [
+    {
+      "path": "dev/staging/natural-lighting-final-read-fix-20261109/PROMOTION-HASHES.json",
+      "sha256": "D1C4A9BB965120D7F66855414807869C23190B1AC6A2635EDE4515459290D9A0"
+    },
+    {
+      "path": "dev/staging/natural-lighting-final-barrier-delta-20261109/PROMOTION-HASHES.json",
+      "sha256": "9FF8A227DEA0F4BA40F49F3B42CB115CE2D6CCC97FB3F4760C0472D9E73EB13E"
+    }
+  ],
+  "validation": {
+    "tests": 30,
+    "pass": 30,
+    "fail": 0,
+    "durationMs": 342.1825,
+    "currentActiveBaselineOriginalFailures": 2,
+    "prebarrierIndependentFailures": 2,
+    "packFiles": 191,
+    "centralSourceRelativeImports": true,
+    "native": false,
+    "fullRun": false
+  },
+  "artifacts": {
+    "active-baseline-original-bugs.log": "72AA018927BD4B968195398F0BDBB2CDEBF5FECF65E0A1EFCBE933BE7E427375",
+    "composed-focused-final.log": "A7FD689E94A677A942CBF8FDD7CD20F7BEEC787F813DB510FD494FE96D685E25",
+    "composed-focused-first.log": "B27C06DCB354754DD9F3EBBA9D5DF3FCB8D5A8B329C5A732DFD59E2B02FCE01F",
+    "prebarrier-independent-regressions.log": "C85C2C03D6071E0B4B2F34A73E1149C95A8CBE881306294DD5951A4EB570873C",
+    "proposed/dev/test/lighting-native-port.test.mjs": "A6559190DA6E5BBEFF91BC31D7F6425E0F2CC6F267758655A404908508210FDB",
+    "proposed/dev/test/lighting-preview-command.test.mjs": "0179E46AFDD2ADE00D8A3C3226C98E441A6D1BBC86CFD3F1A91EF79E8CBDA39F",
+    "proposed/dev/test/lighting-revision-safety.test.mjs": "BE043FA84634B7C267B43940251A65A21403CE81D8C6861408FCF7E926BEB748",
+    "PROVENANCE.json": "0F93CAAD3FB72DA992481CAD6F964E119D610DC6F7DDD547738980D5F645E1B0",
+    "README.md": "E8322050913780BA10686B48343977875782DF0F5BDD20A766195CF682EE62A9",
+    "VALIDATION.json": "1F5437645C75321F571DC15500507827137B69ADFEFCDCDEAD6638AC88E24492"
+  }
+}
