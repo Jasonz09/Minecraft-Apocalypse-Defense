@@ -1,0 +1,303 @@
+{
+  "decision": "NATIVE DURABLE ACTIVATION +REJOIN PASS, zero issued population intent; individual crash-boundary persistence not proven",
+  "scope": "Read-only two immutable10file backups and both whole closed session logs; no source/liveDB/UI writes",
+  "descriptor": {
+    "v": 1,
+    "fixtureId": "vanilla-nov8-hold-69162c9b9521",
+    "epoch": "owner-hold-69162c9b95214489a7971fadd8fad1dc",
+    "receiptSha256": "BE44A5BA9E47C2AB890083B1FAD33657FEAF5B5B122C61A7C026CF0281EFA114",
+    "levelSha256": "CB327CEBBD37FB02A40C87F4CCC59B3C1BB82DC559B6EA6FFE0CA386BA6A64C1",
+    "nonce": "CA_FRESH_8e17b80d8dc644d3",
+    "participant": "NEVER_PEOPLE_ON",
+    "participantId": 1,
+    "operatorKnownNewVanilla": true
+  },
+  "cases": [
+    {
+      "case": "activated",
+      "receipt": "dist\\private-creation-hold2-activated-20261108.json",
+      "receiptSha256": "90DA698726F5D9FE32B6E97DBE6E7E5629BA9B4CE1D9F31F9CEC60095C5247DC",
+      "all10FilesStillExact": true,
+      "mainSnapshots": [
+        {
+          "sequence": 546,
+          "step": 0,
+          "initialRawExact": true,
+          "keys": [
+            "civ:kingdom"
+          ],
+          "activationPhase": null,
+          "header": null,
+          "kingdomRawSha256": "E2E8327899B4B13873AA4D36F831ACBA676545C88E930CFF73279D64E11E0D09"
+        },
+        {
+          "sequence": 639,
+          "step": 0,
+          "initialRawExact": true,
+          "keys": [
+            "civ:kingdom"
+          ],
+          "activationPhase": null,
+          "header": null,
+          "kingdomRawSha256": "E2E8327899B4B13873AA4D36F831ACBA676545C88E930CFF73279D64E11E0D09"
+        },
+        {
+          "sequence": 725,
+          "step": 0,
+          "initialRawExact": true,
+          "keys": [
+            "civ:kingdom",
+            "civ_devgate"
+          ],
+          "activationPhase": null,
+          "header": null,
+          "kingdomRawSha256": "E2E8327899B4B13873AA4D36F831ACBA676545C88E930CFF73279D64E11E0D09"
+        },
+        {
+          "sequence": 785,
+          "step": 1,
+          "initialRawExact": false,
+          "keys": [
+            "civ:creation_activation:v1",
+            "civ:kingdom",
+            "civ:pop_bind:v2:meta",
+            "civ_devgate"
+          ],
+          "activationPhase": "complete",
+          "header": {
+            "v": 2,
+            "epoch": "owner-hold-69162c9b95214489a7971fadd8fad1dc",
+            "mode": "fresh",
+            "fixture": "vanilla-nov8-hold-69162c9b9521",
+            "dimension": "minecraft:overworld",
+            "chunks": [],
+            "issued": 0,
+            "pending": null
+          },
+          "kingdomRawSha256": "EC0FC0C96D9F3CB85D5E3681C3209BB6F368091226B4305A7D09104EBCF18AC2"
+        },
+        {
+          "sequence": 858,
+          "step": 1,
+          "initialRawExact": false,
+          "keys": [
+            "civ:creation_activation:v1",
+            "civ:kingdom",
+            "civ:pop_bind:v2:meta",
+            "civ_devgate"
+          ],
+          "activationPhase": "complete",
+          "header": {
+            "v": 2,
+            "epoch": "owner-hold-69162c9b95214489a7971fadd8fad1dc",
+            "mode": "fresh",
+            "fixture": "vanilla-nov8-hold-69162c9b9521",
+            "dimension": "minecraft:overworld",
+            "chunks": [],
+            "issued": 0,
+            "pending": null
+          },
+          "kingdomRawSha256": "EC0FC0C96D9F3CB85D5E3681C3209BB6F368091226B4305A7D09104EBCF18AC2"
+        }
+      ],
+      "latestActivationRaw": "{\"v\":1,\"fixture\":\"vanilla-nov8-hold-69162c9b9521\",\"epoch\":\"owner-hold-69162c9b95214489a7971fadd8fad1dc\",\"receiptSha256\":\"BE44A5BA9E47C2AB890083B1FAD33657FEAF5B5B122C61A7C026CF0281EFA114\",\"levelSha256\":\"CB327CEBBD37FB02A40C87F4CCC59B3C1BB82DC559B6EA6FFE0CA386BA6A64C1\",\"objective\":\"ca_fresh_owner\",\"nonce\":\"CA_FRESH_8e17b80d8dc644d3\",\"participant\":\"NEVER_PEOPLE_ON\",\"participantId\":1,\"phase\":\"complete\"}",
+      "latestHeaderRaw": "{\"v\":2,\"epoch\":\"owner-hold-69162c9b95214489a7971fadd8fad1dc\",\"mode\":\"fresh\",\"fixture\":\"vanilla-nov8-hold-69162c9b9521\",\"dimension\":\"minecraft:overworld\",\"chunks\":[],\"issued\":0,\"pending\":null}",
+      "latestStep": 1,
+      "marker": {
+        "sequence": 862,
+        "rawSha256": "0F679144AE2B0ACEC9F5EF760E638F12D564DEAAA905AE1F5F935BC5390E256F",
+        "tree": {
+          "Criteria": [],
+          "DisplayObjectives": [],
+          "Entries": [
+            {
+              "FakePlayerName": "NEVER_PEOPLE_ON",
+              "IdentityType": 3,
+              "ScoreboardId": 1
+            }
+          ],
+          "LastUniqueID": 1,
+          "Objectives": [
+            {
+              "Criteria": "dummy",
+              "DisplayName": "CA_FRESH_8e17b80d8dc644d3",
+              "Name": "ca_fresh_owner",
+              "Scores": [
+                {
+                  "Score": 0,
+                  "ScoreboardId": 1
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "walCoverage": {
+        "mutations": 1471,
+        "range": [
+          466,
+          1936
+        ],
+        "contiguousUnique": true,
+        "sstFilesNotDecoded": [
+          "db/000005.ldb"
+        ]
+      },
+      "wholeClosedLog": {
+        "path": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\logs\\ContentLog2026-11-08_19-23-52_1.txt",
+        "copy": "dev\\staging\\private-hold2-native-evidence\\ContentLog2026-11-08_19-23-52_1.txt",
+        "bytes": 4383,
+        "sha256": "A725A13B454788BB314F98F08E658A281341AEC0DF3ABCC36172D8EE0A2A5A05",
+        "nonblankLines": 40,
+        "counts": {
+          "errors": 0,
+          "warnings": 0,
+          "highMemory": 0,
+          "exceptions": 0,
+          "verboseSoundMissing": 32
+        },
+        "notes": "Whole file, no tail sampling. Engine promotes requestedserver2.7 to2.11/UI2.3; sound-not-found messages are verbose level."
+      }
+    },
+    {
+      "case": "rejoined",
+      "receipt": "dist\\private-creation-hold2-rejoined-20261108.json",
+      "receiptSha256": "218F385D4404C7BC8CC1C875A1445006810BDB0F73F99126A43695B277341E43",
+      "all10FilesStillExact": true,
+      "mainSnapshots": [
+        {
+          "sequence": 2008,
+          "step": 1,
+          "initialRawExact": false,
+          "keys": [
+            "civ:creation_activation:v1",
+            "civ:kingdom",
+            "civ:pop_bind:v2:meta",
+            "civ_devgate"
+          ],
+          "activationPhase": "complete",
+          "header": {
+            "v": 2,
+            "epoch": "owner-hold-69162c9b95214489a7971fadd8fad1dc",
+            "mode": "fresh",
+            "fixture": "vanilla-nov8-hold-69162c9b9521",
+            "dimension": "minecraft:overworld",
+            "chunks": [],
+            "issued": 0,
+            "pending": null
+          },
+          "kingdomRawSha256": "EC0FC0C96D9F3CB85D5E3681C3209BB6F368091226B4305A7D09104EBCF18AC2"
+        },
+        {
+          "sequence": 2073,
+          "step": 1,
+          "initialRawExact": false,
+          "keys": [
+            "civ:creation_activation:v1",
+            "civ:kingdom",
+            "civ:pop_bind:v2:meta",
+            "civ_devgate"
+          ],
+          "activationPhase": "complete",
+          "header": {
+            "v": 2,
+            "epoch": "owner-hold-69162c9b95214489a7971fadd8fad1dc",
+            "mode": "fresh",
+            "fixture": "vanilla-nov8-hold-69162c9b9521",
+            "dimension": "minecraft:overworld",
+            "chunks": [],
+            "issued": 0,
+            "pending": null
+          },
+          "kingdomRawSha256": "EC0FC0C96D9F3CB85D5E3681C3209BB6F368091226B4305A7D09104EBCF18AC2"
+        }
+      ],
+      "latestActivationRaw": "{\"v\":1,\"fixture\":\"vanilla-nov8-hold-69162c9b9521\",\"epoch\":\"owner-hold-69162c9b95214489a7971fadd8fad1dc\",\"receiptSha256\":\"BE44A5BA9E47C2AB890083B1FAD33657FEAF5B5B122C61A7C026CF0281EFA114\",\"levelSha256\":\"CB327CEBBD37FB02A40C87F4CCC59B3C1BB82DC559B6EA6FFE0CA386BA6A64C1\",\"objective\":\"ca_fresh_owner\",\"nonce\":\"CA_FRESH_8e17b80d8dc644d3\",\"participant\":\"NEVER_PEOPLE_ON\",\"participantId\":1,\"phase\":\"complete\"}",
+      "latestHeaderRaw": "{\"v\":2,\"epoch\":\"owner-hold-69162c9b95214489a7971fadd8fad1dc\",\"mode\":\"fresh\",\"fixture\":\"vanilla-nov8-hold-69162c9b9521\",\"dimension\":\"minecraft:overworld\",\"chunks\":[],\"issued\":0,\"pending\":null}",
+      "latestStep": 1,
+      "marker": {
+        "sequence": 2076,
+        "rawSha256": "0F679144AE2B0ACEC9F5EF760E638F12D564DEAAA905AE1F5F935BC5390E256F",
+        "tree": {
+          "Criteria": [],
+          "DisplayObjectives": [],
+          "Entries": [
+            {
+              "FakePlayerName": "NEVER_PEOPLE_ON",
+              "IdentityType": 3,
+              "ScoreboardId": 1
+            }
+          ],
+          "LastUniqueID": 1,
+          "Objectives": [
+            {
+              "Criteria": "dummy",
+              "DisplayName": "CA_FRESH_8e17b80d8dc644d3",
+              "Name": "ca_fresh_owner",
+              "Scores": [
+                {
+                  "Score": 0,
+                  "ScoreboardId": 1
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "walCoverage": {
+        "mutations": 1200,
+        "range": [
+          1937,
+          3136
+        ],
+        "contiguousUnique": true,
+        "sstFilesNotDecoded": [
+          "db/000010.ldb"
+        ]
+      },
+      "wholeClosedLog": {
+        "path": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\logs\\ContentLog2026-11-08_19-27-35_1.txt",
+        "copy": "dev\\staging\\private-hold2-native-evidence\\ContentLog2026-11-08_19-27-35_1.txt",
+        "bytes": 2781,
+        "sha256": "77F4CA6C019BB4939E26BA0AD5792E5B714EA8424B6B8F593B0F9CCF8CAFBAD7",
+        "nonblankLines": 22,
+        "counts": {
+          "errors": 0,
+          "warnings": 0,
+          "highMemory": 0,
+          "exceptions": 0,
+          "verboseSoundMissing": 14
+        },
+        "notes": "Whole file, no tail sampling. Engine promotes requestedserver2.7 to2.11/UI2.3; sound-not-found messages are verbose level."
+      }
+    }
+  ],
+  "comparison": {
+    "activationRawByteIdenticalAcrossRejoin": true,
+    "headerRawByteIdenticalAcrossRejoin": true,
+    "freshModeSameEpochFixturePreserved": true,
+    "issued": 0,
+    "pending": null,
+    "chunks": [],
+    "groupRecords": [],
+    "peopleGateOrCursorOrMilitarySelectionPresent": false,
+    "pristineMarkerRawPreservedBothClosures": true
+  },
+  "preciseRejoinObservation": {
+    "fromRootInstruction": "Fresh0groups/pendingnone after actualrestart; last transient signal notobserved is expected after runtime construction",
+    "notInferredFromInheritedReceiptObservations": true,
+    "closedEvidence": "All observed rejoin world-property snapshots carry identical completed activation/header; no new intent/epoch/header reset observed"
+  },
+  "publicationLimit": {
+    "observedFirstRunMainSnapshots": 5,
+    "separateIntentOrHeaderIntermediateWalSnapshots": false,
+    "interpretation": "Engine coalesced property publications before WAL snapshots. Code has3activation publications and native UI confirmed success, but closed WAL does NOT prove six separatewrites or per-boundary powerloss safety. Firstclosedcompleteimage is already atstep1."
+  },
+  "notes": [
+    "Exact initial3981byte step0 observed repeatedly, including afterdevgate; then correct durablecompletion withordinary step1. Closed flush sequences do not timestamp everyUIcall/tick.",
+    "No physical entity/fullSST history census or ownerbirth/unload/gateoff/combat acceptance is claimed. Metadata proves zero actor issuance intent/cursor.",
+    "Marker raw matches actual pristineclosedsource, id1/nonce/score unchanged; bothwholelogs have0error/warning/highmemory/exception.",
+    "Rejoin proof is separate preciseevidence; backuphelper inherited originalobservations are notusedasnewactivationclaims.",
+    "RegularNULL restoration is root-owned and separate from this immutableevidence audit."
+  ]
+}

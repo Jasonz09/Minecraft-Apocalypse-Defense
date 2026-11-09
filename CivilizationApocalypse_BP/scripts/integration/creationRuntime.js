@@ -44,6 +44,17 @@ export function createCreationRuntime(deps){
    fixture.activate(player);last='private first-spawn fixture activation complete';return true;
   }catch(error){last='private first-spawn activation held: '+String(error).slice(0,180);return false;}
  }
+ // A compiled private profile must finish durable activation before its first
+ // accepted hour. Ordinary NULL-trust games receive no callback at all.
+ function simulationReady(){
+  try{
+   const before=fixture.status();if(before.state==='held')throw Error(before.reason);
+   const selected=activeStore();if(!selected)throw Error('private fixture activation pending');
+   selected.inspect('district-1:civ:0');
+   const after=fixture.status();if(after.state==='held'||after.state!==before.state)throw Error('activation changed during hour preflight');
+   return true;
+  }catch(error){last='simulation hour held: '+String(error).slice(0,180);return false;}
+ }
  function registerDeaths(){if(registered)return false;deps.world.afterEvents.entityDie.subscribe((/** @type {any} */e)=>{try{const s=activeStore();if(!s)return;const h=e.deadEntity,tags=h.getTags();if(!Array.isArray(tags)||tags.length>64)throw Error("death identity unreadable");const claims=tags.filter(t=>typeof t==="string"&&t.startsWith("civpop:v1:"));if(claims.length!==1)return;const accepted=s.confirmDeath({groupId:claims[0].slice(10),id:String(h.id),typeId:h.typeId,tags:[...tags]});last=accepted?"exact physical death recorded; aggregate unchanged":"duplicate/untracked death ignored";}catch(e){last=`death held: ${String(e).slice(0,180)}`;}},{entityTypes:[...CREATION_ENTITY_TYPES]});registered=true;return true;}
- return{activeStore,statusLines,command,registerDeaths,onInitialSpawn};
+ return{activeStore,statusLines,command,registerDeaths,onInitialSpawn,beforeSimulationStep:REVIEWED_FRESH_FIXTURE===null?undefined:simulationReady};
 }

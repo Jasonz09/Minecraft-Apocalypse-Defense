@@ -91,6 +91,7 @@ startSimulationLoop(kingdomStore, {
             world.sendMessage(`The chronicle fell silent this hour: ${String(error)}`);
         }
     },
+    beforeStep: creation.beforeSimulationStep,
 });
 
 // Prepared templates enable the ordinary Ledger; unarmed authoring worlds need the development switch.

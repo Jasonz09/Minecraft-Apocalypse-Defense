@@ -1,0 +1,1907 @@
+{
+  "v": 1,
+  "options": {
+    "bundleRoot": "E:\\CivilizationApocalypse\\dev\\staging\\private-fixture-startup-hold-20261108\\native-variant",
+    "bundleManifestSha256": "C0A5C6902E935E2B2587DC24FA60C45AD02210B9F4AA9CE0F74F04F9E386C153",
+    "behaviorParent": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\Shared\\games\\com.mojang\\development_behavior_packs",
+    "resourceParent": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\Shared\\games\\com.mojang\\development_resource_packs",
+    "worldParent": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\16044254735791270272\\games\\com.mojang\\minecraftWorlds",
+    "backupRoot": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\Shared\\games\\com.mojang\\codex_private_fixture_backups",
+    "transactionId": "creation-hold-69162c9b95214489",
+    "worldFolder": "CA_CreationHold_69162c9b",
+    "visibleName": "CA Creation Hold Nov8 69162c9b"
+  },
+  "run": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\Shared\\games\\com.mojang\\codex_private_fixture_backups\\creation-hold-69162c9b95214489",
+  "packs": [
+    {
+      "name": "CivilizationApocalypse_BP",
+      "source": "E:\\CivilizationApocalypse\\dev\\staging\\private-fixture-startup-hold-20261108\\native-variant\\private-packs\\CivilizationApocalypse_BP",
+      "base": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\Shared\\games\\com.mojang\\development_behavior_packs",
+      "dest": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\Shared\\games\\com.mojang\\development_behavior_packs\\CivilizationApocalypse_BP",
+      "expected": [
+        {
+          "path": "entities/archer.json",
+          "bytes": 5578,
+          "sha256": "660C1D0665C97910DD4B6291A8222069A8CC23F6E94DC59EBA440157979B4F30"
+        },
+        {
+          "path": "entities/guard_arrow.json",
+          "bytes": 1715,
+          "sha256": "B3DEA57342313664AB1A66EE46806D75B1AA6697CA767CCDFE69508AC816F761"
+        },
+        {
+          "path": "entities/swordsman.json",
+          "bytes": 4547,
+          "sha256": "774943076D553408FD2A997559159B7F430ADEF39702DAB3ACF854017FF6DEF0"
+        },
+        {
+          "path": "items/ledger.json",
+          "bytes": 526,
+          "sha256": "D5E4183A403740086CEE71E947611A521B2911380423C9F49A313F97A937597A"
+        },
+        {
+          "path": "manifest.json",
+          "bytes": 1406,
+          "sha256": "D72C4320CE3A3FD404C81821042EB2DB163B8283E1A62533C5553A7B0E0B362D"
+        },
+        {
+          "path": "scripts/civ/budget.js",
+          "bytes": 11823,
+          "sha256": "F0A8377A525AFF8BD2C549C820A6DCDDC2E6AEF72F119832C67DBED4633FC8C6"
+        },
+        {
+          "path": "scripts/civ/chains.js",
+          "bytes": 14167,
+          "sha256": "8765F653EDB926CD572462BBF048FD06D41A8F4F6C2A249EB667DB40C1890E20"
+        },
+        {
+          "path": "scripts/civ/districtplan.js",
+          "bytes": 179967,
+          "sha256": "BAE2D199DE6ABADB33C15CD7EA2BA07DFDD856018C3E3B57B4B48EB1CFDB663A"
+        },
+        {
+          "path": "scripts/civ/environments.js",
+          "bytes": 53141,
+          "sha256": "052EDF879EAAB5E9FD25BC018145DD70E7F58E3B3360C23F2CE906C1AE9E8E15"
+        },
+        {
+          "path": "scripts/civ/facilities.js",
+          "bytes": 18321,
+          "sha256": "26D40C718C848E3AE256464F4F7A3BF138A5329BF3437AFCF3E1C2CE1B3D58E1"
+        },
+        {
+          "path": "scripts/civ/farmfixtures.js",
+          "bytes": 17248,
+          "sha256": "50E13BB6B3CE2D1C1C058F9FECBA851B32DD3ACD6EA25AEFA7771F5E5C636244"
+        },
+        {
+          "path": "scripts/civ/field.js",
+          "bytes": 15977,
+          "sha256": "58030DCB6341700C3001885DAF8EDF2DCBD0C333C09D72916E5AB6371034D0EF"
+        },
+        {
+          "path": "scripts/civ/foundations.js",
+          "bytes": 38638,
+          "sha256": "B69736A274F0B00F3D5625426EBD4C6813B8FF9C4025BD46559FD584B137972A"
+        },
+        {
+          "path": "scripts/civ/gatelink.js",
+          "bytes": 25215,
+          "sha256": "07021F3837E7EB5C741DFBD363FD8C62569A4D381F002C4A071B6E0104661CD5"
+        },
+        {
+          "path": "scripts/civ/gates.js",
+          "bytes": 24701,
+          "sha256": "BD8332FCB8543124FFEF1DDD07109090CA0FB6E0D0F189EAEADE222D756728AA"
+        },
+        {
+          "path": "scripts/civ/geom.js",
+          "bytes": 20015,
+          "sha256": "A4C26B23F1FE5F2D068B9886DE010B3F58655E0ADADEAA92682F4F096CF58192"
+        },
+        {
+          "path": "scripts/civ/interiorlights.js",
+          "bytes": 4722,
+          "sha256": "E70C0A0E99DAD431814AC7B52B5EA0EAAD24A37355C67A02AF01725CFFA7EDD6"
+        },
+        {
+          "path": "scripts/civ/jobs.js",
+          "bytes": 22246,
+          "sha256": "AAF62EB442BB66C3046CFC8C42FBF0394FF83BCF75742A7FF7CE7D145A21F629"
+        },
+        {
+          "path": "scripts/civ/lamps.js",
+          "bytes": 15739,
+          "sha256": "2B7FEB5C009E25111515E26E9B1C98CDC1B764250DBF583AB26D56E70BB32A99"
+        },
+        {
+          "path": "scripts/civ/leafSourceStreaming.js",
+          "bytes": 11411,
+          "sha256": "A61AA4A4EB1F86F866DB80CDFA62DECFAF92FAEC3AD27085FC08403547D3F5A4"
+        },
+        {
+          "path": "scripts/civ/leverbindings.js",
+          "bytes": 2147,
+          "sha256": "2F6A6D1BF0D8CD31F5912FBC650640EA76F50019367D9176403B168DFDAE52A4"
+        },
+        {
+          "path": "scripts/civ/lightingRevision.js",
+          "bytes": 1565,
+          "sha256": "9C1726B6E30E905BE9C64F3A8E3CECCF816BCA114BD0244595B114D95E08D4D0"
+        },
+        {
+          "path": "scripts/civ/lots.js",
+          "bytes": 48563,
+          "sha256": "AAA99F38144C374FAB4BD3E29618B1C4EC5B139ABF4AE3BB4FE075FC6F36B368"
+        },
+        {
+          "path": "scripts/civ/lotsteps.js",
+          "bytes": 48467,
+          "sha256": "31324154760F735CB3EC1BF27AC56DB32E491A41876049BE158E1D06704393DA"
+        },
+        {
+          "path": "scripts/civ/masterplan.js",
+          "bytes": 33527,
+          "sha256": "7B6E9844E6B76C8CD319DEFC19455A0A3A963AE8CE71E99FC95C688B25FBCAC2"
+        },
+        {
+          "path": "scripts/civ/opnorm.js",
+          "bytes": 8348,
+          "sha256": "D009811B1AAA791F09F0A32CAE1A30EED38F58FC2E0BCAD0C817B44FDB0E6EBB"
+        },
+        {
+          "path": "scripts/civ/planstore.js",
+          "bytes": 18511,
+          "sha256": "990FE830871989115636DB366E7A1311A453B5E05B3E948DFA2AC22D04EFB23C"
+        },
+        {
+          "path": "scripts/civ/regions.js",
+          "bytes": 33571,
+          "sha256": "4B9769CFFB0C23AEC59A0A709320608FECAE40E2FA15250A12617697FC533D69"
+        },
+        {
+          "path": "scripts/civ/roadnet.js",
+          "bytes": 13040,
+          "sha256": "B9BB4221867CBA92D79CBF6240350072A25A08ADC0345BAC4831962B92BAE9AA"
+        },
+        {
+          "path": "scripts/civ/roofcolumns.js",
+          "bytes": 6710,
+          "sha256": "23CD14AE0079BBF6C04A89D27A6FEA86C3543A28206E8F2B38E509BBB9A88A8C"
+        },
+        {
+          "path": "scripts/civ/roomPreviewProgress.js",
+          "bytes": 2059,
+          "sha256": "D344952FD2F3D64096336F3BB110011E25424F4E7848D5AE3E0674817A9FE8C4"
+        },
+        {
+          "path": "scripts/civ/roomVegetationPreview.js",
+          "bytes": 10005,
+          "sha256": "6CA1FF81158112438520A1695250E8748CBA74F51010089FD91CBE3F415F0FDC"
+        },
+        {
+          "path": "scripts/civ/shapecheck.js",
+          "bytes": 15832,
+          "sha256": "7C5953FB84D2647F138ECE8BE806C8A3814F7F031E52DF10CBD5018808A0ABC8"
+        },
+        {
+          "path": "scripts/civ/sharedtree.js",
+          "bytes": 6074,
+          "sha256": "EDDD2FEF9C761F5B9C05875DB9E005865311F092C9897219BEF4E453DD70F70C"
+        },
+        {
+          "path": "scripts/civ/siteprofile.js",
+          "bytes": 24122,
+          "sha256": "BB72747BB347BECE1958C5EB602F15E4FC136183A0EF43E1D9C4B1584BD2A539"
+        },
+        {
+          "path": "scripts/civ/siteselect.js",
+          "bytes": 26422,
+          "sha256": "369728D61F647A885BABBBCB71F437B3FEC83B14C6749E0B44411E64C75CE4AD"
+        },
+        {
+          "path": "scripts/civ/treeclear.js",
+          "bytes": 3558,
+          "sha256": "24F66EA7D10F5906F0919E388E2A20FF42B818C8B80D1ADAA819DFE3ACAC9C1E"
+        },
+        {
+          "path": "scripts/civ/treeInspectionStreaming.js",
+          "bytes": 6826,
+          "sha256": "808A6D3C8AD645DADFF7406866CCBDBCDD7C1BB7F8171213A46C1EC2329092B8"
+        },
+        {
+          "path": "scripts/civ/treeRootRefusalCache.js",
+          "bytes": 2945,
+          "sha256": "B2281D282679DB1CA7E0F0CE82A075504260C0A306C4C6F257D0937572E2E7E9"
+        },
+        {
+          "path": "scripts/civ/undo.js",
+          "bytes": 26563,
+          "sha256": "3F3B29316F52A3873DC8AF7512B43E075596B6A9CC741139B31FFD0131635C4D"
+        },
+        {
+          "path": "scripts/civ/validate.js",
+          "bytes": 73827,
+          "sha256": "509DDEA7CB98792B63D04E0508D4B747FCB453A0B98F2AC9352340D10358C956"
+        },
+        {
+          "path": "scripts/civ/validatesteps.js",
+          "bytes": 71127,
+          "sha256": "9323DBC9F08FA306810073059E2B427FAB15A060865645044AD5E35DCEBE9804"
+        },
+        {
+          "path": "scripts/civ/wallleafpreview.js",
+          "bytes": 13093,
+          "sha256": "39E2A3D6777F509C9E2CCFF3BD313CE3FDC549366E53C197699D10823FA48AC4"
+        },
+        {
+          "path": "scripts/civ/wallLeafRepair.js",
+          "bytes": 16023,
+          "sha256": "97998CF2E8A2318601B3AB75E0950DC242A57D534C3C1B996EDF83464BA08770"
+        },
+        {
+          "path": "scripts/civ/wallLeafTrim.js",
+          "bytes": 33271,
+          "sha256": "9D3EF064ADF9E4AA1B5D72623859077D47B46C3162D18EBEA75F7EB190E3A951"
+        },
+        {
+          "path": "scripts/civ/walls.js",
+          "bytes": 35154,
+          "sha256": "FD689A52712410A646C3FF13D2FFD7719B828FEDA449B06DBD3F6A7AE174C292"
+        },
+        {
+          "path": "scripts/civ/worldplan.js",
+          "bytes": 6706,
+          "sha256": "9786F78B01C14D3B61D00EE49ABA0071D730F694F290DB1D53A669AC866EE646"
+        },
+        {
+          "path": "scripts/civ/zonesteps.js",
+          "bytes": 58924,
+          "sha256": "A9362C85B1C3A22B7B51C3BB759BFFA42CD46E7071A4945EFF7717DECE93854E"
+        },
+        {
+          "path": "scripts/civ/zoning.js",
+          "bytes": 70734,
+          "sha256": "6D706670C67C7F337D27CF8662662207927887350CA7C53F2BD223C70C236AEC"
+        },
+        {
+          "path": "scripts/commands/args.js",
+          "bytes": 1072,
+          "sha256": "BC055175D1447CCD698049637743FF8959140EB4909530516F5785D38172A840"
+        },
+        {
+          "path": "scripts/commands/civ.js",
+          "bytes": 136551,
+          "sha256": "099848A07F44D6FCA73D286962216FEF739BDBC13A3D544AD214204225893475"
+        },
+        {
+          "path": "scripts/commands/debug.js",
+          "bytes": 10330,
+          "sha256": "DD90F3B70FAEBBB28CC4CA7C3382D440E5D19225C4070F2743D7748E3229E0FE"
+        },
+        {
+          "path": "scripts/commands/gates.js",
+          "bytes": 22388,
+          "sha256": "261939F3BF8FE2B6B21ECE516EF235F09A3CCF5656B6FD3794F042102F519A79"
+        },
+        {
+          "path": "scripts/commands/inspect.js",
+          "bytes": 3683,
+          "sha256": "D770384381BEED07899AB50C9C793B44DB63098841CF1A9ED0BDD00C94C0C71B"
+        },
+        {
+          "path": "scripts/commands/military.js",
+          "bytes": 6976,
+          "sha256": "C7BC09BEE785E83EEF13F31E1105156179236D59DC0F815F4571E0A1AE96E044"
+        },
+        {
+          "path": "scripts/commands/people.js",
+          "bytes": 5046,
+          "sha256": "B79FB7205A2F3186D08C7F0901053F2DC5872FD88B0B9CD8795853765BE7A448"
+        },
+        {
+          "path": "scripts/commands/physical.js",
+          "bytes": 26183,
+          "sha256": "211DC941DAC0CCEDAC8955A2A73C18E8753F57DA79FEA9E1BA0EA3B9193FAF19"
+        },
+        {
+          "path": "scripts/commands/reply.js",
+          "bytes": 1066,
+          "sha256": "79894601EA429239433E492AF197AB0D228A584B986D3D1BA67CD495CB88579E"
+        },
+        {
+          "path": "scripts/commands/starter.js",
+          "bytes": 14968,
+          "sha256": "BDAB27B26A371707A335132095DD95F0B5BB7ADA876DFC55FD6F7AD64AD60AA1"
+        },
+        {
+          "path": "scripts/commands/status.js",
+          "bytes": 1215,
+          "sha256": "ADD30BD233508D14066FB4DFE4FD99A59361303506D44F0D21889F45B4DD6DF9"
+        },
+        {
+          "path": "scripts/config.js",
+          "bytes": 11971,
+          "sha256": "5B6E5325C3EB32B6C41EB3456E39AB529FC96C11B69A62BCF4DC8080C6F8D816"
+        },
+        {
+          "path": "scripts/events/welcome.js",
+          "bytes": 1383,
+          "sha256": "AAEBED353A1302D8D25B5D2300708C63333D1AB2FBE91ADA2EBC7FDBF1DC5AC0"
+        },
+        {
+          "path": "scripts/integration/beaconBindings.js",
+          "bytes": 7465,
+          "sha256": "CE3E2A164A6DDCF2AAC0B466B55D0D73122C0D2D9BC715F6155DF7F7A6ACE00A"
+        },
+        {
+          "path": "scripts/integration/buildAdapter.js",
+          "bytes": 7306,
+          "sha256": "9D8789985F1B1BD664B32F5FD6B59ED7DDC19C5708548F825116C6439BE72350"
+        },
+        {
+          "path": "scripts/integration/chronicle.js",
+          "bytes": 9993,
+          "sha256": "8E996B3FC6726E99E02CE6897782FA12BE3967E4DAEF1A61533F008AAD806749"
+        },
+        {
+          "path": "scripts/integration/chunkLeases.js",
+          "bytes": 7804,
+          "sha256": "2D04E0528F5D37ECF13280C5687C89BF1336EBEE335A12E9B3D4BE1E559B8DC6"
+        },
+        {
+          "path": "scripts/integration/civBuilder.js",
+          "bytes": 156332,
+          "sha256": "6CC60557A2DE01B25AEBED1F9C4C50B2CEF199982B024D8327F49D6DF4C46B79"
+        },
+        {
+          "path": "scripts/integration/civGates.js",
+          "bytes": 27470,
+          "sha256": "8EBE8D1AA325C737B5599467D4A6542F26EB7B661A09199E414F42B6DEEBFFF2"
+        },
+        {
+          "path": "scripts/integration/civilianDestinations.js",
+          "bytes": 9065,
+          "sha256": "168ADFCD2542FE614EFC9EB02D8CCCA0D57A542AE595C0B8683285FA7916E08C"
+        },
+        {
+          "path": "scripts/integration/civilianTravel.js",
+          "bytes": 19674,
+          "sha256": "7CE91984789146169D78276FC5A05C3EB4E7D9F0819A4824A1B5065A1D71C96D"
+        },
+        {
+          "path": "scripts/integration/civProgress.js",
+          "bytes": 10708,
+          "sha256": "8A4F55666188DAE5AC34AEF38384B034DACCFDACAE6978FA64469176D6A22E6F"
+        },
+        {
+          "path": "scripts/integration/civScan.js",
+          "bytes": 39068,
+          "sha256": "1055B2853469D93B20F4FC2D8177305878AEA03DEFDF2ADC6DFE73B5128C9452"
+        },
+        {
+          "path": "scripts/integration/creationBindings.js",
+          "bytes": 21505,
+          "sha256": "717741BBBC0E7E42391C7C84802AE8E5172766BF2009FD897454F20576A01433"
+        },
+        {
+          "path": "scripts/integration/creationRuntime.js",
+          "bytes": 5908,
+          "sha256": "3393D6B86E29AC5D2A243C873E995697D551B566E4B5E7CBE652FBD6455505D5"
+        },
+        {
+          "path": "scripts/integration/districtBuilder.js",
+          "bytes": 17706,
+          "sha256": "36528852259492C73B227AD7174B0C4DC26456F87A57219BA058C847FBBC851B"
+        },
+        {
+          "path": "scripts/integration/doorPlacement.js",
+          "bytes": 4839,
+          "sha256": "9CBCA0BA1D23C5B0A80F51476598758CCE78D9CDF96A9F006376844E9F660957"
+        },
+        {
+          "path": "scripts/integration/farmLightingRevision.js",
+          "bytes": 15790,
+          "sha256": "A994CE666381CBF13A47BC2EFBBFDA01B09A74A7222300A8E50ED7E32FF6BDC1"
+        },
+        {
+          "path": "scripts/integration/freshFixtureTrust.js",
+          "bytes": 745,
+          "sha256": "6A8265877D4591F757F2AFD9569046BB8BDA829F91F1E07EB05B882CCC3782C7"
+        },
+        {
+          "path": "scripts/integration/gateAdapter.js",
+          "bytes": 39450,
+          "sha256": "69DD2BB9ED953CC1DD9103370F04C615F5041594FCCD4745724E9A4BF9B24A93"
+        },
+        {
+          "path": "scripts/integration/gateLevers.js",
+          "bytes": 4140,
+          "sha256": "6F4BE66BD54FF4EF89767C1F9515BADA61F70D2C20EF45B20E3D93EA8D959792"
+        },
+        {
+          "path": "scripts/integration/lampRetrofit.js",
+          "bytes": 21791,
+          "sha256": "77B540D3CBCBF729D31C5C73C2E93F26C46251917592DDEF527713E9BAEA86A8"
+        },
+        {
+          "path": "scripts/integration/ledgerBindings.js",
+          "bytes": 7849,
+          "sha256": "7B8EDCADC37E8BDDDE239B58C76F305FF2704180EF2CD96D5C6EE57EE4659F49"
+        },
+        {
+          "path": "scripts/integration/lightingRevision.js",
+          "bytes": 9421,
+          "sha256": "8C99306C32B91E81AB63B33D95357E710DD367DFF7F5B003509D7FC58F0F7855"
+        },
+        {
+          "path": "scripts/integration/militaryLifecycleDiagnostics.js",
+          "bytes": 9507,
+          "sha256": "EA32B85E1642934434F9B355845F7194AB62C44B1E4FF640616E442E0BC9144D"
+        },
+        {
+          "path": "scripts/integration/militarySelectionStore.js",
+          "bytes": 5382,
+          "sha256": "647C4A52ADE6B2DD18CAE4D989E068AB01DBECBFA440F0F5F81A61B291B050B4"
+        },
+        {
+          "path": "scripts/integration/peopleOrders.js",
+          "bytes": 57261,
+          "sha256": "34E3FE848E63712A9E2A3205291C3F593184088880EFA36B50B4D25417B6CF96"
+        },
+        {
+          "path": "scripts/integration/peopleRuntime.js",
+          "bytes": 10025,
+          "sha256": "6119AA16876F8CF00199E8A92659B72E333F9715D6284E445E4A78B0297F485E"
+        },
+        {
+          "path": "scripts/integration/peopleStreets.js",
+          "bytes": 29638,
+          "sha256": "B0E2F279198203E015817104818FC4A7D52C30EADF96350C5B4CB58B67C180D0"
+        },
+        {
+          "path": "scripts/integration/popSync.js",
+          "bytes": 47358,
+          "sha256": "ED93FC892FC19CC44DF865F98BF954058B7C5314D5961BDF36F0F13A767D58A7"
+        },
+        {
+          "path": "scripts/integration/privateFreshFixture.js",
+          "bytes": 9846,
+          "sha256": "558190D973E5D5230D7DF817990B488324586FF3613B4F07336A137BE760A2B2"
+        },
+        {
+          "path": "scripts/integration/roomKingdomReader.js",
+          "bytes": 1942,
+          "sha256": "8A1F1A9BDD4CBF88858859F47058E0B4EFD18542FE98E0E6DFE719209E8721D1"
+        },
+        {
+          "path": "scripts/integration/siegeMobs.js",
+          "bytes": 53530,
+          "sha256": "8486712BA7B645F21FAABBB8312337AEEEF052B0C125D2B64486163261E996B5"
+        },
+        {
+          "path": "scripts/integration/simulationLoop.js",
+          "bytes": 4575,
+          "sha256": "A45C00BF0359C5620E563CEBFEA9F19ACE7B1ABE68CC069F574357B44649A598"
+        },
+        {
+          "path": "scripts/integration/terrainScan.js",
+          "bytes": 19394,
+          "sha256": "A545108C0BDE0167A748C0630E7A9F4D75C46270648EA83326F29EF0A20C5867"
+        },
+        {
+          "path": "scripts/inventory/beaconRules.js",
+          "bytes": 8485,
+          "sha256": "CB2D626A2FEDE2A390F353485EDA2D99E5FB8108A8C8EA264FE91371DA6320AC"
+        },
+        {
+          "path": "scripts/kingdom/migrations.js",
+          "bytes": 3384,
+          "sha256": "7DF74F7EF9D9A258F8619D79C4249C59AD266A49D79932A970B91AAA1A104794"
+        },
+        {
+          "path": "scripts/kingdom/state.js",
+          "bytes": 22985,
+          "sha256": "D86F68AE94D64A41437096E9FFB569E63148001B5F72A5FCA8603330F21F4ABD"
+        },
+        {
+          "path": "scripts/kingdom/store.js",
+          "bytes": 7735,
+          "sha256": "2A899E946C031AFE8A1C753730EE97018ADD920FE9A9D5F98D20242B9EDDE20A"
+        },
+        {
+          "path": "scripts/ledger/actions.js",
+          "bytes": 23868,
+          "sha256": "A73ABE7D79AC2EC4BC7056801D78B855EAE0700F4298B58A41BC86F74EE889A6"
+        },
+        {
+          "path": "scripts/ledger/devgate.js",
+          "bytes": 4429,
+          "sha256": "4019A3A1DD028F8D167B06695AB0AB842AA87DA4C0F415B6B85340091166CC22"
+        },
+        {
+          "path": "scripts/ledger/frames.js",
+          "bytes": 1742,
+          "sha256": "ECFEFCEB33EFF7D23DDBF1EA5B1050C84ED6AF08A476B1D3EE7C964F1B8C9D76"
+        },
+        {
+          "path": "scripts/ledger/ids.js",
+          "bytes": 1217,
+          "sha256": "28BB96B094ED66C183DCA8A680CCF61ED6179627B791C58F6AB01FB492433016"
+        },
+        {
+          "path": "scripts/ledger/item.js",
+          "bytes": 2753,
+          "sha256": "F0E1EEDEE946DEABFCF28C9F49DC7EA5628BA5F2475863A3D8D1D98C1C81508C"
+        },
+        {
+          "path": "scripts/ledger/menus-kingdom.js",
+          "bytes": 14125,
+          "sha256": "7C1679DE6237DA82A99799365EF153B40E556AD6F93DB449321BFC1FC84A6D11"
+        },
+        {
+          "path": "scripts/ledger/menus-works.js",
+          "bytes": 15246,
+          "sha256": "70EEFAC6BED7B66FB478EBDB9658FB9B5132A96506F60DDF9A375108BA9D47E0"
+        },
+        {
+          "path": "scripts/ledger/menus.js",
+          "bytes": 4913,
+          "sha256": "C9565EEE15E07CB39D66CEB3F564A0B8F28BF5C47BBB26006B2CE6694D0E1725"
+        },
+        {
+          "path": "scripts/ledger/model.js",
+          "bytes": 3577,
+          "sha256": "7D123B095F216D22942D237DC6D7A4C9D02A78F7A966BD8BAF53B17F7A3B47FD"
+        },
+        {
+          "path": "scripts/ledger/navigation.js",
+          "bytes": 2562,
+          "sha256": "B35622C1C1064AC5F9F124AD1DC1A9EF77B09E27775548D451E882C1DED1F228"
+        },
+        {
+          "path": "scripts/ledger/pagination.js",
+          "bytes": 2320,
+          "sha256": "172D60D6D4012871DAA110AC0BA479EBCD9F7B9BCABEC3350EB4EE0F430E56CB"
+        },
+        {
+          "path": "scripts/ledger/runtime.js",
+          "bytes": 21442,
+          "sha256": "5FA02441F4641F5C37F8674CE3CD54619F62678CA660CD13766BB55F006B0925"
+        },
+        {
+          "path": "scripts/ledger/text.js",
+          "bytes": 4517,
+          "sha256": "ABF81DF7BF11927178931B97736D0CDB37F7C5487827373647FF658AFBAF9DF9"
+        },
+        {
+          "path": "scripts/main.js",
+          "bytes": 7152,
+          "sha256": "E4C72F503EF70EFB097B15E4781C1057DF52FF7CDA2088A79FBB73C1B2F4925E"
+        },
+        {
+          "path": "scripts/people/columns.js",
+          "bytes": 8885,
+          "sha256": "0550F90FFC53F25306EE244816BFCB0030D3F3F0147982D534D233ACD7C7D1C2"
+        },
+        {
+          "path": "scripts/people/command.js",
+          "bytes": 8520,
+          "sha256": "35A9A07A8F9A213289AE6BA2AC0229FDF603235D65EC6C95D41F61631B885EDE"
+        },
+        {
+          "path": "scripts/people/contract.js",
+          "bytes": 32407,
+          "sha256": "7923A938505E60AEFE6DE19BA4630421ADC4B8BD0084EACFF8CF95D1E839E3DA"
+        },
+        {
+          "path": "scripts/people/destinations.js",
+          "bytes": 10540,
+          "sha256": "A84A530F8F032EC05A8411BC15EC7B7275D53076152061C77620ACB9508CBF4B"
+        },
+        {
+          "path": "scripts/people/equipment.js",
+          "bytes": 9137,
+          "sha256": "1D7B3931DC54F94417AADF7408BF1D60F18B5D37349204712F25F190658E3809"
+        },
+        {
+          "path": "scripts/people/frontage.js",
+          "bytes": 4416,
+          "sha256": "0F6AF03D2050EAF67F35BC80E87BF9650D3AFC487564811543E8FC347D24E4ED"
+        },
+        {
+          "path": "scripts/people/gate.js",
+          "bytes": 2337,
+          "sha256": "1FECB05397E40CDB51C15EE46A83AADF5D38CBA8A6911F6B14AA1024F555D813"
+        },
+        {
+          "path": "scripts/people/lod.js",
+          "bytes": 11586,
+          "sha256": "BDC1F3C993458697AC4B8068DF29BF8AB10B2ACF20312A17996620B26915A3B6"
+        },
+        {
+          "path": "scripts/people/occupations.js",
+          "bytes": 8820,
+          "sha256": "0C6DE3A9ED219B13A601AB654DAA37169575F248167C0DAB3ABABEF49D5ABB68"
+        },
+        {
+          "path": "scripts/people/patrols.js",
+          "bytes": 9893,
+          "sha256": "BAC413A3C0B27F491113B02C7E56C6A6B4F8FBD583D6F8DAB1B57F2446587CCB"
+        },
+        {
+          "path": "scripts/people/reconcile.js",
+          "bytes": 11461,
+          "sha256": "929DEF12A2B7D495E40EDC8780CF24603F95B8EDC7F02B73990E8C12AC8CE11F"
+        },
+        {
+          "path": "scripts/people/roster.js",
+          "bytes": 13599,
+          "sha256": "D69CC25E05DDE669BFE675FDB647B4E8D9B5AF5DD67D1C2E01E139BB8FA52721"
+        },
+        {
+          "path": "scripts/people/routines.js",
+          "bytes": 5177,
+          "sha256": "F33D82BB16BF652778B62A52F648D3CD6BB3AB47671F3E937E41A84B32BAC721"
+        },
+        {
+          "path": "scripts/people/support.js",
+          "bytes": 10714,
+          "sha256": "7005DC7F5879D6205BE76E3EC65C1FCCACE0C8B66FABB28F8A0E8942CD17955F"
+        },
+        {
+          "path": "scripts/people/training.js",
+          "bytes": 5166,
+          "sha256": "49B9009AC25F6673B0E495029496FC29C01039F61B4DAE44CBC9970C07FD5313"
+        },
+        {
+          "path": "scripts/people/transport.js",
+          "bytes": 7801,
+          "sha256": "408E98A2EFD5A787028B0C2C4116FF70EA17BE9BE2DB6CE5546F633322651752"
+        },
+        {
+          "path": "scripts/people/travel.js",
+          "bytes": 4405,
+          "sha256": "BA1963B4F31EA33E998D0D1875AAC8F4CBD4542CEED44C5C3A9F557391561034"
+        },
+        {
+          "path": "scripts/people/walkSafety.js",
+          "bytes": 799,
+          "sha256": "BB7E9B96DCDC1F7783BDD7A11BE9F4C69B5B2DC6DBB959B40F7B42C9348503A9"
+        },
+        {
+          "path": "scripts/people/workRoutePreview.js",
+          "bytes": 13624,
+          "sha256": "94E39E4EC7B7FDD9AF868EFD1A20A36255EFBBC6843B8CD5FF35F62189D2AC84"
+        },
+        {
+          "path": "scripts/population/cursor.js",
+          "bytes": 4761,
+          "sha256": "99C11E5659EB15E786917A6C71267C91AB95C8B7D6D987E6624E591C6BDDE9F8"
+        },
+        {
+          "path": "scripts/population/groups.js",
+          "bytes": 6854,
+          "sha256": "EECD6EF44DF7932B6C43D76EEB9AED3134B114CC82261041E9551CEAA0971AE8"
+        },
+        {
+          "path": "scripts/population/identity.js",
+          "bytes": 2200,
+          "sha256": "E802AE0711B59232B0B07D88379DB22CCC13AFB0FDED4FBB2C1D1EFA1334C418"
+        },
+        {
+          "path": "scripts/population/lod.js",
+          "bytes": 6708,
+          "sha256": "2BF2E2D0C3676635465B3A0DA8D01A687A36A4F330A306F5060B40DD78BA9AFB"
+        },
+        {
+          "path": "scripts/population/militarySelection.js",
+          "bytes": 4333,
+          "sha256": "63DEBCFE85CB69650707FFEDA5A98D5DCF585887A0D194556C66258035CC7C1D"
+        },
+        {
+          "path": "scripts/population/reconcile.js",
+          "bytes": 28114,
+          "sha256": "E1E24B8CF7ABEF66CFB91308F8ADCF632B7B0E896E9CC489C10089E60386ABE9"
+        },
+        {
+          "path": "scripts/population/settings.js",
+          "bytes": 5887,
+          "sha256": "AA51C379B655AC9D5121402FC0DAEB3685BADB0C7492C1A1DAB6F9718AA9446F"
+        },
+        {
+          "path": "scripts/sim/clock.js",
+          "bytes": 1323,
+          "sha256": "A1D747A2BBAAD7F857B5733AD88C2441B179398ADA8863488994AEA0407C6F0C"
+        },
+        {
+          "path": "scripts/sim/construction.js",
+          "bytes": 27780,
+          "sha256": "F279591B44F9FF32567A0D44487E443098CEE6DF5A7A1ABD1E717234E565BD14"
+        },
+        {
+          "path": "scripts/sim/diplomacy.js",
+          "bytes": 7727,
+          "sha256": "828379138102BBA22A6CA925872C12D767039A26FEFB1E525DF7AEFC15279098"
+        },
+        {
+          "path": "scripts/sim/evacuation.js",
+          "bytes": 27171,
+          "sha256": "AC2FD9B64877FCD1DB551F5C50FFF243514FB4FBB4B1E648BB9AD4785E31FDAB"
+        },
+        {
+          "path": "scripts/sim/expansion.js",
+          "bytes": 30075,
+          "sha256": "626087EF9D50AE5BEC0FE96E455AC320FAE2757892472C2E5440A0F6A333A87B"
+        },
+        {
+          "path": "scripts/sim/gatecontrol.js",
+          "bytes": 25619,
+          "sha256": "9F3CD69DB3EDF60CA257E14D27B1888D17CE76707A253FAF227530B9013A9AB8"
+        },
+        {
+          "path": "scripts/sim/invasion/apply.js",
+          "bytes": 12124,
+          "sha256": "DE397FD11F859CE42ED3B8D2A93271C61E5195217B9ED7580ED903489DD4FFD2"
+        },
+        {
+          "path": "scripts/sim/invasion/composition.js",
+          "bytes": 9629,
+          "sha256": "1C203A1218EC156F2C40F92B325B67027790041781B9C8F530C65975991117D0"
+        },
+        {
+          "path": "scripts/sim/invasion/director.js",
+          "bytes": 38473,
+          "sha256": "61C432E563C37526CBAED608A5DFCBA27F5A6EDAAE8146E651FCC126CA459F57"
+        },
+        {
+          "path": "scripts/sim/policies.js",
+          "bytes": 12178,
+          "sha256": "448EA41FB5685C57B00C81FAD0AA4F3EA13D681E0E66818FC0B5AAF2BB81B3DE"
+        },
+        {
+          "path": "scripts/sim/population.js",
+          "bytes": 18872,
+          "sha256": "77CCB3FF6C95444A489A5B03EDF8153DB017EFDAA9115AEA250359652C28145D"
+        },
+        {
+          "path": "scripts/sim/rng.js",
+          "bytes": 1981,
+          "sha256": "B06436B104E92AE3D815134AD03959E0424D354BE4E37FE5CEB1264B4B7265DC"
+        },
+        {
+          "path": "scripts/sim/scenarios.js",
+          "bytes": 11524,
+          "sha256": "5D5E1F311A6EFEDDC41CD178864374B2D1622101466F30241BAAC8DE3E781452"
+        },
+        {
+          "path": "scripts/sim/siegeTuning.js",
+          "bytes": 2028,
+          "sha256": "4F82A07AD9108353C8E969950266D0183768888906B5B2B20712EE36F17E6DFA"
+        },
+        {
+          "path": "scripts/sim/starter.js",
+          "bytes": 14013,
+          "sha256": "50F751F967BCDA377329C3BABB61332A7402513F59C00A44A9DE18965CB59CB0"
+        },
+        {
+          "path": "scripts/sim/tick.js",
+          "bytes": 8669,
+          "sha256": "4E14AB1A0F739A1F783D363BC6FEF6285DAAB1B8EC0FDA7A792DBAB5ABAFB3C9"
+        },
+        {
+          "path": "scripts/sim/war.js",
+          "bytes": 44893,
+          "sha256": "2FF12D35138E0D6EFE48B17731B52028830788D55DB99329FEC41D34E4232B1C"
+        },
+        {
+          "path": "scripts/structures/blueprints.js",
+          "bytes": 9230,
+          "sha256": "D9A2E2C657019A0133D02928ABCA76E15D0FFDAF28A187D07BA4ACC46B210D36"
+        },
+        {
+          "path": "scripts/structures/blueprints2.js",
+          "bytes": 45482,
+          "sha256": "2CDB49C09F7F01A5BD89231A97330D3178444682D6CE60E65B40C810B96C1731"
+        },
+        {
+          "path": "scripts/structures/facing.js",
+          "bytes": 2242,
+          "sha256": "2F74E2BFB76F26FAD40D7571704B7E00A17F24796CDE6678DFD46A5FDF256973"
+        },
+        {
+          "path": "scripts/structures/layout.js",
+          "bytes": 6231,
+          "sha256": "077908D2189A524BE40D78BA15437D7DE0EDAEC98EDC172DC32749DD9494FB9A"
+        },
+        {
+          "path": "scripts/structures/palette.js",
+          "bytes": 2870,
+          "sha256": "05F528A45AD73E100E45F0CAB0B71C447995F6F38F1EBF84E5B9352387CF1162"
+        },
+        {
+          "path": "scripts/structures/palette2.js",
+          "bytes": 5833,
+          "sha256": "FF2904B874C680B50230E03C48077306157EF57A7BF7F919FB1E6497821460D9"
+        },
+        {
+          "path": "scripts/structures/planner.js",
+          "bytes": 14592,
+          "sha256": "9E946F44A172D4DDE57D203D9BEB609155CEFB5503F224137D39E1D6060FD612"
+        },
+        {
+          "path": "scripts/structures/siteRules.js",
+          "bytes": 1658,
+          "sha256": "02056780C62F1CAF5AD772C658DFFB473EF58D6D9B446E71133BFA1E29610CD3"
+        },
+        {
+          "path": "scripts/structures/terrain.js",
+          "bytes": 19502,
+          "sha256": "027B8B7FEB29F5CC0A1780D525856A55CEA9FDFB94931B54D062F7782E1906C9"
+        },
+        {
+          "path": "scripts/ui/report.js",
+          "bytes": 8303,
+          "sha256": "6F07F8E2730692A71D8E9D6C217B16CA3BB8607C203F0A60E88178C682016AA0"
+        }
+      ],
+      "previous": [
+        {
+          "path": "entities/archer.json",
+          "bytes": 5578,
+          "sha256": "660C1D0665C97910DD4B6291A8222069A8CC23F6E94DC59EBA440157979B4F30"
+        },
+        {
+          "path": "entities/guard_arrow.json",
+          "bytes": 1715,
+          "sha256": "B3DEA57342313664AB1A66EE46806D75B1AA6697CA767CCDFE69508AC816F761"
+        },
+        {
+          "path": "entities/swordsman.json",
+          "bytes": 4547,
+          "sha256": "774943076D553408FD2A997559159B7F430ADEF39702DAB3ACF854017FF6DEF0"
+        },
+        {
+          "path": "items/ledger.json",
+          "bytes": 526,
+          "sha256": "D5E4183A403740086CEE71E947611A521B2911380423C9F49A313F97A937597A"
+        },
+        {
+          "path": "manifest.json",
+          "bytes": 1406,
+          "sha256": "D72C4320CE3A3FD404C81821042EB2DB163B8283E1A62533C5553A7B0E0B362D"
+        },
+        {
+          "path": "scripts/civ/budget.js",
+          "bytes": 11823,
+          "sha256": "F0A8377A525AFF8BD2C549C820A6DCDDC2E6AEF72F119832C67DBED4633FC8C6"
+        },
+        {
+          "path": "scripts/civ/chains.js",
+          "bytes": 14167,
+          "sha256": "8765F653EDB926CD572462BBF048FD06D41A8F4F6C2A249EB667DB40C1890E20"
+        },
+        {
+          "path": "scripts/civ/districtplan.js",
+          "bytes": 179967,
+          "sha256": "BAE2D199DE6ABADB33C15CD7EA2BA07DFDD856018C3E3B57B4B48EB1CFDB663A"
+        },
+        {
+          "path": "scripts/civ/environments.js",
+          "bytes": 53141,
+          "sha256": "052EDF879EAAB5E9FD25BC018145DD70E7F58E3B3360C23F2CE906C1AE9E8E15"
+        },
+        {
+          "path": "scripts/civ/facilities.js",
+          "bytes": 18321,
+          "sha256": "26D40C718C848E3AE256464F4F7A3BF138A5329BF3437AFCF3E1C2CE1B3D58E1"
+        },
+        {
+          "path": "scripts/civ/farmfixtures.js",
+          "bytes": 17248,
+          "sha256": "50E13BB6B3CE2D1C1C058F9FECBA851B32DD3ACD6EA25AEFA7771F5E5C636244"
+        },
+        {
+          "path": "scripts/civ/field.js",
+          "bytes": 15977,
+          "sha256": "58030DCB6341700C3001885DAF8EDF2DCBD0C333C09D72916E5AB6371034D0EF"
+        },
+        {
+          "path": "scripts/civ/foundations.js",
+          "bytes": 38638,
+          "sha256": "B69736A274F0B00F3D5625426EBD4C6813B8FF9C4025BD46559FD584B137972A"
+        },
+        {
+          "path": "scripts/civ/gatelink.js",
+          "bytes": 25215,
+          "sha256": "07021F3837E7EB5C741DFBD363FD8C62569A4D381F002C4A071B6E0104661CD5"
+        },
+        {
+          "path": "scripts/civ/gates.js",
+          "bytes": 24701,
+          "sha256": "BD8332FCB8543124FFEF1DDD07109090CA0FB6E0D0F189EAEADE222D756728AA"
+        },
+        {
+          "path": "scripts/civ/geom.js",
+          "bytes": 20015,
+          "sha256": "A4C26B23F1FE5F2D068B9886DE010B3F58655E0ADADEAA92682F4F096CF58192"
+        },
+        {
+          "path": "scripts/civ/interiorlights.js",
+          "bytes": 4722,
+          "sha256": "E70C0A0E99DAD431814AC7B52B5EA0EAAD24A37355C67A02AF01725CFFA7EDD6"
+        },
+        {
+          "path": "scripts/civ/jobs.js",
+          "bytes": 22246,
+          "sha256": "AAF62EB442BB66C3046CFC8C42FBF0394FF83BCF75742A7FF7CE7D145A21F629"
+        },
+        {
+          "path": "scripts/civ/lamps.js",
+          "bytes": 15739,
+          "sha256": "2B7FEB5C009E25111515E26E9B1C98CDC1B764250DBF583AB26D56E70BB32A99"
+        },
+        {
+          "path": "scripts/civ/leafSourceStreaming.js",
+          "bytes": 11411,
+          "sha256": "A61AA4A4EB1F86F866DB80CDFA62DECFAF92FAEC3AD27085FC08403547D3F5A4"
+        },
+        {
+          "path": "scripts/civ/leverbindings.js",
+          "bytes": 2147,
+          "sha256": "2F6A6D1BF0D8CD31F5912FBC650640EA76F50019367D9176403B168DFDAE52A4"
+        },
+        {
+          "path": "scripts/civ/lightingRevision.js",
+          "bytes": 1565,
+          "sha256": "9C1726B6E30E905BE9C64F3A8E3CECCF816BCA114BD0244595B114D95E08D4D0"
+        },
+        {
+          "path": "scripts/civ/lots.js",
+          "bytes": 48563,
+          "sha256": "AAA99F38144C374FAB4BD3E29618B1C4EC5B139ABF4AE3BB4FE075FC6F36B368"
+        },
+        {
+          "path": "scripts/civ/lotsteps.js",
+          "bytes": 48467,
+          "sha256": "31324154760F735CB3EC1BF27AC56DB32E491A41876049BE158E1D06704393DA"
+        },
+        {
+          "path": "scripts/civ/masterplan.js",
+          "bytes": 33527,
+          "sha256": "7B6E9844E6B76C8CD319DEFC19455A0A3A963AE8CE71E99FC95C688B25FBCAC2"
+        },
+        {
+          "path": "scripts/civ/opnorm.js",
+          "bytes": 8348,
+          "sha256": "D009811B1AAA791F09F0A32CAE1A30EED38F58FC2E0BCAD0C817B44FDB0E6EBB"
+        },
+        {
+          "path": "scripts/civ/planstore.js",
+          "bytes": 18511,
+          "sha256": "990FE830871989115636DB366E7A1311A453B5E05B3E948DFA2AC22D04EFB23C"
+        },
+        {
+          "path": "scripts/civ/regions.js",
+          "bytes": 33571,
+          "sha256": "4B9769CFFB0C23AEC59A0A709320608FECAE40E2FA15250A12617697FC533D69"
+        },
+        {
+          "path": "scripts/civ/roadnet.js",
+          "bytes": 13040,
+          "sha256": "B9BB4221867CBA92D79CBF6240350072A25A08ADC0345BAC4831962B92BAE9AA"
+        },
+        {
+          "path": "scripts/civ/roofcolumns.js",
+          "bytes": 6710,
+          "sha256": "23CD14AE0079BBF6C04A89D27A6FEA86C3543A28206E8F2B38E509BBB9A88A8C"
+        },
+        {
+          "path": "scripts/civ/roomPreviewProgress.js",
+          "bytes": 2059,
+          "sha256": "D344952FD2F3D64096336F3BB110011E25424F4E7848D5AE3E0674817A9FE8C4"
+        },
+        {
+          "path": "scripts/civ/roomVegetationPreview.js",
+          "bytes": 10005,
+          "sha256": "6CA1FF81158112438520A1695250E8748CBA74F51010089FD91CBE3F415F0FDC"
+        },
+        {
+          "path": "scripts/civ/shapecheck.js",
+          "bytes": 15832,
+          "sha256": "7C5953FB84D2647F138ECE8BE806C8A3814F7F031E52DF10CBD5018808A0ABC8"
+        },
+        {
+          "path": "scripts/civ/sharedtree.js",
+          "bytes": 6074,
+          "sha256": "EDDD2FEF9C761F5B9C05875DB9E005865311F092C9897219BEF4E453DD70F70C"
+        },
+        {
+          "path": "scripts/civ/siteprofile.js",
+          "bytes": 24122,
+          "sha256": "BB72747BB347BECE1958C5EB602F15E4FC136183A0EF43E1D9C4B1584BD2A539"
+        },
+        {
+          "path": "scripts/civ/siteselect.js",
+          "bytes": 26422,
+          "sha256": "369728D61F647A885BABBBCB71F437B3FEC83B14C6749E0B44411E64C75CE4AD"
+        },
+        {
+          "path": "scripts/civ/treeclear.js",
+          "bytes": 3558,
+          "sha256": "24F66EA7D10F5906F0919E388E2A20FF42B818C8B80D1ADAA819DFE3ACAC9C1E"
+        },
+        {
+          "path": "scripts/civ/treeInspectionStreaming.js",
+          "bytes": 6826,
+          "sha256": "808A6D3C8AD645DADFF7406866CCBDBCDD7C1BB7F8171213A46C1EC2329092B8"
+        },
+        {
+          "path": "scripts/civ/treeRootRefusalCache.js",
+          "bytes": 2945,
+          "sha256": "B2281D282679DB1CA7E0F0CE82A075504260C0A306C4C6F257D0937572E2E7E9"
+        },
+        {
+          "path": "scripts/civ/undo.js",
+          "bytes": 26563,
+          "sha256": "3F3B29316F52A3873DC8AF7512B43E075596B6A9CC741139B31FFD0131635C4D"
+        },
+        {
+          "path": "scripts/civ/validate.js",
+          "bytes": 73827,
+          "sha256": "509DDEA7CB98792B63D04E0508D4B747FCB453A0B98F2AC9352340D10358C956"
+        },
+        {
+          "path": "scripts/civ/validatesteps.js",
+          "bytes": 71127,
+          "sha256": "9323DBC9F08FA306810073059E2B427FAB15A060865645044AD5E35DCEBE9804"
+        },
+        {
+          "path": "scripts/civ/wallleafpreview.js",
+          "bytes": 13093,
+          "sha256": "39E2A3D6777F509C9E2CCFF3BD313CE3FDC549366E53C197699D10823FA48AC4"
+        },
+        {
+          "path": "scripts/civ/wallLeafRepair.js",
+          "bytes": 16023,
+          "sha256": "97998CF2E8A2318601B3AB75E0950DC242A57D534C3C1B996EDF83464BA08770"
+        },
+        {
+          "path": "scripts/civ/wallLeafTrim.js",
+          "bytes": 33271,
+          "sha256": "9D3EF064ADF9E4AA1B5D72623859077D47B46C3162D18EBEA75F7EB190E3A951"
+        },
+        {
+          "path": "scripts/civ/walls.js",
+          "bytes": 35154,
+          "sha256": "FD689A52712410A646C3FF13D2FFD7719B828FEDA449B06DBD3F6A7AE174C292"
+        },
+        {
+          "path": "scripts/civ/worldplan.js",
+          "bytes": 6706,
+          "sha256": "9786F78B01C14D3B61D00EE49ABA0071D730F694F290DB1D53A669AC866EE646"
+        },
+        {
+          "path": "scripts/civ/zonesteps.js",
+          "bytes": 58924,
+          "sha256": "A9362C85B1C3A22B7B51C3BB759BFFA42CD46E7071A4945EFF7717DECE93854E"
+        },
+        {
+          "path": "scripts/civ/zoning.js",
+          "bytes": 70734,
+          "sha256": "6D706670C67C7F337D27CF8662662207927887350CA7C53F2BD223C70C236AEC"
+        },
+        {
+          "path": "scripts/commands/args.js",
+          "bytes": 1072,
+          "sha256": "BC055175D1447CCD698049637743FF8959140EB4909530516F5785D38172A840"
+        },
+        {
+          "path": "scripts/commands/civ.js",
+          "bytes": 136551,
+          "sha256": "099848A07F44D6FCA73D286962216FEF739BDBC13A3D544AD214204225893475"
+        },
+        {
+          "path": "scripts/commands/debug.js",
+          "bytes": 10330,
+          "sha256": "DD90F3B70FAEBBB28CC4CA7C3382D440E5D19225C4070F2743D7748E3229E0FE"
+        },
+        {
+          "path": "scripts/commands/gates.js",
+          "bytes": 22388,
+          "sha256": "261939F3BF8FE2B6B21ECE516EF235F09A3CCF5656B6FD3794F042102F519A79"
+        },
+        {
+          "path": "scripts/commands/inspect.js",
+          "bytes": 3683,
+          "sha256": "D770384381BEED07899AB50C9C793B44DB63098841CF1A9ED0BDD00C94C0C71B"
+        },
+        {
+          "path": "scripts/commands/military.js",
+          "bytes": 6976,
+          "sha256": "C7BC09BEE785E83EEF13F31E1105156179236D59DC0F815F4571E0A1AE96E044"
+        },
+        {
+          "path": "scripts/commands/people.js",
+          "bytes": 5046,
+          "sha256": "B79FB7205A2F3186D08C7F0901053F2DC5872FD88B0B9CD8795853765BE7A448"
+        },
+        {
+          "path": "scripts/commands/physical.js",
+          "bytes": 26183,
+          "sha256": "211DC941DAC0CCEDAC8955A2A73C18E8753F57DA79FEA9E1BA0EA3B9193FAF19"
+        },
+        {
+          "path": "scripts/commands/reply.js",
+          "bytes": 1066,
+          "sha256": "79894601EA429239433E492AF197AB0D228A584B986D3D1BA67CD495CB88579E"
+        },
+        {
+          "path": "scripts/commands/starter.js",
+          "bytes": 14968,
+          "sha256": "BDAB27B26A371707A335132095DD95F0B5BB7ADA876DFC55FD6F7AD64AD60AA1"
+        },
+        {
+          "path": "scripts/commands/status.js",
+          "bytes": 1215,
+          "sha256": "ADD30BD233508D14066FB4DFE4FD99A59361303506D44F0D21889F45B4DD6DF9"
+        },
+        {
+          "path": "scripts/config.js",
+          "bytes": 11971,
+          "sha256": "5B6E5325C3EB32B6C41EB3456E39AB529FC96C11B69A62BCF4DC8080C6F8D816"
+        },
+        {
+          "path": "scripts/events/welcome.js",
+          "bytes": 1383,
+          "sha256": "AAEBED353A1302D8D25B5D2300708C63333D1AB2FBE91ADA2EBC7FDBF1DC5AC0"
+        },
+        {
+          "path": "scripts/integration/beaconBindings.js",
+          "bytes": 7465,
+          "sha256": "CE3E2A164A6DDCF2AAC0B466B55D0D73122C0D2D9BC715F6155DF7F7A6ACE00A"
+        },
+        {
+          "path": "scripts/integration/buildAdapter.js",
+          "bytes": 7306,
+          "sha256": "9D8789985F1B1BD664B32F5FD6B59ED7DDC19C5708548F825116C6439BE72350"
+        },
+        {
+          "path": "scripts/integration/chronicle.js",
+          "bytes": 9993,
+          "sha256": "8E996B3FC6726E99E02CE6897782FA12BE3967E4DAEF1A61533F008AAD806749"
+        },
+        {
+          "path": "scripts/integration/chunkLeases.js",
+          "bytes": 7804,
+          "sha256": "2D04E0528F5D37ECF13280C5687C89BF1336EBEE335A12E9B3D4BE1E559B8DC6"
+        },
+        {
+          "path": "scripts/integration/civBuilder.js",
+          "bytes": 156332,
+          "sha256": "6CC60557A2DE01B25AEBED1F9C4C50B2CEF199982B024D8327F49D6DF4C46B79"
+        },
+        {
+          "path": "scripts/integration/civGates.js",
+          "bytes": 27470,
+          "sha256": "8EBE8D1AA325C737B5599467D4A6542F26EB7B661A09199E414F42B6DEEBFFF2"
+        },
+        {
+          "path": "scripts/integration/civilianDestinations.js",
+          "bytes": 9065,
+          "sha256": "168ADFCD2542FE614EFC9EB02D8CCCA0D57A542AE595C0B8683285FA7916E08C"
+        },
+        {
+          "path": "scripts/integration/civilianTravel.js",
+          "bytes": 19674,
+          "sha256": "7CE91984789146169D78276FC5A05C3EB4E7D9F0819A4824A1B5065A1D71C96D"
+        },
+        {
+          "path": "scripts/integration/civProgress.js",
+          "bytes": 10708,
+          "sha256": "8A4F55666188DAE5AC34AEF38384B034DACCFDACAE6978FA64469176D6A22E6F"
+        },
+        {
+          "path": "scripts/integration/civScan.js",
+          "bytes": 39068,
+          "sha256": "1055B2853469D93B20F4FC2D8177305878AEA03DEFDF2ADC6DFE73B5128C9452"
+        },
+        {
+          "path": "scripts/integration/creationBindings.js",
+          "bytes": 21505,
+          "sha256": "717741BBBC0E7E42391C7C84802AE8E5172766BF2009FD897454F20576A01433"
+        },
+        {
+          "path": "scripts/integration/creationRuntime.js",
+          "bytes": 5161,
+          "sha256": "C7E8F075D53DE71B9E240A4C7637C64082B687268A02B5867381B44DDF34C17A"
+        },
+        {
+          "path": "scripts/integration/districtBuilder.js",
+          "bytes": 17706,
+          "sha256": "36528852259492C73B227AD7174B0C4DC26456F87A57219BA058C847FBBC851B"
+        },
+        {
+          "path": "scripts/integration/doorPlacement.js",
+          "bytes": 4839,
+          "sha256": "9CBCA0BA1D23C5B0A80F51476598758CCE78D9CDF96A9F006376844E9F660957"
+        },
+        {
+          "path": "scripts/integration/farmLightingRevision.js",
+          "bytes": 15790,
+          "sha256": "A994CE666381CBF13A47BC2EFBBFDA01B09A74A7222300A8E50ED7E32FF6BDC1"
+        },
+        {
+          "path": "scripts/integration/freshFixtureTrust.js",
+          "bytes": 386,
+          "sha256": "5914C01773380ED8DF19B8AB7A271251F65E5EA6EDC7128AB0110808ACA7EADF"
+        },
+        {
+          "path": "scripts/integration/gateAdapter.js",
+          "bytes": 39450,
+          "sha256": "69DD2BB9ED953CC1DD9103370F04C615F5041594FCCD4745724E9A4BF9B24A93"
+        },
+        {
+          "path": "scripts/integration/gateLevers.js",
+          "bytes": 4140,
+          "sha256": "6F4BE66BD54FF4EF89767C1F9515BADA61F70D2C20EF45B20E3D93EA8D959792"
+        },
+        {
+          "path": "scripts/integration/lampRetrofit.js",
+          "bytes": 21791,
+          "sha256": "77B540D3CBCBF729D31C5C73C2E93F26C46251917592DDEF527713E9BAEA86A8"
+        },
+        {
+          "path": "scripts/integration/ledgerBindings.js",
+          "bytes": 7849,
+          "sha256": "7B8EDCADC37E8BDDDE239B58C76F305FF2704180EF2CD96D5C6EE57EE4659F49"
+        },
+        {
+          "path": "scripts/integration/lightingRevision.js",
+          "bytes": 9421,
+          "sha256": "8C99306C32B91E81AB63B33D95357E710DD367DFF7F5B003509D7FC58F0F7855"
+        },
+        {
+          "path": "scripts/integration/militaryLifecycleDiagnostics.js",
+          "bytes": 9507,
+          "sha256": "EA32B85E1642934434F9B355845F7194AB62C44B1E4FF640616E442E0BC9144D"
+        },
+        {
+          "path": "scripts/integration/militarySelectionStore.js",
+          "bytes": 5382,
+          "sha256": "647C4A52ADE6B2DD18CAE4D989E068AB01DBECBFA440F0F5F81A61B291B050B4"
+        },
+        {
+          "path": "scripts/integration/peopleOrders.js",
+          "bytes": 57261,
+          "sha256": "34E3FE848E63712A9E2A3205291C3F593184088880EFA36B50B4D25417B6CF96"
+        },
+        {
+          "path": "scripts/integration/peopleRuntime.js",
+          "bytes": 10025,
+          "sha256": "6119AA16876F8CF00199E8A92659B72E333F9715D6284E445E4A78B0297F485E"
+        },
+        {
+          "path": "scripts/integration/peopleStreets.js",
+          "bytes": 29638,
+          "sha256": "B0E2F279198203E015817104818FC4A7D52C30EADF96350C5B4CB58B67C180D0"
+        },
+        {
+          "path": "scripts/integration/popSync.js",
+          "bytes": 47358,
+          "sha256": "ED93FC892FC19CC44DF865F98BF954058B7C5314D5961BDF36F0F13A767D58A7"
+        },
+        {
+          "path": "scripts/integration/privateFreshFixture.js",
+          "bytes": 9846,
+          "sha256": "558190D973E5D5230D7DF817990B488324586FF3613B4F07336A137BE760A2B2"
+        },
+        {
+          "path": "scripts/integration/roomKingdomReader.js",
+          "bytes": 1942,
+          "sha256": "8A1F1A9BDD4CBF88858859F47058E0B4EFD18542FE98E0E6DFE719209E8721D1"
+        },
+        {
+          "path": "scripts/integration/siegeMobs.js",
+          "bytes": 53530,
+          "sha256": "8486712BA7B645F21FAABBB8312337AEEEF052B0C125D2B64486163261E996B5"
+        },
+        {
+          "path": "scripts/integration/simulationLoop.js",
+          "bytes": 3840,
+          "sha256": "3FE35CB6ADBAE9CF90333210A2F1D4F84FEA2FB6E8EA311B672559166CCE93B2"
+        },
+        {
+          "path": "scripts/integration/terrainScan.js",
+          "bytes": 19394,
+          "sha256": "A545108C0BDE0167A748C0630E7A9F4D75C46270648EA83326F29EF0A20C5867"
+        },
+        {
+          "path": "scripts/inventory/beaconRules.js",
+          "bytes": 8485,
+          "sha256": "CB2D626A2FEDE2A390F353485EDA2D99E5FB8108A8C8EA264FE91371DA6320AC"
+        },
+        {
+          "path": "scripts/kingdom/migrations.js",
+          "bytes": 3384,
+          "sha256": "7DF74F7EF9D9A258F8619D79C4249C59AD266A49D79932A970B91AAA1A104794"
+        },
+        {
+          "path": "scripts/kingdom/state.js",
+          "bytes": 22985,
+          "sha256": "D86F68AE94D64A41437096E9FFB569E63148001B5F72A5FCA8603330F21F4ABD"
+        },
+        {
+          "path": "scripts/kingdom/store.js",
+          "bytes": 7735,
+          "sha256": "2A899E946C031AFE8A1C753730EE97018ADD920FE9A9D5F98D20242B9EDDE20A"
+        },
+        {
+          "path": "scripts/ledger/actions.js",
+          "bytes": 23868,
+          "sha256": "A73ABE7D79AC2EC4BC7056801D78B855EAE0700F4298B58A41BC86F74EE889A6"
+        },
+        {
+          "path": "scripts/ledger/devgate.js",
+          "bytes": 4429,
+          "sha256": "4019A3A1DD028F8D167B06695AB0AB842AA87DA4C0F415B6B85340091166CC22"
+        },
+        {
+          "path": "scripts/ledger/frames.js",
+          "bytes": 1742,
+          "sha256": "ECFEFCEB33EFF7D23DDBF1EA5B1050C84ED6AF08A476B1D3EE7C964F1B8C9D76"
+        },
+        {
+          "path": "scripts/ledger/ids.js",
+          "bytes": 1217,
+          "sha256": "28BB96B094ED66C183DCA8A680CCF61ED6179627B791C58F6AB01FB492433016"
+        },
+        {
+          "path": "scripts/ledger/item.js",
+          "bytes": 2753,
+          "sha256": "F0E1EEDEE946DEABFCF28C9F49DC7EA5628BA5F2475863A3D8D1D98C1C81508C"
+        },
+        {
+          "path": "scripts/ledger/menus-kingdom.js",
+          "bytes": 14125,
+          "sha256": "7C1679DE6237DA82A99799365EF153B40E556AD6F93DB449321BFC1FC84A6D11"
+        },
+        {
+          "path": "scripts/ledger/menus-works.js",
+          "bytes": 15246,
+          "sha256": "70EEFAC6BED7B66FB478EBDB9658FB9B5132A96506F60DDF9A375108BA9D47E0"
+        },
+        {
+          "path": "scripts/ledger/menus.js",
+          "bytes": 4913,
+          "sha256": "C9565EEE15E07CB39D66CEB3F564A0B8F28BF5C47BBB26006B2CE6694D0E1725"
+        },
+        {
+          "path": "scripts/ledger/model.js",
+          "bytes": 3577,
+          "sha256": "7D123B095F216D22942D237DC6D7A4C9D02A78F7A966BD8BAF53B17F7A3B47FD"
+        },
+        {
+          "path": "scripts/ledger/navigation.js",
+          "bytes": 2562,
+          "sha256": "B35622C1C1064AC5F9F124AD1DC1A9EF77B09E27775548D451E882C1DED1F228"
+        },
+        {
+          "path": "scripts/ledger/pagination.js",
+          "bytes": 2320,
+          "sha256": "172D60D6D4012871DAA110AC0BA479EBCD9F7B9BCABEC3350EB4EE0F430E56CB"
+        },
+        {
+          "path": "scripts/ledger/runtime.js",
+          "bytes": 21442,
+          "sha256": "5FA02441F4641F5C37F8674CE3CD54619F62678CA660CD13766BB55F006B0925"
+        },
+        {
+          "path": "scripts/ledger/text.js",
+          "bytes": 4517,
+          "sha256": "ABF81DF7BF11927178931B97736D0CDB37F7C5487827373647FF658AFBAF9DF9"
+        },
+        {
+          "path": "scripts/main.js",
+          "bytes": 7104,
+          "sha256": "11D3875F2F0FADD15B09226C10E80543123C25DE646A5E6F2317F45D2DD9C241"
+        },
+        {
+          "path": "scripts/people/columns.js",
+          "bytes": 8885,
+          "sha256": "0550F90FFC53F25306EE244816BFCB0030D3F3F0147982D534D233ACD7C7D1C2"
+        },
+        {
+          "path": "scripts/people/command.js",
+          "bytes": 8520,
+          "sha256": "35A9A07A8F9A213289AE6BA2AC0229FDF603235D65EC6C95D41F61631B885EDE"
+        },
+        {
+          "path": "scripts/people/contract.js",
+          "bytes": 32407,
+          "sha256": "7923A938505E60AEFE6DE19BA4630421ADC4B8BD0084EACFF8CF95D1E839E3DA"
+        },
+        {
+          "path": "scripts/people/destinations.js",
+          "bytes": 10540,
+          "sha256": "A84A530F8F032EC05A8411BC15EC7B7275D53076152061C77620ACB9508CBF4B"
+        },
+        {
+          "path": "scripts/people/equipment.js",
+          "bytes": 9137,
+          "sha256": "1D7B3931DC54F94417AADF7408BF1D60F18B5D37349204712F25F190658E3809"
+        },
+        {
+          "path": "scripts/people/frontage.js",
+          "bytes": 4416,
+          "sha256": "0F6AF03D2050EAF67F35BC80E87BF9650D3AFC487564811543E8FC347D24E4ED"
+        },
+        {
+          "path": "scripts/people/gate.js",
+          "bytes": 2337,
+          "sha256": "1FECB05397E40CDB51C15EE46A83AADF5D38CBA8A6911F6B14AA1024F555D813"
+        },
+        {
+          "path": "scripts/people/lod.js",
+          "bytes": 11586,
+          "sha256": "BDC1F3C993458697AC4B8068DF29BF8AB10B2ACF20312A17996620B26915A3B6"
+        },
+        {
+          "path": "scripts/people/occupations.js",
+          "bytes": 8820,
+          "sha256": "0C6DE3A9ED219B13A601AB654DAA37169575F248167C0DAB3ABABEF49D5ABB68"
+        },
+        {
+          "path": "scripts/people/patrols.js",
+          "bytes": 9893,
+          "sha256": "BAC413A3C0B27F491113B02C7E56C6A6B4F8FBD583D6F8DAB1B57F2446587CCB"
+        },
+        {
+          "path": "scripts/people/reconcile.js",
+          "bytes": 11461,
+          "sha256": "929DEF12A2B7D495E40EDC8780CF24603F95B8EDC7F02B73990E8C12AC8CE11F"
+        },
+        {
+          "path": "scripts/people/roster.js",
+          "bytes": 13599,
+          "sha256": "D69CC25E05DDE669BFE675FDB647B4E8D9B5AF5DD67D1C2E01E139BB8FA52721"
+        },
+        {
+          "path": "scripts/people/routines.js",
+          "bytes": 5177,
+          "sha256": "F33D82BB16BF652778B62A52F648D3CD6BB3AB47671F3E937E41A84B32BAC721"
+        },
+        {
+          "path": "scripts/people/support.js",
+          "bytes": 10714,
+          "sha256": "7005DC7F5879D6205BE76E3EC65C1FCCACE0C8B66FABB28F8A0E8942CD17955F"
+        },
+        {
+          "path": "scripts/people/training.js",
+          "bytes": 5166,
+          "sha256": "49B9009AC25F6673B0E495029496FC29C01039F61B4DAE44CBC9970C07FD5313"
+        },
+        {
+          "path": "scripts/people/transport.js",
+          "bytes": 7801,
+          "sha256": "408E98A2EFD5A787028B0C2C4116FF70EA17BE9BE2DB6CE5546F633322651752"
+        },
+        {
+          "path": "scripts/people/travel.js",
+          "bytes": 4405,
+          "sha256": "BA1963B4F31EA33E998D0D1875AAC8F4CBD4542CEED44C5C3A9F557391561034"
+        },
+        {
+          "path": "scripts/people/walkSafety.js",
+          "bytes": 799,
+          "sha256": "BB7E9B96DCDC1F7783BDD7A11BE9F4C69B5B2DC6DBB959B40F7B42C9348503A9"
+        },
+        {
+          "path": "scripts/people/workRoutePreview.js",
+          "bytes": 13624,
+          "sha256": "94E39E4EC7B7FDD9AF868EFD1A20A36255EFBBC6843B8CD5FF35F62189D2AC84"
+        },
+        {
+          "path": "scripts/population/cursor.js",
+          "bytes": 4761,
+          "sha256": "99C11E5659EB15E786917A6C71267C91AB95C8B7D6D987E6624E591C6BDDE9F8"
+        },
+        {
+          "path": "scripts/population/groups.js",
+          "bytes": 6854,
+          "sha256": "EECD6EF44DF7932B6C43D76EEB9AED3134B114CC82261041E9551CEAA0971AE8"
+        },
+        {
+          "path": "scripts/population/identity.js",
+          "bytes": 2200,
+          "sha256": "E802AE0711B59232B0B07D88379DB22CCC13AFB0FDED4FBB2C1D1EFA1334C418"
+        },
+        {
+          "path": "scripts/population/lod.js",
+          "bytes": 6708,
+          "sha256": "2BF2E2D0C3676635465B3A0DA8D01A687A36A4F330A306F5060B40DD78BA9AFB"
+        },
+        {
+          "path": "scripts/population/militarySelection.js",
+          "bytes": 4333,
+          "sha256": "63DEBCFE85CB69650707FFEDA5A98D5DCF585887A0D194556C66258035CC7C1D"
+        },
+        {
+          "path": "scripts/population/reconcile.js",
+          "bytes": 28114,
+          "sha256": "E1E24B8CF7ABEF66CFB91308F8ADCF632B7B0E896E9CC489C10089E60386ABE9"
+        },
+        {
+          "path": "scripts/population/settings.js",
+          "bytes": 5887,
+          "sha256": "AA51C379B655AC9D5121402FC0DAEB3685BADB0C7492C1A1DAB6F9718AA9446F"
+        },
+        {
+          "path": "scripts/sim/clock.js",
+          "bytes": 1323,
+          "sha256": "A1D747A2BBAAD7F857B5733AD88C2441B179398ADA8863488994AEA0407C6F0C"
+        },
+        {
+          "path": "scripts/sim/construction.js",
+          "bytes": 27780,
+          "sha256": "F279591B44F9FF32567A0D44487E443098CEE6DF5A7A1ABD1E717234E565BD14"
+        },
+        {
+          "path": "scripts/sim/diplomacy.js",
+          "bytes": 7727,
+          "sha256": "828379138102BBA22A6CA925872C12D767039A26FEFB1E525DF7AEFC15279098"
+        },
+        {
+          "path": "scripts/sim/evacuation.js",
+          "bytes": 27171,
+          "sha256": "AC2FD9B64877FCD1DB551F5C50FFF243514FB4FBB4B1E648BB9AD4785E31FDAB"
+        },
+        {
+          "path": "scripts/sim/expansion.js",
+          "bytes": 30075,
+          "sha256": "626087EF9D50AE5BEC0FE96E455AC320FAE2757892472C2E5440A0F6A333A87B"
+        },
+        {
+          "path": "scripts/sim/gatecontrol.js",
+          "bytes": 25619,
+          "sha256": "9F3CD69DB3EDF60CA257E14D27B1888D17CE76707A253FAF227530B9013A9AB8"
+        },
+        {
+          "path": "scripts/sim/invasion/apply.js",
+          "bytes": 12124,
+          "sha256": "DE397FD11F859CE42ED3B8D2A93271C61E5195217B9ED7580ED903489DD4FFD2"
+        },
+        {
+          "path": "scripts/sim/invasion/composition.js",
+          "bytes": 9629,
+          "sha256": "1C203A1218EC156F2C40F92B325B67027790041781B9C8F530C65975991117D0"
+        },
+        {
+          "path": "scripts/sim/invasion/director.js",
+          "bytes": 38473,
+          "sha256": "61C432E563C37526CBAED608A5DFCBA27F5A6EDAAE8146E651FCC126CA459F57"
+        },
+        {
+          "path": "scripts/sim/policies.js",
+          "bytes": 12178,
+          "sha256": "448EA41FB5685C57B00C81FAD0AA4F3EA13D681E0E66818FC0B5AAF2BB81B3DE"
+        },
+        {
+          "path": "scripts/sim/population.js",
+          "bytes": 18872,
+          "sha256": "77CCB3FF6C95444A489A5B03EDF8153DB017EFDAA9115AEA250359652C28145D"
+        },
+        {
+          "path": "scripts/sim/rng.js",
+          "bytes": 1981,
+          "sha256": "B06436B104E92AE3D815134AD03959E0424D354BE4E37FE5CEB1264B4B7265DC"
+        },
+        {
+          "path": "scripts/sim/scenarios.js",
+          "bytes": 11524,
+          "sha256": "5D5E1F311A6EFEDDC41CD178864374B2D1622101466F30241BAAC8DE3E781452"
+        },
+        {
+          "path": "scripts/sim/siegeTuning.js",
+          "bytes": 2028,
+          "sha256": "4F82A07AD9108353C8E969950266D0183768888906B5B2B20712EE36F17E6DFA"
+        },
+        {
+          "path": "scripts/sim/starter.js",
+          "bytes": 14013,
+          "sha256": "50F751F967BCDA377329C3BABB61332A7402513F59C00A44A9DE18965CB59CB0"
+        },
+        {
+          "path": "scripts/sim/tick.js",
+          "bytes": 8669,
+          "sha256": "4E14AB1A0F739A1F783D363BC6FEF6285DAAB1B8EC0FDA7A792DBAB5ABAFB3C9"
+        },
+        {
+          "path": "scripts/sim/war.js",
+          "bytes": 44893,
+          "sha256": "2FF12D35138E0D6EFE48B17731B52028830788D55DB99329FEC41D34E4232B1C"
+        },
+        {
+          "path": "scripts/structures/blueprints.js",
+          "bytes": 9230,
+          "sha256": "D9A2E2C657019A0133D02928ABCA76E15D0FFDAF28A187D07BA4ACC46B210D36"
+        },
+        {
+          "path": "scripts/structures/blueprints2.js",
+          "bytes": 45482,
+          "sha256": "2CDB49C09F7F01A5BD89231A97330D3178444682D6CE60E65B40C810B96C1731"
+        },
+        {
+          "path": "scripts/structures/facing.js",
+          "bytes": 2242,
+          "sha256": "2F74E2BFB76F26FAD40D7571704B7E00A17F24796CDE6678DFD46A5FDF256973"
+        },
+        {
+          "path": "scripts/structures/layout.js",
+          "bytes": 6231,
+          "sha256": "077908D2189A524BE40D78BA15437D7DE0EDAEC98EDC172DC32749DD9494FB9A"
+        },
+        {
+          "path": "scripts/structures/palette.js",
+          "bytes": 2870,
+          "sha256": "05F528A45AD73E100E45F0CAB0B71C447995F6F38F1EBF84E5B9352387CF1162"
+        },
+        {
+          "path": "scripts/structures/palette2.js",
+          "bytes": 5833,
+          "sha256": "FF2904B874C680B50230E03C48077306157EF57A7BF7F919FB1E6497821460D9"
+        },
+        {
+          "path": "scripts/structures/planner.js",
+          "bytes": 14592,
+          "sha256": "9E946F44A172D4DDE57D203D9BEB609155CEFB5503F224137D39E1D6060FD612"
+        },
+        {
+          "path": "scripts/structures/siteRules.js",
+          "bytes": 1658,
+          "sha256": "02056780C62F1CAF5AD772C658DFFB473EF58D6D9B446E71133BFA1E29610CD3"
+        },
+        {
+          "path": "scripts/structures/terrain.js",
+          "bytes": 19502,
+          "sha256": "027B8B7FEB29F5CC0A1780D525856A55CEA9FDFB94931B54D062F7782E1906C9"
+        },
+        {
+          "path": "scripts/ui/report.js",
+          "bytes": 8303,
+          "sha256": "6F07F8E2730692A71D8E9D6C217B16CA3BB8607C203F0A60E88178C682016AA0"
+        }
+      ],
+      "stage": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\Shared\\games\\com.mojang\\codex_private_fixture_backups\\creation-hold-69162c9b95214489\\staged-0",
+      "backup": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\Shared\\games\\com.mojang\\codex_private_fixture_backups\\creation-hold-69162c9b95214489\\previous-0",
+      "failed": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\Shared\\games\\com.mojang\\codex_private_fixture_backups\\creation-hold-69162c9b95214489\\retained-new-0",
+      "restoreStage": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\Shared\\games\\com.mojang\\codex_private_fixture_backups\\creation-hold-69162c9b95214489\\restore-staged-0"
+    },
+    {
+      "name": "CivilizationApocalypse_RP",
+      "source": "E:\\CivilizationApocalypse\\dev\\staging\\private-fixture-startup-hold-20261108\\native-variant\\private-packs\\CivilizationApocalypse_RP",
+      "base": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\Shared\\games\\com.mojang\\development_resource_packs",
+      "dest": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\Shared\\games\\com.mojang\\development_resource_packs\\CivilizationApocalypse_RP",
+      "expected": [
+        {
+          "path": "animations/archer.animation.json",
+          "bytes": 406,
+          "sha256": "E68E2F2C90078B29C3A6B18DA98FBFE29C588466713D3D912F0DDE38C273E3D2"
+        },
+        {
+          "path": "animations/swordsman.animation.json",
+          "bytes": 1507,
+          "sha256": "D802AA054DA888149AAA8AEB3F1B50CB07C260F9BDD68FC714F2B2AA14FF1C51"
+        },
+        {
+          "path": "entity/archer.entity.json",
+          "bytes": 858,
+          "sha256": "D7888CF04760F270A5FE25EA4F913424AB2397B1396F7B6F53FA78825B1FF895"
+        },
+        {
+          "path": "entity/guard_arrow.entity.json",
+          "bytes": 808,
+          "sha256": "362EA8232F2A39C392E84621B3D43871B552C9D347CFA9EBA7A529984E27F217"
+        },
+        {
+          "path": "entity/swordsman.entity.json",
+          "bytes": 886,
+          "sha256": "FA9BF1B9E9DA21D1B5A68B1D51CB585A7B9DB0FCB52AA39BB1F6D3BDBA412E5D"
+        },
+        {
+          "path": "manifest.json",
+          "bytes": 671,
+          "sha256": "DD789999BB1893624D00C2A75A347F19AF74796917B36B3722D905E06B22BAA2"
+        },
+        {
+          "path": "models/entity/archer.geo.json",
+          "bytes": 33281,
+          "sha256": "992C234164367C9B45C96A83FD2D3FB086558472A9D9A0484D3091414A40B26A"
+        },
+        {
+          "path": "models/entity/swordsman.geo.json",
+          "bytes": 31846,
+          "sha256": "D4D47A9CB3F4ED4F52CAF29E041B879367F4925116CFEEB226CC18369D864A08"
+        },
+        {
+          "path": "render_controllers/archer.render_controllers.json",
+          "bytes": 305,
+          "sha256": "AAB93AE3D4735D22A3815858F16C0A1833EF9003985BEB3A86176FBA52450C99"
+        },
+        {
+          "path": "render_controllers/swordsman.render_controllers.json",
+          "bytes": 292,
+          "sha256": "8FBDC4329224611AEB54FD60BA6BF45E593BAC49ED637CD18F45DFF893693710"
+        },
+        {
+          "path": "textures/entity/civ_trial/swordsman.png",
+          "bytes": 616,
+          "sha256": "F87FE69F9D542328B2CC7A30B8D13DFF2B0C8908F96CF16C976434ECFF282ECF"
+        }
+      ],
+      "previous": [
+        {
+          "path": "animations/archer.animation.json",
+          "bytes": 406,
+          "sha256": "E68E2F2C90078B29C3A6B18DA98FBFE29C588466713D3D912F0DDE38C273E3D2"
+        },
+        {
+          "path": "animations/swordsman.animation.json",
+          "bytes": 1507,
+          "sha256": "D802AA054DA888149AAA8AEB3F1B50CB07C260F9BDD68FC714F2B2AA14FF1C51"
+        },
+        {
+          "path": "entity/archer.entity.json",
+          "bytes": 858,
+          "sha256": "D7888CF04760F270A5FE25EA4F913424AB2397B1396F7B6F53FA78825B1FF895"
+        },
+        {
+          "path": "entity/guard_arrow.entity.json",
+          "bytes": 808,
+          "sha256": "362EA8232F2A39C392E84621B3D43871B552C9D347CFA9EBA7A529984E27F217"
+        },
+        {
+          "path": "entity/swordsman.entity.json",
+          "bytes": 886,
+          "sha256": "FA9BF1B9E9DA21D1B5A68B1D51CB585A7B9DB0FCB52AA39BB1F6D3BDBA412E5D"
+        },
+        {
+          "path": "manifest.json",
+          "bytes": 671,
+          "sha256": "DD789999BB1893624D00C2A75A347F19AF74796917B36B3722D905E06B22BAA2"
+        },
+        {
+          "path": "models/entity/archer.geo.json",
+          "bytes": 33281,
+          "sha256": "992C234164367C9B45C96A83FD2D3FB086558472A9D9A0484D3091414A40B26A"
+        },
+        {
+          "path": "models/entity/swordsman.geo.json",
+          "bytes": 31846,
+          "sha256": "D4D47A9CB3F4ED4F52CAF29E041B879367F4925116CFEEB226CC18369D864A08"
+        },
+        {
+          "path": "render_controllers/archer.render_controllers.json",
+          "bytes": 305,
+          "sha256": "AAB93AE3D4735D22A3815858F16C0A1833EF9003985BEB3A86176FBA52450C99"
+        },
+        {
+          "path": "render_controllers/swordsman.render_controllers.json",
+          "bytes": 292,
+          "sha256": "8FBDC4329224611AEB54FD60BA6BF45E593BAC49ED637CD18F45DFF893693710"
+        },
+        {
+          "path": "textures/entity/civ_trial/swordsman.png",
+          "bytes": 616,
+          "sha256": "F87FE69F9D542328B2CC7A30B8D13DFF2B0C8908F96CF16C976434ECFF282ECF"
+        }
+      ],
+      "stage": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\Shared\\games\\com.mojang\\codex_private_fixture_backups\\creation-hold-69162c9b95214489\\staged-1",
+      "backup": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\Shared\\games\\com.mojang\\codex_private_fixture_backups\\creation-hold-69162c9b95214489\\previous-1",
+      "failed": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\Shared\\games\\com.mojang\\codex_private_fixture_backups\\creation-hold-69162c9b95214489\\retained-new-1",
+      "restoreStage": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\Shared\\games\\com.mojang\\codex_private_fixture_backups\\creation-hold-69162c9b95214489\\restore-staged-1"
+    }
+  ],
+  "world": {
+    "source": "E:\\CivilizationApocalypse\\dev\\staging\\private-fixture-startup-hold-20261108\\native-variant\\derivative-world",
+    "sourceExpected": [
+      {
+        "path": "db/000003.log",
+        "bytes": 652585,
+        "sha256": "6990DAB95731F88B8F20D79819C63BB2E2EFBCD1FD3A462E2C6CB14FF58AE5EE"
+      },
+      {
+        "path": "db/CURRENT",
+        "bytes": 16,
+        "sha256": "1005A525006F148C86EFCBFB36C6EAC091B311532448010F70F7DE9A68007167"
+      },
+      {
+        "path": "db/MANIFEST-000002",
+        "bytes": 50,
+        "sha256": "E292F241DAAFC3DF90F3E2D339C61C6E2787A0D0739AAC764E1EA9BB8544EE97"
+      },
+      {
+        "path": "level.dat",
+        "bytes": 3067,
+        "sha256": "CB327CEBBD37FB02A40C87F4CCC59B3C1BB82DC559B6EA6FFE0CA386BA6A64C1"
+      },
+      {
+        "path": "level.dat_old",
+        "bytes": 3067,
+        "sha256": "8731DB09138F846358C39D61591186ED37529814BD171426340C463987CAD7A8"
+      },
+      {
+        "path": "levelname.txt",
+        "bytes": 19,
+        "sha256": "3945BE28071A1F35C83266D7E47D91F1295384756E785F2975B92A83ABF50911"
+      },
+      {
+        "path": "world_behavior_packs.json",
+        "bytes": 126,
+        "sha256": "78F697891E871196A7B220ECE95B6D4D4AE46F6B90FF212450BA34A7694D6C1D"
+      },
+      {
+        "path": "world_icon.jpeg",
+        "bytes": 67402,
+        "sha256": "DCD3AC6AB08F2522C8CB4F634B71AE6B4E8ED6AEAD86483B5FD9BBFABD7333D7"
+      },
+      {
+        "path": "world_resource_packs.json",
+        "bytes": 126,
+        "sha256": "B96D0E838EF7545FA6C8FF9732942954575C4AD27D1F192C669C450C1F12B227"
+      }
+    ],
+    "expected": [
+      {
+        "path": "db/000003.log",
+        "bytes": 652585,
+        "sha256": "6990DAB95731F88B8F20D79819C63BB2E2EFBCD1FD3A462E2C6CB14FF58AE5EE"
+      },
+      {
+        "path": "db/CURRENT",
+        "bytes": 16,
+        "sha256": "1005A525006F148C86EFCBFB36C6EAC091B311532448010F70F7DE9A68007167"
+      },
+      {
+        "path": "db/MANIFEST-000002",
+        "bytes": 50,
+        "sha256": "E292F241DAAFC3DF90F3E2D339C61C6E2787A0D0739AAC764E1EA9BB8544EE97"
+      },
+      {
+        "path": "level.dat",
+        "bytes": 3078,
+        "sha256": "DB253632013F7539546FC4F6FDDB3D41D79F635EDC9FF1F5A56C51193D6E5F7E"
+      },
+      {
+        "path": "level.dat_old",
+        "bytes": 3067,
+        "sha256": "8731DB09138F846358C39D61591186ED37529814BD171426340C463987CAD7A8"
+      },
+      {
+        "path": "levelname.txt",
+        "bytes": 31,
+        "sha256": "BEA702FD92DEDD667F6D7D969B79632F4FFFBD1B3269992146CD59D40E758194"
+      },
+      {
+        "path": "world_behavior_packs.json",
+        "bytes": 126,
+        "sha256": "78F697891E871196A7B220ECE95B6D4D4AE46F6B90FF212450BA34A7694D6C1D"
+      },
+      {
+        "path": "world_icon.jpeg",
+        "bytes": 67402,
+        "sha256": "DCD3AC6AB08F2522C8CB4F634B71AE6B4E8ED6AEAD86483B5FD9BBFABD7333D7"
+      },
+      {
+        "path": "world_resource_packs.json",
+        "bytes": 126,
+        "sha256": "B96D0E838EF7545FA6C8FF9732942954575C4AD27D1F192C669C450C1F12B227"
+      }
+    ],
+    "dest": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\16044254735791270272\\games\\com.mojang\\minecraftWorlds\\CA_CreationHold_69162c9b",
+    "stage": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\Shared\\games\\com.mojang\\codex_private_fixture_backups\\creation-hold-69162c9b95214489\\staged-world",
+    "failed": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\Shared\\games\\com.mojang\\codex_private_fixture_backups\\creation-hold-69162c9b95214489\\retained-world",
+    "renamedLevelSha256": "DB253632013F7539546FC4F6FDDB3D41D79F635EDC9FF1F5A56C51193D6E5F7E"
+  },
+  "nativeInstalled": false
+}

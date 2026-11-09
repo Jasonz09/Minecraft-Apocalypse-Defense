@@ -1,0 +1,76 @@
+{
+  "utc": "2026-11-09T00:21:26.504138+00:00",
+  "scope": "Independent readonly optional startup HOLD +new private preflight review; no main/install/worldcatalog/native writes",
+  "status": "NO BLOCKER for exact reviewed new private variant and plan",
+  "regularManifestSha256": "22A6B35FF34F73FFE0280E188797C5EC71FC419E661E8C2660FB766702BADBA9",
+  "regular3BaselinesAndProposalsExact": true,
+  "privateManifestSha256": "C0A5C6902E935E2B2587DC24FA60C45AD02210B9F4AA9CE0F74F04F9E386C153",
+  "private176ExactInventorySHABytes": true,
+  "onlyPrivateOverrides": [
+    "CivilizationApocalypse_BP/scripts/integration/creationRuntime.js",
+    "CivilizationApocalypse_BP/scripts/integration/freshFixtureTrust.js",
+    "CivilizationApocalypse_BP/scripts/integration/simulationLoop.js",
+    "CivilizationApocalypse_BP/scripts/main.js"
+  ],
+  "epoch": "owner-hold-69162c9b95214489a7971fadd8fad1dc",
+  "fixtureId": "vanilla-nov8-hold-69162c9b9521",
+  "pristine9SHABytesExact": true,
+  "derivative9ChangesOnly": [
+    "world_behavior_packs.json",
+    "world_resource_packs.json"
+  ],
+  "allDBBytesOriginalPristineNotFailedAttempt": true,
+  "newVisibleName": "CA Creation Hold Nov8 69162c9b",
+  "plan": "dev/staging/private-native-setup-20261108/plan-evidence/independent-startup-hold-plan.json",
+  "planSha256": "1B47BC7355D1E8D3162F4969950B09FD4D5FB2006A8A4701875197F12A9FC928",
+  "actualPriorInstalled176MatchesFreeze": true,
+  "actualNewTargetsAbsent": true,
+  "mainSource176StillFrozenAndNull": true,
+  "review": [
+    "Configured private HOLD before kingdom load and again immediately before existing transaction, after original save/anchor reads.",
+    "NULL profile supplies undefined callback, tested exact old world reads/bytes/reports across16hours.",
+    "Strict true-only callback; throws/nontrue hold without loading/writing/publishing.",
+    "Completed durable fresh or deliberately valid legacy store only; changing/corrupt/unknown/partial status refuses.",
+    "No relaxation of exact initial save, native marker/caller/census or developer/people/job gates.",
+    "No implicit developer flag, timer, clock reset, catchup or new physical owner.",
+    "New untouched9file source clone and epoch replace failed attempt; no reset/rewind of failed world."
+  ],
+  "tests": {
+    "focused": {
+      "pass": 14,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "durationMs": 438.2987,
+      "log": "independent-focused14.log"
+    },
+    "existingContracts": {
+      "pass": 87,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "durationMs": 5239.5424,
+      "log": "independent-existing87.log"
+    },
+    "strictRegularTSC": {
+      "exit": 0,
+      "log": "independent-regular-tsc.log"
+    },
+    "strictPrivateTSC": {
+      "exit": 0,
+      "log": "independent-private-tsc.log"
+    }
+  },
+  "nativeAcceptance": false,
+  "nextNativeGate": [
+    "Root closed-game apply exact reviewed new plan and verify all176private hashes+named9file world.",
+    "Open only new visible copy, wait at least normal1000tick callback interval, verify exact step0 pending/zero activation.",
+    "Explicit existing devgate then fresh confirm; require durable complete, then ordinary next callback advances one hour.",
+    "Save/close/rejoin audited original receipt/epoch/complete binding before people-on."
+  ],
+  "limits": [
+    "Regular176 full2240 remains historical; this staged3-file/private variant has focused/TSC proof, not a repeated full gate.",
+    "Native runtime marker type/id and actual first activation still must succeed.",
+    "Public military selection remains separate reviewed city-source contract."
+  ]
+}

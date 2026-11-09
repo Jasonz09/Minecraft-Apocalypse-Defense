@@ -1,0 +1,11 @@
+{
+  "bundleRoot": "E:\\CivilizationApocalypse\\dev\\staging\\private-fixture-startup-hold-20261108\\native-variant",
+  "bundleManifestSha256": "C0A5C6902E935E2B2587DC24FA60C45AD02210B9F4AA9CE0F74F04F9E386C153",
+  "behaviorParent": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\Shared\\games\\com.mojang\\development_behavior_packs",
+  "resourceParent": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\Shared\\games\\com.mojang\\development_resource_packs",
+  "worldParent": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\16044254735791270272\\games\\com.mojang\\minecraftWorlds",
+  "backupRoot": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\Users\\Shared\\games\\com.mojang\\codex_private_fixture_backups",
+  "transactionId": "creation-hold-69162c9b95214489",
+  "worldFolder": "CA_CreationHold_69162c9b",
+  "visibleName": "CA Creation Hold Nov8 69162c9b"
+}

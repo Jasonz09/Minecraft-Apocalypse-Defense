@@ -1,0 +1,78 @@
+{
+  "utc": "2026-11-09T00:16:18.322169+00:00",
+  "scope": "NEW second private startup-hold trial; staged only, unopened, no active compilation/installation",
+  "proposedTrust": {
+    "source": "proposed/freshFixtureTrust.js",
+    "sha256": "6A8265877D4591F757F2AFD9569046BB8BDA829F91F1E07EB05B882CCC3782C7",
+    "destination": "CivilizationApocalypse_BP/scripts/integration/freshFixtureTrust.js"
+  },
+  "genuineSourceChain": [
+    {
+      "path": "dist\\vanilla-never-owner-backup-20261108.json",
+      "sha256": "BE44A5BA9E47C2AB890083B1FAD33657FEAF5B5B122C61A7C026CF0281EFA114"
+    },
+    {
+      "path": "dev\\staging\\population-archer-readiness\\native-evidence\\exact-scoreboard-identity-audit-20261108.json",
+      "sha256": "784DFEEBD6F74B494B0F64E996AC360E1680B692557F478BB220F14387302230"
+    }
+  ],
+  "stagedPrivatePack": {
+    "files": 176,
+    "plan": "PRIVATE-PACK-PLAN.json",
+    "sha256": "652E84D771AE7885B1147D6F420837492A009E794241E9AC256FCDAE4C9FBA84",
+    "overrides": [
+      "CivilizationApocalypse_BP/scripts/integration/creationRuntime.js",
+      "CivilizationApocalypse_BP/scripts/integration/freshFixtureTrust.js",
+      "CivilizationApocalypse_BP/scripts/integration/simulationLoop.js",
+      "CivilizationApocalypse_BP/scripts/main.js"
+    ]
+  },
+  "derivative": {
+    "plan": "DERIVATIVE-PLAN.json",
+    "sha256": "5ADF7A48266AA1CED7811BCB5F69290EB5547C89E925586333CDD87E822A07B0",
+    "files": [
+      {
+        "path": "db/000003.log",
+        "sha256": "6990DAB95731F88B8F20D79819C63BB2E2EFBCD1FD3A462E2C6CB14FF58AE5EE"
+      },
+      {
+        "path": "db/CURRENT",
+        "sha256": "1005A525006F148C86EFCBFB36C6EAC091B311532448010F70F7DE9A68007167"
+      },
+      {
+        "path": "db/MANIFEST-000002",
+        "sha256": "E292F241DAAFC3DF90F3E2D339C61C6E2787A0D0739AAC764E1EA9BB8544EE97"
+      },
+      {
+        "path": "level.dat",
+        "sha256": "CB327CEBBD37FB02A40C87F4CCC59B3C1BB82DC559B6EA6FFE0CA386BA6A64C1"
+      },
+      {
+        "path": "level.dat_old",
+        "sha256": "8731DB09138F846358C39D61591186ED37529814BD171426340C463987CAD7A8"
+      },
+      {
+        "path": "levelname.txt",
+        "sha256": "3945BE28071A1F35C83266D7E47D91F1295384756E785F2975B92A83ABF50911"
+      },
+      {
+        "path": "world_behavior_packs.json",
+        "sha256": "78F697891E871196A7B220ECE95B6D4D4AE46F6B90FF212450BA34A7694D6C1D"
+      },
+      {
+        "path": "world_icon.jpeg",
+        "sha256": "DCD3AC6AB08F2522C8CB4F634B71AE6B4E8ED6AEAD86483B5FD9BBFABD7333D7"
+      },
+      {
+        "path": "world_resource_packs.json",
+        "sha256": "B96D0E838EF7545FA6C8FF9732942954575C4AD27D1F192C669C450C1F12B227"
+      }
+    ],
+    "opened": false,
+    "nativeCatalog": false
+  },
+  "epoch": "owner-hold-69162c9b95214489a7971fadd8fad1dc",
+  "fixtureId": "vanilla-nov8-hold-69162c9b9521",
+  "nativeAcceptance": false,
+  "compiledIntoActive": false
+}

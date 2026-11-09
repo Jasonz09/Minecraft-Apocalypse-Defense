@@ -1,0 +1,46 @@
+{
+  "scope": "NEW pristine9-derived unopened staged second trial; never reuses failed attempt world/epoch.",
+  "fixtureId": "vanilla-nov8-hold-69162c9b9521",
+  "epoch": "owner-hold-69162c9b95214489a7971fadd8fad1dc",
+  "pristineBackup": "E:\\CivilizationApocalypse\\dist\\backups\\vanilla-never-owner-20261108",
+  "sourceReceipt": "dist\\vanilla-never-owner-backup-20261108.json",
+  "sourceReceiptSha256": "BE44A5BA9E47C2AB890083B1FAD33657FEAF5B5B122C61A7C026CF0281EFA114",
+  "bindings": {
+    "world_behavior_packs": [
+      {
+        "pack_id": "fd04cb50-dddc-4ebe-83fc-5b5375819bcb",
+        "version": [
+          1,
+          0,
+          0
+        ]
+      }
+    ],
+    "world_resource_packs": [
+      {
+        "pack_id": "e634c636-7b98-49f7-81cd-13483bfa3f9f",
+        "version": [
+          1,
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "derivativeOnlyChangedPaths": [
+    "world_behavior_packs.json",
+    "world_resource_packs.json"
+  ],
+  "worldFolder": "CA_CreationHold_69162c9b",
+  "visibleName": "CA Creation Hold Nov8 69162c9b",
+  "startupHold": "Existing1000ticktimer no-op until actual native activation complete or valid explicit legacy store; no clockreset/catchup/devflag",
+  "openingSequence": [
+    "Root independently reviews three regular guard deltas and exact private176pins/newdescriptor.",
+    "Use only NEW pristine-derived staged world and helpernooverwrite/new transaction, with distinct visible label. Existing failed trial and oldepoch remain immutable.",
+    "With reviewed private startupHOLD pair installed while Minecraft closed, open ONLY the new visible world. Let at least one ordinary1000tickcallback pass; verify kingdom remains step0/nohour progression.",
+    "Operator explicitly enables civ:generate_devgate on and runs civ:people creation fresh confirm. HOLD does not enableflags/seedheaders or weaken exactinitialproof.",
+    "Require positive complete receipt and status; next scheduled hour may then advance exactlyone step, same timer/noreset. Saveclose and audit durable activation/header before people-on."
+  ],
+  "nativeAcceptance": false,
+  "compiledIntoActive": false
+}

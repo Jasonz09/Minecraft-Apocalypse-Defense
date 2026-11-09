@@ -1,0 +1,44 @@
+19:28:01[Scripting][verbose]-Plugin Discovered [Civilization Apocalypse Behavior Pack] PackId [fd04cb50-dddc-4ebe-83fc-5b5375819bcb_1.0.0] ModuleId [eeb1f41d-2811-4f68-9d0b-7303188f3867]
+
+19:28:01[Scripting][verbose]-Plugin [Civilization Apocalypse Behavior Pack] - promoted [@minecraft/server] from [2.7.0] to [2.11.0] requested by [Civilization Apocalypse Behavior Pack - 1.0.0].
+
+19:28:01[Scripting][verbose]-Plugin [Civilization Apocalypse Behavior Pack] - promoted [@minecraft/server] from [2.0.0] to [2.11.0] requested by [@minecraft/server-ui-bindings - 2.3.0].
+
+19:28:01[Scripting][verbose]-Plugin [Civilization Apocalypse Behavior Pack] - promoted [@minecraft/server] from [2.0.0] to [2.11.0] requested by [@minecraft/server-ui-bindings - 2.1.0].
+
+19:28:01[Scripting][verbose]-Plugin [Civilization Apocalypse Behavior Pack] - promoted [@minecraft/server-bindings] from [2.7.0] to [2.11.0] requested by [@minecraft/server - 2.7.0].
+
+19:28:01[Scripting][verbose]-Plugin [Civilization Apocalypse Behavior Pack] - promoted [@minecraft/server-bindings] from [2.0.0] to [2.11.0] requested by [@minecraft/server - 2.0.0].
+
+19:28:01[Scripting][verbose]-Plugin [Civilization Apocalypse Behavior Pack] - promoted [@minecraft/server-ui-bindings] from [2.1.0] to [2.3.0] requested by [@minecraft/server-ui - 2.1.0].
+
+19:28:01[Scripting][verbose]-Plugin [Civilization Apocalypse Behavior Pack] - promoted [@minecraft/server-ui] from [2.1.0] to [2.3.0] requested by [Civilization Apocalypse Behavior Pack - 1.0.0].
+
+19:28:15[Sound][verbose]-No sound found for block type 'normal' and event type 'fly'
+
+19:28:18[Sound][verbose]-No sound found for block type 'normal' and event type 'fly'
+
+19:28:20[Sound][verbose]-No sound found for block type 'normal' and event type 'fly'
+
+19:28:22[Sound][verbose]-No sound found for block type 'normal' and event type 'fly'
+
+19:28:26[Sound][verbose]-No sound found for block type 'normal' and event type 'fly'
+
+19:28:28[Sound][verbose]-No sound found for block type 'normal' and event type 'fly'
+
+19:28:46[Sound][verbose]-No sound found for block type 'normal' and event type 'fly'
+
+19:28:46[Sound][verbose]-No sound found for block type 'normal' and event type 'fly'
+
+19:28:49[Sound][verbose]-No sound found for block type 'normal' and event type 'fly'
+
+19:28:49[Sound][verbose]-No sound found for block type 'normal' and event type 'fly'
+
+19:28:50[Sound][verbose]-No sound found for block type 'normal' and event type 'fly'
+
+19:28:51[Sound][verbose]-No sound found for block type 'normal' and event type 'fly'
+
+19:28:53[Sound][verbose]-No sound found for block type 'normal' and event type 'fly'
+
+19:28:53[Sound][verbose]-No sound found for block type 'normal' and event type 'fly'
+

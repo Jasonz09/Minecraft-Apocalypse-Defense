@@ -1,0 +1,7 @@
+{
+  "extends": "../../../../tsconfig.json",
+  "include": [
+    "private-packs/CivilizationApocalypse_BP/scripts/**/*.js"
+  ],
+  "exclude": []
+}

@@ -39,7 +39,7 @@ function anchorPositions(dimensionName) {
 
 /**
  * @param {ReturnType<typeof import("../kingdom/store.js").createKingdomStore>} kingdomStore
- * @param {{ stepTicks?: number, dimensionName?: string, onStep?: (report: any) => void }} options
+ * @param {{ stepTicks?: number, dimensionName?: string, onStep?: (report: any) => void, beforeStep?: () => boolean }} options
  */
 export function startSimulationLoop(kingdomStore, options = {}) {
     if (stopHandle !== undefined) {
@@ -49,13 +49,25 @@ export function startSimulationLoop(kingdomStore, options = {}) {
     const tickInterval = Number(options.stepTicks ?? SIM.stepTicks);
     const dimensionName = String(options.dimensionName ?? "overworld");
 
+    // Undefined on the ordinary NULL-trust path: no additional world reads.
+    const mayStep = () => {
+        if (typeof options.beforeStep !== "function") return true;
+        try { return options.beforeStep() === true; }
+        catch (_error) { return false; }
+    };
     const runId = system.runInterval(() => {
+        // Same timer; no clock reset or catch-up while privately held.
+        if (!mayStep()) return;
         const loaded = kingdomStore.load();
         if (loaded.kingdom === undefined) {
             return;
         }
 
-        const advanced = advanceKingdom(loaded.kingdom, 1, { approach: preferredApproachesOf(loaded.kingdom, anchorPositions(dimensionName)) });
+        const approach = preferredApproachesOf(loaded.kingdom, anchorPositions(dimensionName));
+        // Existing save/player getters may invalidate private readiness. Check
+        // again immediately before the pure hour transaction, never afterward.
+        if (!mayStep()) return;
+        const advanced = advanceKingdom(loaded.kingdom, 1, { approach });
         const report = /** @type {any} */ ({ ...advanced, problem: undefined, build: undefined, buildError: undefined });
         if (report.skipped > 0) {
             // advanceKingdomStep already rolled the state back, so there is nothing to

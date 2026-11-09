@@ -2,26 +2,28 @@
 
 **Where we are — step2 of8 is current; the whole roadmap is unfinished.**
 
-**November 8 development update:** source176 is now installed with NULL fixture
-trust.2,240/2,240 tests, all5 gates and52/52headless stages pass (600,475.9531ms,
-0fail/cancel/skip). Root verifies352source/installed SHA+size checks and exact
-inventories; prior165pair retained. Native archer/activation/import acceptance
-remains OPEN. First full run's10 failures are retained; three test fixtures were
-corrected without changing any game-pack file or weakening guards. Independent
-harness, integration and installed independent reviews pass. The city loads and
-the read-only creation-status command reports legacyOFF; the whole closed1,713-byte
-smoke log has0warnings/errors/high-memory messages/exceptions. This is not fresh
-activation or archer combat acceptance.
+**November 8 verified checkpoint:** the176-file build now includes the reviewed
+startup hold and is installed with NULL fixture trust.2,240/2,240 tests, all5 gates
+and52/52headless stages pass (705,929.3174ms,0fail/cancel/skip). Root verifies352
+source/installed SHA+size checks and exact inventories; only the three intended
+startup paths differ from the prior176, and other173 pack files are unchanged.
+Private fresh activation, normal scheduled resume and save/close/rejoin pass in
+a separately configured disposable world. Native archer/combat/import acceptance
+and the whole roadmap remain OPEN. Evidence:
+`dist/startup-hold-installed-verification-20261108.json`,
+`dev/staging/private-hold2-native-evidence/AUDIT.json`.
 
 The actual vanilla `CA Never Owner Nov8` fixture was created with no behavior/local
 resource packs. Its witnessed unique scoreboard marker and9-file closed backup
 were independently audited (exact fake participant ID1/score0); a separate private
-configuration/derivative was reviewed and used for one native attempt. Activation
-refused because the clock advanced from exact initial step0 to step1 before
-confirmation. The failed10-file trial is preserved; regular176NULL packs are
-restored and verified. No activation is accepted. A deterministic pre-activation
-simulation hold is the next staged fix; no evolved-state relaxation/reset.
-Evidence: `dist/private-creation-refused-attempt1-20261108.json`. Cavalry remains
+configuration/derivative was reviewed and used for the first native attempt.
+Activation refused because the clock advanced from exact initial step0 to step1
+before confirmation. That failed10-file trial is preserved. A separately reviewed
+startup hold and a new pristine-derived trial now pass native fresh activation,
+normal scheduled step1 afterward, and save/close/rejoin with fresh history intact.
+Both new10-file saves are preserved. The regular NULL176 packs were restored;
+the three startup-hold source changes are integrated, fully verified and installed. No evolved-state relaxation/reset, population birth or combat acceptance.
+Evidence: `dev/staging/private-hold2-native-evidence/AUDIT.json` verifies all20 saved-file pins and byte-identical activation/header across restart. Both whole closed logs have0warnings/errors/high-memory messages/exceptions; individual publication crash boundaries remain unproven because the engine coalesced the writes. Cavalry remains
 staged with native births/seating disabled. Current evidence:
 `dist/archer-preview-installed-verification-20261108.json`,
 `dist/vanilla-never-owner-backup-20261108.json`.
