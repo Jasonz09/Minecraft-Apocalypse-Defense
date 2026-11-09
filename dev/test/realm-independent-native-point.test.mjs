@@ -1,0 +1,3 @@
+import test from'node:test';import assert from'node:assert/strict';import{load}from'../lib/civharness.mjs';
+const{guardPlayerRealmDimension}=await load('civ','playerRealmProtection.js');
+test('native getter cannot change caller point and move protected writer barrier to another column',()=>{let writes=0;const actual=[],guard={claims:[{x0:400,z0:400,x1:500,z1:500}],current(){}};const dimension=guardPlayerRealmDimension({getBlock(point){const location={...point};point.x=0;return{location,setPermutation(){writes++;actual.push(location);}}}},guard);assert.throws(()=>dimension.getBlock({x:401,y:70,z:401}).setPermutation({}),/foreign claim/);assert.equal(writes,0);});

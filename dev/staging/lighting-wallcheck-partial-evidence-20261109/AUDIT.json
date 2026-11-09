@@ -1,0 +1,35 @@
+{
+  "scope": "Closed immutable WAL main-property snapshots and whole last-session log only",
+  "receipt": "dist\\lighting-wallcheck-partial-20261109.json",
+  "receiptSha256": "49F5A80445F543B1BAC2FD08BD036D6B2E51081D10D8881F4CCA812F1DF330D7",
+  "all15BackupPinsExact": true,
+  "observedSnapshots": 7,
+  "latestSequence": 465549,
+  "latestStep": 1974,
+  "allObserved35PlanJobPinsAnd14WallReceiptExact": true,
+  "wholeLog": {
+    "name": "ContentLog2026-11-08_21-56-57_1.txt",
+    "bytes": 10791,
+    "sha256": "2585096EF3216FD94AAFF7C91A4A8837895F25576D117D6FA8EA38281518F58F",
+    "counts": {
+      "warnings": 0,
+      "errors": 0,
+      "highMemory": 0,
+      "exceptions": 0,
+      "verboseSoundMessages": 104
+    }
+  },
+  "nativePointObservations": {
+    "first7WallIds": "PASS witnessed before interruption",
+    "second7WallIds": "NOT RUN",
+    "protected3LeafIds": "NOT RUN"
+  },
+  "gameClosure": "Already closed on resume; graceful closure not witnessed",
+  "noCleanupCommandSubmitted": true,
+  "limits": [
+    "No live-world reads",
+    "No SST/chunk/entity decode or global actor census",
+    "Raw metadata is not physical14/3 acceptance",
+    "No all-five lighting/aesthetics/release acceptance"
+  ]
+}

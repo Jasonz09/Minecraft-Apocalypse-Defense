@@ -1,0 +1,5 @@
+import test from'node:test';import assert from'node:assert/strict';import{mc,resetWorld,load}from'../lib/civharness.mjs';
+const{createRealmClaimRegistry,resolveRealmBuilderContext}=await load('civ','realmSources.js');
+function fixture(){resetWorld();const r=createRealmClaimRegistry(mc.world,{capturePlayerProtection:()=>({complete:true,areas:[]})});r.reserve('realm-1',{x0:100,z0:100,x1:200,z1:200});return r;}
+test('finite own-source change is detected (control)',()=>{const r=fixture(),key='civ:realm:realm-1:jobs:probe';mc.props.set(key,1);const c=resolveRealmBuilderContext(r.builderContext('realm-1'),mc.world,1).readFence();mc.props.set(key,2);assert.throws(c,/source changed/);});
+test('nonfinite own source must refuse capture rather than collapse NaN and Infinity to same JSONnull',()=>{const r=fixture(),key='civ:realm:realm-1:jobs:probe';mc.props.set(key,NaN);assert.throws(()=>{const c=resolveRealmBuilderContext(r.builderContext('realm-1'),mc.world,1).readFence();mc.props.set(key,Infinity);c();},/unreadable|source changed/);});

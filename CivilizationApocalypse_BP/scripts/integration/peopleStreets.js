@@ -176,6 +176,10 @@ export function createPeopleStreets(deps = {}) {
             const applied=run.applied.some((/** @type {any} */e)=>e.action===action),skipped=run.skipped.find((/** @type {any} */e)=>e.action===action),failed=run.failed.find((/** @type {any} */e)=>e.action===action);
             return `${action.groupId} ${applied?"born":skipped?`deferred ${skipped.reason}`:failed?`failed ${String(failed.error).slice(0,120)}`:"not executed"}`;
         }).join("; "):"no birth actions queued");
+        if(!birthActions.length&&Array.isArray(run.report?.deferred)&&run.report.deferred.length){
+            const deferred=run.report.deferred;
+            done.births+="; owner deferred: "+deferred.slice(0,2).map((/** @type {any} */d)=>`${String(d.groupId).slice(0,80)} ${String(d.reason).slice(0,120)}`).join("; ")+(deferred.length>2?`; +${deferred.length-2} more`:"");
+        }
         if (typeof run.refused === "string" && run.refused.length > 0) {
             // A refused hour reads nothing, so the last hour's census must not be printed as if it were this one's.
             done.refused = run.refused;

@@ -1,0 +1,47 @@
+{
+  "utc": "2026-11-09T04:31:05.021077+00:00",
+  "packFiles": 194,
+  "sourceInstalledChecks": 388,
+  "exactInventories": true,
+  "freezeSha256": "354EF453DD449580B55CB4D4BBF1027B11D6F02C2F389E3F54076FF1B3FF7A4E",
+  "regularTrust": "all3 NULL in source and installed packs",
+  "fullLogSha256": "5D4854DE026D923F10EE93625C7E723B4800A5C5A079590DD45F730FFBAD68C2",
+  "tests": 2535,
+  "pass": 2535,
+  "fail": 0,
+  "cancelled": 0,
+  "skipped": 0,
+  "gates": 5,
+  "headless": 52,
+  "native194Acceptance": "OPEN; no launch window available on latest resume",
+  "nativePrivate191Cavalry": "First-pair birth/seating/rejoin only PASS",
+  "wholeRoadmap": "UNFINISHED step2/8",
+  "clientDate": "2026-11-08",
+  "branch": "master",
+  "changes": [
+    "Bounded pure lighting preparation batching; native writer barriers unchanged",
+    "Deferred birth reason display",
+    "Player and foreign realm source protection; foreign terrain writes held",
+    "Two test-contract updates with negative controls"
+  ],
+  "nativeLighting": "D1/D2 readonly previews; first7 wall checks observed; remaining7/3leaf and D3-D5/daynight OPEN",
+  "nativeBlocker": "Desktop launch error: accessibility window-opened handler did not become ready",
+  "preservedClosedSave": "dev/staging/lighting-wallcheck-partial-evidence-20261109/AUDIT.json",
+  "developerPreview": {
+    "valid": true,
+    "kind": "CivilizationApocalypseDeveloperPreview",
+    "sourceFiles": 194,
+    "pairedPacks": 2,
+    "worldIncluded": false,
+    "releaseApproved": false,
+    "cleanStarterVerified": false,
+    "bindingStatus": {
+      "state": "NOT_CHECKED",
+      "scope": "No world supplied; examples are not installed bindings or clean-world proof"
+    },
+    "receiptSha256": "A248E1F3E87D84A367353A47516ED6F2F07B8F4C612718AA08DC6F2CBB2E0959",
+    "archiveSha256": "A37CF77CF5EBC5436B78167185453CE77F72C00D44A27E37AECA4D2278552AF3"
+  },
+  "nextCodeReview": "Ledger confirmation access revocation fix staged, not installed",
+  "nextFoundations": "Refusal-only authoring and readonly siege observer stages, no release/casualty authority"
+}

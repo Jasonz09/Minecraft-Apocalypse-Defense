@@ -155,7 +155,7 @@ function assertIdentifierContexts(source,file,known=new Set(knownContextIds)) {
         ts.forEachChild(n,visit);
     };
     if(/\bevent\s*(?:\.|\[)|runCommand/.test(source))visit(ast);
-    const durableFamilies=new Set(["plan","jobs","farm_lights","wall_leaf_trim"]);
+    const durableFamilies=new Set(["plan","jobs","farm_lights","wall_leaf_trim","realm","realm_claims"]);
     for(const m of source.matchAll(/\bciv:([a-z_]+):([a-z0-9_]+)/g)){
         assert.ok(durableFamilies.has(m[1]),`${file}: leftover multi-colon command-like identifier ${m[0]}`);
     }
@@ -164,12 +164,13 @@ test("command identifiers stay one-colon while known durable-property families m
     for(const file of [...walk(scripts),...walk(join(root,"docs")),join(root,"README.md")])assertIdentifierContexts(readFileSync(file,"utf8"),file);
 });
 test("identifier audit rejects malformed command events even when they resemble allowed durable keys",()=>{
-    assert.doesNotThrow(()=>assertIdentifierContexts('const key="civ:wall_leaf_trim:v1:d4:12345678"; const q="civ:jobs:meta";',"property fixture"));
-    for(const bad of ["civ:generate:plan","civ:wall_leaf_trim:v1:d4:12345678","civ:jobs:meta","civ:status:","civ:not_registered"]){
+    assert.doesNotThrow(()=>assertIdentifierContexts('const key="civ:wall_leaf_trim:v1:d4:12345678"; const q="civ:jobs:meta"; const claims="civ:realm_claims:v1"; const realm="civ:realm:realm-1:plan:meta";',"property fixture"));
+    for(const bad of ["civ:generate:plan","civ:wall_leaf_trim:v1:d4:12345678","civ:jobs:meta","civ:status:","civ:not_registered","civ:realm_claims:v1","civ:realm:realm-1:plan:meta"]){
         assert.throws(()=>assertIdentifierContexts("/scriptevent "+bad,"bad command fixture"),/script-event|multi-colon/);
     }
     assert.throws(()=>assertIdentifierContexts('const legacy="civ:generate:plan";',"legacy fixture"),/multi-colon/);
-    for(const code of ['if(event.id === "civ:jobs:meta") {}','if("civ:wall_leaf_trim:v1" === event.id) {}','switch(event.id){case "civ:plan:meta":break;}','if(event["id"] === "civ:jobs:meta") {}','dimension.runCommand("scriptevent civ:jobs:meta")'])
+    assert.throws(()=>assertIdentifierContexts('const unknown="civ:realm_claims_extra:v1";',"unregistered family fixture"),/multi-colon/);
+    for(const code of ['if(event.id === "civ:jobs:meta") {}','if("civ:wall_leaf_trim:v1" === event.id) {}','switch(event.id){case "civ:plan:meta":break;}','if(event["id"] === "civ:jobs:meta") {}','dimension.runCommand("scriptevent civ:jobs:meta")','if(event.id === "civ:realm_claims:v1") {}','switch(event.id){case "civ:realm:realm-1:plan:meta":break;}','dimension.runCommand("scriptevent civ:realm_claims:v1")'])
         assert.throws(()=>assertIdentifierContexts(code,"bad literal handler fixture"),/literal event/);
     assert.doesNotThrow(()=>assertIdentifierContexts('if(event.id === "civ:status") {} switch(event.id){case "civ:people":break;}',"valid handler fixture"));
     const fixtureFile=join(root,"dev","staging","swordsman-combat-fixture","BP","scripts","fixtureInspection.js");

@@ -37,6 +37,7 @@ export function classifyStarterKeys(keys, rules = STARTER) {
     /** @type {{ keep: string[], wipe: string[], unknown: string[] }} */
     const out = { keep: [], wipe: [], unknown: [] };
     for (const key of [...keys].sort()) {
+        if(key.startsWith("civ:realm:")||key.startsWith("civ:realm_claims:")){out.keep.push(key);continue;}
         if((key.startsWith("civ:pop_bind:")||key.startsWith("civ:creation_activation:"))){out.keep.push(key);continue;}
         if(key.startsWith("civ:wall_leaf_trim:")){out.keep.push(key);continue;}
         if (exactWipe.has(key)) {
@@ -131,6 +132,7 @@ export function buildStarterBaseline(input = {}) {
  */
 export function starterArmProblems(world = {}) {
     const /** @type {string[]} */ problems = [];
+    if((world.keys??[]).some(key=>key.startsWith("civ:realm:")||key.startsWith("civ:realm_claims:")))problems.push("foreign realm source/claim history remains; preserve and reconcile a separate release copy before arming/export");
     const kingdom = world.kingdom;
 
     if (kingdom === undefined || kingdom === null) {

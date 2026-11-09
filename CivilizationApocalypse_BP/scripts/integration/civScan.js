@@ -516,17 +516,19 @@ export function stallMessage(stats, rect) {
  *
  * @param {Job} token @param {Dimension} dimension @param {Rect} rect
  * @param {(r: Rect) => Iterable<{ x: number, z: number }>} pointsOf
- * @param {GridField} field @param {ScanStats} stats @param {Progress | undefined} progress
+ * @param {GridField} field @param {ScanStats} stats @param {Progress | undefined} progress @param {(()=>void)|undefined} [current]
  * @returns {Promise<"ok" | "stalled" | "cancelled" | "aborted">}
  */
-async function surveyTile(token, dimension, rect, pointsOf, field, stats, progress) {
+async function surveyTile(token, dimension, rect, pointsOf, field, stats, progress, current=undefined) {
+    current?.();
     /** @type {Rect[]} */
     const work = [rect];
     let result = /** @type {"ok" | "stalled" | "cancelled" | "aborted"} */ ("ok");
     while (work.length > 0) {
         const r = /** @type {Rect} */ (work.shift());
         if (progress !== undefined) progress.tile = r;
-        let held = await holdArea(dimension, r, token, CIV_TICKING_ID, progress);
+        current?.();
+        let held = await holdArea(dimension, r, token, CIV_TICKING_ID, progress);current?.();
         if (token.cancelled || held.status === "cancelled") {
             return "cancelled";
         }
@@ -592,7 +594,9 @@ async function surveyTile(token, dimension, rect, pointsOf, field, stats, progre
             }
         }
         try {
-            await runJobAsync(token, readColumns(token, dimension, pointsOf(r), field, stats, progress), progress);
+            const columns=readColumns(token, dimension, pointsOf(r), field, stats, progress);
+            function* checkedColumns(){for(;;){current?.();const n=columns.next();current?.();if(n.done)return n.value;yield;current?.();}}
+            await runJobAsync(token,current?checkedColumns():columns,progress);current?.();
         } finally {
             releaseSurveyLease(token);
         }
@@ -658,7 +662,7 @@ const tileKeyOf = (r, tile) => `${String(Math.floor(r.x0 / tile))},${String(Math
  * @param {number} step lattice spacing
  * @param {{
  *   rings?: number[], evaluate?: (field: GridField, ringRadius: number, last: boolean, info: { tilesDone: number, tilesTotal: number, knownHalf: number, atRingEnd: boolean }) => boolean,
- *   onTile?: (done: number, total: number) => void, tile?: number, progress?: Progress
+ *   onTile?: (done: number, total: number) => void, tile?: number, progress?: Progress, current?:()=>void
  * }} [options]
  * @returns {Promise<{ field: GridField, stats: ScanStats, cancelled: boolean, scannedRadius: number, tilesTotal: number, early: boolean }>}
  */
@@ -708,7 +712,7 @@ export async function scanProgressive(token, dimension, anchor, radius, step, op
                 }
                 done.add(index);
                 known.add(tileKeyOf(r, tileSize));
-                const outcome = await surveyTile(token, dimension, r, (sub) => tile.points.filter((p) => p.x >= sub.x0 && p.x <= sub.x1 && p.z >= sub.z0 && p.z <= sub.z1), field, stats, progress);
+                const outcome = await surveyTile(token, dimension, r, (sub) => tile.points.filter((p) => p.x >= sub.x0 && p.x <= sub.x1 && p.z >= sub.z0 && p.z <= sub.z1), field, stats, progress, options.current);
                 if (outcome === "cancelled") {
                     return { field, stats, cancelled: true, scannedRadius, tilesTotal: tiles.length, early };
                 }
@@ -718,7 +722,7 @@ export async function scanProgressive(token, dimension, anchor, radius, step, op
                 // A stalled tile is NOT known: its columns were never read, so it must not enlarge `knownHalf`.
                 if (outcome !== "ok") known.delete(tileKeyOf(r, tileSize));
                 if (progress !== undefined) progress.tilesDone = done.size;
-                options.onTile?.(done.size, tiles.length);
+                options.onTile?.(done.size, tiles.length);options.current?.();
                 if (options.evaluate !== undefined) {
                     const knownHalf = knownHalfFromTiles(anchor, known, tileSize, radius, step);
                     if (options.evaluate(field, ring, false, { tilesDone: done.size, tilesTotal: tiles.length, knownHalf, atRingEnd: false }) === true) {
@@ -749,7 +753,7 @@ export async function scanProgressive(token, dimension, anchor, radius, step, op
             const attemptedBefore = stats.attempted;
             const tilesBefore = stats.tiles;
             for (const r of pending) {
-                const outcome = await surveyTile(token, dimension, r, pointsIn, field, stats, progress);
+                const outcome = await surveyTile(token, dimension, r, pointsIn, field, stats, progress, options.current);
                 if (outcome === "cancelled") {
                     return { field, stats, cancelled: true, scannedRadius, tilesTotal: tiles.length, early };
                 }
@@ -765,13 +769,13 @@ export async function scanProgressive(token, dimension, anchor, radius, step, op
     } finally {
         releaseArea(token);
     }
-    return { field, stats, cancelled: false, scannedRadius, tilesTotal: tiles.length, early };
+    options.current?.();return { field, stats, cancelled: false, scannedRadius, tilesTotal: tiles.length, early };
 }
 
 /**
  * Whole-radius coarse survey (one ring, no early exit). Kept for tools and tests.
  * @param {Job} token @param {Dimension} dimension @param {{ x: number, z: number }} anchor @param {number} radius @param {number} step
- * @param {{ onTile?: (done: number, total: number) => void, tile?: number, progress?: Progress }} [options]
+ * @param {{ onTile?: (done: number, total: number) => void, tile?: number, progress?: Progress, current?:()=>void }} [options]
  */
 export async function scanCoarse(token, dimension, anchor, radius, step, options = {}) {
     return scanProgressive(token, dimension, anchor, radius, step, options);
@@ -784,7 +788,7 @@ export async function scanCoarse(token, dimension, anchor, radius, step, options
  * @param {Job} token
  * @param {Dimension} dimension
  * @param {Rect} rect inclusive block bounds
- * @param {{ onTile?: (done: number, total: number) => void, tile?: number, progress?: Progress }} [options]
+ * @param {{ onTile?: (done: number, total: number) => void, tile?: number, progress?: Progress, current?:()=>void }} [options]
  * @returns {Promise<{ field: GridField, stats: ScanStats, cancelled: boolean }>}
  */
 export async function scanFull(token, dimension, rect, options = {}) {
@@ -818,7 +822,7 @@ export async function scanFull(token, dimension, rect, options = {}) {
     try {
         for (let index = 0; index < tiles.length; index += 1) {
             const area = /** @type {Rect} */ (tiles[index]);
-            const outcome = await surveyTile(token, dimension, area, rectPoints, field, stats, progress);
+            const outcome = await surveyTile(token, dimension, area, rectPoints, field, stats, progress, options.current);
             if (outcome === "cancelled") {
                 return { field, stats, cancelled: true };
             }
@@ -826,12 +830,12 @@ export async function scanFull(token, dimension, rect, options = {}) {
                 return { field, stats, cancelled: false };
             }
             if (progress !== undefined) progress.tilesDone = index + 1;
-            options.onTile?.(index + 1, tiles.length);
+            options.onTile?.(index + 1, tiles.length);options.current?.();
         }
     } finally {
         releaseArea(token);
     }
-    return { field, stats, cancelled: false };
+    options.current?.();return { field, stats, cancelled: false };
 }
 
 /**

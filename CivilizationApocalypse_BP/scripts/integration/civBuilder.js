@@ -1,3 +1,5 @@
+import {capturePlayerRealmProtection,guardPlayerRealmDimension,isStrictPlayerRealmClaim} from "../civ/playerRealmProtection.js";
+import {resolveRealmBuilderContext,markRealmMetadata,isRealmMetadata} from "../civ/realmSources.js";
 import {treeInspectionBounds,withinTreeInspection,TREE_INSPECTION_SOURCE_LIMITS,isTreeInspectionProtection} from "../civ/treeInspectionStreaming.js";
 import { BlockPermutation, world } from "@minecraft/server";
 import { CIV, PHYSICAL } from "../config.js";
@@ -17,10 +19,16 @@ import { SITE_DEFAULTS, TERRAIN_POLICY_DEFAULT, overlapsExclusion, rankSites, sc
 import { validatePlanSteps } from "../civ/validatesteps.js";
 import { classifyTerrainCell, isBenign, isLeaves, isLog, isNaturalGround, isPlant, isTreePart } from "../structures/terrain.js";
 import { activeToken, cancelActiveJob, finishJob } from "./districtBuilder.js";
-import { CIV_TICKING_ID, countTiles, holdArea, nextTick, releaseArea, runJobAsync, scanFull, scanProgressive, tileSizeNow } from "./civScan.js";
+import { CIV_TICKING_ID, countTiles, holdArea, nextTick, releaseArea, runJobAsync as baseRunJobAsync, scanFull, scanProgressive, tileSizeNow } from "./civScan.js";
 import { finishProgress, getProgress, heartbeat, nowTick, resetProgressForTests, setPhase, touch } from "./civProgress.js";
 import { createChunkLoader } from "./chunkLeases.js";
 import { isDoorOp, lowerDoorOp, placeDoorPair } from "./doorPlacement.js";
+
+/** @type {WeakMap<object,any>} */
+const playerRealmJobs=new WeakMap();
+/** Existing scheduler only; optional realm source fence at each cooperative yield.
+ * @template T @param {any} token @param {Generator<void,T,void>} generator @param {any} [progress] */
+function runJobAsync(token,generator,progress=undefined){const guard=playerRealmJobs.get(token);if(!guard)return baseRunJobAsync(token,generator,progress);function* checked(){for(;;){guard.current();const n=generator.next();guard.current();if(n.done)return n.value;yield;guard.current();}}return baseRunJobAsync(token,checked(),progress);}
 
 /**
  * Bedrock boundary for the one-command civilization workflow, WRITE side, plus the planning
@@ -117,19 +125,22 @@ const WORLD_MAX_Y = 319;
 // construction. Both families still start with the prefixes the starter-world rules in config.js classify: the plan
 // prefix is KEPT when a world is armed, the job prefix is WIPED.
 
-/** @param {number} index @returns {string} the plan-prefix slot holding ONE district's site payload (ground + options + checksum) */
-export function sitePrefixFor(index) {
+/** @param {number} index @param {any} [sourceContext] @returns {string} the plan-prefix slot holding ONE district's site payload (ground + options + checksum) */
+export function sitePrefixFor(index, sourceContext = undefined) {
+    if (sourceContext !== undefined) return resolveRealmBuilderContext(sourceContext,world,index).keys.site;
     return `${PLAN_PREFIX}:site:d${String(index)}`;
 }
 
-/** @param {number} index @returns {string} the job-prefix slot holding ONE district's queue (district 1 keeps the plain `civ:jobs`) */
-export function jobPrefixFor(index) {
+/** @param {number} index @param {any} [sourceContext] @returns {string} the job-prefix slot holding ONE district's queue (district 1 keeps the plain `civ:jobs`) */
+export function jobPrefixFor(index, sourceContext = undefined) {
+    if (sourceContext !== undefined) return resolveRealmBuilderContext(sourceContext,world,index).keys.jobs;
     return index === 1 ? jobs.JOB_PREFIX : `${jobs.JOB_PREFIX}:d${String(index)}`;
 }
 
 /** Maintenance stays in the transient jobs family, separate from every original build queue.
- * @param {number} index */
-export function cityRepairPrefixFor(index) {
+ * @param {number} index @param {any} [sourceContext] */
+export function cityRepairPrefixFor(index, sourceContext = undefined) {
+    if (sourceContext !== undefined) return resolveRealmBuilderContext(sourceContext,world,index).keys.repair;
     assertIndex(index);
     return `${jobs.JOB_PREFIX}:repair:d${index}`;
 }
@@ -323,6 +334,7 @@ export const WALL_FILL_KINDS = Object.freeze(["wall", "tower", "merlon", "walk",
 export function isSharedWallFill(areas, op) {
     if (!WALL_FILL_KINDS.includes(String(op.kind)) || isAir(String(op.id))) return false;
     for (const area of areas) {
+        if(isStrictPlayerRealmClaim(area)){if(inRect(area,op.x,op.z))return false;continue;}
         const polygon = area.polygon;
         if (polygon === undefined) return false;
         if (inRect(area, op.x, op.z) && insidePolygon(polygon, op.x, op.z)) return false;
@@ -391,6 +403,7 @@ export function createProtectedColumnLookup(areas, region) {
  *   say: (lines: string[]) => void, maxPlanBytes?: number,
  *   progress?: import("./civProgress.js").Progress,
  *   district?: number, siteMode?: "search" | "here", planSeed?: number,
+ *   sourceContext?:any, realmGuard?:any,
  *   policy?: import("../civ/siteselect.js").TerrainPolicy
  * }} PlanContext
  * @typedef {{
@@ -420,11 +433,13 @@ function newOutcome(index, stage = "scan") {
  * is planned from it). Older worlds stored the plan and district 1's ground together in that slot; their `plan`
  * member is read the same way.
  *
+ * @param {any} [sourceContext]
  * @returns {{ status: string, plan: any, payload: any, planSeed: number | undefined, anchor: { x: number, z: number } | undefined, reason: string | undefined }}
  */
-export function loadMasterPlan() {
-    const loaded = createPlanStore(world).loadPlan();
+export function loadMasterPlan(sourceContext = undefined) {
+    const loaded = (sourceContext === undefined ? createPlanStore(world) : resolveRealmBuilderContext(sourceContext,world,1).planStore).loadPlan();
     const payload = loaded.plan;
+    if(sourceContext!==undefined){markRealmMetadata(payload);markRealmMetadata(payload?.plan);}
     return {
         status: loaded.status,
         plan: payload?.plan,
@@ -466,16 +481,21 @@ export function coverageProblem(stats) {
  * @returns {Promise<PlanOutcome>}
  */
 export async function planWorld(ctx) {
+    if(ctx.sourceContext!==undefined){resolveRealmBuilderContext(ctx.sourceContext,world,ctx.district??1);throw Error("Foreign realm context is metadata-only; verified survey/write envelope and all-player protection adapter are required before native planning");}
     const index = ctx.district ?? 1;
     assertIndex(index);
+    const guard=capturePlayerRealmProtection(world);
+    if(guard){ctx={...ctx,realmGuard:guard,exclusions:[...ctx.exclusions,...guard.claims],plannerFootprints:[...(ctx.plannerFootprints??ctx.exclusions),...guard.claims]};playerRealmJobs.set(ctx.token,guard);}
+    try {
     const stored = loadMasterPlan();
     if (stored.plan !== undefined && stored.plan !== null) {
         // The terrain policy rides with the stored master plan: every district of one civilization is
         // built under the policy its own site was chosen by (old plans have none and keep the old rules).
         ctx.policy = policyOf(stored.payload?.policy);
-        return planOnStoredMaster(ctx, stored.plan, index, stored.planSeed);
+        const result=await planOnStoredMaster(ctx, stored.plan, index, stored.planSeed);guard?.current();return result;
     }
-    return planNewMaster(ctx, index);
+    const result=await planNewMaster(ctx,index);guard?.current();return result;
+    }finally{if(guard)playerRealmJobs.delete(ctx.token);}
 }
 
 /** @param {any} policy @returns {import("../civ/siteselect.js").TerrainPolicy} */
@@ -615,7 +635,7 @@ async function readRegion(ctx, plan, index, numbered = false) {
     ctx.say([`${numbered ? "[4/6] " : ""}Reading ${districtLabel(index, plan)} at full resolution (read-only, one sample per column): ${String(columns)} columns in ${String(tiles)} ${String(tile)}-block tiles; up to ${String(tiles * (tile / 16) ** 2)} chunks may have to be generated and loaded, nothing outside this district is read.`]);
     let lastTile = 0;
     const fine = await scanFull(ctx.token, ctx.dimension, region, {
-        progress: ctx.progress,
+        progress: ctx.progress,current:ctx.realmGuard?.current,
         onTile(done, total) {
             if (done - lastTile >= Math.max(1, Math.floor(total / 4)) && done < total) {
                 lastTile = done;
@@ -782,7 +802,7 @@ async function planNewMaster(ctx, index) {
     const windowHalf = Math.ceil(SITE_DEFAULTS.windowSize / (2 * SITE_DEFAULTS.step)) * SITE_DEFAULTS.step;
     const coarse = await scanProgressive(token, ctx.dimension, ctx.anchor, scanRadius, SITE_DEFAULTS.step, {
         rings,
-        progress,
+        progress,current:ctx.realmGuard?.current,
         onTile() {
             const now = nowTick();
             if (progress !== undefined && now - lastTileTick > 100) {
@@ -1132,10 +1152,11 @@ export function civilizationOverview(plan, kingdom) {
  * this district's queue and site payload, and the master plan too when this world made it in this same run.
  * Never touches another district's slots.
  *
- * @param {PlanOutcome} outcome
+ * @param {PlanOutcome} outcome @param {any} [sourceContext]
  * @returns {string[]} what could not be cleared
  */
-export function discardRun(outcome) {
+export function discardRun(outcome, sourceContext = undefined) {
+    if(sourceContext!==undefined){resolveRealmBuilderContext(sourceContext,world,outcome.district??1);return ["Foreign realm metadata and protective claim retained; clearing is unavailable."];}
     const index = outcome.district ?? 1;
     const { planStore, siteStore, jobStore } = stores(index);
     /** @type {string[]} */
@@ -1189,8 +1210,9 @@ export function jobSpecsOf(record) {
  * @typedef {ReturnType<typeof createPlanStore>} PlanStore
  */
 
-/** @param {number} [index] @returns {{ planStore: PlanStore, siteStore: PlanStore, jobStore: ReturnType<typeof jobs.createJobStore> }} */
-function stores(index = 1) {
+/** @param {number} [index] @param {any} [sourceContext] @returns {{ planStore: PlanStore, siteStore: PlanStore, jobStore: ReturnType<typeof jobs.createJobStore> }} */
+function stores(index = 1, sourceContext = undefined) {
+    if(sourceContext!==undefined)return resolveRealmBuilderContext(sourceContext,world,index);
     return { planStore: createPlanStore(world), siteStore: siteStoreFor(index), jobStore: jobStoreFor(index) };
 }
 
@@ -1200,13 +1222,14 @@ function stores(index = 1) {
  * The ordering discipline is unchanged and is what makes a crash harmless: every size is measured BEFORE the first
  * property write, and a queue write that fails takes the payloads it would have orphaned back down with it.
  *
- * @param {PlanOutcome} outcome
+ * @param {PlanOutcome} outcome @param {any} [sourceContext]
  * @returns {{ ok: boolean, reason?: string, queue?: JobQueue, saved?: any, savedMaster?: any, bytes?: Record<string, number> }}
  */
-export function persistRun(outcome) {
+export function persistRun(outcome, sourceContext = undefined) {
+    if(sourceContext!==undefined){resolveRealmBuilderContext(sourceContext,world,outcome.district??1);for(const item of[outcome.record,outcome.plan,outcome.payload?.plan,outcome.master?.plan])markRealmMetadata(item);}
     const index = outcome.district ?? 1;
     assertIndex(index);
-    const { planStore, siteStore, jobStore } = stores(index);
+    const { planStore, siteStore, jobStore } = stores(index,sourceContext);
     try {
         // Check the queue BEFORE any plan is stored, so an oversize queue can never leave an orphan plan behind.
         const queue = jobs.createQueue(jobSpecsOf(outcome.record), { planHash: outcome.record.checksum, maxAttempts: 8 });
@@ -1230,7 +1253,7 @@ export function persistRun(outcome) {
         }
         const saved = siteStore.savePlan(outcome.payload);
         if (!saved.ok) {
-            if (savedMaster !== undefined && savedMaster.ok) {
+            if (sourceContext===undefined && savedMaster !== undefined && savedMaster.ok) {
                 try {
                     planStore.clear();
                 } catch (_error) {
@@ -1242,10 +1265,10 @@ export function persistRun(outcome) {
         const queued = jobStore.saveQueue(queue);
         if (!queued.ok) {
             try {
-                siteStore.clear();
+                if(sourceContext===undefined){siteStore.clear();
                 if (savedMaster !== undefined && savedMaster.ok) {
                     planStore.clear();
-                }
+                }}
             } catch (_error) {
                 // best effort: the plan without a record is harmless
             }
@@ -1266,12 +1289,12 @@ export function persistRun(outcome) {
  *
  * @param {{ checksum?: string, seed?: number }} civ the district.civ record
  * @param {import("../civ/regions.js").Ops} ops
- * @param {number} [index]
+ * @param {number} [index] @param {any} [sourceContext]
  * @returns {Generator<void, { ok: true, plan: any, record: any, queue: JobQueue, region: Rect, payload: any, district: number, recovered: number } | { ok: false, reasons: string[] }, void>}
  */
-export function* loadSavedRunSteps(civ, ops, index = 1) {
+function* loadSavedRunCore(civ, ops, index = 1, sourceContext = undefined) {
     assertIndex(index);
-    const { planStore, siteStore, jobStore } = stores(index);
+    const { planStore, siteStore, jobStore } = stores(index,sourceContext);
     const loadedMaster = planStore.loadPlan();
     if (loadedMaster.status !== "ok" || loadedMaster.plan === undefined) {
         return { ok: false, reasons: [`the stored plan is ${loadedMaster.status}${loadedMaster.reason ? ` (${loadedMaster.reason})` : ""}; refusing to continue`] };
@@ -1279,7 +1302,7 @@ export function* loadSavedRunSteps(civ, ops, index = 1) {
     const master = loadedMaster.plan;
     const loadedSite = siteStore.loadPlan();
     // A world planned before districts had their own slots keeps district 1's ground in the master-plan slot.
-    const legacy = loadedSite.status !== "ok" && index === 1 && master?.ground !== undefined ? master : undefined;
+    const legacy = sourceContext===undefined && loadedSite.status !== "ok" && index === 1 && master?.ground !== undefined ? master : undefined;
     const payload = loadedSite.status === "ok" && loadedSite.plan !== undefined ? loadedSite.plan : legacy;
     if (payload === undefined) {
         const reason = loadedSite.status === "ok" ? "it holds no ground" : loadedSite.reason;
@@ -1331,13 +1354,22 @@ export function* loadSavedRunSteps(civ, ops, index = 1) {
     return { ok: true, plan, record, queue, region: siteGroundRegion(plan, index), payload, district: index, recovered: loadedQueue.recovered ?? 0 };
 }
 
+/** Same saved-source loader, scoped only by an issued metadata context.
+ * @param {{checksum?:string,seed?:number}} civ @param {import("../civ/regions.js").Ops} ops @param {number} [index] @param {any} [sourceContext] */
+export function* loadSavedRunSteps(civ,ops,index=1,sourceContext=undefined){
+    if(sourceContext===undefined)return yield* loadSavedRunCore(civ,ops,index);
+    const scoped=resolveRealmBuilderContext(sourceContext,world,index),current=scoped.readFence();
+    const generator=loadSavedRunCore(civ,ops,index,sourceContext);
+    for(;;){current();const next=generator.next();current();if(next.done){if(next.value.ok){markRealmMetadata(next.value.plan);markRealmMetadata(next.value.record);markRealmMetadata(next.value.payload);}return next.value;}yield;current();}
+}
+
 /**
  * What ONE district's stored queue says, without a running session (restart / status read-out).
- * @param {number} index @param {{ recoverRunning?: boolean }} [options]
+ * @param {number} index @param {{ recoverRunning?: boolean }} [options] @param {any} [sourceContext]
  * @returns {{ status: string, reason: string | undefined, state: string | undefined, pct: number | undefined, done: number | undefined, total: number | undefined }}
  */
-export function storedQueueStatus(index, options = {}) {
-    const { jobStore } = stores(index);
+export function storedQueueStatus(index, options = {}, sourceContext = undefined) {
+    const { jobStore } = stores(index,sourceContext);
     const loaded = jobStore.loadQueue({ recoverRunning: options.recoverRunning });
     if (loaded.status !== "ok" || loaded.queue === undefined) {
         return { status: loaded.status, reason: loaded.reason, state: undefined, pct: undefined, done: undefined, total: undefined };
@@ -1425,6 +1457,7 @@ export function storageFootprint() {
  *   byReason: Record<string, number>, samples: string[]
  * }} Counts
  * @typedef {{
+ *   sourceContext?:any, realmGuard?:any,
  *   token: Job, dimension: Dimension, plan: any, record: any, queue: JobQueue, region: Rect,
  *   protectedRects: ProtectedArea[], district: number,
  *   say: (lines: string[]) => void,
@@ -1448,7 +1481,7 @@ function newCounts() {
 /**
  * @typedef {{
  *   opts: ConstructionOptions, token: Job, dimension: Dimension, queue: JobQueue, record: any, plan: any,
- *   inspectionBounds?:ReturnType<typeof treeInspectionBounds>, inspectionCurrent?:()=>boolean,
+ *   inspectionBounds?:ReturnType<typeof treeInspectionBounds>, inspectionCurrent?:()=>boolean, realmGuard?:any, realmBlocks?:any,
  *   counts: Counts, slice: SliceStats, meter: { reads: number, writes: number, ops: number, treeVisits: number },
  *   heldRect: Rect | undefined, holdSide: number, fragmented: boolean, chunkLease: ReturnType<typeof constructionChunks.acquire> | undefined, holdState?: {status:string,held:boolean}, fallbackReported?:boolean, perms: Map<string, any>, opCache: Map<string, CanonicalOp[]>, own: Map<number, number | { last: number, all: number[], seq: number[] }>, ownStage: Map<number, number>, ids: string[], idIndex: Map<string, number>,
  *   treeRefused: Map<string,string>, treeRootRefused:ReturnType<typeof createTreeRootRefusalCache>, sharedTreeWallTargets: Map<number,number>, finalTreeBoundaryWalls:Set<number>, protectedAt: (x:number,z:number)=>boolean, treeHold?: Rect, lastSkipReason?: string, lastUnread?: string, firstUnread?:string, cur: { element: number, cursor: number } | undefined, sinceSave: number, lastPct: number, lastStage: string,
@@ -1619,9 +1652,11 @@ function endSlice(s) {
  * @param {Session} s @param {number} reads @param {number} writes
  */
 function* budgetFor(s, reads, writes) {
+    s.realmGuard?.current();
     if (s.meter.reads + reads > CIV_LIMITS.maxReadsPerSlice || s.meter.writes + writes > CIV_LIMITS.maxBlocksPerSlice) {
         endSlice(s);
         yield;
+        s.realmGuard?.current();
     }
 }
 
@@ -1663,7 +1698,7 @@ function readLive(s, x, y, z) {
     if(s.inspectionBounds||s.inspectionCurrent)return readInspectionLive(s,x,y,z);
     s.meter.reads += 1;
     try {
-        const block = s.dimension.getBlock({ x, y, z });
+        const block = (s.realmBlocks??s.dimension).getBlock({ x, y, z });
         if (block === undefined || block.isValid === false) {
             s.lastUnread = `tree read at (${x}, ${y}, ${z}): ${block === undefined ? "no block returned" : "invalid block"}`;
             return undefined;
@@ -1689,7 +1724,7 @@ function readInspectionLive(s, x, y, z) {
     if(s.inspectionBounds&&!withinTreeInspection(s.inspectionBounds,{x,y,z}))throw Error("Tree inspection read escaped its verified source projection");
     current();
     try {
-        const block = s.dimension.getBlock({ x, y, z });current();
+        const block = (s.realmBlocks??s.dimension).getBlock({ x, y, z });current();
         if(block===undefined){s.lastUnread=`tree read at (${x}, ${y}, ${z}): no block returned`;return undefined;}
         const valid=block.isValid;current();
         if(valid===false){s.lastUnread=`tree read at (${x}, ${y}, ${z}): invalid block`;return undefined;}
@@ -2086,7 +2121,7 @@ function* eraseProvenTree(s,component) {
             continue;
         }
         try {
-            const block = s.dimension.getBlock({ x: cell.x, y: cell.y, z: cell.z });
+            const block = (s.realmBlocks??s.dimension).getBlock({ x: cell.x, y: cell.y, z: cell.z });
             s.meter.reads += 1;
             if (block === undefined) {
                 return { ok:false, reason:"a chunk next to the tree is not loaded" };
@@ -2159,7 +2194,7 @@ function* applyOp(s, op) {
     }
     let target;
     try {
-        target = s.dimension.getBlock({ x: op.x, y: op.y, z: op.z });
+        target = (s.realmBlocks??s.dimension).getBlock({ x: op.x, y: op.y, z: op.z });
     } catch (error) {
         s.lastUnread=`operation target read at (${op.x}, ${op.y}, ${op.z}): ${String(error)}`;
         target = undefined;
@@ -2186,7 +2221,7 @@ function* applyOp(s, op) {
         }
         yield* budgetFor(s,1,0);
         try {
-            target = s.dimension.getBlock({ x: op.x, y: op.y, z: op.z });
+            target = (s.realmBlocks??s.dimension).getBlock({ x: op.x, y: op.y, z: op.z });
         } catch (error) {
             s.lastUnread=`operation re-read after tree at (${op.x}, ${op.y}, ${op.z}): ${String(error)}`;
             target = undefined;
@@ -2217,7 +2252,7 @@ function* applyOp(s, op) {
             return "ok";
         }
         yield* budgetFor(s,7,2);
-        const door = placeDoorPair(s.dimension,lower);
+        const door = placeDoorPair(s.realmBlocks??s.dimension,lower);
         s.meter.reads += door.reads;
         s.meter.writes += door.writes;
         if (door.status === "unloaded") return "unloaded";
@@ -2345,6 +2380,7 @@ export function recoverConstructionHolds() {
 
 /** Persist the job queue and the small kingdom record. @param {Session} s @param {Record<string, any>} [extra] */
 function persistProgress(s, extra = {}) {
+    if(s.realmGuard){const guard=s.realmGuard,overall=jobs.progress(s.queue),patch={stage:s.lastStage,ops:overall.totalOps-overall.remainingOps,opsTotal:overall.totalOps,placed:s.counts.placed,skipped:s.counts.skipped,...extra};const index=s.opts.district??1,prefix=s.opts.saveQueue?cityRepairPrefixFor(index):jobPrefixFor(index);return guard.progress(prefix,s.queue,index,patch,()=>{s.realmGuard=undefined;try{return persistProgress(s,extra);}finally{s.realmGuard=guard;}});}
     const result = s.opts.saveQueue ? s.opts.saveQueue(s.queue) : stores(s.opts.district ?? 1).jobStore.saveQueue(s.queue);
     if (!result.ok) {
         throw new Error(`could not store progress (${String(result.reason ?? result.status)})`);
@@ -2428,7 +2464,7 @@ function* constructionJob(s) {
                 if (item.stage === "gates" && s.counts.skipped > skippedBefore && !s.protectedAt(op.x, op.z)) {
                     let existing;
                     try {
-                        existing = s.dimension.getBlock({ x: op.x, y: op.y, z: op.z })?.typeId;
+                        existing = (s.realmBlocks??s.dimension).getBlock({ x: op.x, y: op.y, z: op.z })?.typeId;
                     } catch (_error) {
                         existing = undefined;
                     }
@@ -2480,11 +2516,15 @@ function* constructionJob(s) {
  *
  * @param {ConstructionOptions} opts @param {boolean} [inspection]
  * @returns {Session}
+  * @param {any} [providedRealmGuard]
  */
-function createConstructionSession(opts,inspection=false) {
+function createConstructionSession(opts,inspection=false,providedRealmGuard=undefined) {
+    if(opts.sourceContext!==undefined||isRealmMetadata(opts.record)||isRealmMetadata(opts.plan))throw Error("Foreign realm metadata cannot authorize terrain execution; scoped native proof adapter is not enabled");
     if(isTreeInspectionProtection(opts.sharedTreeProtection)&&!inspection)throw Error("Read-only tree inspection projection cannot authorize construction or repair");
+    const realmGuard=providedRealmGuard===undefined?capturePlayerRealmProtection(world):providedRealmGuard;
+    if(realmGuard){realmGuard.current();realmGuard.source(opts.district??1,opts.plan,opts.record,opts.queue);opts={...opts,protectedRects:[...opts.protectedRects,...realmGuard.claims]};playerRealmJobs.set(opts.token,realmGuard);}
     /** @type {Session} */
-    const s = {
+    const s = {realmGuard:realmGuard??undefined,realmBlocks:realmGuard?guardPlayerRealmDimension(opts.dimension,realmGuard):undefined,
         opts,
         token: opts.token,
         dimension: opts.dimension,
@@ -2530,8 +2570,12 @@ function createConstructionSession(opts,inspection=false) {
 
 /** @param {ConstructionOptions} opts @returns {Session} */
 export function startConstruction(opts) {
+    if(opts.sourceContext!==undefined||isRealmMetadata(opts.record)||isRealmMetadata(opts.plan))throw Error("Foreign realm metadata cannot authorize terrain execution; scoped native proof adapter is not enabled");
+    const realmGuard=capturePlayerRealmProtection(world);
+    realmGuard?.source(opts.district??1,opts.plan,opts.record,opts.queue);
     recoverConstructionHolds();
-    const s = createConstructionSession(opts);
+    realmGuard?.current();
+    const s = createConstructionSession(opts,false,realmGuard??null);
     session = s;
     opts.token.kind = "civ-build";
     s.done = run(s);
@@ -2576,7 +2620,9 @@ export function prepareCityRepair(record, index) {
  * Proofs/cursors persist in an independent journal; the original completion record stays intact.
  * @param {Pick<ConstructionOptions,"token"|"dimension"|"plan"|"record"|"region"|"protectedRects"|"district"|"say"|"onEnd"|"sharedTreeProtection">} opts */
 export function startCityRepair(opts) {
+    const realmPreflight=capturePlayerRealmProtection(world);realmPreflight?.source(opts.district??1,opts.plan,opts.record,undefined);
     const prepared = prepareCityRepair(opts.record,opts.district);
+    realmPreflight?.current();
     const saved = prepared.store.saveQueue(prepared.queue);
     if (!saved.ok) throw new Error(`Could not save city repair before starting (${saved.reason ?? saved.status}); no blocks changed.`);
     return startConstruction({

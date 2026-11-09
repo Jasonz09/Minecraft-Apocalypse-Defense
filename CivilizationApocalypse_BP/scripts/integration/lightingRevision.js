@@ -1,3 +1,4 @@
+import {lightingPreparationSteps} from "../civ/lightingPreparation.js";
 import {createWallLeafSourceGuard} from "../civ/wallLeafRepair.js";
 import {isPlant,isTreePart} from "../structures/terrain.js";
 import { BlockPermutation, system, world } from "@minecraft/server";
@@ -72,12 +73,17 @@ async function revise(options, state) {
         const owner=readKingdom().districts.find((/** @type {any} */d)=>d.id==="district-"+options.index)?.civ;
         if(owner?.status!=="complete"||owner?.checksum!==options.civ.checksum||owner?.dimension!==options.dimension.id)throw Error("current completed district source identity differs");
         function* checked(/** @type {Generator<any,any,any>} */generator){for(;;){sources.assert();const n=generator.next();sources.assert();if(n.done)return n.value;yield;}}
+        let progressMessages=0,lastPreparationTick=system.currentTick;
+        const prepare=(/** @type {Generator<any,any,any>} */generator,/** @type {string} */phase)=>lightingPreparationSteps(generator,{
+            assertSources:()=>sources.assert(),fastCurrent:()=>!token.cancelled&&activeToken()===token,
+            onProgress:units=>{state.view={...state.view,phase:`${phase} (${units} planning segments)`,units};const now=system.currentTick;if(progressMessages<12&&now-lastPreparationTick>=200){sources.assert();options.say([`Lighting ${phase}: ${units} bounded planning segments checked; no fixture changes during preparation.`]);sources.assert();lastPreparationTick=now;progressMessages++;}}
+        });
         options.say(["Preparing a quieter lighting layout from this district's saved plan. Buildings and interiors stay in place."]);
-        const saved = await runJobAsync(token, checked(loadSavedRunSteps(options.civ, newOps(), options.index)));
+        const saved = await runJobAsync(token, prepare(loadSavedRunSteps(options.civ, newOps(), options.index),"verifying saved source"));
         if (token.cancelled) return;
         if (!saved?.ok) throw new Error(saved?.reasons.join("; ") ?? "the saved plan could not be read");
         if(saved.district!==options.index||saved.record?.checksum!==options.civ.checksum||saved.queue?.state!=="complete")throw Error("completed saved fixture source proof differs");
-        const natural = await runJobAsync(token, checked(rehydrateSiteSteps(saved.plan, options.index, saved.payload.ground, { ...saved.payload.siteOptions, lighting: "natural" })));
+        const natural = await runJobAsync(token, prepare(rehydrateSiteSteps(saved.plan, options.index, saved.payload.ground, { ...saved.payload.siteOptions, lighting: "natural" }),"planning sparse layout"));
         if (token.cancelled) return;
         if (!natural?.ok) throw new Error(natural?.problems.join("; ") ?? "the new layout could not be planned");
         const signature = `${saved.record.checksum}:${natural.record.checksum}`;
