@@ -1,0 +1,11 @@
+{
+  "status": "staged-corrected-readonly-overlay-awaiting-independent-review",
+  "changes": ["lookupActor raw comparison after final census", "observer native frame comparison after final metadata callback"],
+  "productionEdits": false,
+  "terminalSink": false,
+  "nativeActions": false,
+  "tests": {"total": 41, "pass": 41, "fail": 0, "durationMs": 1538.8507, "newIndependentCases": 2, "preservedPriorCases": 39},
+  "strictTypecheckDiagnostics": 0,
+  "atomicity": "bounded exact reproduced traces only; no arbitrary hostile native-port linearizability claim",
+  "scope": "same previous read-only foundation; candidate does not publish or authorize terminal evidence"
+}

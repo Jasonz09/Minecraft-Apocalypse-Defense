@@ -1,0 +1,41 @@
+{
+  "utc": "2026-11-09T04:18:59.317162+00:00",
+  "decision": "PASS_REFUSAL_ONLY_FOUNDATION_NO_PUBLIC_AUTHORITY",
+  "manifestSha256": "340E89BC0A75EE0BDC4D60C094BB5DBEEFCB2290F0C7E791CBF399A82CC77215",
+  "sourceSha256": "910833DD84B60C3EA77BB357AB602FA26BB106166616C3D5396454AEF728CC61",
+  "allArtifactAndActualDependencyBaselinePinsMatch": true,
+  "independentAuthorCases": {
+    "tests": 18,
+    "pass": 18,
+    "fail": 0,
+    "durationMs": 191.6116,
+    "log": "author18.log"
+  },
+  "independentExtraProbes": {
+    "tests": 6,
+    "pass": 6,
+    "fail": 0,
+    "durationMs": 82.8071,
+    "log": "adversarial.log"
+  },
+  "independentStrictClosure": {
+    "diagnostics": 0,
+    "sourceFiles": 5,
+    "log": "typecheck.log"
+  },
+  "review": [
+    "Default/explicitfalse/nontrue flag returns undefined without accessing native reader/status collaborators.",
+    "Every enabled callback result is literallyfalse, including complete synthetic DTO, malformed/async/cyclic inputs, diagnosticreturntrue/throw, optionsmutation and repeatedcalls.",
+    "Canonical baseline is compared, never saved or returned to caller as replacement; evolved clock/resources/RNG/log/manualgate states refuse and remain preserved.",
+    "Exact never-issued v3 header and creation namespace checks are necessary predicates only; malformed/pending/future/duplicate/missingheader refuses.",
+    "No worldAPI imports, native calls, writer, owner, listener, timer, reset, activation, release or public continuation path exists."
+  ],
+  "blockers": [],
+  "limits": [
+    "preparedAuthoringProblems([]result) is NOT genuine provenance, sourceCAS, complete activation receipt validation, all-five/gate/plan/farm/queue validation or release authorization; minimal fabricated DTOs intentionally pass necessary predicates.",
+    "No actual loop/builder wiring, successful all-five build under HOLD, durable public handoff, clone epoch semantics or native acceptance.",
+    "AlwaysHOLD means no forward progress by itself; future release requires a separate reviewed durable capability rather than flipping this callback.",
+    "No promotion recommendation for public gameplay or release."
+  ],
+  "noProductionEdits": true
+}

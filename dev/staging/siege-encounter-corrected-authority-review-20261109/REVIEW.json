@@ -1,0 +1,54 @@
+{
+  "decision": "ORIGINAL_FOUR_FIXED; new same-key final-CAS coherence blocker before hooks",
+  "scope": "Independent staged-only metadata review; no source edits/main/hooks/native/aggregate effects",
+  "reviewedManifestSha256": "BE59B76F41D13089BA2391A6F32D888904B15B3A438A3FA173949C491D54459C",
+  "moduleSha256": "BB83BD72F7B530C883B33AB868B7287FF1C3EDD67211D3C48FB08A8E11FACBBD",
+  "artifactPinMismatches": [],
+  "ownerBaselinesUnchanged": true,
+  "tests": {
+    "exactOriginalPeerSix": {
+      "pass": 6,
+      "fail": 0,
+      "durationMs": 73.577,
+      "log": "original-six.log",
+      "counting": "These6are included in author22, not6additionalunique cases."
+    },
+    "allExistingCorrected": {
+      "pass": 22,
+      "fail": 0,
+      "durationMs": 94.0384,
+      "log": "all22.log"
+    },
+    "newSameKeyCoherence": {
+      "pass": 0,
+      "fail": 1,
+      "durationMs": 70.0115,
+      "log": "same-key-raw-race.log"
+    }
+  },
+  "fourFixesConfirmed": [
+    "Alive iff terminalStep null; terminal states require safe >=born step. Full would-be schema/uniqueness/caps checked before serialization.",
+    "Census after raw read catches original future-key introduction.",
+    "Shared canonical-world WeakSet prevents nested factory mutation from falsely acknowledging overwritten data; false means unacknowledged and retryable. Distinct wrapper aliases remain outside declared lock scope.",
+    "Born and terminal use detached captured primitive fields throughout; original duplicate-ID and terminal DTO mutation regressions pass."
+  ],
+  "newFinding": {
+    "id": "S5",
+    "priority": 2,
+    "function": "load()/save() final CAS",
+    "issue": "Postraw census verifies key names only. A final CAS raw getter can return prior raw while replacing the same key with another valid actor list; census is unchanged, so save overwrites the valid new observation.",
+    "reproduction": "same-key-raw-race.test.mjs: seed exists; second getDynamicProperty in next born changes same journal to seed+other but returns seed; outer acknowledges and replaces it with seed+outer.",
+    "minimumCorrection": "Add a bounded coherent raw reread/comparison around load/final publication in addition to family census, preserving the changed record on this demonstrated callback. Keep explicit best-effort/trusted native port assumptions; no finite JS checks establish atomic compare-and-swap against arbitrary last-reader/writer side effects.",
+    "scope": "Synthetic same canonical injected world, prepublication getter callback. Not a demonstrated native Bedrock property-getter side effect, not an aggregate/casualty or entity mutation bug."
+  },
+  "nativeHookGateStillOpen": [
+    "Private actor/frame/source adapter and missing readonly original-wave-by-ID lookup remain unimplemented.",
+    "Attacker branch must precede unrelated activeStore earlyreturn in existing single lifecycle subscription, absent/default exact parity.",
+    "Untracked/busy/capacity/crash coverage must be shown as partial; false response is not successful evidence.",
+    "Starter/export preservation, real managed-contact death/removal/rejoin/performance and later explicit simulation/native transaction authority remain separate gates."
+  ],
+  "aggregateDelta": 0,
+  "humanCasualtyDebit": 0,
+  "nativeAdapterImplemented": false,
+  "mainOrSourceEdits": false
+}

@@ -1,0 +1,12 @@
+{
+  "status": "frozen-staged-awaiting-independent-review",
+  "productionEdits": 0,
+  "proposal": "CivilizationApocalypse_BP/scripts/ledger/runtime.js",
+  "newCentralTest": "dev/test/ledger-access-revocation.test.mjs",
+  "baseline": {"tests": 13, "pass": 2, "fail": 11, "durationMs": 161.2547},
+  "corrected": {"tests": 46, "pass": 46, "fail": 0, "newCases": 13, "existingCases": 33, "durationMs": 187.2707},
+  "strictTypecheck": {"diagnostics": 0, "pureSourceFiles": 24},
+  "nativeActions": 0,
+  "newTimersOrSubscriptions": 0,
+  "limits": "No rollback after completed save/service, no atomic native permission lock, no native UI acceptance claim"
+}

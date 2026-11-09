@@ -1,0 +1,73 @@
+{
+  "stage": "v3-authoring-foundation-20261109",
+  "productionChanges": 0,
+  "authority": "none; DTOs synthetic, refusal-only",
+  "proposed": [
+    "CivilizationApocalypse_BP/scripts/integration/authoringHold.js"
+  ],
+  "artifacts": [
+    {
+      "path": "dev/staging/v3-authoring-foundation-20261109/actual-production-repro.log",
+      "bytes": 2092,
+      "sha256": "1AE4F72CFBBFC6AFE84068A22ED5C8F8F3267CAA3D73142A053AF9F61BD94BEC"
+    },
+    {
+      "path": "dev/staging/v3-authoring-foundation-20261109/actual-production-repro.test.mjs",
+      "bytes": 824,
+      "sha256": "21A767A66FF0C147758EE0F5B7350B75C262E78E2EBB94D71265B7247D133DBA"
+    },
+    {
+      "path": "dev/staging/v3-authoring-foundation-20261109/authoring.test.mjs",
+      "bytes": 4178,
+      "sha256": "64D5D53ADDFC274D57A6EC31D34A2715BB592E9779C079A3B878C957BE07D7E4"
+    },
+    {
+      "path": "dev/staging/v3-authoring-foundation-20261109/CHECKPOINT.json",
+      "bytes": 1100,
+      "sha256": "1120CAFE7699423A3F0B5052BF4EE65DF86AE2672A961974784FDA384F3AA036"
+    },
+    {
+      "path": "dev/staging/v3-authoring-foundation-20261109/focused.log",
+      "bytes": 1337,
+      "sha256": "9E4BF27E88035DEDF35EF3D11CA268A578E138C66746E609C4A81E322B4A0EE0"
+    },
+    {
+      "path": "dev/staging/v3-authoring-foundation-20261109/proposed/integration/authoringHold.js",
+      "bytes": 4300,
+      "sha256": "910833DD84B60C3EA77BB357AB602FA26BB106166616C3D5396454AEF728CC61"
+    },
+    {
+      "path": "dev/staging/v3-authoring-foundation-20261109/README.md",
+      "bytes": 1706,
+      "sha256": "58ACC2F4CE41E52BD80C8F68CC1094B672C99A37802C09E93C7623C91F031D4F"
+    },
+    {
+      "path": "dev/staging/v3-authoring-foundation-20261109/typecheck.log",
+      "bytes": 130,
+      "sha256": "88A353881DC6B09A194128C89292D92FFBBFDD550E838FD279F7B97B80C27C7A"
+    },
+    {
+      "path": "dev/staging/v3-authoring-foundation-20261109/typecheck.mjs",
+      "bytes": 1371,
+      "sha256": "D720C220E642A46B1479051E9CEBEDAF5B5E9BCB16CE93EC19FC3F7ED353C46B"
+    }
+  ],
+  "productionBaselines": [
+    {
+      "path": "CivilizationApocalypse_BP/scripts/kingdom/state.js",
+      "sha256": "D86F68AE94D64A41437096E9FFB569E63148001B5F72A5FCA8603330F21F4ABD"
+    },
+    {
+      "path": "CivilizationApocalypse_BP/scripts/sim/starter.js",
+      "sha256": "A731FD6C08825D617800B247C1BCA78D4D4AC56B19FBB0AD7E63C1E9E20CDF40"
+    },
+    {
+      "path": "CivilizationApocalypse_BP/scripts/sim/diplomacy.js",
+      "sha256": "828379138102BBA22A6CA925872C12D767039A26FEFB1E525DF7AEFC15279098"
+    },
+    {
+      "path": "CivilizationApocalypse_BP/scripts/config.js",
+      "sha256": "5B6E5325C3EB32B6C41EB3456E39AB529FC96C11B69A62BCF4DC8080C6F8D816"
+    }
+  ]
+}

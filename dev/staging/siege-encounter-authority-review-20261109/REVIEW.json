@@ -1,0 +1,99 @@
+{
+  "decision": "BLOCKED_BEFORE_NATIVE_HOOKS; evidence-only architecture direction acceptable",
+  "scope": "Independent source/design/hook review of first1DE6 freeze; no author/main/native/Git edits",
+  "reviewedManifestSha256": "1DE6B5C7667ED305A7B346CB50B40355DC5D4AB81B2270501CD2FA088F3C0D19",
+  "artifactPinMismatches": [],
+  "ownerBaselinesStillExact": true,
+  "proposalEqualsValidationCopy": true,
+  "filesRead": [
+    "DESIGN.md",
+    "HOOK-BOUNDARIES.md",
+    "README.md",
+    "proposed/integration/siegeEncounterEvidence.js",
+    "journal.test.mjs",
+    "authority-repros.test.mjs"
+  ],
+  "tests": {
+    "existingJournalAndPureAuthority": {
+      "pass": 14,
+      "fail": 0,
+      "durationMs": 95.9692,
+      "log": "existing14.log"
+    },
+    "actualExistingOwnerAbsence": {
+      "pass": 1,
+      "fail": 0,
+      "durationMs": 429.1783,
+      "log": "existing-owner1.log"
+    },
+    "independentAdversarial": {
+      "tests": 6,
+      "pass": 1,
+      "fail": 5,
+      "durationMs": 130.4453,
+      "log": "adversarial-complete.log",
+      "meaning": "5 failures prove4 distinct metadata defects; passing primitive-control proves aggregate0, not native identity."
+    }
+  },
+  "findings": [
+    {
+      "id": "S1",
+      "priority": 2,
+      "function": "validActor/load",
+      "issue": "Alive records with non-null terminalStep pass due OR branch; later death overwrites/normalizes the malformed source.",
+      "evidenceCases": 2,
+      "minimumCorrection": "Require phase===alive ? terminalStep===null : finite terminalStep>=bornStep, and validate proposed full schema before publishing.",
+      "authorityScope": "Metadata integrity only, not native combat authority."
+    },
+    {
+      "id": "S2",
+      "priority": 2,
+      "function": "load/save final CAS",
+      "issue": "Future namespace added in the last CAS raw getter is not re-censused; born writes v1 alongside now-present unknownv2 instead of HOLD.",
+      "evidenceCases": 1,
+      "minimumCorrection": "Bounded coherent census/raw recapture after getters and immediately before publication/readback; preserve unknown namespaces without v1 writes.",
+      "authorityScope": "Synthetic side-effecting injected port; not an observed Bedrock native failure."
+    },
+    {
+      "id": "S3",
+      "priority": 2,
+      "function": "enter/save across factories",
+      "issue": "Per-instance lock permits nested second factory to acknowledge b1, then outer setter replaces it with a1; both successful but one record lost.",
+      "evidenceCases": 1,
+      "minimumCorrection": "Share world/key operation exclusion or enforce one private instance with an explicit proven no-second-writer boundary. Detect/reject nested writes before either acknowledged observation can be lost.",
+      "authorityScope": "Reentrant injected port proof; current production callsite disabled and real engine callback behavior not assumed."
+    },
+    {
+      "id": "S4",
+      "priority": 2,
+      "function": "born duplicate lookup/save schema",
+      "issue": "candidate.id is captured once, then lookup re-reads p.id after native load. Mutation of plain DTO can append duplicate captured ID and persist a self-invalid journal while returning true.",
+      "evidenceCases": 1,
+      "minimumCorrection": "Snapshot all primitive fields once, use candidate.id consistently and validate complete output schema/uniqueness before write; do not treat supplied primitives as fresh native proof.",
+      "authorityScope": "Mutable synthetic primitive DTO/native-port callback; not fabricated native combat acceptance."
+    }
+  ],
+  "positiveScope": [
+    "No native actor/world handles escape; no entity spawn/remove/terrain/timer/listener/query code in proposed journal.",
+    "Writes scoped to one new key; advisory aggregateDelta/humanCasualtyDebit remain0.",
+    "Disabled methods return without native world access.",
+    "Unknown actor terminals do not adopt census, reasons conflict rather than relabel, save-before/after retries are bounded in existing tests.",
+    "Design explicitly distinguishes current war arithmetic and representative counts from native events; no physical outcome authority enabled."
+  ],
+  "integrationBlockers": [
+    "Correct metadata findings before optional hooks.",
+    "Missing actor-ID lookup prevents correctly recovering original wave after restart; add bounded readonly detached lookup rather than use current wave or duplicate parser.",
+    "Place optional attacker death branch before current activeStore earlyreturn; same subscription/filter, defaultdisabled parity mandatory.",
+    "Existing remove count alone is not positive own-removal proof.",
+    "No starter/export preservation/refusal, native frame adapter, managed-contact event or crash/rejoin hook proof yet.",
+    "Caps are lifelong and can exhaust; no pruning/reset shortcut."
+  ],
+  "nextSafeHook": "NEXT-HOOK.md",
+  "notFindings": [
+    "Accepting fabricated primitive observations is not by itself a native-authority vulnerability: this factory explicitly trusts its caller, is unconfigured in main and never applies aggregate effects. The private adapter must establish provenance later.",
+    "Loaded absence/top-up is current existing owner policy demonstrated by repro, not a new bug to patch with a casualty debit.",
+    "No source edits, native combat, physical breach, finite-army depletion, physical arrival/withdrawal or resource outcomes reviewed as complete."
+  ],
+  "fullPlannerOrNativeRun": false,
+  "authorSourceChanged": false
+}

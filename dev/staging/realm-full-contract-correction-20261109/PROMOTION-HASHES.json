@@ -1,0 +1,52 @@
+{
+  "scope": "Exact two test contracts for reviewed realm integration; production unchanged",
+  "proposedFiles": [
+    {
+      "destination": "dev/test/commands.test.mjs",
+      "source": "dev/staging/realm-full-contract-correction-20261109/proposed/dev/test/commands.test.mjs",
+      "sha256": "772933B25B5ED24C2C5E8CB4FE941B5114FF7F56B767A00DCAF1C83DD33B41D8",
+      "baselineSha256": "347C84D9C6DDA26C4C5214C49C269A1EE2C857440E62F8F231F3CE63B06E6A6A"
+    },
+    {
+      "destination": "dev/test/tree-inspection-streaming.test.mjs",
+      "source": "dev/staging/realm-full-contract-correction-20261109/proposed/dev/test/tree-inspection-streaming.test.mjs",
+      "sha256": "20FF707BC65894207B7733CF2AC4036AAE6B361D46E957C87292515F2AE21A77",
+      "baselineSha256": "BD33975C447700E3390B62B3E3B16F636AC5061190608CAD6F595F305A6DD84A"
+    }
+  ],
+  "originalFull": {
+    "path": "dist/realm-diagnostic-preparation-full-verify-20261109.log",
+    "sha256": "3661E52696436EA40CB1A77BE9AD4EAA9AB3F3AC696C8428D0F9B656FECFD176",
+    "pass": 2530,
+    "fail": 2,
+    "cancelled": 1,
+    "total": 2533,
+    "durationMs": 1245853.7838
+  },
+  "focused": {
+    "pass": 22,
+    "fail": 0,
+    "durationMs": 2232.2827
+  },
+  "isolatedTimeoutRecheck": {
+    "pass": 1,
+    "fail": 0,
+    "cancelled": 0,
+    "durationMs": 40428.5859,
+    "timeoutChanged": false
+  },
+  "productionChanges": false,
+  "centralChanges": false,
+  "artifacts": {
+    "BASELINE.json": "C30518962FAB75CCA5E2BA5F9A7B89550F75D92266EA1E72619B4A349E0D1EF8",
+    "focused.log": "6F52D97869CC414154A6EB8A55B4C94729991C4152EE374DA77DC9FD63F47A32",
+    "proposed.patch": "6B68E135674A4A2B45DD56FE7F47C2B0B4F587F3DB25D4F9434C163CB5DB69A2",
+    "README.md": "CD9AB797E51359F122D27822C71D410BEADEA6C5C14E730B3670A67C389EF6F5",
+    "evidence/full-failures-excerpt.txt": "DA1618D4F281D3C352305510F3303D22757B9BFF5CCA2717646FBFE6CFF5DF21",
+    "evidence/realm-full-command-contract-repro-20261109.log": "FD81C2AA4E75DC7289D17324F3FA45C2B186C7A56099909E58BE29BC562F178F",
+    "evidence/realm-full-interior-lights-isolated-20261109.log": "18564386B3DDEAB222361ACD5F7F13C7E3FC7F4AC2B8773504EF37D9003D5CFE",
+    "evidence/realm-full-tree-reader-contract-repro-20261109.log": "971DF05C391CBEAAFDAAF8908C79B2D801C26FDA5F2B70E86E15CB9FFA26900A",
+    "proposed/dev/test/commands.test.mjs": "772933B25B5ED24C2C5E8CB4FE941B5114FF7F56B767A00DCAF1C83DD33B41D8",
+    "proposed/dev/test/tree-inspection-streaming.test.mjs": "20FF707BC65894207B7733CF2AC4036AAE6B361D46E957C87292515F2AE21A77"
+  }
+}

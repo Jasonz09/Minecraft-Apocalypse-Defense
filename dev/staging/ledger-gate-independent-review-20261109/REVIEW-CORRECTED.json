@@ -1,0 +1,40 @@
+{
+  "utc": "2026-11-09T04:34:17.137435+00:00",
+  "decision": "PASS_CORRECTED_GATE_REVOCATION_BOUNDED_DELTA",
+  "manifestSha256": "3F86677E6821E0143072FA72E3DD60803BB255CCD8399D9C3EDEEF893055F20A",
+  "sourceSha256": "3C388A7A7C5961548DF1164EA9827C84AA6D7FB0A0467E1FC82985A7DF692F3C",
+  "allManifestPinsVerified": true,
+  "independentOriginalNine": {
+    "tests": 9,
+    "pass": 9,
+    "fail": 0,
+    "durationMs": 111.3487,
+    "log": "corrected9.log"
+  },
+  "independentCentralPlusExisting": {
+    "tests": 48,
+    "pass": 48,
+    "fail": 0,
+    "durationMs": 185.496,
+    "log": "corrected48.log"
+  },
+  "independentStrictTSC": {
+    "diagnostics": 0,
+    "sourceFiles": 24,
+    "log": "corrected-strict.log"
+  },
+  "review": [
+    "CC218 two reproduced gaps fixed by assembling actionContext before the final access check and using attempted wording.",
+    "Same existing per-player session/confirmation/fresh kingdom action flow; live gate rechecked before deferred show, response, delegate, save and physical followup.",
+    "Gateoff/unreadable closes affected session, prevents queued mutations/retries; freshON opens clean root.",
+    "Completed save remains saved with honest notice; revoked physical followup is held, never rollback/retry claim.",
+    "No new timer/listener/operator policy, source mutation or world action."
+  ],
+  "priorBlockedEvidence": "REVIEW-CC218.json and candidate9.log preserved; old1PASS6FAIL baseline retained.",
+  "blockers": [],
+  "limits": [
+    "No atomicpermissionlock against arbitrary every-last native/service callbacks; running/partial services cannot be undone.",
+    "Native UI acceptance and coherent main integration/full gates remain separate."
+  ],
+  "noProductionEdits": true
+}

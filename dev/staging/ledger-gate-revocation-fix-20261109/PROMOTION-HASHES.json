@@ -1,0 +1,89 @@
+{
+  "stage": "ledger-gate-revocation-fix-20261109",
+  "productionEdits": 0,
+  "promotion": [
+    {
+      "from": "proposed/ledger/runtime.js",
+      "to": "CivilizationApocalypse_BP/scripts/ledger/runtime.js"
+    },
+    {
+      "from": "proposed-tests/ledger-access-revocation.test.mjs",
+      "to": "dev/test/ledger-access-revocation.test.mjs"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "dev/staging/ledger-gate-revocation-fix-20261109/baseline.log",
+      "sha256": "DFE225AC1E246617B1BB5BA18528713529D048BDD63709C4AA68384E9D64B250",
+      "bytes": 9838
+    },
+    {
+      "path": "dev/staging/ledger-gate-revocation-fix-20261109/CHECKPOINT.json",
+      "sha256": "6547D8F0B8E72F964E5330669D346220B20158B6B3F13B4F713E29FE6CD06318",
+      "bytes": 649
+    },
+    {
+      "path": "dev/staging/ledger-gate-revocation-fix-20261109/combined-final.log",
+      "sha256": "05BCFEE0EDCDEC7EAB86DFF55CFEC5B0CA27DF2B65DF3C410AC282F3B054D3B7",
+      "bytes": 4779
+    },
+    {
+      "path": "dev/staging/ledger-gate-revocation-fix-20261109/combined.log",
+      "sha256": "2CCB006AC3A36FC2A1071E33D35169B9B150FDEAB8A4DD6B0871E421D69F70C8",
+      "bytes": 5533
+    },
+    {
+      "path": "dev/staging/ledger-gate-revocation-fix-20261109/focused-first.log",
+      "sha256": "B13F54C33FBABC1458D974A988704D321A3FD76683F54D18A62D53E4744F5C39",
+      "bytes": 1272
+    },
+    {
+      "path": "dev/staging/ledger-gate-revocation-fix-20261109/overlay-loader.mjs",
+      "sha256": "97A829439CFC795559A23038F73E76FEC98C9BC2648B50AB39C49B2FC3039DD6",
+      "bytes": 781
+    },
+    {
+      "path": "dev/staging/ledger-gate-revocation-fix-20261109/proposed-tests/ledger-access-revocation.test.mjs",
+      "sha256": "8C82FA421CB8735D3ED3A8FE26EE852BAF2586282CECD373E803E0C0523C6BE2",
+      "bytes": 6060
+    },
+    {
+      "path": "dev/staging/ledger-gate-revocation-fix-20261109/proposed/ledger/runtime.js",
+      "sha256": "7BD61F84C8830C76594B1E78785D07138F225D2335C0232890E49B0278659C81",
+      "bytes": 22338
+    },
+    {
+      "path": "dev/staging/ledger-gate-revocation-fix-20261109/README.md",
+      "sha256": "114A2B703E695B37B8A663B40CF8410A7FAB24EA08D678F5B0D8096E89EE5961",
+      "bytes": 2692
+    },
+    {
+      "path": "dev/staging/ledger-gate-revocation-fix-20261109/strict.log",
+      "sha256": "6AF9B984CBAE42ECE96E6239EDF057DCEF301B3FA92D0F39A300A27FED5619A6",
+      "bytes": 123
+    },
+    {
+      "path": "dev/staging/ledger-gate-revocation-fix-20261109/typecheck.mjs",
+      "sha256": "04BFE46C32555EFBF34A49CD81D3FFF5F73C0A65248C8CB0EA199D1D897B4F7E",
+      "bytes": 1218
+    }
+  ],
+  "baselines": [
+    {
+      "path": "CivilizationApocalypse_BP/scripts/ledger/runtime.js",
+      "sha256": "5FA02441F4641F5C37F8674CE3CD54619F62678CA660CD13766BB55F006B0925"
+    },
+    {
+      "path": "dev/lib/ledgerharness.mjs",
+      "sha256": "DDD142E1E42833D8F028B0EB2AC0C8F3153EB726927F81551954BE65B01107AE"
+    },
+    {
+      "path": "dev/test/ledger-ui.test.mjs",
+      "sha256": "FECBC0DAB6E06F0F8F4C3C319A17C2FCEEF2778616340556DD86ED7703E51F4D"
+    },
+    {
+      "path": "dev/staging/roadmap-practical-defect-audit-20261109/PROMOTION-HASHES.json",
+      "sha256": "B79EDFC3BFFB56AF52E3C439D9AD3756157AB09EF7AE63634DE5DEF1C60C4A10"
+    }
+  ]
+}

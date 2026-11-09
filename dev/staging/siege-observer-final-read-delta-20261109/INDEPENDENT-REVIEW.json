@@ -1,0 +1,25 @@
+{
+  "decision": "APPROVE_LIMITED_DETACHED_ADVISORY_OBSERVER_DELTA",
+  "manifestSha256": "611B5E7168DC949F287E43001423F554FD020335FB71E23DE2CF7A4030A3E98B",
+  "allDeltaAndPreservedPinsVerified": true,
+  "originalTwoIndependentTestsByteUnchanged": true,
+  "focused": {
+    "tests": 41,
+    "pass": 41,
+    "fail": 0,
+    "durationMs": 135.1196
+  },
+  "changesReviewed": [
+    "Exactrawrecheck after final lookupcensus; no stalealivecandidate after samekeyreplacement.",
+    "Final repeated nativeframe after second metadata callback; mutatedIDcandidateheld.",
+    "Original NULL callback/filter identity, zeroReads, originalcallbackalwaysruns and originalwave unchanged."
+  ],
+  "scope": [
+    "Advisory detached candidate only; observer does not publish terminal journal/debit.",
+    "No actual creationRuntime wiring, nativebirth registration, positive deathterminal sink or native acceptance.",
+    "Last nativeframe cannot guarantee atomicity against arbitrary mutually sideeffectinghost getters; trusted native call boundary explicitly retained.",
+    "S5 boundedCAS test passes, not a universal arbitrary-native-CAS claim."
+  ],
+  "productionChanges": false,
+  "testsFinishedNoBackgroundExecution": true
+}

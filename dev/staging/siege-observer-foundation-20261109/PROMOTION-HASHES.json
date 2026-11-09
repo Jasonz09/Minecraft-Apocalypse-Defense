@@ -1,0 +1,121 @@
+{
+  "stage": "siege-observer-foundation-20261109",
+  "proposed": [
+    "integration/siegeEncounterEvidence.js",
+    "integration/siegeDeathObserver.js"
+  ],
+  "productionEdits": 0,
+  "artifacts": [
+    {
+      "path": "dev/staging/siege-observer-foundation-20261109/additional.test.mjs",
+      "bytes": 2122,
+      "sha256": "851AC35DB4747D6DDEC8C886763EFC0BCFECA6DB61AE0C5FE9844E0C4605C8C2"
+    },
+    {
+      "path": "dev/staging/siege-observer-foundation-20261109/adversarial.test.mjs",
+      "bytes": 3721,
+      "sha256": "AA92058836B50B14E6FD89D3F8CB58E390D5694A0C4D4167BFD9BA613554C65E"
+    },
+    {
+      "path": "dev/staging/siege-observer-foundation-20261109/CHECKPOINT.json",
+      "bytes": 1224,
+      "sha256": "7581B8AFF80501A00C255399C46B38238DC7D48DFE1CA14D6C1841F9C54623EB"
+    },
+    {
+      "path": "dev/staging/siege-observer-foundation-20261109/focused.log",
+      "bytes": 3383,
+      "sha256": "F581C9D6621D7C4995823B075878B7C0F6E4D31A2E276324A4E9BD54C668327A"
+    },
+    {
+      "path": "dev/staging/siege-observer-foundation-20261109/INTEGRATION.md",
+      "bytes": 2071,
+      "sha256": "5A94FBF9F7112635ADCDBDC45A7D11BF1A8297197FBB924B5283644AD6D4018A"
+    },
+    {
+      "path": "dev/staging/siege-observer-foundation-20261109/journal.test.mjs",
+      "bytes": 4212,
+      "sha256": "278657241A8267ECBA16A6800B6C90B6B6FC3398EECD6374A84662DD92661EAD"
+    },
+    {
+      "path": "dev/staging/siege-observer-foundation-20261109/observer.test.mjs",
+      "bytes": 6153,
+      "sha256": "E06DF4A46CBEF1171EE70766C35213D985A009B02A8315755034470D34311340"
+    },
+    {
+      "path": "dev/staging/siege-observer-foundation-20261109/proposed/integration/siegeDeathObserver.js",
+      "bytes": 3737,
+      "sha256": "10DF7562A9409B028B11ABEB6A153DE86AD96770868868491B42B5D62B54D8A1"
+    },
+    {
+      "path": "dev/staging/siege-observer-foundation-20261109/proposed/integration/siegeEncounterEvidence.js",
+      "bytes": 6230,
+      "sha256": "3313F3F25A7467EDF6F797D012C97050222CD83B7E9A4B8FD85319B5C67EAA1E"
+    },
+    {
+      "path": "dev/staging/siege-observer-foundation-20261109/README.md",
+      "bytes": 2952,
+      "sha256": "A3051781A0D3975D7B99470976742BF9BF221FEE08230396C56F4BE779EFC881"
+    },
+    {
+      "path": "dev/staging/siege-observer-foundation-20261109/same-key-raw-race.test.mjs",
+      "bytes": 1418,
+      "sha256": "8AD2588F4369F63D913357B30BE7CFEBC0115A5859C4E27E5843A0B0E1FEE91F"
+    },
+    {
+      "path": "dev/staging/siege-observer-foundation-20261109/strict.log",
+      "bytes": 0,
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "path": "dev/staging/siege-observer-foundation-20261109/tsconfig.json",
+      "bytes": 282,
+      "sha256": "33ABAB39484D22B5F685B2DF1A7F36DFEE56BDADAFC2400A9ABB382EF87B2A0A"
+    },
+    {
+      "path": "dev/staging/siege-observer-foundation-20261109/validation/civ/budget.js",
+      "bytes": 11823,
+      "sha256": "F0A8377A525AFF8BD2C549C820A6DCDDC2E6AEF72F119832C67DBED4633FC8C6"
+    },
+    {
+      "path": "dev/staging/siege-observer-foundation-20261109/validation/civ/planstore.js",
+      "bytes": 18511,
+      "sha256": "990FE830871989115636DB366E7A1311A453B5E05B3E948DFA2AC22D04EFB23C"
+    },
+    {
+      "path": "dev/staging/siege-observer-foundation-20261109/validation/integration/siegeDeathObserver.js",
+      "bytes": 3737,
+      "sha256": "10DF7562A9409B028B11ABEB6A153DE86AD96770868868491B42B5D62B54D8A1"
+    },
+    {
+      "path": "dev/staging/siege-observer-foundation-20261109/validation/integration/siegeEncounterEvidence.js",
+      "bytes": 6230,
+      "sha256": "3313F3F25A7467EDF6F797D012C97050222CD83B7E9A4B8FD85319B5C67EAA1E"
+    }
+  ],
+  "preservedSources": [
+    {
+      "path": "dev/staging/siege-encounter-evidence-fixes-20261109/PROMOTION-HASHES.json",
+      "sha256": "BE59B76F41D13089BA2391A6F32D888904B15B3A438A3FA173949C491D54459C"
+    },
+    {
+      "path": "dev/staging/siege-encounter-evidence-fixes-20261109/proposed/integration/siegeEncounterEvidence.js",
+      "sha256": "BB83BD72F7B530C883B33AB868B7287FF1C3EDD67211D3C48FB08A8E11FACBBD"
+    },
+    {
+      "path": "dev/staging/siege-encounter-corrected-authority-review-20261109/same-key-raw-race.test.mjs",
+      "sha256": "F470704B382645B984684DB0C76F6551FB1D92969457408DF82A22B6710A616C"
+    },
+    {
+      "path": "CivilizationApocalypse_BP/scripts/integration/creationRuntime.js",
+      "sha256": "ACA6489E179E3AEEFC77795196E597DB19F06B6AE56C654041D1ED91F77E1DFD"
+    },
+    {
+      "path": "CivilizationApocalypse_BP/scripts/integration/siegeMobs.js",
+      "sha256": "8486712BA7B645F21FAABBB8312337AEEEF052B0C125D2B64486163261E996B5"
+    },
+    {
+      "path": "CivilizationApocalypse_BP/scripts/sim/starter.js",
+      "sha256": "A731FD6C08825D617800B247C1BCA78D4D4AC56B19FBB0AD7E63C1E9E20CDF40"
+    }
+  ]
+}

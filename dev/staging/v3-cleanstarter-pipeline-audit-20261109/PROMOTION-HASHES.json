@@ -1,0 +1,82 @@
+{
+  "scope": "read-only audit; no native or freshness authority",
+  "sources": [
+    {
+      "path": "CivilizationApocalypse_BP/scripts/sim/starter.js",
+      "sha256": "A731FD6C08825D617800B247C1BCA78D4D4AC56B19FBB0AD7E63C1E9E20CDF40",
+      "bytes": 14354
+    },
+    {
+      "path": "CivilizationApocalypse_BP/scripts/commands/starter.js",
+      "sha256": "BDAB27B26A371707A335132095DD95F0B5BB7ADA876DFC55FD6F7AD64AD60AA1",
+      "bytes": 14968
+    },
+    {
+      "path": "CivilizationApocalypse_BP/scripts/integration/creationRuntime.js",
+      "sha256": "ACA6489E179E3AEEFC77795196E597DB19F06B6AE56C654041D1ED91F77E1DFD",
+      "bytes": 6867
+    },
+    {
+      "path": "CivilizationApocalypse_BP/scripts/integration/privateFreshV3Fixture.js",
+      "sha256": "A4BB72A4EA52D2A9FFD9E2501E657C59FED1ACC610A65ECF1AFAE86A1349A447",
+      "bytes": 10187
+    },
+    {
+      "path": "CivilizationApocalypse_BP/scripts/integration/simulationLoop.js",
+      "sha256": "A45C00BF0359C5620E563CEBFEA9F19ACE7B1ABE68CC069F574357B44649A598",
+      "bytes": 4575
+    },
+    {
+      "path": "CivilizationApocalypse_BP/scripts/events/welcome.js",
+      "sha256": "AAEBED353A1302D8D25B5D2300708C63333D1AB2FBE91ADA2EBC7FDBF1DC5AC0",
+      "bytes": 1383
+    },
+    {
+      "path": "CivilizationApocalypse_BP/scripts/integration/cavalryFreshTrust.js",
+      "sha256": "299384D6802EBCC41C10A14E4226C8A79CEAC86D7040451E110355D57C701604",
+      "bytes": 339
+    },
+    {
+      "path": "CivilizationApocalypse_BP/scripts/integration/cavalryMicrotrialTrust.js",
+      "sha256": "4E21322BA738A5CCBDEDE847496335ED1901658B67F590E67AC8BF069C02C6BE",
+      "bytes": 217
+    },
+    {
+      "path": "dev/lib/release-readiness.mjs",
+      "sha256": "B8752ED5D78DF399BD1E7D734A01C1AA853D31B38DF42375BC57DA2A84845DCF",
+      "bytes": 5986
+    },
+    {
+      "path": "dev/build-template.mjs",
+      "sha256": "98D5200286DD17BF8BC0681646B537D59E99A1D34BF2883AC571E2C48025C2BC",
+      "bytes": 14035
+    },
+    {
+      "path": "dev/validate-template.mjs",
+      "sha256": "C354A38901B45EE29A7AB7AEE9C525C4D5A15434EA62FBF0C1D41136B21BC571",
+      "bytes": 21086
+    },
+    {
+      "path": "dev/check-release.mjs",
+      "sha256": "FDDEBD3A95ACA87439F0499108680B1003DA1B0544F846C46DA39A10068EA7AE",
+      "bytes": 4803
+    },
+    {
+      "path": "starter/template.json",
+      "sha256": "E2B9FB8987457CA811AA0E9DDC16571E6126D35CABFBF773A7FCADAEE2F94B67",
+      "bytes": 4006
+    },
+    {
+      "path": "starter/build-receipt.json",
+      "sha256": "F317A6C604B0159215627662F70C1D64CBC53AA9E8F077B9BE5B461AFCB9C2EB",
+      "bytes": 1203
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "dev\\staging\\v3-cleanstarter-pipeline-audit-20261109\\AUDIT.md",
+      "sha256": "4D99C1A2AF0E56D827BF210199FF36DB774981A584F2BE5923D128C2306FC8AF",
+      "bytes": 11894
+    }
+  ]
+}

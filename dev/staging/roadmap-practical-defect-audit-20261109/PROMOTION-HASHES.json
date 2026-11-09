@@ -1,0 +1,39 @@
+{
+  "scope": "read-only production defect audit with actual production callback repro",
+  "productionEdits": 0,
+  "artifacts": [
+    {
+      "path": "dev/staging/roadmap-practical-defect-audit-20261109/AUDIT.md",
+      "sha256": "E51FFC1A47CB68D14059449E1946F3FFC4B7F1B0B2C4072BE01C3CE368CAB0F4",
+      "bytes": 3218
+    },
+    {
+      "path": "dev/staging/roadmap-practical-defect-audit-20261109/ledger-gate-revocation.log",
+      "sha256": "9D80737E52ADF36E6574321553058F7AD974C4936044E7A38B753BE16D3D27C4",
+      "bytes": 1068
+    },
+    {
+      "path": "dev/staging/roadmap-practical-defect-audit-20261109/ledger-gate-revocation.test.mjs",
+      "sha256": "45073876FFCA380A9A53C0117C69F0C8E25B1778F0B0E87242631636FA7009EC",
+      "bytes": 1531
+    }
+  ],
+  "sources": [
+    {
+      "path": "CivilizationApocalypse_BP/scripts/ledger/runtime.js",
+      "sha256": "5FA02441F4641F5C37F8674CE3CD54619F62678CA660CD13766BB55F006B0925"
+    },
+    {
+      "path": "CivilizationApocalypse_BP/scripts/ledger/devgate.js",
+      "sha256": "4019A3A1DD028F8D167B06695AB0AB842AA87DA4C0F415B6B85340091166CC22"
+    },
+    {
+      "path": "CivilizationApocalypse_BP/scripts/integration/ledgerBindings.js",
+      "sha256": "7B8EDCADC37E8BDDDE239B58C76F305FF2704180EF2CD96D5C6EE57EE4659F49"
+    },
+    {
+      "path": "dev/lib/ledgerharness.mjs",
+      "sha256": "DDD142E1E42833D8F028B0EB2AC0C8F3153EB726927F81551954BE65B01107AE"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+import ts from '../../../node_modules/typescript/lib/typescript.js';import fs from 'node:fs';import path from 'node:path';import{fileURLToPath}from'node:url';
+const root=fileURLToPath(new URL('../../../',import.meta.url)),target=path.join(root,'CivilizationApocalypse_BP/scripts/ledger/runtime.js'),source=fs.readFileSync(new URL('./proposed/ledger/runtime.js',import.meta.url),'utf8');
+const options={allowJs:true,checkJs:true,noEmit:true,strict:true,skipLibCheck:false,target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.NodeNext,moduleResolution:ts.ModuleResolutionKind.NodeNext,types:[]};
+const host=ts.createCompilerHost(options),read=host.readFile;host.readFile=p=>path.resolve(p)===target?source:read(p);
+const program=ts.createProgram([target],options,host),diagnostics=ts.getPreEmitDiagnostics(program);
+console.log(ts.formatDiagnosticsWithColorAndContext(diagnostics,{getCanonicalFileName:p=>p,getCurrentDirectory:()=>root,getNewLine:()=> '\n'}));console.log(JSON.stringify({diagnostics:diagnostics.length,sourceFiles:program.getSourceFiles().filter(f=>!f.isDeclarationFile).length,scope:'in-memory actual-path candidate + production pure closure; no source edits'}));process.exitCode=diagnostics.length?1:0;

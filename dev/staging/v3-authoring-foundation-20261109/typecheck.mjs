@@ -1,0 +1,16 @@
+import ts from '../../../node_modules/typescript/lib/typescript.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+const root=fileURLToPath(new URL('../../../',import.meta.url));
+const virtual=path.join(root,'CivilizationApocalypse_BP/scripts/integration/__authoringHoldCandidate.js');
+const source=fs.readFileSync(new URL('./proposed/integration/authoringHold.js',import.meta.url),'utf8');
+const options={allowJs:true,checkJs:true,noEmit:true,strict:true,skipLibCheck:true,target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.NodeNext,moduleResolution:ts.ModuleResolutionKind.NodeNext,types:[]};
+const host=ts.createCompilerHost(options),read=host.readFile,exists=host.fileExists;
+host.readFile=p=>path.resolve(p)===virtual?source:read(p);
+host.fileExists=p=>path.resolve(p)===virtual||exists(p);
+const program=ts.createProgram([virtual],options,host);
+const diagnostics=ts.getPreEmitDiagnostics(program);
+console.log(ts.formatDiagnosticsWithColorAndContext(diagnostics,{getCanonicalFileName:p=>p,getCurrentDirectory:()=>root,getNewLine:()=> '\n'}));
+console.log(JSON.stringify({diagnostics:diagnostics.length,sourceFiles:program.getSourceFiles().filter(f=>!f.isDeclarationFile).length,scope:'virtual candidate plus actual pure production dependency closure; no source writes'}));
+process.exitCode=diagnostics.length?1:0;

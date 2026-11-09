@@ -1,0 +1,43 @@
+{
+  "decision": "HOLD_ADVISORY_CANDIDATE_FRESHNESS_CORRECTION_BEFORE_INTEGRATION",
+  "manifestSha256": "A739EE9221FF07BC97B6CA7F1AA9DC5B856E3D5473BB63D3F7B1B662CA66C797",
+  "allOriginalPinsUnchanged": true,
+  "focusedBaseline": {
+    "pass": 39,
+    "fail": 0,
+    "durationMs": 691.6107
+  },
+  "independentRepros": {
+    "pass": 0,
+    "fail": 2,
+    "durationMs": 571.1501,
+    "test": "late-observer-races.test.mjs",
+    "log": "late-observer-races.log"
+  },
+  "findings": [
+    {
+      "id": "R1",
+      "actual": "Second lookup final key census replaces SAME raw journal with valid terminal record; stale alive candidate is published.",
+      "minimalCorrection": "Recheck exact raw after final key census; preserve changed writer bytes."
+    },
+    {
+      "id": "R2",
+      "actual": "Second lookup callback changes native actor ID after second frame; stale old-ID candidate is published.",
+      "minimalCorrection": "Bounded final native identity frame after metadata callbacks; refuse changed frame."
+    }
+  ],
+  "confirmedContracts": [
+    "Disabled observer returnsNULL withoutworld/native queries; wrapper/filter NULL identityexact.",
+    "Originalcallbackalwaysrunsincludingobserverexceptions; exactreturn/exception preserved.",
+    "Originalissuedwave retained, wrongtype/district/ambiguous/tags/dimension/stalehour hold.",
+    "No observer journalwrites/aggregate changes; no native birthregistration/terminal sink exists.",
+    "S5 boundedsamekey-writeCAS regression passes and no erase/reseed."
+  ],
+  "scopeLimits": [
+    "Findings concern accuracy of ADVISORY event candidate snapshots, not demonstrated native journal/casualty mutation.",
+    "No future terminal sink authority or native event readability acceptance.",
+    "Do not claim arbitrarymutuallysideeffectinghostgetter atomicity; explicit trusted native call boundary remains.",
+    "ActualcreationRuntime single-subscription wiring notimplemented/tested by reusable wrapper tests.",
+    "No liveDB/UI/source/installed changes."
+  ]
+}

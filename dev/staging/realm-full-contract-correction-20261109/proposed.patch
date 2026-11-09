@@ -1,0 +1,54 @@
+--- a/dev/test/commands.test.mjs
++++ b/dev/test/commands.test.mjs
+@@ -155,7 +155,7 @@
+         ts.forEachChild(n,visit);
+     };
+     if(/\bevent\s*(?:\.|\[)|runCommand/.test(source))visit(ast);
+-    const durableFamilies=new Set(["plan","jobs","farm_lights","wall_leaf_trim"]);
++    const durableFamilies=new Set(["plan","jobs","farm_lights","wall_leaf_trim","realm","realm_claims"]);
+     for(const m of source.matchAll(/\bciv:([a-z_]+):([a-z0-9_]+)/g)){
+         assert.ok(durableFamilies.has(m[1]),`${file}: leftover multi-colon command-like identifier ${m[0]}`);
+     }
+@@ -164,12 +164,13 @@
+     for(const file of [...walk(scripts),...walk(join(root,"docs")),join(root,"README.md")])assertIdentifierContexts(readFileSync(file,"utf8"),file);
+ });
+ test("identifier audit rejects malformed command events even when they resemble allowed durable keys",()=>{
+-    assert.doesNotThrow(()=>assertIdentifierContexts('const key="civ:wall_leaf_trim:v1:d4:12345678"; const q="civ:jobs:meta";',"property fixture"));
+-    for(const bad of ["civ:generate:plan","civ:wall_leaf_trim:v1:d4:12345678","civ:jobs:meta","civ:status:","civ:not_registered"]){
++    assert.doesNotThrow(()=>assertIdentifierContexts('const key="civ:wall_leaf_trim:v1:d4:12345678"; const q="civ:jobs:meta"; const claims="civ:realm_claims:v1"; const realm="civ:realm:realm-1:plan:meta";',"property fixture"));
++    for(const bad of ["civ:generate:plan","civ:wall_leaf_trim:v1:d4:12345678","civ:jobs:meta","civ:status:","civ:not_registered","civ:realm_claims:v1","civ:realm:realm-1:plan:meta"]){
+         assert.throws(()=>assertIdentifierContexts("/scriptevent "+bad,"bad command fixture"),/script-event|multi-colon/);
+     }
+     assert.throws(()=>assertIdentifierContexts('const legacy="civ:generate:plan";',"legacy fixture"),/multi-colon/);
+-    for(const code of ['if(event.id === "civ:jobs:meta") {}','if("civ:wall_leaf_trim:v1" === event.id) {}','switch(event.id){case "civ:plan:meta":break;}','if(event["id"] === "civ:jobs:meta") {}','dimension.runCommand("scriptevent civ:jobs:meta")'])
++    assert.throws(()=>assertIdentifierContexts('const unknown="civ:realm_claims_extra:v1";',"unregistered family fixture"),/multi-colon/);
++    for(const code of ['if(event.id === "civ:jobs:meta") {}','if("civ:wall_leaf_trim:v1" === event.id) {}','switch(event.id){case "civ:plan:meta":break;}','if(event["id"] === "civ:jobs:meta") {}','dimension.runCommand("scriptevent civ:jobs:meta")','if(event.id === "civ:realm_claims:v1") {}','switch(event.id){case "civ:realm:realm-1:plan:meta":break;}','dimension.runCommand("scriptevent civ:realm_claims:v1")'])
+         assert.throws(()=>assertIdentifierContexts(code,"bad literal handler fixture"),/literal event/);
+     assert.doesNotThrow(()=>assertIdentifierContexts('if(event.id === "civ:status") {} switch(event.id){case "civ:people":break;}',"valid handler fixture"));
+     const fixtureFile=join(root,"dev","staging","swordsman-combat-fixture","BP","scripts","fixtureInspection.js");
+--- a/dev/test/tree-inspection-streaming.test.mjs
++++ b/dev/test/tree-inspection-streaming.test.mjs
+@@ -26,4 +26,22 @@
+ test('source/player/job cancellation across a source yield returns no accepted projection and releases source references',()=>{for(const mode of['current','cancelled']){const f=setup(),g=prepareTreeInspectionSourcesSteps(f.input,f.deps);g.next();f.state[mode]=mode==='current'?false:true;assert.throws(()=>g.next(),/guard refused/);assert.equal(f.state.loads.length,1);}});
+ test('native envelope is exact H17/V41; changed caller seed cannot move compilation after start',()=>{const f=setup(),g=prepareTreeInspectionSourcesSteps(f.input,f.deps);g.next();f.input.seed.x=999;const r=run(g);assert.deepEqual(r.bounds,treeInspectionBounds(seed));assert.equal(withinTreeInspection(r.bounds,{x:17,y:111,z:-17}),true);assert.equal(withinTreeInspection(r.bounds,{x:18,y:70,z:0}),false);assert.equal(withinTreeInspection(r.bounds,{x:0,y:112,z:0}),false);assert.throws(()=>treeInspectionBounds({x:0,y:319,z:0}));});
+ test('shared projection cap refuses instead of dropping historical tree/foreign final claims',()=>{const f=setup();assert.throws(()=>run(compileSharedTreeProtectionSteps(f.records.slice(0,1),{x0:-40,x1:40,z0:-40,z1:40},()=>true,{opsFor:f.deps.opsFor,entryLimit:1})),/cap exceeded/);assert.throws(()=>run(compileSharedTreeProtectionSteps([],{x0:0,x1:0,z0:0,z1:0},()=>true,{entryLimit:NaN})),/Invalid/);});
+-test('construction native reader remains its exact previous body behind inspector-only dispatch',()=>{const before=JSON.parse(readFileSync(new URL('../fixtures/tree-inspection-before.json',import.meta.url),'utf8')).builder,after=readFileSync(new URL('../../CivilizationApocalypse_BP/scripts/integration/civBuilder.js',import.meta.url),'utf8');const body=raw=>{const s=raw.replaceAll('\r\n','\n');return s.slice(s.indexOf('function readLive(s, x, y, z) {'),s.indexOf('\n}\n',s.indexOf('function readLive(s, x, y, z) {'))+2);};assert.equal(body(after).replace('    if(s.inspectionBounds||s.inspectionCurrent)return readInspectionLive(s,x,y,z);\n',''),body(before));assert.equal((after.match(/s\.inspectionBounds=treeInspectionBounds\(seed\)/g)||[]).length,1);assert.ok(after.includes('checked(clearTree(s, seed, true))'));});
++const oldBuilder=()=>JSON.parse(readFileSync(new URL('../fixtures/tree-inspection-before.json',import.meta.url),'utf8')).builder;
++const actualBuilder=()=>readFileSync(new URL('../../CivilizationApocalypse_BP/scripts/integration/civBuilder.js',import.meta.url),'utf8');
++function readLiveBody(raw){const s=raw.replaceAll('\r\n','\n'),at=s.indexOf('function readLive(s, x, y, z) {');assert.notEqual(at,-1);return s.slice(at,s.indexOf('\n}\n',at)+2);}
++function assertReadLiveCompatibility(after,before){
++ const raw=readLiveBody(after),withoutInspection=raw.replace('    if(s.inspectionBounds||s.inspectionCurrent)return readInspectionLive(s,x,y,z);\n','');
++ const guarded='const block = (s.realmBlocks??s.dimension).getBlock({ x, y, z });';
++ assert.equal(withoutInspection.split(guarded).length-1,1,'exactly one reviewed realm/native accessor');
++ assert.equal(withoutInspection.replace(guarded,'const block = s.dimension.getBlock({ x, y, z });'),readLiveBody(before));
++}
++test('construction native reader preserves exact previous semantics modulo inspector dispatch and reviewed realm facade',()=>{const before=oldBuilder(),after=actualBuilder();assertReadLiveCompatibility(after,before);assert.equal((after.match(/s\.inspectionBounds=treeInspectionBounds\(seed\)/g)||[]).length,1);assert.ok(after.includes('checked(clearTree(s, seed, true))'));});
++test('reader compatibility rejects changed persistent semantics or bypassed realm accessor',()=>{const before=oldBuilder(),after=actualBuilder();assert.throws(()=>assertReadLiveCompatibility(after.replace('persistent: state !== false','persistent: state === false'),before));assert.throws(()=>assertReadLiveCompatibility(after.replace('(s.realmBlocks??s.dimension).getBlock','s.dimension.getBlock'),before));});
++test('actual private construction reader routes native ports through realm guard without fallback on refusal',()=>{
++ const read=Function('isLeaves','readInspectionLive','return ('+readLiveBody(actualBuilder())+');')(id=>id.endsWith('_leaves'),()=>({inspection:true}));
++ const plain=[],guarded=[],block={isValid:true,typeId:'minecraft:oak_leaves',permutation:{getState:()=>false}};
++ const s={meter:{reads:0},dimension:{getBlock:p=>{plain.push(p);return block}}};
++ assert.deepEqual(read(s,1,70,2),{id:'minecraft:oak_leaves',persistent:false});assert.equal(plain.length,1);
++ s.realmBlocks={getBlock:p=>{guarded.push(p);return block}};assert.deepEqual(read(s,1,70,2),{id:'minecraft:oak_leaves',persistent:false});assert.equal(plain.length,1);assert.equal(guarded.length,1);
++ s.realmBlocks={getBlock:()=>{throw Error('foreign realm source changed')}};assert.equal(read(s,1,70,2),undefined);assert.match(s.lastUnread,/foreign realm source changed/);assert.equal(plain.length,1);assert.equal(s.meter.reads,3);
++});

@@ -1,0 +1,13 @@
+# Ledger access revocation — staged narrow fix
+
+Only production proposal: `CivilizationApocalypse_BP/scripts/ledger/runtime.js`. New central test target: `dev/test/ledger-access-revocation.test.mjs`. Main production/tests/worlds/installations are untouched. Existing audit/repro retained separately.
+
+The same session flow now revalidates the live Ledger gate before deferred rendering/form display, each response, beginning execution, after the fresh kingdom read/private clone, before committing the pure action, and before physical follow-up. Unreadable gate closes access. Revocation tells the affected player once and finishes only that session; an already scheduled retry cannot reopen it. Fresh explicit item use works after re-enable and existing debounce. No timers, listeners, permission system or new action semantics.
+
+A save which already completed is NOT rolled back or called unsaved if its native callback closes access. The player is told the change was saved, the session closes, and physical follow-up does not run. A service-only action which already ran before revocation is not undone or retried; its status must be checked. These checks do not create an atomic native lock across arbitrary getters/setters/services or prevent the existing gate adapter from doing its separate ordinary work later.
+
+The central-ready test imports actual active-relative runtime and the existing SDK-shaped harness only. No stage/dist runtime fallback exists in that file. The EXTERNAL overlay loader injects the proposed runtime at its actual production URL without editing main, preserving all real relative dependencies. `CIV_LEDGER_OVERLAY=baseline` uses actual unchanged production. Strict typecheck overlays the same candidate in memory and checks24pure source files with strict options/no skipLibCheck relaxation.
+
+Results: actual current baseline13cases2ONcontrolsPASS11newcontractFAIL161.2547ms. Corrected composition13new+33existing Ledger UI=46/46PASS187.2707ms. Strict0diagnostics. The retained combined.log initial45PASS1FAIL was a test-harness path error (picked nonexistent Works rather than actual Construction); live-ON service control exposed it, corrected final tests use Construction and prove abort service runs once when enabled and zero when revoked. No production fix was changed for that harness correction. focused-first.log is an earlier10case run and is not an additional unique count.
+
+Native UI acceptance and parent central promotion/full gate remain separate. Next independent review should run the peer's original7repros against this frozen runtime and inspect late load/save/service boundaries, busy retries, per-player cleanup and re-enable behavior.

@@ -1,0 +1,31 @@
+{
+  "utc": "2026-11-09T04:31:53.708874+00:00",
+  "decision": "BLOCKED_TWO_REPRODUCED_REVIEW_GAPS",
+  "manifestSha256": "CC2187E060AF7A40200FA0964BAA7B51B2382015E148E4AAC594697E59FE791E",
+  "sourceSha256": "7BD61F84C8830C76594B1E78785D07138F225D2335C0232890E49B0278659C81",
+  "originalIndependent7": {
+    "pass": 7,
+    "fail": 0,
+    "durationMs": 110.6173,
+    "log": "candidate7.log"
+  },
+  "extendedIndependent9": {
+    "pass": 7,
+    "fail": 2,
+    "log": "candidate9.log"
+  },
+  "blockers": [
+    "deps.services getter evaluated while constructing runAction ctx AFTER gatecheck can revoke gate yet confirmed service-only abort still runs. Construct ctx first, then accessCurrent immediately before runAction.",
+    "Service that revokes gate and throws before mutation yields outcome.okfalse, but status claims action ran. Use accurate attempted/outcome-aware text."
+  ],
+  "preserved": [
+    "Actual production baseline7cases1PASS6FAIL",
+    "Original7snapshot and logs",
+    "CC218 source snapshot, all author pin checks"
+  ],
+  "noEditsToAuthorOrMain": true,
+  "limits": [
+    "Not claiming atomicpermissionlock against arbitrary hostile every-last-service getter/native callbacks.",
+    "No new operator policy, broad permission redesign or native acceptance."
+  ]
+}

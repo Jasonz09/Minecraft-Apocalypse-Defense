@@ -1,0 +1,64 @@
+ℹ tests 2533
+ℹ suites 0
+ℹ pass 2530
+ℹ fail 2
+ℹ cancelled 1
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1245853.7838
+
+✖ failing tests:
+
+test at dev\test\commands.test.mjs:163:1
+✖ command identifiers stay one-colon while known durable-property families may be hierarchical (1446.2165ms)
+  AssertionError [ERR_ASSERTION]: E:\CivilizationApocalypse\CivilizationApocalypse_BP\scripts\civ\playerRealmProtection.js: leftover multi-colon command-like identifier civ:realm_claims:v1
+      at assertIdentifierContexts (file:///E:/CivilizationApocalypse/dev/test/commands.test.mjs:160:16)
+      at TestContext.<anonymous> (file:///E:/CivilizationApocalypse/dev/test/commands.test.mjs:164:92)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at dev\test\interior-lights-runtime.test.mjs:11:1
+✖ supported-fixture maintenance is read-only first, guards foreign source/target/anchor, waits for stability and resumes safely (300005.7427ms)
+  'test timed out after 300000ms'
+
+test at dev\test\tree-inspection-streaming.test.mjs:29:1
+✖ construction native reader remains its exact previous body behind inspector-only dispatch (52.3747ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+    'function readLive(s, x, y, z) {\n' +
+      '    s.meter.reads += 1;\n' +
+      '    try {\n' +
+  +   '        const block = (s.realmBlocks??s.dimension).getBlock({ x, y, z });\n' +
+  -   '        const block = s.dimension.getBlock({ x, y, z });\n' +
+      '        if (block === undefined || block.isValid === false) {\n' +
+      '            s.lastUnread = `tree read at (${x}, ${y}, ${z}): ${block === undefined ? "no block returned" : "invalid block"}`;\n' +
+      '            return undefined;\n' +
+      '        }\n' +
+      '        const id = block.typeId;\n' +
+  
+      at TestContext.<anonymous> (file:///E:/CivilizationApocalypse/dev/test/tree-inspection-streaming.test.mjs:29:533)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'function readLive(s, x, y, z) {\n    s.meter.reads += 1;\n    try {\n        const block = (s.realmBlocks??s.dimension).getBlock({ x, y, z });\n        if (block === undefined || block.isValid === false) {\n            s.lastUnread = `tree read at (${x}, ${y}, ${z}): ${block === undefined ? "no block returned" : "invalid block"}`;\n            return undefined;\n        }\n        const id = block.typeId;\n        if (isLeaves(id)) {\n            const state = block.permutation?.getState("persistent_bit");\n            return { id, persistent: state !== false };\n        }\n        return { id };\n    } catch (error) {\n        s.lastUnread = `tree read at (${x}, ${y}, ${z}): ${String(error)}`;\n        return undefined;\n    }\n}',
+    expected: 'function readLive(s, x, y, z) {\n    s.meter.reads += 1;\n    try {\n        const block = s.dimension.getBlock({ x, y, z });\n        if (block === undefined || block.isValid === false) {\n            s.lastUnread = `tree read at (${x}, ${y}, ${z}): ${block === undefined ? "no block returned" : "invalid block"}`;\n            return undefined;\n        }\n        const id = block.typeId;\n        if (isLeaves(id)) {\n            const state = block.permutation?.getState("persistent_bit");\n            return { id, persistent: state !== false };\n        }\n        return { id };\n    } catch (error) {\n        s.lastUnread = `tree read at (${x}, ${y}, ${z}): ${String(error)}`;\n        return undefined;\n    }\n}',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

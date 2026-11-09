@@ -1,0 +1,12 @@
+{
+  "status": "staged-refusal-foundation-only",
+  "productionEdits": false,
+  "nativeActions": false,
+  "trustCreated": false,
+  "actualProductionRepros": {"tests": 2, "pass": 0, "fail": 2, "purpose": "retained desired-contract failures: current baseline resets77to0 and current starter refuses all v3 creation keys"},
+  "focused": {"tests": 18, "pass": 18, "fail": 0, "durationMs": 583.2282},
+  "strictTypecheck": {"diagnostics": 0, "pureSourceClosureFiles": 5},
+  "scope": "default undefined callback; opt-in always-HOLD pre-step function; refusal-only canonical-state/header predicates, no writer or activation",
+  "notProved": ["actual simulation-loop wiring", "all-five construction while held", "genuine normal-world provenance", "native preparation", "atomic or restart-safe arming", "public continuation", "template clone epoch contract", "finished-city release"],
+  "nextGate": "independent review of refusal-only helper, then a separately reviewed genuinely authorized normal-source integration and actual existing-loop/builder callback tests; no promotion as public freshness authority"
+}

@@ -1,0 +1,13 @@
+{
+  "status": "staged-readonly-foundation-not-native-wired",
+  "productionEdits": false,
+  "nativeActions": false,
+  "newSubscriptions": 0,
+  "newTimers": 0,
+  "aggregateOrResourceDebit": 0,
+  "focused": {"tests": 39, "pass": 39, "fail": 0, "durationMs": 110.8818, "breakdown": "22 preserved corrected journal cases + original S5 assertion with stage-only import adjustment +16new observer/lookup cases"},
+  "strictTypecheck": {"diagnostics": 0, "options": "existing strict validation closure; no relaxed flags"},
+  "s5Decision": "bounded coherent reread correction catches actual reproduced trace; trust final native getter/setter and canonical world port, no arbitrary-host atomic CAS claim",
+  "writes": "Only the existing journal proposal's born/death/ownerRemoved methods can publish journal metadata. The NEW death observer and lookup do not write; synthetic births in tests are not native authority.",
+  "notProved": ["native birth provenance", "native deadEntity readability", "actual production callback wiring", "owner-remove confirmation", "all encounter family starter/export guards", "full siege coverage", "combat cause/outcome authority", "aggregate casualty reconciliation", "native or release readiness"]
+}
