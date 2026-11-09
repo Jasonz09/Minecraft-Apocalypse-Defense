@@ -1,0 +1,66 @@
+{
+  "utc": "2026-11-09T01:00:18.705353+00:00",
+  "scope": "STAGED ONLY central68; no active edits, synthetic trust only",
+  "proposedFiles": [
+    {
+      "staged": "proposed/dev/fixtures/cavalry-v3-native-stub.mjs",
+      "destination": "dev/fixtures/cavalry-v3-native-stub.mjs",
+      "sha256": "D70076D0D743CF96F8B844777033A7A83D128F5B5C8B4671C709EA628A71C42E",
+      "bytes": 60,
+      "baselineSha256": null
+    },
+    {
+      "staged": "proposed/dev/fixtures/cavalry-v3-synthetic-trust.mjs",
+      "destination": "dev/fixtures/cavalry-v3-synthetic-trust.mjs",
+      "sha256": "B968CE60CF9E6E9B63DD4529A2BC0468B73ED94FDBEEB0AF73543B60D0F57A49",
+      "bytes": 367,
+      "baselineSha256": null
+    },
+    {
+      "staged": "proposed/dev/fixtures/creation-runtime-v2-before-cavalry.txt",
+      "destination": "dev/fixtures/creation-runtime-v2-before-cavalry.txt",
+      "sha256": "3393D6B86E29AC5D2A243C873E995697D551B566E4B5E7CBE652FBD6455505D5",
+      "bytes": 5908,
+      "baselineSha256": null
+    },
+    {
+      "staged": "proposed/dev/lib/cavalry-v3-fixture.mjs",
+      "destination": "dev/lib/cavalry-v3-fixture.mjs",
+      "sha256": "8A0164D89E4885338013757738FE76D71F85EDEA830C44CC27E557ABFF83FA61",
+      "bytes": 1587,
+      "baselineSha256": null
+    },
+    {
+      "staged": "proposed/dev/lib/cavalry-v3-test-loader.mjs",
+      "destination": "dev/lib/cavalry-v3-test-loader.mjs",
+      "sha256": "7D6B59848AFC1A623CE0AE3A238BB0F03E6F81B114C7B720AB4D478F6CFA44A7",
+      "bytes": 922,
+      "baselineSha256": null
+    },
+    {
+      "staged": "proposed/dev/test/cavalry-v3-activation.test.mjs",
+      "destination": "dev/test/cavalry-v3-activation.test.mjs",
+      "sha256": "CB2652D4F6A8081EF552D5E77157837DA162CF8CA2775E9F122E44DDEE1A57D0",
+      "bytes": 8801,
+      "baselineSha256": null
+    },
+    {
+      "staged": "proposed/dev/test/cavalry-v3-composition.test.mjs",
+      "destination": "dev/test/cavalry-v3-composition.test.mjs",
+      "sha256": "AE135B7F4DE453983AA56797F97C2F583C789F8B90922C12C221E4ECC7425966",
+      "bytes": 7513,
+      "baselineSha256": null
+    },
+    {
+      "staged": "proposed/dev/test/cavalry-v3-native-owner.test.mjs",
+      "destination": "dev/test/cavalry-v3-native-owner.test.mjs",
+      "sha256": "E37279DACDBB9F55E11361080F770C1E7E1BD170261635808659108F41AAE056",
+      "bytes": 16578,
+      "baselineSha256": null
+    }
+  ],
+  "validation": {
+    "pass": 68,
+    "durationMs": 300.1429
+  }
+}

@@ -1,0 +1,100 @@
+{
+  "state": "REVIEW_REQUIRED_NO_REAL_PROFILE",
+  "sourceReceipt": null,
+  "pristineSourceDirectory": null,
+  "reviewedSourceInventorySha256": null,
+  "privateDescriptor": null,
+  "privateMicrotrialOrigin": null,
+  "forbidden": [
+    "activated v2 world",
+    "played guard fixture",
+    "public fresh=true proof",
+    "reuse prior epoch or activation receipt"
+  ],
+  "compileOnlyAfterRootReview": [
+    "integration/cavalryFreshTrust.js",
+    "integration/cavalryMicrotrialTrust.js"
+  ],
+  "oldV2TrustMustRemainNull": true,
+  "nativeAcceptance": false,
+  "proposedSetup": {
+    "status": "PROPOSAL_NOT_EXECUTED",
+    "worldScope": "new pristine-derived disposable actor-test world only; not release city/template",
+    "origin": {
+      "x": 8,
+      "y": 301,
+      "z": 8
+    },
+    "derivedHome": {
+      "x": 4,
+      "y": 301,
+      "z": -16
+    },
+    "padBounds": {
+      "x": [
+        3,
+        13
+      ],
+      "z": [
+        3,
+        13
+      ],
+      "floorY": 300,
+      "interiorAirY": [
+        301,
+        319
+      ],
+      "wallY": [
+        301,
+        303
+      ]
+    },
+    "maximumFillWrites": 2540,
+    "commandsBeforeActivation": [
+      "/gamemode spectator @s",
+      "/tp @s 8.5 307 8.5 0 60",
+      "/difficulty peaceful",
+      "/gamerule doMobSpawning false",
+      "/fill 3 301 3 13 319 13 minecraft:air",
+      "/fill 3 300 3 13 300 13 minecraft:stone_bricks",
+      "/fill 3 301 3 3 303 13 minecraft:stone_bricks",
+      "/fill 13 301 3 13 303 13 minecraft:stone_bricks",
+      "/fill 4 301 3 12 303 3 minecraft:stone_bricks",
+      "/fill 4 301 13 12 303 13 minecraft:stone_bricks",
+      "/execute if block 8 300 8 minecraft:stone_bricks if block 6 300 8 minecraft:stone_bricks if block 8 301 8 minecraft:air if block 8 304 8 minecraft:air run testforblock 6 302 8 minecraft:air",
+      "/scriptevent civ:generate_devgate on",
+      "/scriptevent civ:people creation fresh confirm",
+      "/scriptevent civ:people creation status"
+    ],
+    "commandsAfterPositiveCompleteV3": [
+      "/scriptevent civ:people on",
+      "/scriptevent civ:people inspect group=district-1:sol:0",
+      "/testfor @e[type=civ_trial:cavalry]",
+      "/testfor @e[type=civ_trial:cavalry_mount]",
+      "/scriptevent civ:people off"
+    ],
+    "cadence": "existing once-per-accepted-simulation-hour owner, not a new timer; minimum reservation+rider+mount+seat =4 owner passes",
+    "caps": {
+      "actorSlots": 2,
+      "maxOpsPerTick": 1,
+      "maxSpawnsPerTick": 1,
+      "physicalRadius": 1,
+      "holdRadius": 3,
+      "coarseRadius": 4
+    },
+    "eligibility": "only derived district-1:sol:0 is at private anchor; unchanged kingdom aggregate, other groups have no nearby eligible spot",
+    "forbidden": [
+      "summon/kill/heal/teleport rider or horse to fake owner success",
+      "fill normal city/template",
+      "reuse activated v2 world/receipt",
+      "delete binding/activation records"
+    ],
+    "beforeRootCompile": [
+      "review genuine original source + closed pristine-derived pad command/backup chain",
+      "new fixture ID/epoch; descriptor/profile fixture IDs match",
+      "old v2 trust remains NULL",
+      "review content-pack graph allowance and full defaults",
+      "independent native floor/body proof required even though coordinates are proposed"
+    ]
+  }
+}

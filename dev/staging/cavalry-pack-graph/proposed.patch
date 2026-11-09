@@ -1,0 +1,101 @@
+--- /dev/null
++++ b/dev/fixtures/cavalry-vanilla-texture-reference.json
+@@ -0,0 +1,23 @@
++{
++  "utc": "2026-11-09T00:27:51.127916+00:00",
++  "primaryOfficialSample": "https://raw.githubusercontent.com/Mojang/bedrock-samples/v1.26.0.2/resource_pack/entity/horse_v1.entity.json",
++  "repository": "Mojang/bedrock-samples",
++  "ref": "v1.26.0.2",
++  "gitRefObject": {
++    "sha": "6ecff5fb86d6149cec0507665ea5686f3800b193",
++    "type": "commit",
++    "url": "https://api.github.com/repos/Mojang/bedrock-samples/git/commits/6ecff5fb86d6149cec0507665ea5686f3800b193"
++  },
++  "sampleSha256": "D1837825FB1A202961A1D40DCCE6635DD2E8C3ED63BF0DA2FAF71FFBB1959B14",
++  "sampleBytes": 4410,
++  "facts": {
++    "formatVersion": "1.10.0",
++    "identifier": "minecraft:horse",
++    "brownTextureAlias": "base_brown",
++    "brownTexturePath": "textures/entity/horse/horse_brown"
++  },
++  "scope": "Only sample JSON read and facts/hash retained; no texture/image bytes fetched/copied. This establishes official reference path, not native custom render/import acceptance.",
++  "failedInitialLookup": "horse.entity.json does not exist at this ref; correct official filename is horse_v1.entity.json",
++  "immutablePrimaryURL": "https://raw.githubusercontent.com/Mojang/bedrock-samples/6ecff5fb86d6149cec0507665ea5686f3800b193/resource_pack/entity/horse_v1.entity.json",
++  "immutableCommitBytesMatch": true
++}
+--- a/dev/lib/content-packs.mjs
++++ b/dev/lib/content-packs.mjs
+@@ -4,7 +4,7 @@
+ const triple = (v) => Array.isArray(v) && v.length === 3 && v.every(n => Number.isInteger(n) && n >= 0);
+ const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+ const same = (a,b) => JSON.stringify(a) === JSON.stringify(b);
+-export const REQUIRED_ENTITY_IDS=Object.freeze(["civ_trial:swordsman","civ_trial:archer","civ_trial:guard_arrow"]);
++export const REQUIRED_ENTITY_IDS=Object.freeze(["civ_trial:swordsman","civ_trial:archer","civ_trial:guard_arrow","civ_trial:cavalry","civ_trial:cavalry_mount"]);
+ const jsonFiles = (dir) => !existsSync(dir) ? [] : readdirSync(dir,{withFileTypes:true}).flatMap(e =>
+     e.isDirectory() ? jsonFiles(join(dir,e.name)) : e.name.endsWith(".json") ? [join(dir,e.name)] : []);
+ 
+@@ -55,6 +55,14 @@
+             &&same(d.materials,{default:"arrow"})&&same(d.geometry,{default:"geometry.arrow"})
+             &&same(d.textures,{default:"textures/entity/arrows"})&&same(d.animations,{move:"animation.arrow.move"})
+             &&same(d.render_controllers,["controller.render.arrow"]);
++        // Reviewed official legacy horse texture only for this exact custom client
++        // profile. Its geometry/controller remain mandatory owned local assets.
++        const builtinMount=d.identifier==="civ_trial:cavalry_mount"
++            &&same(Object.keys(d).sort(),["identifier","materials","textures","geometry","render_controllers"].sort())
++            &&same(d.materials,{default:"entity_alphatest"})
++            &&same(d.geometry,{default:"geometry.civ_trial.cavalry_mount"})
++            &&same(d.textures,{default:"textures/entity/horse/horse_brown"})
++            &&same(d.render_controllers,["controller.render.civ_trial.swordsman"]);
+         const bones=new Set();
+         for(const id of Object.values(d.geometry??{})) {
+             if(builtinArrow&&id==="geometry.arrow")continue;
+@@ -65,7 +73,7 @@
+             if(builtinArrow&&path==="textures/entity/arrows")continue;
+             if(typeof path!=="string"||!/^textures\/[A-Za-z0-9_/-]+$/.test(path)){problems.push(`unsafe texture reference for ${d.identifier}`);continue;}
+             const file=join(root,`${path}.png`);
+-            if(!fileExists(file)){problems.push(`missing texture ${path} for ${d.identifier}`);continue;}
++            if(!fileExists(file)){if(builtinMount&&path==="textures/entity/horse/horse_brown")continue;problems.push(`missing texture ${path} for ${d.identifier}`);continue;}
+             const png=readFile(file);
+             if(png.length<24||!png.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])))problems.push(`invalid PNG texture ${path}`);
+         }
+--- /dev/null
++++ b/dev/test/cavalry-content-packs.test.mjs
+@@ -0,0 +1,18 @@
++import test from 'node:test';import assert from 'node:assert/strict';
++import {cpSync,mkdirSync,mkdtempSync,readFileSync,writeFileSync,rmSync,existsSync} from 'node:fs';import {join,resolve} from 'node:path';import {tmpdir} from 'node:os';
++import {contentPackProblems,REQUIRED_ENTITY_IDS} from '../lib/content-packs.mjs';
++const project=resolve(import.meta.dirname,'../..');
++function fixture(t){const root=mkdtempSync(join(tmpdir(),'ca-cavalry-graph-'));t.after(()=>rmSync(root,{recursive:true,force:true}));const bp=join(root,'BP'),rp=join(root,'RP');mkdirSync(bp);cpSync(join(project,'CivilizationApocalypse_BP/manifest.json'),join(bp,'manifest.json'));cpSync(join(project,'CivilizationApocalypse_BP/entities'),join(bp,'entities'),{recursive:true});cpSync(join(project,'CivilizationApocalypse_RP'),rp,{recursive:true});return{root,bp,rp,packs:[{kind:'behavior_packs',root:bp},{kind:'resource_packs',root:rp}]};}
++function change(path,fn){const j=JSON.parse(readFileSync(path,'utf8'));fn(j);writeFileSync(path,JSON.stringify(j));}
++const problems=f=>contentPackProblems(f.packs).join('\n');
++test('complete five entity pairs accept exact builtin horse texture without shipping vanilla PNG',t=>{const f=fixture(t);assert.deepEqual(REQUIRED_ENTITY_IDS,['civ_trial:swordsman','civ_trial:archer','civ_trial:guard_arrow','civ_trial:cavalry','civ_trial:cavalry_mount']);assert.deepEqual(contentPackProblems(f.packs),[]);assert.equal(existsSync(join(f.rp,'textures/entity/horse/horse_brown.png')),false);});
++test('cavalry and mount each require their behavior AND client pair',t=>{for(const [kind,name]of[['BP','cavalry'],['BP','cavalry_mount'],['RP','cavalry'],['RP','cavalry_mount']]){const f=fixture(t);rmSync(kind==='BP'?join(f.bp,'entities',name+'.json'):join(f.rp,'entity',name+'.entity.json'));assert.match(problems(f),new RegExp('required entity pair is missing: civ_trial:'+name));}});
++test('missing cavalry behavior cannot be hidden behind resource files or a disabled script flag',t=>{const f=fixture(t);rmSync(join(f.bp,'entities/cavalry.json'));rmSync(join(f.bp,'entities/cavalry_mount.json'));const p=problems(f);assert.match(p,/required entity pair is missing: civ_trial:cavalry/);assert.match(p,/required entity pair is missing: civ_trial:cavalry_mount/);});
++test('wrong material, changed geometry alias, extended scripts or extra textures gains no builtin exception',t=>{for(const mode of ['material','geometry','scripts','extra']){const f=fixture(t);change(join(f.rp,'entity/cavalry_mount.entity.json'),j=>{const d=j['minecraft:client_entity'].description;if(mode==='material')d.materials.default='not-reviewed';if(mode==='geometry')d.geometry.extra='geometry.missing';if(mode==='scripts')d.scripts={initialize:[]};if(mode==='extra')d.textures.other='textures/entity/missing';});assert.match(problems(f),/missing texture textures\/entity\/horse\/horse_brown for civ_trial:cavalry_mount/);}});
++test('other custom identity and alternate vanilla horse texture remain unreviewed missing assets',t=>{for(const mode of ['identity','texture']){const f=fixture(t);change(join(f.rp,'entity/cavalry_mount.entity.json'),j=>{const d=j['minecraft:client_entity'].description;if(mode==='identity')d.identifier='civ_trial:foreign';else d.textures.default='textures/entity/horse/horse_white';});assert.match(problems(f),/missing texture textures\/entity\/horse\/horse_/);}});
++test('custom horse geometry remains a required local artifact, never treated as builtin',t=>{const f=fixture(t);rmSync(join(f.rp,'models/entity/cavalry_mount.geo.json'));assert.match(problems(f),/missing geometry geometry.civ_trial.cavalry_mount/);});
++test('shared owned render controller and rider texture remain required',t=>{for(const mode of ['controller','texture']){const f=fixture(t);rmSync(join(f.rp,mode==='controller'?'render_controllers/swordsman.render_controllers.json':'textures/entity/civ_trial/swordsman.png'));assert.match(problems(f),mode==='controller'?/missing render controller controller.render.civ_trial.swordsman/:/missing texture textures\/entity\/civ_trial\/swordsman/);}});
++test('provided corrupt local horse texture cannot hide behind builtin fallback',t=>{const f=fixture(t),folder=join(f.rp,'textures/entity/horse');mkdirSync(folder,{recursive:true});writeFileSync(join(folder,'horse_brown.png'),'not a PNG');assert.match(problems(f),/invalid PNG texture textures\/entity\/horse\/horse_brown/);});
++test('existing exact arrow exception remains intact, while a mutated arrow material still refuses',t=>{const f=fixture(t);assert.deepEqual(contentPackProblems(f.packs),[]);change(join(f.rp,'entity/guard_arrow.entity.json'),j=>j['minecraft:client_entity'].description.materials.default='not-arrow');assert.match(problems(f),/missing geometry geometry.arrow/);});
++
++test('builtin exception matches immutable official Mojang horse_v1 JSON reference projection',()=>{const ref=JSON.parse(readFileSync(new URL('../fixtures/cavalry-vanilla-texture-reference.json',import.meta.url),'utf8')),client=JSON.parse(readFileSync(join(project,'CivilizationApocalypse_RP/entity/cavalry_mount.entity.json'),'utf8'))['minecraft:client_entity'].description;assert.equal(ref.repository,'Mojang/bedrock-samples');assert.equal(ref.gitRefObject.sha,'6ecff5fb86d6149cec0507665ea5686f3800b193');assert.equal(ref.immutableCommitBytesMatch,true);assert.equal(ref.facts.identifier,'minecraft:horse');assert.equal(ref.facts.brownTexturePath,client.textures.default);assert.match(ref.sampleSha256,/^[A-F0-9]{64}$/);assert.match(ref.immutablePrimaryURL,/Mojang\/bedrock-samples\/6ecff5fb86d6149cec0507665ea5686f3800b193\/resource_pack\/entity\/horse_v1.entity.json$/);});
+--- a/dev/test/developer-preview.test.mjs
++++ b/dev/test/developer-preview.test.mjs
+@@ -13,13 +13,13 @@
+ const project=fileURLToPath(new URL('../../',import.meta.url));
+ const hash=bytes=>createHash('sha256').update(bytes).digest('hex').toUpperCase(),read=p=>JSON.parse(readFileSync(p,'utf8'));
+ function fixture(t){const root=mkdtempSync(join(tmpdir(),'ca-preview-'));t.after(()=>{const rel=relative(realpathSync(tmpdir()),realpathSync(root));assert.ok(rel&&!isAbsolute(rel)&&rel!=='..'&&!rel.startsWith('..'));rmSync(root,{recursive:true,force:false});});const put=(name,data)=>{const p=join(root,name);mkdirSync(resolve(p,'..'),{recursive:true});writeFileSync(p,data);return p;};
+- for(const name of ['CivilizationApocalypse_BP/manifest.json','CivilizationApocalypse_BP/entities/archer.json','CivilizationApocalypse_BP/entities/guard_arrow.json','CivilizationApocalypse_RP/animations/archer.animation.json','CivilizationApocalypse_RP/entity/archer.entity.json','CivilizationApocalypse_RP/entity/guard_arrow.entity.json','CivilizationApocalypse_RP/models/entity/archer.geo.json','CivilizationApocalypse_RP/render_controllers/archer.render_controllers.json','CivilizationApocalypse_BP/entities/swordsman.json','CivilizationApocalypse_RP/manifest.json','CivilizationApocalypse_RP/animations/swordsman.animation.json','CivilizationApocalypse_RP/entity/swordsman.entity.json','CivilizationApocalypse_RP/models/entity/swordsman.geo.json','CivilizationApocalypse_RP/render_controllers/swordsman.render_controllers.json','CivilizationApocalypse_RP/textures/entity/civ_trial/swordsman.png'])put(name,readFileSync(join(project,name)));
++ for(const name of ['CivilizationApocalypse_BP/manifest.json','CivilizationApocalypse_BP/entities/cavalry.json','CivilizationApocalypse_BP/entities/cavalry_mount.json','CivilizationApocalypse_RP/entity/cavalry.entity.json','CivilizationApocalypse_RP/entity/cavalry_mount.entity.json','CivilizationApocalypse_RP/models/entity/cavalry_mount.geo.json','CivilizationApocalypse_BP/entities/archer.json','CivilizationApocalypse_BP/entities/guard_arrow.json','CivilizationApocalypse_RP/animations/archer.animation.json','CivilizationApocalypse_RP/entity/archer.entity.json','CivilizationApocalypse_RP/entity/guard_arrow.entity.json','CivilizationApocalypse_RP/models/entity/archer.geo.json','CivilizationApocalypse_RP/render_controllers/archer.render_controllers.json','CivilizationApocalypse_BP/entities/swordsman.json','CivilizationApocalypse_RP/manifest.json','CivilizationApocalypse_RP/animations/swordsman.animation.json','CivilizationApocalypse_RP/entity/swordsman.entity.json','CivilizationApocalypse_RP/models/entity/swordsman.geo.json','CivilizationApocalypse_RP/render_controllers/swordsman.render_controllers.json','CivilizationApocalypse_RP/textures/entity/civ_trial/swordsman.png'])put(name,readFileSync(join(project,name)));
+  put('CivilizationApocalypse_BP/scripts/main.js','// synthetic test pack, not Minecraft acceptance\n');put('starter/build-receipt.json','historical receipt unchanged');put('dist/templates/historical.mctemplate','historical archive unchanged');
+  const historical=()=>[hash(readFileSync(join(root,'starter/build-receipt.json'))),hash(readFileSync(join(root,'dist/templates/historical.mctemplate')))];return{root,put,historical,build:(label='preview',options={})=>buildDeveloperPreview({projectRoot:root,label,dryRun:false,...options}),validate:directory=>validateDeveloperPreview({projectRoot:root,directory})};}
+ function files(root){const out=[];const visit=(d,p='')=>{for(const e of readdirSync(d,{withFileTypes:true})){const at=p+e.name;if(e.isDirectory())visit(join(d,e.name),at+'/');else out.push(at);}};visit(root);return out.sort();}
+ function rewriteOutputHash(directory,name){const path=join(directory,'preview-receipt.json'),r=read(path),out=r.outputs.find(f=>f.name===name),bytes=readFileSync(join(directory,name));out.sha256=hash(bytes);out.bytes=bytes.length;writeFileSync(path,JSON.stringify(r,null,2)+'\n');}
+-test('dryrun checks complete pair and leaves entire project, historical archive and receipt unchanged',t=>{const f=fixture(t),before=files(f.root),history=f.historical(),r=buildDeveloperPreview({projectRoot:f.root,label:'dry'});assert.equal(r.dryRun,true);assert.equal(r.sourceFiles,16);assert.equal(r.worldIncluded,false);assert.equal(r.releaseApproved,false);assert.equal(r.bindingStatus.state,'NOT_CHECKED');assert.deepEqual(files(f.root),before);assert.deepEqual(f.historical(),history);});
+-test('actual paired MCPACK-in-MCADDON bytes and binding examples validate, with no world or release claims',t=>{const f=fixture(t),history=f.historical(),r=f.build(),v=f.validate(r.output),receipt=read(join(r.output,'preview-receipt.json'));assert.equal(v.valid,true);assert.equal(v.sourceFiles,16);assert.equal(v.pairedPacks,2);for(const key of ['worldIncluded','releaseApproved','cleanStarterVerified'])assert.equal(v[key],false);assert.equal(receipt.nativeImportVerified,false);const bytes=readFileSync(join(r.output,'developer-preview.mcaddon')),entries=listZip(bytes);assert.deepEqual(entries.map(e=>e.name),['behavior.mcpack','resources.mcpack']);for(const e of entries)assert.ok(readZipEntry(bytes,e).equals(readFileSync(join(r.output,'packs',e.name))));assert.equal(files(r.output).some(p=>p.includes('level.dat')||p.startsWith('db/')||p.endsWith('.mctemplate')),false);assert.deepEqual(f.historical(),history);});
++test('dryrun checks complete pair and leaves entire project, historical archive and receipt unchanged',t=>{const f=fixture(t),before=files(f.root),history=f.historical(),r=buildDeveloperPreview({projectRoot:f.root,label:'dry'});assert.equal(r.dryRun,true);assert.equal(r.sourceFiles,21);assert.equal(r.worldIncluded,false);assert.equal(r.releaseApproved,false);assert.equal(r.bindingStatus.state,'NOT_CHECKED');assert.deepEqual(files(f.root),before);assert.deepEqual(f.historical(),history);});
++test('actual paired MCPACK-in-MCADDON bytes and binding examples validate, with no world or release claims',t=>{const f=fixture(t),history=f.historical(),r=f.build(),v=f.validate(r.output),receipt=read(join(r.output,'preview-receipt.json'));assert.equal(v.valid,true);assert.equal(v.sourceFiles,21);assert.equal(v.pairedPacks,2);for(const key of ['worldIncluded','releaseApproved','cleanStarterVerified'])assert.equal(v[key],false);assert.equal(receipt.nativeImportVerified,false);const bytes=readFileSync(join(r.output,'developer-preview.mcaddon')),entries=listZip(bytes);assert.deepEqual(entries.map(e=>e.name),['behavior.mcpack','resources.mcpack']);for(const e of entries)assert.ok(readZipEntry(bytes,e).equals(readFileSync(join(r.output,'packs',e.name))));assert.equal(files(r.output).some(p=>p.includes('level.dat')||p.startsWith('db/')||p.endsWith('.mctemplate')),false);assert.deepEqual(f.historical(),history);});
+ test('unchanged complete source yields deterministic pack and paired addon payloads across new labels',t=>{const f=fixture(t),a=f.build('first'),b=f.build('second');assert.equal(a.archiveSha256,b.archiveSha256);for(const p of ['behavior.mcpack','resources.mcpack'])assert.ok(readFileSync(join(a.output,'packs',p)).equals(readFileSync(join(b.output,'packs',p))));});
+ test('missing RP and wrong dependency both refuse preflight before any output mutation',t=>{for(const mode of ['missing','dependency']){const f=fixture(t),history=f.historical();if(mode==='missing')rmSync(join(f.root,'CivilizationApocalypse_RP/manifest.json'));else{const p=join(f.root,'CivilizationApocalypse_BP/manifest.json'),m=read(p);m.dependencies.find(d=>d.uuid).version=[9,9,9];writeFileSync(p,JSON.stringify(m));}assert.throws(()=>f.build(),/ENOENT|preflight/);assert.equal(existsSync(join(f.root,'dist/developer-previews')),false);assert.deepEqual(f.historical(),history);}});
+ test('missing referenced texture refuses complete-pair packaging without changing historical files',t=>{const f=fixture(t),history=f.historical();rmSync(join(f.root,'CivilizationApocalypse_RP/textures/entity/civ_trial/swordsman.png'));assert.throws(()=>f.build(),/missing texture/);assert.equal(existsSync(join(f.root,'dist/developer-previews')),false);assert.deepEqual(f.historical(),history);});

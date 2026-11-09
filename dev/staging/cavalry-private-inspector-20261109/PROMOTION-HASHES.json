@@ -1,0 +1,68 @@
+{
+  "scope": "staged PRIVATE-gated readonly existing inspector; ordinary false path unchanged",
+  "proposedFiles": [
+    {
+      "source": "dev/staging/cavalry-private-inspector-20261109/proposed/CivilizationApocalypse_BP/scripts/integration/peopleStreets.js",
+      "target": "CivilizationApocalypse_BP/scripts/integration/peopleStreets.js",
+      "sha256": "7E31D5DC06E8D827493E0505866BEBC20DB85DD34B1713484B6A8C9BA79C6DD7",
+      "bytes": 36330,
+      "baselineSha256": "3CCD43CEFF9390A45B47B385B82ECDE2E58EBDCF5E2338ADE039BBE028D8B1EC"
+    },
+    {
+      "source": "dev/staging/cavalry-private-inspector-20261109/proposed/dev/fixtures/people-streets-before-private-inspector.txt",
+      "target": "dev/fixtures/people-streets-before-private-inspector.txt",
+      "sha256": "3CCD43CEFF9390A45B47B385B82ECDE2E58EBDCF5E2338ADE039BBE028D8B1EC",
+      "bytes": 29806,
+      "baselineSha256": null
+    },
+    {
+      "source": "dev/staging/cavalry-private-inspector-20261109/proposed/dev/test/cavalry-private-inspector.test.mjs",
+      "target": "dev/test/cavalry-private-inspector.test.mjs",
+      "sha256": "020B1B4DD83A25994A371B7CB211A9473F8F5A14144DC821A599FCB6A89C6536",
+      "bytes": 9481,
+      "baselineSha256": null
+    }
+  ],
+  "baseline191FreezeSha256": "7C2D3F79FFAE33A27D735C089BEA25CD82105292C0E53CD20D9BDC87179EFF5D",
+  "privateD7D5ManifestSha256": "D7D5AD31CCF5EE5FF4AD1919A9E01983ADF9106840B23C9A5E1A7BF7244A74D9",
+  "focused": {
+    "tests": 17,
+    "pass": 17,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 185.0593,
+    "log": "central-focused.log"
+  },
+  "strictTypecheck": {
+    "exitCode": 0,
+    "log": "strict-final.log"
+  },
+  "nativeQueryCaps": {
+    "knownIdLookups": 2,
+    "roleTagQueries": 2,
+    "queryClosest": 2,
+    "riderListEntries": 1,
+    "tagsPerActor": 64,
+    "getRidersSamples": 2
+  },
+  "files": {
+    "central-focused.log": "E6487622486A1CB8D8973DDC6293DD94C2004925A6B76FA11957094EE32610B9",
+    "focused-final.log": "0714B12273987D1AFECB89A7022F33CAE4B6EE3EA87C51A46A7D93E7771A2F0F",
+    "focused-initial.log": "71252F683E7412191819A23735367A6A9168225A712F635F2BD93FB6C2F5CB0B",
+    "inspector.test.mjs": "DE550CA4FCDBF0D24E4489791325F455E61B620FD9F22059AC986DFA04247084",
+    "loader.mjs": "99F93A88F867C2F301849940339688D634607F12E2D5483FD1D77AEAF28FEFC2",
+    "native-stub.mjs": "8EED29C9AA1DB319DE2E130FE4C9C08C382DFA22494ADEF6BCEC0E8F9EAE00DC",
+    "proposal.patch": "384684250EB59776CDF1D8DF0C3B2983C804B9E21C4A9B7063E2997291501BDE",
+    "README.md": "DF8AA92C5373E06C31BB551DD086DDE516484A092D08B5803558DB384F4E5243",
+    "register.mjs": "38E39EA17DBFC362D6444B2D60EE2AF5FF1D19471D83AFC767767AAA8215ABC7",
+    "strict-final.log": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+    "strict-initial.log": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+    "tsconfig.json": "5130D0D4613DE1F4669D8A32E0D8B2EDFD11F066827C72984AB02446975DAFCE"
+  },
+  "productionEdits": false,
+  "privateBundleEdits": false,
+  "nativeAcceptance": false,
+  "cachedLastOp": false,
+  "newTimerOrListener": false
+}

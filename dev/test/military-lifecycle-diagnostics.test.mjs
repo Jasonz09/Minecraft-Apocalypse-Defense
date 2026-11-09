@@ -3,7 +3,7 @@ import test from "node:test";
 import {register} from "node:module";
 import {readFileSync} from "node:fs";
 import {createMilitaryLifecycleDiagnostics,militaryActorSnapshot,registerMilitaryLifecycleSignals} from "../../CivilizationApocalypse_BP/scripts/integration/militaryLifecycleDiagnostics.js";
-import {decodeMilitarySelection,SWORDSMAN_TYPE,ARCHER_TYPE} from "../../CivilizationApocalypse_BP/scripts/population/militarySelection.js";
+import {decodeMilitarySelection,SWORDSMAN_TYPE,ARCHER_TYPE,CAVALRY_TYPE} from "../../CivilizationApocalypse_BP/scripts/population/militarySelection.js";
 import {tagFor} from "../../CivilizationApocalypse_BP/scripts/population/identity.js";
 import {createPopWorld} from "../lib/poptharness.mjs";
 import {createInitialKingdom} from "../../CivilizationApocalypse_BP/scripts/kingdom/state.js";
@@ -52,7 +52,7 @@ test("actual 2.7 death/remove are type-filtered and hurt subscription supports e
     const signal=name=>({subscribe(callback,options){subscriptions.push({name,callback,options});}});
     const world={afterEvents:{entityDie:signal("die"),entityRemove:signal("remove"),entityHurt:signal("hurt")},getDynamicProperty(){throw Error("early read");}};
     registerMilitaryLifecycleSignals(world,t.d);assert.equal(t.reads(),0);
-    assert.deepEqual(subscriptions.map(s=>s.options),[{entityTypes:[SWORDSMAN_TYPE,ARCHER_TYPE]},{entityTypes:[SWORDSMAN_TYPE,ARCHER_TYPE]},undefined]);
+    assert.deepEqual(subscriptions.map(s=>s.options),[{entityTypes:[SWORDSMAN_TYPE,ARCHER_TYPE,CAVALRY_TYPE]},{entityTypes:[SWORDSMAN_TYPE,ARCHER_TYPE,CAVALRY_TYPE]},undefined]);
     const types=readFileSync(new URL("../../node_modules/@minecraft/server/index.d.ts",import.meta.url),"utf8");
     for(const name of ["EntityDieAfterEventSignal","EntityRemoveAfterEventSignal","EntityHurtAfterEventSignal"]){const section=types.slice(types.indexOf(`export class ${name}`));assert.match(section.slice(0,section.indexOf("unsubscribe(")),/can be called in early-execution mode/);}
 });

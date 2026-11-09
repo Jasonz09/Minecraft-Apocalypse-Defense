@@ -1,0 +1,21 @@
+{
+  "scope": "Only two intentional test contract updates; no production edits",
+  "proposedFiles": [
+    {
+      "destination": "dev/test/population-archer-creation.test.mjs",
+      "staged": "proposed/dev/test/population-archer-creation.test.mjs",
+      "sha256": "48251DE5BE3F95FCB850ADF276805C265D8A21F375CEF88CF1479520F8B40B95",
+      "baselineSha256": "F757C99D52760C85516AF4CF667BD64D8B7DDD9431BD9678E9131746A1D62C25"
+    },
+    {
+      "destination": "dev/test/swordsman-animation-signal.test.mjs",
+      "staged": "proposed/dev/test/swordsman-animation-signal.test.mjs",
+      "sha256": "E95E67D307278EF87E237EB22D391799FA1D27BC46603701CD2A0A76C5BABD02",
+      "baselineSha256": "6615D8D647BB95DCFA73785C180B3591FDD305AE2FD4C159F6462F59819950C7"
+    }
+  ],
+  "before": "before.log:21/23 pass,2 fail (exact original contracts)",
+  "after": "after.log:23/23 pass225.5737ms",
+  "configuredV3Coverage": "Existing central cavalry-v3-composition configureddeathfilterincludesbothroles asserts separate V3 subscription; ordinary V2 retains exact two custom types.",
+  "preserved": "All existing other assertions remain; cavalry client attack hook explicitly mapped to same tested native animation."
+}

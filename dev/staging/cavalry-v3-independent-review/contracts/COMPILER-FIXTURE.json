@@ -1,0 +1,7 @@
+{
+  "scope": "Test-copy compiler entry only, not a production proposal",
+  "actualCompilerModule": "E:\\CivilizationApocalypse\\node_modules\\typescript\\lib\\tsc.js",
+  "argvUnchanged": true,
+  "compilerOptionsUnchanged": true,
+  "ambientTypesResolveFromActualAncestorNodeModules": true
+}

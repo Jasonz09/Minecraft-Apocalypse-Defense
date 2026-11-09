@@ -7,12 +7,15 @@ function files(url){return readdirSync(url,{withFileTypes:true}).flatMap(e=>e.is
 // Native Nov6 log rejected query.attack_time in all three expressions. The
 // supported engine variable is documented in Microsoft Practical Molang and
 // Mojang's humanoid attack animation. Static checks do not prove native rendering.
-test("all active resource definitions reject the unsupported attack query and use the native variable at all three hooks",()=>{
+test("all active resource definitions reject the unsupported attack query and use the native variable at all four hooks",()=>{
     const text=files(root).map(p=>readFileSync(p,"utf8")).join("\n");
     assert.doesNotMatch(text,/\b(?:query|q)\.attack_time\b/);
-    assert.equal((text.match(/\bvariable\.attack_time\b/g)??[]).length,3);
+    assert.equal((text.match(/\bvariable\.attack_time\b/g)??[]).length,4);
     const client=read("entity/swordsman.entity.json")["minecraft:client_entity"].description;
     assert.equal(client.scripts.animate.find(a=>typeof a==="object"&&Object.hasOwn(a,"attack")).attack,"variable.attack_time > 0.0");
+    const cavalry=read("entity/cavalry.entity.json")["minecraft:client_entity"].description;
+    assert.equal(cavalry.scripts.animate.find(a=>typeof a==="object"&&Object.hasOwn(a,"attack")).attack,"variable.attack_time > 0.0");
+    assert.equal(cavalry.animations.attack,client.animations.attack);
     const attack=read("animations/swordsman.animation.json").animations[client.animations.attack];
     assert.deepEqual(attack.bones.right_arm.rotation,["-math.sin(variable.attack_time * 180) * 90",0,"-math.sin(variable.attack_time * 180) * 10"]);
 });

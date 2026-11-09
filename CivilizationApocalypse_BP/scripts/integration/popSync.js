@@ -1,6 +1,9 @@
+import {createCompoundNative} from "./compoundNative.js";
+import {compoundReservations,planCompoundCompletion} from "../population/compoundPlanning.js";
+import {createRoleBudget} from "../population/roleBudget.js";
 import { world as runtimeWorld } from "@minecraft/server";
 import { createKingdomStore } from "../kingdom/store.js";
-import { buildGroupTable, chunkKeyOf, nearestDistance, nearestPostDistance, parseGroupId, postOf, spotFor } from "../population/groups.js";
+import { buildGroupTable, districtInFight, chunkKeyOf, nearestDistance, nearestPostDistance, parseGroupId, postOf, spotFor } from "../population/groups.js";
 import { classifyTags, tagFor } from "../population/identity.js";
 import { cursorBytes, decodeCursor, encodeCursor } from "../population/cursor.js";
 import { reconcile, resolveConfig } from "../population/reconcile.js";
@@ -61,6 +64,7 @@ export function createPopSync(deps = {}) {
     }
     const config = resolveConfig(deps.config ?? {});
     const creationBindings=deps.creationBindings;
+    const compoundTrial=deps.compoundNativeTrial===true; // STAGED trusted factory opt-in only; every main caller remains off.
     const enabled = deps.enabled === true;
     /** Last owner plan only: diagnostic reads never reconcile or advance its cursor. @type {any} */
     let lastPlan;
@@ -230,12 +234,13 @@ export function createPopSync(deps = {}) {
     const plan = (prior, kingdom, tick) => {
         const anchors = normaliseAnchors(anchorsOf());
         const posts = postsOf(kingdom);
+        const activeCompounds=compoundRows(),reservations=compoundReservations(activeCompounds),compoundActive=activeCompounds.length>0;
         const snapshot=militaryPolicy(kingdom);
         const policy=snapshot?.selection?snapshot:null;
         const session = observe(kingdom, anchors, posts,policy!==null||!!creationBindings);
         if(policy?.selection){const found=findTagged(tagFor(policy.selection.groupId),true);diagnose("observe",policy.selection.groupId,found);for(const handle of found)session.admit(handle);}
-        let result = reconcile(prior, session.observation, tick, config,policy?.typeForGroup??(creationBindings?(group=>POP_ENTITY_TYPES[group.kind]):undefined));
-        if(policy!==null)chargeMilitaryWork(result.report.work??0);
+        let result = reconcile(prior, session.observation, tick, config,policy?.typeForGroup??(creationBindings?(group=>POP_ENTITY_TYPES[group.kind]):undefined),policy?.physicalCostForGroup??deps.physicalCostForGroup,reservations);
+        if(policy!==null||compoundActive)chargeMilitaryWork(result.report.work??0);
         for (let pass = 0; pass < 2; pass += 1) {
             let discovered = 0;
             for (const action of result.actions) {
@@ -253,9 +258,11 @@ export function createPopSync(deps = {}) {
             if (discovered === 0) {
                 break;
             }
-            result = reconcile(prior, session.observation, tick, config,policy?.typeForGroup??(creationBindings?(group=>POP_ENTITY_TYPES[group.kind]):undefined));
-            if(policy!==null)chargeMilitaryWork(result.report.work??0);
+            result = reconcile(prior, session.observation, tick, config,policy?.typeForGroup??(creationBindings?(group=>POP_ENTITY_TYPES[group.kind]):undefined),policy?.physicalCostForGroup??deps.physicalCostForGroup,reservations);
+            if(policy!==null||compoundActive)chargeMilitaryWork(result.report.work??0);
         }
+        attachCompoundMaintenance(result,prior,tick);
+        if(activeCompounds.length){const completion=planCompoundCompletion(activeCompounds,result.state.physical,{tick,ops:result.state.ops,spawns:result.state.spawns},tick,config);result.report.compound.completionPreview=completion;result.report.compound.reservedActorSlots=reservations.length*2;}
         lastPlan={tick,posts:Object.fromEntries(Object.entries(posts).map(([id,list])=>[id,{count:list.length,points:list.slice(0,9).map((/** @type {any} */p)=>({...p}))}])),
             counts:new Map(kingdom.districts.map((/** @type {any} */d)=>[d.id,{civ:d.civilians,sol:d.soldiers}])),policy:snapshot,
             admitted:[...result.state.physical],actions:result.actions,refused:result.report.refused??null,deferred:result.report.deferred??[],outcomes:[],
@@ -265,11 +272,12 @@ export function createPopSync(deps = {}) {
 
     /**
      * @param {number} tick
-     * @returns {{ refused: string | null, plan: any, cursor: string }}
+     * @returns {{ refused: string | null, plan: any, cursor: string,cursorRaw?:unknown }}
      */
     const planFromStore = (tick) => {
         militaryWork=0;
-        const loaded = decodeCursor(world.getDynamicProperty(POP_CURSOR_KEY));
+        const cursorRaw=world.getDynamicProperty(POP_CURSOR_KEY);
+        const loaded = decodeCursor(cursorRaw);
         if (loaded.status === "newer") {
             return { refused: `cursor refused: ${String(loaded.reason)}`, plan: null, cursor: loaded.status };
         }
@@ -278,8 +286,9 @@ export function createPopSync(deps = {}) {
             return { refused: "no kingdom records are stored yet", plan: null, cursor: loaded.status };
         }
         try {
+            const rows=compoundRows();if(rows.some(r=>[r.rider,r.mount].some(m=>!["never","cancelled"].includes(m.phase)))&&loaded.status!=="ok")throw Error("issued compound quota cursor missing/corrupt; no budget reset from absence");
             const planned = plan(loaded.state, kingdom, tick);
-            return { refused: planned.result.report.refused ?? null, plan: planned, cursor: loaded.status };
+            return { refused: planned.result.report.refused ?? null, plan: planned, cursor: loaded.status,cursorRaw };
         } catch(error) {
             if(typeof deps.readMilitarySelection!=="function")throw error;
             return {refused:String(error),plan:null,cursor:loaded.status};
@@ -322,7 +331,12 @@ export function createPopSync(deps = {}) {
             try{const rows=[];for(const handle of planned.plan.handles.values()){const d=describe(handle);if(!d)throw Error("creation observation unreadable");const read=classifyTags(d.tags);if(read.claims.length===1&&isCanonicalFor(read.ownTags,read.claims[0]))rows.push({groupId:read.claims[0],id:d.id,typeId:d.typeId,tags:d.tags});}creationBindings.observeLoaded(rows);}
             catch(error){return{refused:"creation binding observation held: "+String(error),actions:[],report:planned.plan.result.report,applied:[],skipped:[],failed:[],saved:false};}
         }
-        const outcome = applyActions(planned.plan.result.actions, planned.plan.handles,planned.plan.policy);
+        const jobs=planned.plan.result.compoundMaintenance??[];
+        let prepaidRaw;
+        if(jobs.length){try{prepaidRaw=publishCompoundBudget(planned.cursorRaw,planned.plan.result.state);planned.plan.result.report.compound.quotaPrepaid=true;}catch(error){return{refused:String(error),actions:[],report:planned.plan.result.report,applied:[],skipped:[],failed:[],saved:false};}}
+        const maintenance=applyCompoundMaintenance(jobs,planned.plan.policy,prepaidRaw);
+        const outcome = maintenance.held?{applied:[],skipped:[],failed:[],militaryRefused:maintenance.held}:applyActions(planned.plan.result.actions, planned.plan.handles,planned.plan.policy,prepaidRaw);
+        outcome.applied.unshift(...maintenance.applied);
         const saved = outcome.militaryRefused===null?saveCursor(planned.plan.result.state):{saved:false,reason:outcome.militaryRefused};
         return {
             refused: outcome.militaryRefused,
@@ -336,12 +350,59 @@ export function createPopSync(deps = {}) {
         };
     }
 
+    /** @returns {any[]} */
+    function compoundRows(){const rows=creationBindings?.listCompounds?.()??[];if(!Array.isArray(rows)||rows.length>config.maxPhysicalTotal)throw Error("compound maintenance record cap");return rows;}
+    /** Plans one charged role operation at a time; native compound birth remains disabled.
+     * @param {any[]} rows @param {string[]} admitted */
+    function cleanupJobs(rows,admitted){const jobs=[],held=[];for(const r of rows){const cleanup=!admitted.includes(r.group)||[r.rider,r.mount].some(m=>["terminal","cancelled","removing"].includes(m.phase));if([r.rider,r.mount].some(m=>m.phase==="pending")){held.push(r.group+": pending role outcome unknown");continue;}if(!cleanup){if(!compoundTrial&&[r.rider,r.mount].some(m=>m.phase==="never"))held.push(r.group+": compound birth disabled; incomplete role remains tracked");continue;}for(const role of ["rider","mount"]){const m=r[role];if(m.phase==="never"||["alive","removing"].includes(m.phase))jobs.push({groupId:r.group,role,kind:m.phase==="never"?"cancel":"remove",epoch:r.epoch,generation:r.generation,id:m.actor,type:m.type});}}return{jobs,held};}
+    /** @param {any} result @param {any} prior @param {number} tick */
+    function attachCompoundMaintenance(result,prior,tick){const rows=compoundRows();if(!rows.length)return;const scheduled=cleanupJobs(rows,result.state.physical),groups=new Set(rows.map(r=>r.group));const budget=createRoleBudget({tick:prior?.tick??null,ops:prior?.ops??0,spawns:prior?.spawns??0},tick,config),jobs=[];for(const job of scheduled.jobs){if(budget.reserve(job.kind==="cancel"?"cancel":"remove"))jobs.push(job);else scheduled.held.push(job.groupId+": role budget pending");}
+        if(compoundTrial){const completion=planCompoundCompletion(rows,result.state.physical,{tick,...budget.status()},tick,config);for(const j of completion.jobs){if(budget.reserve("spawn"))jobs.push({...j,kind:"birth",id:null,at:result.actions.find((/** @type {any} */a)=>a.op==="spawn"&&a.groupId===j.groupId)?.at});}scheduled.held.push(...completion.held);for(const r of rows){if(result.state.physical.includes(r.group)&&r.rider.phase==="alive"&&r.mount.phase==="alive"){if(budget.reserve("cancel"))jobs.push({groupId:r.group,role:"rider",kind:"seat",epoch:r.epoch,generation:r.generation,id:r.rider.actor,type:r.rider.type,expected:JSON.stringify(r)});else scheduled.held.push(r.group+": seat action budget pending");}}}
+        const ordinary=[];for(const action of result.actions){if(groups.has(action.groupId))continue;if(action.op==="spawn"&&(scheduled.jobs.length||scheduled.held.length)){result.report.pending.spawn++;continue;}if(budget.reserve(action.op==="spawn"?"spawn":"remove"))ordinary.push(action);else result.report.pending[action.op]++;}
+        result.actions=ordinary;result.compoundMaintenance=jobs;const used=budget.status();result.state.ops=used.ops;result.state.spawns=used.spawns;Object.assign(result.report.budget,{opsUsed:used.ops,spawnsUsed:used.spawns});result.report.compound={scheduledRoleOps:jobs.length,roleJobs:jobs.map(j=>({...j})),held:scheduled.held,birthEnabled:compoundTrial,quotaPrepaid:false};if(scheduled.held.length)result.report.hold="Mounted guard is waiting: "+scheduled.held[0];result.report.actions={spawn:ordinary.filter(a=>a.op==="spawn").length+jobs.filter(j=>j.kind==="birth").length,despawn:ordinary.filter(a=>a.op==="despawn").length+jobs.filter(j=>j.kind==="remove").length,retag:ordinary.filter(a=>a.op==="retag").length};
+    }
+    /** @param {unknown} expected @param {import("../population/cursor.js").CursorState} state */
+    function publishCompoundBudget(expected,state){const raw=encodeCursor(state);if(cursorBytes(state)>POP_CURSOR_MAX_BYTES||world.getDynamicProperty(POP_CURSOR_KEY)!==expected)throw Error("compound budget cursor changed; no native work");world.setDynamicProperty(POP_CURSOR_KEY,raw);if(world.getDynamicProperty(POP_CURSOR_KEY)!==raw)throw Error("compound budget publication unverified; no native work");return raw;}
+    /** @param {any} policy @param {string} [groupId] */
+    function compoundPolicyCurrent(policy,groupId){const kingdom=readKingdom();if(policy!==null&&militaryPolicy(kingdom)?.stamp!==policy.stamp)throw Error("military selection changed before compound work");if(groupId){const district=parseGroupId(groupId)?.district,rows=kingdom?.districts?.filter((/** @type {any} */d)=>d.id===district);if(!Array.isArray(rows)||rows.length!==1||districtInFight(rows[0]))throw Error("compound in-fight or district changed; preserve");}}
+    /** @param {any} h */
+    function compoundFrame(h){chargeMilitaryWork(1);const at=h.location,tags=h.getTags();if(!Array.isArray(tags)||tags.length>64||tags.some(t=>typeof t!=="string"||t.length>256))throw Error("compound native tags unreadable");chargeMilitaryWork(tags.length+1);return{id:String(h.id),typeId:String(h.typeId),valid:h.isValid,location:{x:at.x,y:at.y,z:at.z},tags:[...tags].sort()};}
+    /** Strictly bounded global-tag query; absent loaded actor is NEVER a terminal receipt.
+     * @param {string} tag */
+    function compoundQuery(tag){chargeMilitaryWork(1);const rows=dimension.getEntities({tags:[tag],location:{x:0,y:64,z:0},closest:2});if(!Array.isArray(rows)||rows.length>1)throw Error("compound query failed or duplicate; preserve pair");return rows;}
+    /** All metadata checks precede repeated final native role/relationship proof.
+     * @param {any} job @param {any} policy */
+    function compoundPreflight(job,policy){const core=creationBindings.compound(),r=core.inspect(job.groupId);if(!r||r.kind!=="compound"||r.epoch!==job.epoch||r.generation!==job.generation||r[job.role].actor!==job.id||r[job.role].type!==job.type)throw Error("compound job identity changed");if(dimension.id!=="minecraft:overworld")throw Error("compound dimension mismatch");const handles=new Map(),frames=new Map();
+        for(const role of ["rider","mount"]){const m=r[role],tag=`civcavalry:v1:${r.epoch}:${r.group}:${r.generation}:${role}`,matches=compoundQuery(tag);if(["never","terminal","cancelled"].includes(m.phase)){if(matches.length)throw Error("unissued/terminal compound actor reappeared; preserve pair");continue;}if(m.phase==="pending")throw Error("compound pending outcome unknown; preserve pair");if(matches.length!==1)throw Error("compound role unloaded/absent; preserve pair");const h=matches[0],frame=compoundFrame(h);core.assertOwned({groupId:r.group,role,id:frame.id,typeId:frame.typeId,tags:frame.tags});handles.set(role,h);frames.set(role,frame);}
+        compoundPolicyCurrent(policy,job.groupId);
+        const rider=handles.get("rider"),mount=handles.get("mount");let riding=null,riders=[];
+        if(mount){chargeMilitaryWork(1);const rideable=mount.getComponent("minecraft:rideable");if(!rideable||typeof rideable.getRiders!=="function")throw Error("compound rideable proof unavailable");chargeMilitaryWork(1);riders=rideable.getRiders();if(!Array.isArray(riders)||riders.length>1)throw Error("ambiguous compound riders");if(riders.length&&(!rider||String(riders[0].id)!==String(rider.id)))throw Error("foreign rider attached; preserve pair");}
+        if(rider){chargeMilitaryWork(1);const relation=rider.getComponent("minecraft:riding");if(relation){riding=relation.entityRidingOn;if(!mount||!riding||String(riding.id)!==String(mount.id))throw Error("rider on foreign mount; preserve pair");}}
+        if(Boolean(riding)!==Boolean(riders.length))throw Error("compound riding directions disagree");
+        for(const[role,h]of handles){const a=compoundFrame(h);if(!chunkLoadedAt(a.location))throw Error("compound final chunk unloaded");chargeMilitaryWork(1);const loadedBlock=dimension.getBlock(a.location);if(!loadedBlock||loadedBlock.isValid!==true)throw Error("compound final loaded block unreadable");const b=compoundFrame(h),c=compoundFrame(h),m=r[role],tag=`civcavalry:v1:${r.epoch}:${r.group}:${r.generation}:${role}`;
+            if(a.id!==m.actor||a.typeId!==m.type||a.valid!==true||![a.location.x,a.location.y,a.location.z].every(Number.isFinite)||a.tags.filter(t=>t.startsWith("civcavalry:")).length!==1||!a.tags.includes(tag)||JSON.stringify(a)!==JSON.stringify(b)||JSON.stringify(b)!==JSON.stringify(c)||JSON.stringify(frames.get(role))!==JSON.stringify(a))throw Error("compound native identity/location changed after metadata");
+            const own=a.tags.filter(t=>t.startsWith("civpop:"));if(role==="rider"?(own.length!==1||own[0]!==tagFor(r.group)):own.length!==0)throw Error("compound canonical role changed");}
+        return{core,record:r,handles,frames};
+    }
+    /** @param {any[]} jobs @param {any} policy @param {string|undefined} prepaidRaw */
+    function applyCompoundMaintenance(jobs,policy,prepaidRaw){const applied=[];let held=null;for(const job of jobs){try{
+            if(job.kind==="birth"||job.kind==="seat"){if(!compoundTrial||creationBindings.format()!==3)throw Error("compound native trial disabled or wrong schema");const native=createCompoundNative({world,dimension,store:creationBindings,charge:chargeMilitaryWork,readCurrent:()=>{if(dimension.id!=="minecraft:overworld"||world.getDynamicProperty(POP_CURSOR_KEY)!==prepaidRaw)throw Error("cavalry clearance quota/dimension changed; preserve");},current:()=>{compoundPolicyCurrent(policy,job.groupId);if(world.getDynamicProperty(POP_CURSOR_KEY)!==prepaidRaw)throw Error("prepaid compound quota changed; preserve");}});if(job.kind==="birth"){const at=job.at?settleSpot(job.at):undefined;if(job.at&&!at)throw Error("no safe cavalry spawn column");const born=native.spawnRole(job,at);applied.push({action:{op:"spawn",groupId:job.groupId,role:job.role,reason:"compound charged role birth"},reason:null,entityId:born.id});}else{native.seat(job);applied.push({action:{op:"seat-role",groupId:job.groupId},reason:null,entityId:job.id});}continue;}
+            let proof=compoundPreflight(job,policy),member=proof.record[job.role];if(job.kind==="cancel"){if(member.phase!=="never")throw Error("role no longer never-created");if(world.getDynamicProperty(POP_CURSOR_KEY)!==prepaidRaw)throw Error("prepaid compound quota changed; preserve");proof.core.cancelNeverCreated(job.groupId,job.role);applied.push({action:{op:"cancel-role",...job},reason:null,entityId:null});continue;}
+            if(!["alive","removing"].includes(member.phase))throw Error("compound role terminal changed");const frame=proof.frames.get(job.role),ticket=proof.core.beginRemove({groupId:job.groupId,role:job.role,id:frame.id,typeId:frame.typeId,tags:frame.tags});proof=compoundPreflight(job,policy);const h=proof.handles.get(job.role);if(!h)throw Error("compound removal actor unavailable");
+            compoundPolicyCurrent(policy,job.groupId);if(world.getDynamicProperty(POP_CURSOR_KEY)!==prepaidRaw)throw Error("prepaid compound quota changed; preserve");
+            // Counterpart/relationship/block callbacks may invalidate an earlier role frame.
+            // Re-read the ACTUAL deletion target after all of them; no metadata or counterpart callbacks follow.
+            const finalA=compoundFrame(h),finalB=compoundFrame(h);if(JSON.stringify(finalA)!==JSON.stringify(proof.frames.get(job.role))||JSON.stringify(finalA)!==JSON.stringify(finalB))throw Error("compound final deletion target changed after counterpart proof");
+            h.remove();if(h.isValid!==false)throw Error("compound owner removal not positively observed");proof.core.commitRemoved(ticket);applied.push({action:{op:"despawn",groupId:job.groupId,entityId:job.id,role:job.role,reason:"compound tracked owner cleanup"},reason:null,entityId:job.id});
+        }catch(error){held=String(error);break;}}return{applied,held};}
+
     /**
      * @param {any[]} actions
      * @param {Map<string, any>} handles
      * @param {ReturnType<typeof militarySelectionPolicy>|null} policy
+     * @param {string|undefined} [prepaidRaw]
      */
-    function applyActions(actions, handles,policy) {
+    function applyActions(actions, handles,policy,prepaidRaw) {
         /** @type {any[]} */
         const applied = [];
         /** @type {any[]} */
@@ -355,7 +416,7 @@ export function createPopSync(deps = {}) {
                 if(policy!==null) {
                     guardMilitaryAction(action,policy);
                 }
-                const beforeWrite=policy===null?undefined:()=>guardMilitaryAction(action,policy);
+                const beforeWrite=policy===null&&prepaidRaw===undefined?undefined:()=>{if(policy!==null)guardMilitaryAction(action,policy);if(prepaidRaw!==undefined&&world.getDynamicProperty(POP_CURSOR_KEY)!==prepaidRaw)throw Error("prepaid compound quota changed; preserve");};
                 /** @type {{ ok: boolean, reason: string | null, entityId?: string,settled?:{x:number,y:number,z:number} }} */
                 const outcome = action.op === "spawn" ? spawnOne(action,beforeWrite) : action.op === "despawn" ? removeOne(action, handles,beforeWrite) : retagOne(action, handles,beforeWrite);
                 if(policy?.selection?.groupId===action.groupId)diagnose("ownerOutcome",action,outcome);
@@ -449,7 +510,7 @@ export function createPopSync(deps = {}) {
                 f.tags.length<=64&&f.tags.every((/** @type {any} */t)=>typeof t==="string"&&t.length<=256)&&
                 isCanonicalFor(classifyTags(f.tags).ownTags,action.groupId)&&
                 f.tags.filter((/** @type {string} */t)=>t.startsWith("civbirth:")).length===1&&
-                f.tags.includes(`civbirth:v2:${removal.epoch}:${removal.group}:${removal.generation}`);
+                f.tags.includes(removal.tag??`civbirth:v2:${removal.epoch}:${removal.group}:${removal.generation}`);
             if(!valid(first)||!valid(second)||!valid(third)||JSON.stringify(first)!==JSON.stringify(second)||JSON.stringify(second)!==JSON.stringify(third))throw Error("owner removal final live identity/location changed; preserved");
         }
         const removalId=removal?removal.actor:String(handle.id);handle.remove();
@@ -512,6 +573,7 @@ export function createPopSync(deps = {}) {
      * @returns {{ ok: boolean, reason: string | null, entityId?: string,settled?:{x:number,y:number,z:number} }}
      */
     function spawnOne(action,beforeWrite) {
+        if(action.typeId==="civ_trial:cavalry"){if(!compoundTrial)return{ok:false,reason:"compound native birth disabled; maintenance only"};if(!creationBindings||creationBindings.format()!==3)throw Error("fresh-v3 binding required for cavalry trial");beforeWrite?.();if(findTagged(tagFor(action.groupId),true).length)throw Error("cavalry canonical actor already exists");creationBindings.compound().reservePair(action.groupId);return{ok:false,reason:"cavalry pair reserved; charged per-role births begin next owner pass"};}
         const tag = tagFor(action.groupId);
         if (findTagged(tag,!!creationBindings).length > 0) {
             return { ok: false, reason: "representative-exists" };
@@ -626,14 +688,20 @@ export function createPopSync(deps = {}) {
             ownerRefused:lastPlan.refused,admitted:lastPlan.admitted.includes(groupId),expectedType,postIndex,postCount:list?.count??0,post,requested,lastAttempt,
             settle:{point:settled,reason:settleReason,nativeBlockReads:reads,maxBlockReads:240,limited,unreadable},live};
     }
+    /** Same callback, same persisted tick quotas; never a namespace-only remove-all.
+     * @param {any[]} found @param {number|undefined} tick @param {any} policy @param {any[]} pairs */
+    function teardownCompounds(found,tick,policy,pairs){if(!Number.isSafeInteger(tick)||/** @type {number} */(tick)<0)throw Error("compound teardown requires explicit owner tick");const at=/** @type {number} */(tick),raw=world.getDynamicProperty(POP_CURSOR_KEY),cursor=decodeCursor(raw);if(cursor.status==="newer"||pairs.some(r=>[r.rider,r.mount].some(m=>!["never","cancelled"].includes(m.phase)))&&cursor.status!=="ok")throw Error("compound teardown quota cursor missing/corrupt/newer; preserve pair");const result=/** @type {any} */({actions:[],state:{...cursor.state,tick:at,runs:cursor.state.runs+1,physical:[]},report:{pending:{spawn:0,despawn:0,retag:0},budget:{}}});
+        const pairIds=new Set(pairs.map(r=>r.group)),handles=new Map(),seen=new Set();for(const h of found){const tags=h.getTags();if(!Array.isArray(tags)||tags.length>64)throw Error("compound teardown tag cap");chargeMilitaryWork(tags.length+1);const read=classifyTags(tags),g=read.claims[0];if(!isCanonicalFor(read.ownTags,g)||seen.has(g))throw Error("compound teardown canonical ambiguity");seen.add(g);if(pairIds.has(g))continue;const id=String(h.id);creationBindings.assertOwned({groupId:g,id,typeId:h.typeId,tags:[...tags]});handles.set(id,h);result.actions.push({op:"despawn",groupId:g,entityId:id,reason:"people gate-off owner cleanup"});}
+        attachCompoundMaintenance(result,cursor.state,at);const jobs=result.compoundMaintenance??[];if(!jobs.length&&!result.actions.length)return{removed:0,held:result.report.compound?.held?.[0]??"compound role budget pending"};const prepaidRaw=publishCompoundBudget(raw,result.state);const maintenance=applyCompoundMaintenance(jobs,policy,prepaidRaw);const ordinary=maintenance.held?{applied:[],militaryRefused:maintenance.held,failed:[],skipped:[]}:applyActions(result.actions,handles,policy,prepaidRaw);return{removed:maintenance.applied.filter(e=>e.action.op==="despawn").length+ordinary.applied.length,held:maintenance.held??ordinary.militaryRefused??ordinary.failed[0]?.error??ordinary.skipped[0]?.reason??result.report.compound?.held?.[0]??null};}
     /** Gate-off removes only already-issued loaded actors through removeOne, never a new owner.
      * No planning, birth, retag, cursor reset, or absent-instance terminal inference.
-     * @param {any[]} found */
-    function teardownBound(found){
+     * @param {any[]} found @param {number} [tick] */
+    function teardownBound(found,tick=undefined){
         if(!creationBindings)throw Error("durable teardown requires creation bindings");
         if(!Array.isArray(found)||found.length>config.maxPhysicalTotal)throw Error("bound teardown census cap");
         militaryWork=0;creationBindings.recoverIssuance();
         const policy=militaryPolicy(readKingdom()),seen=new Set(),handles=new Map(),actions=[];
+        const pairs=compoundRows();if(pairs.length)return teardownCompounds(found,tick,policy,pairs);
         // Full preflight before the first removal: unknown/legacy/duplicate identities hold all.
         for(const h of found){const tags=h.getTags();if(!Array.isArray(tags)||tags.length>64)throw Error("bound teardown tags cap");
             const read=classifyTags(tags),groupId=read.claims[0],id=String(h.id);

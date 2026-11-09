@@ -1,0 +1,27 @@
+{
+  "utc": "2026-11-09T01:17:54.110840+00:00",
+  "decision": "PASS_SCOPED_READONLY_DIAGNOSTIC_NO_PROMOTION_BLOCKER",
+  "manifestSha256": "35D712B8490E075BB98978F4313D5083CE7781C2385F75C36CF4123A8CCDC1DA",
+  "sourceSha256": "7E31D5DC06E8D827493E0505866BEBC20DB85DD34B1713484B6A8C9BA79C6DD7",
+  "allPinnedFilesMatch": true,
+  "activeBaselineStillUnchanged": true,
+  "independentFocused": {
+    "pass": 17,
+    "fail": 0,
+    "durationMs": 186.8653,
+    "log": "independent-focused.log"
+  },
+  "strictTSC": "Author strict191 overlay exit0; pinned strict-final.log verified, not redundantly rerun",
+  "review": [
+    "Factory flag only; ordinary false/absent full accepted-hour native/DP/status parity.",
+    "Exact durable epoch/generation/role IDs and selection stamp; two known-ID lookups plus two untyped role-tag queries closest2.",
+    "Repeated two-way relationships and native identities, foreign/duplicate/unloaded/wrong-type/reentry refusal.",
+    "No new actor/block/property writer, timer, listener, adoption, death inference, terrain read or last-operation cache.",
+    "Stable2.7 getRiders and entityRidingOn type declarations independently checked."
+  ],
+  "limits": [
+    "Bounded non-atomic read-only observation; no atomic source/actor lock or write authority.",
+    "Native component availability/seating proof still pending.",
+    "Root must derive a NEW private variant; originalD7D5 remains frozen."
+  ]
+}

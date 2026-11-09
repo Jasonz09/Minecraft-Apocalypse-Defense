@@ -1,0 +1,90 @@
+{
+  "utc": "2026-11-09T00:34:15.954181+00:00",
+  "scope": "STAGED ONLY narrowly reviewed cavalry builtin texture +required pairs; no main/native/data/world/Git changes",
+  "proposedFiles": [
+    {
+      "staged": "proposed/dev/fixtures/cavalry-vanilla-texture-reference.json",
+      "destination": "dev/fixtures/cavalry-vanilla-texture-reference.json",
+      "sha256": "CC119C5B27204FDCA1D4E7759DB19468250430AC66DC1B48A8E2254F8B9DCDAC",
+      "bytes": 1303,
+      "baselineSha256": null
+    },
+    {
+      "staged": "proposed/dev/lib/content-packs.mjs",
+      "destination": "dev/lib/content-packs.mjs",
+      "sha256": "A630B0890BFAF2742DE587C574C5D37E7A1B28000DBA5B934970E130E6AAA084",
+      "bytes": 10742,
+      "baselineSha256": "F37AAF956D97D5E6D0FDC975D3E51F07FBB288A32FF600436B7624DF3BEEBFBD"
+    },
+    {
+      "staged": "proposed/dev/test/cavalry-content-packs.test.mjs",
+      "destination": "dev/test/cavalry-content-packs.test.mjs",
+      "sha256": "6EF5E25C32F139FC5C19F666F331FBBFB79A32D38BB4D13A07256661CB9CB594",
+      "bytes": 5653,
+      "baselineSha256": null
+    },
+    {
+      "staged": "proposed/dev/test/developer-preview.test.mjs",
+      "destination": "dev/test/developer-preview.test.mjs",
+      "sha256": "970EB902D39BA44FD156F4C201BD7998CDEAC2613E27AF246F5DA168D3358297",
+      "bytes": 16023,
+      "baselineSha256": "999339D9C8228ECC7DDBE1C0B7CF7205C7AE081D3B1D1DE473A925BAB521D52E"
+    }
+  ],
+  "requiredDataDependencies": [
+    {
+      "path": "dev/staging/cavalry-native-review79/data-proposal/CivilizationApocalypse_BP/entities/cavalry.json",
+      "destination": "CivilizationApocalypse_BP/entities/cavalry.json",
+      "sha256": "0B6B86C0D8322BB3316CD5DDF8CDF93C1C500A2AC8FBFDFC3B94115E33DB1719",
+      "bytes": 5765
+    },
+    {
+      "path": "dev/staging/cavalry-native-review79/data-proposal/CivilizationApocalypse_BP/entities/cavalry_mount.json",
+      "destination": "CivilizationApocalypse_BP/entities/cavalry_mount.json",
+      "sha256": "DE35483687111CF2CF825B4E93EE3077CF126247C3C513FCC64D1E154863AD21",
+      "bytes": 1345
+    },
+    {
+      "path": "dev/staging/cavalry-native-review79/data-proposal/CivilizationApocalypse_RP/entity/cavalry.entity.json",
+      "destination": "CivilizationApocalypse_RP/entity/cavalry.entity.json",
+      "sha256": "434A0A46FCDB2C3CD88D825133C521ECAC4303801A60D72A028C703F202AD0E4",
+      "bytes": 920
+    },
+    {
+      "path": "dev/staging/cavalry-native-review79/data-proposal/CivilizationApocalypse_RP/entity/cavalry_mount.entity.json",
+      "destination": "CivilizationApocalypse_RP/entity/cavalry_mount.entity.json",
+      "sha256": "140839B148FF6074D481796DE6386403084C205758E953DF9123594A367AE51A",
+      "bytes": 484
+    },
+    {
+      "path": "dev/staging/cavalry-native-review79/data-proposal/CivilizationApocalypse_RP/models/entity/cavalry_mount.geo.json",
+      "destination": "CivilizationApocalypse_RP/models/entity/cavalry_mount.geo.json",
+      "sha256": "600A87C6575F1BC560F5CAFDFD1C1A1A04C9363AA4D70DA166C0F9D81CAA6947",
+      "bytes": 3883
+    }
+  ],
+  "primaryEvidence": {
+    "path": "PRIMARY-SOURCE.json",
+    "sha256": "CC119C5B27204FDCA1D4E7759DB19468250430AC66DC1B48A8E2254F8B9DCDAC"
+  },
+  "focused": {
+    "tests": 40,
+    "pass": 40,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 119935.0594,
+    "log": "focused-final.log",
+    "concurrentRootFull": true
+  },
+  "existingPreviewCasesAll19Preserved": true,
+  "actualSourceDataNativeAcceptance": false,
+  "promotionRequiresCoherentFiveAssetComposition": true,
+  "nodeTypecheck": "Not claimed; Node dev tools outside existing server-script TSC",
+  "evidence": {
+    "README.md": "C0CE8044CC9BB19C233A6262AD6F0320EC8A0C80C22C30C9984D02C2C9E13BCC",
+    "focused-first.log": "F31D6A46E6D4156D09E6F8031B430FFFD955C874FB05D0D27232A464E9F90E51",
+    "focused-final.log": "8416AABE1654DAF694ECC0732924B852644A7C3ECC946D3519B3F27898EC88C7",
+    "baseline-content-packs.mjs": "F37AAF956D97D5E6D0FDC975D3E51F07FBB288A32FF600436B7624DF3BEEBFBD"
+  }
+}

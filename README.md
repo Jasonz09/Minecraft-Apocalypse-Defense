@@ -2,16 +2,21 @@
 
 **Where we are — step2 of8 is current; the whole roadmap is unfinished.**
 
-**November 8 verified checkpoint:** the176-file build now includes the reviewed
-startup hold and is installed with NULL fixture trust.2,240/2,240 tests, all5 gates
-and52/52headless stages pass (705,929.3174ms,0fail/cancel/skip). Root verifies352
-source/installed SHA+size checks and exact inventories; only the three intended
-startup paths differ from the prior176, and other173 pack files are unchanged.
-Private fresh activation, normal scheduled resume and save/close/rejoin pass in
-a separately configured disposable world. Native archer/combat/import acceptance
-and the whole roadmap remain OPEN. Evidence:
-`dist/startup-hold-installed-verification-20261108.json`,
-`dev/staging/private-hold2-native-evidence/AUDIT.json`.
+**November 8 verified checkpoint:** the191-file cavalry development build is
+installed with all three private settings NULL.2,383/2,383 tests, all5 gates and
+52/52 headless stages pass (608,679.8169ms,0fail/cancel/skip). Root verifies382
+source/installed SHA+size checks and exact inventories. Versus the startup176
+build,169 files remain identical,7 reviewed files changed and15 were added.
+
+The existing population owner now supports the tested cavalry lifecycle and a
+private read-only inspector for both riding directions. No extra owner, timer or
+listener was added. Real cavalry spawning, seating, rendering, unload/death and
+combat acceptance remain OPEN. A separately reviewed genuine-source191 private
+trial is prepared; normal settings remain disabled. The first full run's two old
+test expectations were corrected without weakening guards; that failed run and
+its evidence remain preserved. Evidence:
+`dist/cavalry-observed-installed-verification-20261109.json`,
+`dist/cavalry-observed-central-full-verify-20261109.log`.
 
 The actual vanilla `CA Never Owner Nov8` fixture was created with no behavior/local
 resource packs. Its witnessed unique scoreboard marker and9-file closed backup
@@ -39,8 +44,8 @@ staged with native births/seating disabled. Current evidence:
 |7|Recurring war and physical expansion|Open: connect simulated war/reinforcement/expansion to accepted physical gameplay.|
 |8|Other civilizations and diplomacy|Partial: scouting/reports/envoys/alliances installed for native testing; physical settlements, allied support and conflict remain open.|
 
-**Latest result:**176-file development build installed;2,240tests/all5gates/52headless
-stages pass. Full computer control is authorized; native acceptance remains open.
+**Latest result:**191-file development build installed;2,383tests/all5gates/52headless
+stages pass. Full computer control is authorized; native cavalry acceptance remains open.
 
 **Historical combat checkpoint:** the pillager trial was saved without engagement.
 The same original guard is full-health30 and unique1/1/1, but the owner refused all

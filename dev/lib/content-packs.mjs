@@ -4,7 +4,7 @@ import { join } from "node:path";
 const triple = (v) => Array.isArray(v) && v.length === 3 && v.every(n => Number.isInteger(n) && n >= 0);
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const same = (a,b) => JSON.stringify(a) === JSON.stringify(b);
-export const REQUIRED_ENTITY_IDS=Object.freeze(["civ_trial:swordsman","civ_trial:archer","civ_trial:guard_arrow"]);
+export const REQUIRED_ENTITY_IDS=Object.freeze(["civ_trial:swordsman","civ_trial:archer","civ_trial:guard_arrow","civ_trial:cavalry","civ_trial:cavalry_mount"]);
 const jsonFiles = (dir) => !existsSync(dir) ? [] : readdirSync(dir,{withFileTypes:true}).flatMap(e =>
     e.isDirectory() ? jsonFiles(join(dir,e.name)) : e.name.endsWith(".json") ? [join(dir,e.name)] : []);
 
@@ -55,6 +55,14 @@ export function contentPackProblems(packs,{requiredEntities=REQUIRED_ENTITY_IDS,
             &&same(d.materials,{default:"arrow"})&&same(d.geometry,{default:"geometry.arrow"})
             &&same(d.textures,{default:"textures/entity/arrows"})&&same(d.animations,{move:"animation.arrow.move"})
             &&same(d.render_controllers,["controller.render.arrow"]);
+        // Reviewed official legacy horse texture only for this exact custom client
+        // profile. Its geometry/controller remain mandatory owned local assets.
+        const builtinMount=d.identifier==="civ_trial:cavalry_mount"
+            &&same(Object.keys(d).sort(),["identifier","materials","textures","geometry","render_controllers"].sort())
+            &&same(d.materials,{default:"entity_alphatest"})
+            &&same(d.geometry,{default:"geometry.civ_trial.cavalry_mount"})
+            &&same(d.textures,{default:"textures/entity/horse/horse_brown"})
+            &&same(d.render_controllers,["controller.render.civ_trial.swordsman"]);
         const bones=new Set();
         for(const id of Object.values(d.geometry??{})) {
             if(builtinArrow&&id==="geometry.arrow")continue;
@@ -65,7 +73,7 @@ export function contentPackProblems(packs,{requiredEntities=REQUIRED_ENTITY_IDS,
             if(builtinArrow&&path==="textures/entity/arrows")continue;
             if(typeof path!=="string"||!/^textures\/[A-Za-z0-9_/-]+$/.test(path)){problems.push(`unsafe texture reference for ${d.identifier}`);continue;}
             const file=join(root,`${path}.png`);
-            if(!fileExists(file)){problems.push(`missing texture ${path} for ${d.identifier}`);continue;}
+            if(!fileExists(file)){if(builtinMount&&path==="textures/entity/horse/horse_brown")continue;problems.push(`missing texture ${path} for ${d.identifier}`);continue;}
             const png=readFile(file);
             if(png.length<24||!png.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])))problems.push(`invalid PNG texture ${path}`);
         }

@@ -1,0 +1,58 @@
+--- a/CivilizationApocalypse_BP/scripts/integration/peopleStreets.js
++++ b/CivilizationApocalypse_BP/scripts/integration/peopleStreets.js
+@@ -1,4 +1,4 @@
+-import { system } from "@minecraft/server";
++import { system, world as runtimeWorld } from "@minecraft/server";
+ import { peopleGateOn } from "../people/gate.js";
+ import { decodeCursor } from "../population/cursor.js";
+ import { buildGroupTable, parseGroupId } from "../population/groups.js";
+@@ -60,6 +60,7 @@
+  *   anchors?: () => Array<{ x: number, y: number, z: number }>,
+  *   getCreationBindings?:()=>any,
+  *   compoundNativeTrial?:boolean,
++ *   inspectionWorld?:any, // test injection only; normal private runtime uses the SDK world lazily
+  *   readMilitarySelection?:()=>import("../population/militarySelection.js").MilitarySelectionRead,
+  *   militaryDiagnostics?:ReturnType<typeof import("./militaryLifecycleDiagnostics.js").createMilitaryLifecycleDiagnostics>,
+  * }} [deps]
+@@ -417,10 +418,41 @@
+     function status() {
+         return { ...done };
+     }
++    let privateInspectionBusy=false,privateInspectionReentered=false;
++    /** PRIVATE fixture only. Bounded read-only sample, not an atomic world snapshot or write capability.
++     * No terrain probe, actor repair, adoption or lifecycle inference occurs here.
++     * @param {string} groupId @returns {string[]} */
++    function inspectPrivateCompound(groupId){
++        if(privateInspectionBusy){privateInspectionReentered=true;return["PRIVATE cavalry inspection held: reentry", "No state was changed."];}privateInspectionBusy=true;privateInspectionReentered=false;
++        try{
++            const world=deps.inspectionWorld??runtimeWorld;
++            const selected=()=>{const r=deps.readMilitarySelection?.();if(r?.status!=="ok"||r.selection?.class!=="cavalry"||r.selection.groupId!==groupId||r.selection.dimension!=="minecraft:overworld")throw Error("only the configured private cavalry group may be inspected");return r.stamp;};
++            const selection=selected(),binding=deps.getCreationBindings?.();if(!binding||binding.format()!==3)throw Error("completed fresh-v3 creation history is unavailable");
++            const core=binding.compound(),record=core.inspect(groupId);if(!record||record.kind!=="compound")throw Error("no durable compound generation exists");const source=JSON.stringify(record);
++            const title=`=== PRIVATE read-only cavalry ${groupId} ===`,metadata=`Durable epoch ${record.epoch}; generation ${record.generation}; rider ${record.rider.phase} ID ${record.rider.actor??"none"}; mount ${record.mount.phase} ID ${record.mount.actor??"none"}.`;
++            const verifySource=()=>{const fresh=deps.getCreationBindings?.();if(!fresh||fresh.format()!==3||JSON.stringify(fresh.compound().inspect(groupId))!==source||selected()!==selection||privateInspectionReentered)throw Error("durable generation/private selection changed or reentered during inspection");};
++            if(record.rider.phase!=="alive"||record.mount.phase!=="alive"){verifySource();return[title,metadata,"Live seating unavailable: both roles are not durably alive. Missing/unloaded actors are never inferred dead.","No state was changed."];}
++            const dimension=world.getDimension("overworld");if(dimension.id!=="minecraft:overworld")throw Error("inspection dimension differs");
++            /** @param {any} entity */const frame=entity=>{if(!entity)throw Error("known role is unavailable/unloaded");const id=entity.id,typeId=entity.typeId,valid=entity.isValid,where=entity.dimension?.id,at=entity.location,tags=entity.getTags();if(typeof id!=="string"||id.length>128||typeof typeId!=="string"||valid!==true||where!=="minecraft:overworld"||![at?.x,at?.y,at?.z].every(Number.isFinite)||!Array.isArray(tags)||tags.length>64||tags.some(t=>typeof t!=="string"||t.length>256))throw Error("role identity/location/tags unavailable");return{id,typeId,where,at:{x:at.x,y:at.y,z:at.z},tags:[...tags].sort()};};
++            /** @param {any} a @param {any} b */const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
++            const rider=world.getEntity(record.rider.actor),mount=world.getEntity(record.mount.actor),beforeR=frame(rider),beforeM=frame(mount);
++            core.assertOwned({groupId,role:"rider",id:beforeR.id,typeId:beforeR.typeId,tags:beforeR.tags});core.assertOwned({groupId,role:"mount",id:beforeM.id,typeId:beforeM.typeId,tags:beforeM.tags});
++            if(beforeR.id!==record.rider.actor||beforeM.id!==record.mount.actor)throw Error("known role lookup changed");
++            const seat=()=>{const c=mount.getComponent("minecraft:rideable");if(!c||typeof c.getRiders!=="function")throw Error("mount rideable API unavailable");const list=c.getRiders();if(!Array.isArray(list)||list.length>1)throw Error("mount rider list ambiguous");const ids=list.map((/** @type {any} */h)=>{const id=h.id;if(typeof id!=="string"||id.length>128)throw Error("rider-list identity unreadable");return id;});const relation=rider.getComponent("minecraft:riding"),on=relation?.entityRidingOn;let ridingOn=null;if(relation){if(!on||typeof on.id!=="string"||on.id.length>128)throw Error("riding relation unreadable");ridingOn=on.id;}if(ids.some((/** @type {string} */id)=>id!==record.rider.actor)||ridingOn!==null&&ridingOn!==record.mount.actor||Boolean(ids.length)!==Boolean(ridingOn))throw Error("foreign/inconsistent riding relation; no seating proof");return{ridingOn,riderIds:ids,seated:ids.length===1&&ridingOn===record.mount.actor};};
++            const first=seat();
++            /** Final loaded queries never filter type, so a wrong-type claimant cannot be hidden. */
++            for(const role of ["rider","mount"]){const tag=`civcavalry:v1:${record.epoch}:${record.group}:${record.generation}:${role}`,rows=dimension.getEntities({tags:[tag],location:{x:0,y:64,z:0},closest:2});if(!Array.isArray(rows)||rows.length!==1)throw Error(`${role} loaded tag census is ${Array.isArray(rows)?rows.length:"unknown"}; duplicate/unloaded is not death`);const actual=frame(rows[0]),wanted=role==="rider"?beforeR:beforeM;if(!equal(actual,wanted))throw Error("loaded role identity changed during inspection");}
++            const second=seat();if(!equal(first,second))throw Error("riding relation changed during sample");
++            let tick="UNKNOWN";try{const now=system.currentTick;if(Number.isSafeInteger(now)&&now>=0)tick=String(now);}catch(_unknownTick){}verifySource();if(!equal(frame(rider),beforeR)||!equal(frame(mount),beforeM)||!equal(frame(rider),beforeR))throw Error("role identity changed after metadata/counterpart callbacks");
++            if(privateInspectionReentered)throw Error("private inspection reentered during final getters");
++            return[title,metadata,`Live sampled tick ${tick}; rider ${beforeR.id} riding.entityRidingOn = ${second.ridingOn??"none"}.`,`Mount ${beforeM.id} rideable.getRiders IDs = [${second.riderIds.join(", ")}].`,`Two-way seating observed: ${second.seated?"YES":"NO (both sides unseated)"}.`,"Bounded sample: two known-ID lookups, two role-tag queries (closest2), no terrain reads. Non-atomic read-only observation; no state was changed."];
++        }catch(error){return["PRIVATE cavalry inspection held: "+String(error).slice(0,220),"No seating proof or actor-death inference. No state was changed."];}finally{privateInspectionBusy=false;}
++    }
+     /** @param {string} message @returns {string[]} */
+     function inspectCommand(message){
+         const match=/^group=([^\s]+)$/.exec(message.trim());
+         if(!match||parseGroupId(match[1])===null)return["Usage: /scriptevent civ:people inspect group=district-1:sol:0"];
++        if(deps.compoundNativeTrial===true)return inspectPrivateCompound(match[1]);
+         if(!lastSync)return["Read-only population inspection: no owner plan has run in this session; wait for its normal hour."];
+         const info=lastSync.inspectGroup(match[1],tickOf(undefined,liveTick()));
+         if(info.state!=="ok")return["Read-only population inspection: "+info.reason];

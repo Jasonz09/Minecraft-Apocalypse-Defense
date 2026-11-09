@@ -1,0 +1,10 @@
+[
+  {
+    "path": "entities\\swordsman.json",
+    "sha256": "42287CA290705E4A01487D55DC45DCF136D23088A52F3B29A538C17AD83C8544"
+  },
+  {
+    "path": "manifest.json",
+    "sha256": "D1F3F9D3C2ED5BF21517471FC1CF613F7B182D90DDFF09DB82178A308C41A87B"
+  }
+]

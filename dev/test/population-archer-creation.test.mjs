@@ -9,7 +9,7 @@ const {createCreationRuntime : unconfigured}=await import('../../CivilizationApo
 const {CREATION_ENTITY_TYPES,CUSTOM_CREATION_ENTITY_TYPES,registerCreationDeaths,PREFIX,META}=await import('../../CivilizationApocalypse_BP/scripts/integration/creationBindings.js');
 const {createPeopleStreets}=await import('../../CivilizationApocalypse_BP/scripts/integration/peopleStreets.js');
 const {createMilitarySelectionStore}=await import('../../CivilizationApocalypse_BP/scripts/integration/militarySelectionStore.js');
-const {MILITARY_TYPES,ARCHER_TYPE,SWORDSMAN_TYPE,decodeMilitarySelection,MILITARY_SELECTION_KEY}=await import('../../CivilizationApocalypse_BP/scripts/population/militarySelection.js');
+const {MILITARY_TYPES,ARCHER_TYPE,SWORDSMAN_TYPE,CAVALRY_TYPE,decodeMilitarySelection,MILITARY_SELECTION_KEY}=await import('../../CivilizationApocalypse_BP/scripts/population/militarySelection.js');
 import {REVIEWED_FRESH_FIXTURE as trust} from '../fixtures/synthetic-creation-trust.mjs';
 const GROUP='district-1:sol:0',TAG='civpop:v1:'+GROUP;
 
@@ -39,7 +39,7 @@ function fixture({activate=true,kind='archer',mode='fresh'}={}){
  return{pop,world,props,caller,objective,k,ready,run,alive,store,get runtime(){return runtime;},get selection(){return selection;},get deathOptions(){return deathOptions;},registerDeaths:()=>runtime.registerDeaths(),fire:entity=>death({deadEntity:entity}),rejoin(){pop.restart();runtime=createCreationRuntime(deps);},snapshot:e=>({groupId:GROUP,id:e.id,typeId:e.typeId,tags:[...e.tags]})};
 }
 test('shared creation allowlists exactly include both selected types; both death entrypoints use that same list',()=>{
- assert.deepEqual(CUSTOM_CREATION_ENTITY_TYPES,MILITARY_TYPES);assert.deepEqual(CREATION_ENTITY_TYPES,['minecraft:villager_v2','minecraft:iron_golem',SWORDSMAN_TYPE,ARCHER_TYPE]);assert.ok(Object.isFrozen(CREATION_ENTITY_TYPES));
+ assert.deepEqual(CUSTOM_CREATION_ENTITY_TYPES,[SWORDSMAN_TYPE,ARCHER_TYPE]);assert.deepEqual(MILITARY_TYPES,[SWORDSMAN_TYPE,ARCHER_TYPE,CAVALRY_TYPE]);assert.deepEqual(CREATION_ENTITY_TYPES,['minecraft:villager_v2','minecraft:iron_golem',SWORDSMAN_TYPE,ARCHER_TYPE]);assert.ok(Object.isFrozen(CREATION_ENTITY_TYPES));
  const f=fixture();assert.equal(f.registerDeaths(),true);assert.equal(f.registerDeaths(),false);assert.deepEqual(f.deathOptions.entityTypes,[...CREATION_ENTITY_TYPES]);
  let options;const w={afterEvents:{entityDie:{subscribe(_fn,o){options=o;}}}};registerCreationDeaths(w,{});assert.deepEqual(options.entityTypes,[...CREATION_ENTITY_TYPES]);
 });

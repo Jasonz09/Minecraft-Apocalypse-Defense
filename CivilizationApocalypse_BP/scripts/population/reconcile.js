@@ -118,7 +118,7 @@ function emptyReport(tick) {
         clockReset: false,
         refused: /** @type {string | null} */ (null),
         hold: /** @type {string | null} */ (null),
-        groups: { total: 0, physical: 0, coarse: 0, simulated: 0, capped: 0, chunkBlocked: 0 },
+        groups: /** @type {{total:number,physical:number,coarse:number,simulated:number,capped:number,chunkBlocked:number,admittedActorSlots?:number}} */ ({ total: 0, physical: 0, coarse: 0, simulated: 0, capped: 0, chunkBlocked: 0 }),
         observed: { entities: 0, own: 0, foreign: 0, unmanaged: 0, orphans: 0 },
         actions: { spawn: 0, despawn: 0, retag: 0 },
         pending: { spawn: 0, despawn: 0, retag: 0 },
@@ -364,9 +364,11 @@ function driftFor(records, table, byGroup, config) {
  * @param {number} tick
  * @param {Partial<PopSyncConfig>} [overrides]
  * @param {(group:import("./groups.js").GroupRecord)=>string} [typeForGroup] opt-in strict owner policy; absent preserves default behavior
+ * @param {(group:import("./groups.js").GroupRecord)=>1|2} [physicalCostForGroup]
+ * @param {{groupId:string,district:string,cost:2}[]} [reservations]
  * @returns {{ actions: Array<SpawnAction | DespawnAction | RetagAction>, state: CursorState, report: any }}
  */
-export function reconcile(state, observation, tick, overrides = {}, typeForGroup = undefined) {
+export function reconcile(state, observation, tick, overrides = {}, typeForGroup = undefined, physicalCostForGroup=undefined,reservations=[]) {
     if (!Number.isInteger(tick) || tick < 0) {
         throw new RangeError(`reconcile: tick must be a non-negative integer, got ${String(tick)}`);
     }
@@ -480,10 +482,11 @@ export function reconcile(state, observation, tick, overrides = {}, typeForGroup
             homeDistance: districtPosts.length > 0 ? nearestPostDistance(districtPosts, anchors) : Infinity,
             spotLoaded: spot !== null && loaded.has(chunkKeyOf(spot.x, spot.z)),
             bound: scan.byGroup.has(group.id),
+            physicalCost:physicalCostForGroup?.(group),
         });
     }
 
-    const plan = hold ? null : planLevels(inputs, config, meter);
+    const plan = hold ? null : planLevels(inputs, config, meter,reservations);
     report.groups.total = table.groups.length;
     if (hold) {
         report.hold = "no anchor is near any player: nothing is spawned or demoted until one is; duplicates and retags are still resolved";
@@ -588,6 +591,7 @@ export function reconcile(state, observation, tick, overrides = {}, typeForGroup
     }
     if (plan !== null) {
         Object.assign(report.groups, plan.counts);
+        if(plan.actorSlots!==undefined)report.groups.admittedActorSlots=plan.actorSlots;
     }
 
     // Budgets, in priority order: duplicates (the one-representative rule), retags (identity), demotions (capacity), spawns.

@@ -20,6 +20,7 @@ import { compareText, parseGroupId } from "./groups.js";
  *   homeDistance?: number,
  *   spotLoaded: boolean,
  *   bound: boolean,
+ *   physicalCost?: 1|2,
  * }} LodInput
  * @typedef {{ level: "physical" | "coarse" | "simulated", admitted: boolean, reason: string }} LodDecision
  */
@@ -41,9 +42,10 @@ function reachOf(input) {
  * @param {LodInput[]} inputs
  * @param {{ physicalRadius: number, holdRadius: number, coarseRadius: number, maxPhysicalPerDistrict: number, physicalFloorPerKind?: number, maxPhysicalTotal: number }} config
  * @param {{ ops: number }} meter work counter, incremented for every group evaluated and every comparison
- * @returns {{ decisions: Map<string, LodDecision>, counts: { physical: number, coarse: number, simulated: number, capped: number, chunkBlocked: number } }}
+ * @param {{groupId:string,district:string,cost:2}[]} [reservations] unresolved compound components consume capacity even when not loaded or in the group table
+ * @returns {{ decisions: Map<string, LodDecision>, counts: { physical: number, coarse: number, simulated: number, capped: number, chunkBlocked: number },actorSlots?:number,reservedActorSlots?:number,chargedActorSlots?:number }}
  */
-export function planLevels(inputs, config, meter) {
+export function planLevels(inputs, config, meter,reservations=[]) {
     /** @type {Map<string, LodDecision>} */
     const decisions = new Map();
     /** @type {LodInput[]} */
@@ -53,6 +55,7 @@ export function planLevels(inputs, config, meter) {
 
     for (const input of inputs) {
         meter.ops += 1;
+        if(input.physicalCost!==undefined&&input.physicalCost!==1&&input.physicalCost!==2)throw new Error("invalid physical actor cost");
         if (input.headcount <= 0) {
             decisions.set(input.id, { level: "simulated", admitted: false, reason: "empty" });
             continue;
@@ -117,18 +120,23 @@ export function planLevels(inputs, config, meter) {
     }
 
     const perDistrict = new Map();
-    let total = 0;
+    const reserved=new Map();let reservedTotal=0;
+    if(!Array.isArray(reservations)||reservations.length>24)throw Error("reservation input cap");
+    for(const r of reservations){const parsed=parseGroupId(r?.groupId);if(!parsed||parsed.kind!=="sol"||parsed.district!==r.district||r.cost!==2||reserved.has(r.groupId))throw Error("invalid capacity reservation");reserved.set(r.groupId,r);reservedTotal+=r.cost;perDistrict.set(r.district,(perDistrict.get(r.district)??0)+r.cost);meter.ops++;}
+    let total = reservedTotal;
     for (const candidate of candidates) {
         const used = perDistrict.get(candidate.district) ?? 0;
-        if (total >= config.maxPhysicalTotal) {
+        const own=reserved.get(candidate.id);if(own&&(own.district!==candidate.district||(candidate.physicalCost??1)!==2))throw Error("reserved group class/cost changed");
+        const cost=own?0:candidate.physicalCost??1;
+        if (total+cost > config.maxPhysicalTotal) {
             capped += 1;
             decisions.set(candidate.id, excluded(candidate, config, "capacity"));
-        } else if (used >= config.maxPhysicalPerDistrict) {
+        } else if (used+cost > config.maxPhysicalPerDistrict) {
             capped += 1;
             decisions.set(candidate.id, excluded(candidate, config, "capacity"));
         } else {
-            total += 1;
-            perDistrict.set(candidate.district, used + 1);
+            total += cost;
+            perDistrict.set(candidate.district, used + cost);
             decisions.set(candidate.id, { level: "physical", admitted: true, reason: "admitted" });
         }
     }
@@ -137,7 +145,7 @@ export function planLevels(inputs, config, meter) {
     for (const decision of decisions.values()) {
         counts[decision.level] += 1;
     }
-    return { decisions, counts };
+    return { decisions, counts,...(inputs.some(i=>i.physicalCost===2)||reservations.length?{actorSlots:inputs.reduce((n,i)=>n+(decisions.get(i.id)?.admitted?(i.physicalCost??1):0),0)}:{}),...(reservations.length?{reservedActorSlots:reservedTotal,chargedActorSlots:total}:{}) };
 }
 
 /**

@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "decision": "NOT_REVIEWED",
+  "closed": null,
+  "noMainHistory": null,
+  "noAttachedPacks": null,
+  "neverPeopleOn": null,
+  "sourceReceipt": {
+    "path": null,
+    "sha256": null
+  },
+  "padAudit": {
+    "path": null,
+    "sha256": null
+  },
+  "originalReceiptSha256": "BE44A5BA9E47C2AB890083B1FAD33657FEAF5B5B122C61A7C026CF0281EFA114",
+  "scoreboardAuditSha256": "784DFEEBD6F74B494B0F64E996AC360E1680B692557F478BB220F14387302230",
+  "fixtureId": null,
+  "epoch": null,
+  "origin": {
+    "x": 8,
+    "y": 301,
+    "z": 8
+  }
+}

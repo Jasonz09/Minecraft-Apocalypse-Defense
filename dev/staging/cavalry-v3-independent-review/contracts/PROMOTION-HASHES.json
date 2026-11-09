@@ -1,0 +1,66 @@
+{
+  "utc": "2026-11-09T01:00:18.705353+00:00",
+  "scope": "STAGED ONLY contracts; no active edits, synthetic trust only",
+  "proposedFiles": [
+    {
+      "staged": "proposed/dev/test/integration.test.mjs",
+      "destination": "dev/test/integration.test.mjs",
+      "sha256": "162A770157777CE4AE1F9B642DE49946961F3673ECE83FA962E2E825FF13DAFE",
+      "bytes": 16654,
+      "baselineSha256": "86CAC0DE3413D7724C177AA06D53D4FE8F6E3377B24FCF8029DA13EA194D4919"
+    },
+    {
+      "staged": "proposed/dev/test/ledger-binding.test.mjs",
+      "destination": "dev/test/ledger-binding.test.mjs",
+      "sha256": "3B1AA77ED156BCBB9141798EB3E01D69F710B6007A51A574FCFAC34FBFFC4B0C",
+      "bytes": 20392,
+      "baselineSha256": "75722AEB9494F9334D6A017D1C7016589423421904A8D2FF7B321F33628B9C10"
+    },
+    {
+      "staged": "proposed/dev/test/military-archer-assets.test.mjs",
+      "destination": "dev/test/military-archer-assets.test.mjs",
+      "sha256": "C00E9BFF6D809FCFB04134D2C3792A3A6E3CB21AAD7BACD3B9C95F80745920DE",
+      "bytes": 5065,
+      "baselineSha256": "68A6EEC141B1BA6FCF656F0C3A37D43A0A8678086CFADE7A14EBF067BA91C5F9"
+    },
+    {
+      "staged": "proposed/dev/test/military-lifecycle-diagnostics.test.mjs",
+      "destination": "dev/test/military-lifecycle-diagnostics.test.mjs",
+      "sha256": "B7B9C20168433C8AD6C7A43F5C615B14E399B59F382256E38C616128D035EA25",
+      "bytes": 14426,
+      "baselineSha256": "E44F12B4CDB26567D7E0A4CE42A8E5477BC8C608B13C0B865879E86257661E70"
+    },
+    {
+      "staged": "proposed/dev/test/people-runtime.test.mjs",
+      "destination": "dev/test/people-runtime.test.mjs",
+      "sha256": "29B04BB22FAEB6FF93D89C28F06036A34549CC989E398A07F6E991284ADEFABE",
+      "bytes": 12328,
+      "baselineSha256": "9A75B6C8B6D998910754BC504AB01D7AAF35E02FD7288316B081B9E84A38FBBE"
+    },
+    {
+      "staged": "proposed/dev/test/population-sync.test.mjs",
+      "destination": "dev/test/population-sync.test.mjs",
+      "sha256": "4EFB5D9CEF414392C64267155FA4ACAFE5E883381894985D0FE78EDB2B03A745",
+      "bytes": 39659,
+      "baselineSha256": "973243E578DD9512DEBC485750BC241ED9A5DB05D64A79146157E11176B02357"
+    },
+    {
+      "staged": "proposed/dev/test/reliability-runtime.test.mjs",
+      "destination": "dev/test/reliability-runtime.test.mjs",
+      "sha256": "C7D8531521FA353D218F62D3F91E744EB4028FFC76255733065FC50C44BA385B",
+      "bytes": 54176,
+      "baselineSha256": "87FA49EE69DFC45EC7EE6DBEDAE8BC7204E602EBB33A0B42C2C2503CD8268085"
+    }
+  ],
+  "validation": {
+    "pass": 146,
+    "fiveExistingFiles": {
+      "pass": 126,
+      "durationMs": 5665.3584
+    },
+    "twoRequiredAssetDiagnostic": {
+      "pass": 20,
+      "durationMs": 191.1082
+    }
+  }
+}

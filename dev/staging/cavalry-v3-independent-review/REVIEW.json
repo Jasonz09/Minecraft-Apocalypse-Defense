@@ -1,0 +1,41 @@
+{
+  "utc": "2026-11-09T01:00:18.705353+00:00",
+  "status": "NO NEW CODE BLOCKER in frozen v3; central/full/native gates still required",
+  "v3Manifest": "0EB95A26F21DAB9E815C857AEFBE3D2E69DEF430B3EF9201E27217696D5B70D1",
+  "independent": {
+    "pass": 68,
+    "durationMs": 403.7987
+  },
+  "exactPriorFourRegressions": {
+    "pass": 4,
+    "durationMs": 242.1346
+  },
+  "activeRelative68": {
+    "manifest": "central68/PROMOTION-HASHES.json",
+    "sha256": "5F2FFD4096B683718344A1481CC651FA3A5D8FAE44C7FFB5E924E60C1438E0DD",
+    "pass": 68,
+    "durationMs": 300.1429
+  },
+  "compatibility": {
+    "manifest": "contracts/PROMOTION-HASHES.json",
+    "sha256": "725D9A90A8B238D0F01838BABA46C8BE9C3643F8F41BDABB37932EE9C4DD4D76",
+    "files": 7,
+    "pass": 146
+  },
+  "reviewed": [
+    "NULL trust/profile defaults inert; no new owner/timer",
+    "Strict3-phase durable activation, preserve partials; no v2/future conversion",
+    "Native marker/caller/census includes both roles; operator closed-world provenance still required",
+    "Existing startupHOLD +full fresh write/finalquery/infight barriers",
+    "Bounded48read/pass clearance, separately charged rider/mount/seat",
+    "Prior cross-role/late quota failures now pass",
+    "Starter/export preserves/refuses all versions, no human aggregate debit"
+  ],
+  "remaining": [
+    "Coherent central191 full pass before install",
+    "Private bundle/genuine pad witness separate from synthetic tests",
+    "Horse content graph4/five assets prerequisite",
+    "No production city/cohort/migration/balance or native render/seat/rejoin acceptance"
+  ],
+  "noMainEdits": true
+}

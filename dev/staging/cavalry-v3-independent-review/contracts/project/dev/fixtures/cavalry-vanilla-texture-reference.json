@@ -1,0 +1,23 @@
+{
+  "utc": "2026-11-09T00:27:51.127916+00:00",
+  "primaryOfficialSample": "https://raw.githubusercontent.com/Mojang/bedrock-samples/v1.26.0.2/resource_pack/entity/horse_v1.entity.json",
+  "repository": "Mojang/bedrock-samples",
+  "ref": "v1.26.0.2",
+  "gitRefObject": {
+    "sha": "6ecff5fb86d6149cec0507665ea5686f3800b193",
+    "type": "commit",
+    "url": "https://api.github.com/repos/Mojang/bedrock-samples/git/commits/6ecff5fb86d6149cec0507665ea5686f3800b193"
+  },
+  "sampleSha256": "D1837825FB1A202961A1D40DCCE6635DD2E8C3ED63BF0DA2FAF71FFBB1959B14",
+  "sampleBytes": 4410,
+  "facts": {
+    "formatVersion": "1.10.0",
+    "identifier": "minecraft:horse",
+    "brownTextureAlias": "base_brown",
+    "brownTexturePath": "textures/entity/horse/horse_brown"
+  },
+  "scope": "Only sample JSON read and facts/hash retained; no texture/image bytes fetched/copied. This establishes official reference path, not native custom render/import acceptance.",
+  "failedInitialLookup": "horse.entity.json does not exist at this ref; correct official filename is horse_v1.entity.json",
+  "immutablePrimaryURL": "https://raw.githubusercontent.com/Mojang/bedrock-samples/6ecff5fb86d6149cec0507665ea5686f3800b193/resource_pack/entity/horse_v1.entity.json",
+  "immutableCommitBytesMatch": true
+}

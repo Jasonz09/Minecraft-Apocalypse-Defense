@@ -1,0 +1,311 @@
+--- before/integration/cavalryFreshTrust.js
++++ proposed/integration/cavalryFreshTrust.js
+@@ -0,0 +1,3 @@
++// Shipped default deliberately null. Only root-reviewed pristine witness/compiler may produce a PRIVATE variant.
++/** @type {null|{v:1,fixtureId:string,epoch:string,receiptSha256:string,levelSha256:string,nonce:string,participant:string,participantId:number,operatorKnownNewVanilla:true}} */
++export const REVIEWED_CAVALRY_FIXTURE=null;
+--- before/integration/cavalryMicrotrial.js
++++ proposed/integration/cavalryMicrotrial.js
+@@ -0,0 +1,18 @@
++// @ts-check
++import {PRIVATE_CAVALRY_TRIAL} from "./cavalryMicrotrialTrust.js";
++import {REVIEWED_CAVALRY_FIXTURE} from "./cavalryFreshTrust.js";
++import {decodeMilitarySelection} from "../population/militarySelection.js";
++import {POP_SPOTS} from "../population/settings.js";
++/** A private disposable-fixture configuration, NOT the production military selector or a saved city.
++ * NULL mode is inert and reads no world state. It never changes kingdom counts or terrain.
++ * @param {{creation:any}} deps */
++export function createCavalryMicrotrial(deps){
++ const p=PRIVATE_CAVALRY_TRIAL,d=REVIEWED_CAVALRY_FIXTURE;
++ if(p===null)return{streetsOptions:()=>({}),description:"off"};
++ if(!d||p.v!==1||p.fixtureId!==d.fixtureId||![p.origin.x,p.origin.y,p.origin.z].every(Number.isFinite)||!Number.isSafeInteger(p.origin.y)||p.origin.y< -63||p.origin.y>315)throw Error("private cavalry profile does not match reviewed v3 fixture");
++ const origin=Object.freeze({...p.origin}),home=Object.freeze({x:origin.x-POP_SPOTS.inset,y:origin.y,z:origin.z-POP_SPOTS.inset-POP_SPOTS.soldierRowOffset});
++ const selected=JSON.stringify({v:3,trialId:d.fixtureId,fixtureId:d.fixtureId,groupId:"district-1:sol:0",class:"cavalry",typeId:"civ_trial:cavalry",dimension:"minecraft:overworld"});
++ function readSelection(){const s=deps.creation.activeStore();if(!s||s.format()!==3)throw Error("private cavalry trial requires completed fresh-v3 activation");return decodeMilitarySelection(selected);}
++ function streetsOptions(){return{compoundNativeTrial:true,homes:()=>({"district-1":{...home}}),anchors:()=>[{...origin}],config:{physicalRadius:1,holdRadius:3,coarseRadius:4,physicalFloorPerKind:0,maxPhysicalPerDistrict:2,maxPhysicalTotal:2,maxSpawnsPerTick:1,maxOpsPerTick:1},readMilitarySelection:readSelection};}
++ return{streetsOptions,description:"private one-group owner trial; source-city military selection is not tested"};
++}
+--- before/integration/cavalryMicrotrialTrust.js
++++ proposed/integration/cavalryMicrotrialTrust.js
+@@ -0,0 +1,3 @@
++// No actual position or private trial profile is configured or inferred from a played world.
++/** @type {null|{v:1,fixtureId:string,origin:{x:number,y:number,z:number}}} */
++export const PRIVATE_CAVALRY_TRIAL=null;
+--- before/integration/compoundNative.js
++++ proposed/integration/compoundNative.js
+@@ -3,22 +3,22 @@
+ const RIDER="civ_trial:cavalry",MOUNT="civ_trial:cavalry_mount";
+ /** Concrete SAME-owner native adapter: no subscription, timer or independent reconciliation.
+  * Construction is inert. Factory flag stays false in every shipped/main call site.
+- * @param {{world:any,dimension:any,store:any,current:()=>void,charge:(n:number)=>void}} deps */
++ * @param {{world:any,dimension:any,store:any,current:()=>void,readCurrent?:()=>void,charge:(n:number)=>void}} deps */
+ export function createCompoundNative(deps){
+- const {world,dimension,store}=deps;
++ const {world,dimension,store}=deps;const readCurrent=deps.readCurrent??deps.current;
+  /** @param {any} r @param {'rider'|'mount'} role */const tag=(r,role)=>`civcavalry:v1:${r.epoch}:${r.group}:${r.generation}:${role}`;
+  /** @param {any} h */function frame(h){deps.charge(1);const at=h.location,tags=h.getTags();if(!Array.isArray(tags)||tags.length>64||tags.some(t=>typeof t!=="string"||t.length>256))throw Error("cavalry native tags unreadable");return{id:String(h.id),typeId:h.typeId,valid:h.isValid,at:{x:at.x,y:at.y,z:at.z},tags:[...tags].sort()};}
+  /** @param {any} r @param {'rider'|'mount'} role */function find(r,role){deps.current();deps.charge(1);const rows=dimension.getEntities({tags:[tag(r,role)],location:{x:0,y:64,z:0},closest:2});if(!Array.isArray(rows)||rows.length>1)throw Error("cavalry role query ambiguous");if(role==="rider"){deps.current();deps.charge(1);const canonical=dimension.getEntities({tags:["civpop:v1:"+r.group],location:{x:0,y:64,z:0},closest:2});if(!Array.isArray(canonical)||canonical.length!==(r.rider.phase==="alive"?1:0)||canonical.length&&String(canonical[0].id)!==r.rider.actor)throw Error("cavalry canonical identity conflict; preserve");}if(r[role].phase!=="alive"){if(rows.length)throw Error("unissued cavalry actor observed");return null;}if(rows.length!==1)throw Error("cavalry role unloaded/absent, preserve");const h=rows[0],a=frame(h);store.compound().assertOwned({groupId:r.group,role,id:a.id,typeId:a.typeId,tags:a.tags});const b=frame(h);if(JSON.stringify(a)!==JSON.stringify(b)||a.valid!==true)throw Error("cavalry role changed");return h;}
+  /** 3x3 horse floor plus 4-high composite body, and distinct rider landing floor/2-high body.
+   * At most48 getBlock calls per pass; no chunk loads or broad replaceability fallback.
+   * @param {{x:number,y:number,z:number}} center @param {string[]} [allowedIds] */function clearance(center,allowedIds=[]){deps.current();if(dimension.id!=="minecraft:overworld"||![center.x,center.y,center.z].every(Number.isFinite))throw Error("cavalry clearance dimension/position");const x=Math.floor(center.x),y=Math.floor(center.y),z=Math.floor(center.z);if(y< -63||y>315)throw Error("cavalry clearance height");deps.charge(1);const near=dimension.getEntities({location:center,maxDistance:4,closest:3});if(!Array.isArray(near)||near.length>2||near.some(h=>!allowedIds.includes(String(h.id))))throw Error("foreign entity in cavalry clearance; preserve");deps.current();const cells=[];for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++)for(let dy=-1;dy<=3;dy++)cells.push({x:x+dx,y:y+dy,z:z+dz,floor:dy===-1});for(let dy=-1;dy<=1;dy++)cells.push({x:x-2,y:y+dy,z,floor:dy===-1});
+- for(const c of cells){deps.current();deps.charge(1);const b=dimension.getBlock(c),id=b?.typeId;if(!b||b.isValid!==true)throw Error("cavalry clearance unloaded/unreadable");if(c.floor?!isKnownTravelFooting(id):!isTravelBodyClear(id))throw Error("cavalry two-body clearance blocked at "+[c.x,c.y,c.z].join(",")+" "+id);deps.current();}return{mount:{x:x+.5,y,z:z+.5},rider:{x:x-1.5,y,z:z+.5}};}
++ for(const c of cells){readCurrent();deps.charge(1);const b=dimension.getBlock(c),id=b?.typeId;if(!b||b.isValid!==true)throw Error("cavalry clearance unloaded/unreadable");if(c.floor?!isKnownTravelFooting(id):!isTravelBodyClear(id))throw Error("cavalry two-body clearance blocked at "+[c.x,c.y,c.z].join(",")+" "+id);readCurrent();}deps.current();return{mount:{x:x+.5,y,z:z+.5},rider:{x:x-1.5,y,z:z+.5}};}
+  /** @param {any} job @param {{x:number,y:number,z:number}|undefined} at */function spawnRole(job,at){
+  const core=store.compound(),r=core.inspect(job.groupId);if(JSON.stringify(r)!==job.expected||r?.[job.role]?.phase!=="never")throw Error("cavalry birth source changed");
+  const rider=find(r,"rider"),mount=find(r,"mount");if(mount)throw Error("mount-first trial unsupported; preserve");let center=at;if(rider){const f=frame(rider);center={x:f.at.x+2,y:f.at.y,z:f.at.z};}if(!center)throw Error("cavalry spawn position unavailable");const allowedIds=[rider,mount].filter(Boolean).map(h=>String(h.id));const spots=clearance(center,allowedIds);deps.current();if(JSON.stringify(core.inspect(job.groupId))!==job.expected)throw Error("cavalry metadata changed before intent");const ticket=core.prepareRole(job.groupId,job.role,job.expected);deps.current();
+  // Metadata/native queries may run callbacks; repeat the complete physical proof AFTER pending intent.
+  const fresh=core.inspect(job.groupId);find(fresh,job.role==="rider"?"mount":"rider");clearance(center,allowedIds);deps.current();
+- find(fresh,job.role);
++ find(fresh,job.role);deps.current();
+  const type=job.role==="rider"?RIDER:MOUNT,point=job.role==="rider"?spots.rider:spots.mount;const h=dimension.spawnEntity(type,point),id=String(h.id);
+  try{core.recordSpawned(ticket,id);if(h.addTag(ticket.tag)!==true||job.role==="rider"&&h.addTag("civpop:v1:"+r.group)!==true)throw Error("cavalry newborn tags failed");const a=frame(h);if(a.id!==id||a.typeId!==type||a.valid!==true||!a.tags.includes(ticket.tag)||job.role==="rider"&&!a.tags.includes("civpop:v1:"+r.group))throw Error("cavalry newborn identity changed");deps.current();core.confirmBorn(ticket,{groupId:r.group,role:job.role,id,typeId:type,tags:a.tags});return{id,role:job.role};}
+  catch(error){
+--- before/integration/creationRuntime.js
++++ proposed/integration/creationRuntime.js
+@@ -1,3 +1,7 @@
++import {REVIEWED_CAVALRY_FIXTURE} from "./cavalryFreshTrust.js";
++import {createPrivateFreshV3Fixture} from "./privateFreshV3Fixture.js";
++import {META as V3_META} from "./creationUnifiedV3.js";
++import {routeCompoundDeath} from "./compoundNative.js";
+ // @ts-check
+ import {FAMILY,META,CREATION_ENTITY_TYPES} from "./creationBindings.js";
+ import {createPrivateFreshFixture,ACTIVATION_FAMILY} from "./privateFreshFixture.js";
+@@ -6,24 +10,27 @@
+  * Fresh activation is private compiled-fixture only; the shipped descriptor is null.
+  * @param {{world:any,isPeopleOn:()=>boolean,isBusy:()=>boolean,isDeveloper:()=>boolean,readKingdom:()=>any}} deps */
+ export function createCreationRuntime(deps){
+- const fixture=createPrivateFreshFixture(deps),store=fixture.store;let registered=false,last="not observed";
++ const cavalryConfigured=REVIEWED_CAVALRY_FIXTURE!==null;if(cavalryConfigured&&REVIEWED_FRESH_FIXTURE!==null)throw Error("choose one private activation schema");
++ const configured=cavalryConfigured||REVIEWED_FRESH_FIXTURE!==null,bindingMeta=cavalryConfigured?V3_META:META;
++ const fixture=cavalryConfigured?createPrivateFreshV3Fixture(deps):createPrivateFreshFixture(deps),store=fixture.store;let registered=false,last="not observed";
+  function keys(){const k=deps.world.getDynamicPropertyIds();if(!Array.isArray(k)||k.length>4096||k.some(x=>typeof x!=="string")||new Set(k).size!==k.length)throw Error("creation state census unreadable");return k;}
+  function activeStore(){
+   const before=fixture.status();if(before.state==='held')throw Error('creation activation HOLD: '+before.reason);
+   const ids=keys();
+   if(before.state==='absent'&&ids.some(k=>k.startsWith(ACTIVATION_FAMILY)))throw Error('creation activation changed during census; HOLD');
+   const present=ids.some(k=>k.startsWith(FAMILY));
+-  if(before.state==='absent'&&!present&&REVIEWED_FRESH_FIXTURE!==null)throw Error('private fixture activation pending; HOLD before legacy birth');
++  if(before.state==='absent'&&!present&&configured)throw Error('private fixture activation pending; HOLD before legacy birth');
+   const after=fixture.status();if(after.state!==before.state||after.state==='held')throw Error('creation activation changed or held');
+   return present||after.state==='complete'?store:undefined;
+  }
+- function statusLines(){try{const s=activeStore();if(!s)return["Creation history: off (legacy population behavior).",`Last creation signal: ${last}`];s.inspect("district-1:civ:0");const m=JSON.parse(deps.world.getDynamicProperty(META));return[`Creation history: ${m.mode}; ${m.issued} groups; pending issuance ${m.pending?"held":"none"}.`,`Last creation signal: ${last}`];}catch(e){return[`Creation history held: ${String(e)}`];}}
++ function statusLines(){try{const s=activeStore();if(!s)return["Creation history: off (legacy population behavior).",`Last creation signal: ${last}`];s.inspect("district-1:civ:0");const m=JSON.parse(deps.world.getDynamicProperty(bindingMeta));return[`Creation history: ${m.mode}; ${m.issued} groups; pending issuance ${m.pending?"held":"none"}.`,`Last creation signal: ${last}`];}catch(e){return[`Creation history held: ${String(e)}`];}}
+  /** @param {string} message @param {any} [player] */
+  function command(message,player){const text=message.trim();if(text==="status")return statusLines();
+   if(!deps.isDeveloper()||deps.isBusy()||deps.isPeopleOn())throw Error("creation activation requires development mode, people off and no active job");
+   if(text==="fresh confirm"){
+    fixture.activate(player);last='reviewed private fixture activation complete';return statusLines();
+   }
++  if(cavalryConfigured)throw Error("fresh-v3 cannot initialize or migrate legacy/v2 history");
+   // A marker of any activation schema must never reach legacy initialization.
+   const activation=fixture.status();if(activation.state!=='absent'||keys().some(k=>k.startsWith(ACTIVATION_FAMILY)))throw Error('creation activation present or held; legacy fallback prohibited');
+   const m=/^legacy confirm epoch=([A-Za-z0-9_-]{1,64})$/.exec(text);if(!m)throw Error("use creation status or creation legacy confirm epoch=<unique-id>");
+@@ -36,7 +43,7 @@
+  /** @param {any} player */
+  function onInitialSpawn(player){
+   // No world read at all when the compiled descriptor is absent. Never set the developer flag.
+-  if(REVIEWED_FRESH_FIXTURE===null)return false;
++  if(!configured)return false;
+   try{
+    const status=fixture.status();if(status.state==='complete')return false;
+    if(status.state!=='absent')throw Error('creation activation incomplete; preserve and HOLD');
+@@ -55,6 +62,6 @@
+    return true;
+   }catch(error){last='simulation hour held: '+String(error).slice(0,180);return false;}
+  }
+- function registerDeaths(){if(registered)return false;deps.world.afterEvents.entityDie.subscribe((/** @type {any} */e)=>{try{const s=activeStore();if(!s)return;const h=e.deadEntity,tags=h.getTags();if(!Array.isArray(tags)||tags.length>64)throw Error("death identity unreadable");const claims=tags.filter(t=>typeof t==="string"&&t.startsWith("civpop:v1:"));if(claims.length!==1)return;const accepted=s.confirmDeath({groupId:claims[0].slice(10),id:String(h.id),typeId:h.typeId,tags:[...tags]});last=accepted?"exact physical death recorded; aggregate unchanged":"duplicate/untracked death ignored";}catch(e){last=`death held: ${String(e).slice(0,180)}`;}},{entityTypes:[...CREATION_ENTITY_TYPES]});registered=true;return true;}
+- return{activeStore,statusLines,command,registerDeaths,onInitialSpawn,beforeSimulationStep:REVIEWED_FRESH_FIXTURE===null?undefined:simulationReady};
++ function registerDeaths(){if(registered)return false;deps.world.afterEvents.entityDie.subscribe((/** @type {any} */e)=>{try{const s=activeStore();if(!s)return;const h=e.deadEntity;if(cavalryConfigured&&["civ_trial:cavalry","civ_trial:cavalry_mount"].includes(h.typeId)){const accepted=routeCompoundDeath(e,s);last=accepted?"exact cavalry role death recorded; aggregate unchanged":"duplicate/untracked cavalry death ignored";return;}const tags=h.getTags();if(!Array.isArray(tags)||tags.length>64)throw Error("death identity unreadable");const claims=tags.filter(t=>typeof t==="string"&&t.startsWith("civpop:v1:"));if(claims.length!==1)return;const accepted=s.confirmDeath({groupId:claims[0].slice(10),id:String(h.id),typeId:h.typeId,tags:[...tags]});last=accepted?"exact physical death recorded; aggregate unchanged":"duplicate/untracked death ignored";}catch(e){last=`death held: ${String(e).slice(0,180)}`;}},{entityTypes:[...CREATION_ENTITY_TYPES,...(cavalryConfigured?["civ_trial:cavalry","civ_trial:cavalry_mount"]:[])]});registered=true;return true;}
++ return{activeStore,statusLines,command,registerDeaths,onInitialSpawn,beforeSimulationStep:configured?simulationReady:undefined};
+ }
+--- before/integration/peopleStreets.js
++++ proposed/integration/peopleStreets.js
+@@ -59,6 +59,7 @@
+  *   posts?: (kingdom: any) => Record<string, Array<{ x: number, y: number, z: number }>>,
+  *   anchors?: () => Array<{ x: number, y: number, z: number }>,
+  *   getCreationBindings?:()=>any,
++ *   compoundNativeTrial?:boolean,
+  *   readMilitarySelection?:()=>import("../population/militarySelection.js").MilitarySelectionRead,
+  *   militaryDiagnostics?:ReturnType<typeof import("./militaryLifecycleDiagnostics.js").createMilitaryLifecycleDiagnostics>,
+  * }} [deps]
+@@ -127,7 +128,7 @@
+         if (gateOn(world) !== true) {
+             if(creationBindings){
+                 try{const owner=createPopSync({world,dimension,readKingdom:()=>ctx.kingdom,enabled:false,
+-                    creationBindings,config:deps.config??{},readMilitarySelection:deps.readMilitarySelection,militaryDiagnostics:deps.militaryDiagnostics});
++                    creationBindings,compoundNativeTrial:deps.compoundNativeTrial===true,config:deps.config??{},readMilitarySelection:deps.readMilitarySelection,militaryDiagnostics:deps.militaryDiagnostics});
+                     lastSync=owner;const result=owner.teardownBound(censusOurs(ctx,true),tickOf(ctx.tick,liveTick()));
+                     done.cleared+=result.removed;done.removed+=result.removed;done.refused=result.held;
+                     done.births="gate-off bound teardown; no birth requested";
+@@ -165,7 +166,7 @@
+             config: deps.config ?? {},
+             readMilitarySelection:deps.readMilitarySelection,
+             militaryDiagnostics:deps.militaryDiagnostics,
+-            creationBindings,
++            creationBindings,compoundNativeTrial:deps.compoundNativeTrial===true,
+         });
+         lastSync=sync;
+         const run = sync.reconcileOnce(tickOf(ctx.tick, liveTick()));
+--- before/integration/popSync.js
++++ proposed/integration/popSync.js
+@@ -3,7 +3,7 @@
+ import {createRoleBudget} from "../population/roleBudget.js";
+ import { world as runtimeWorld } from "@minecraft/server";
+ import { createKingdomStore } from "../kingdom/store.js";
+-import { buildGroupTable, chunkKeyOf, nearestDistance, nearestPostDistance, parseGroupId, postOf, spotFor } from "../population/groups.js";
++import { buildGroupTable, districtInFight, chunkKeyOf, nearestDistance, nearestPostDistance, parseGroupId, postOf, spotFor } from "../population/groups.js";
+ import { classifyTags, tagFor } from "../population/identity.js";
+ import { cursorBytes, decodeCursor, encodeCursor } from "../population/cursor.js";
+ import { reconcile, resolveConfig } from "../population/reconcile.js";
+@@ -363,8 +363,8 @@
+     }
+     /** @param {unknown} expected @param {import("../population/cursor.js").CursorState} state */
+     function publishCompoundBudget(expected,state){const raw=encodeCursor(state);if(cursorBytes(state)>POP_CURSOR_MAX_BYTES||world.getDynamicProperty(POP_CURSOR_KEY)!==expected)throw Error("compound budget cursor changed; no native work");world.setDynamicProperty(POP_CURSOR_KEY,raw);if(world.getDynamicProperty(POP_CURSOR_KEY)!==raw)throw Error("compound budget publication unverified; no native work");return raw;}
+-    /** @param {any} policy */
+-    function compoundPolicyCurrent(policy){if(policy!==null&&militaryPolicy(readKingdom())?.stamp!==policy.stamp)throw Error("military selection changed before compound work");}
++    /** @param {any} policy @param {string} [groupId] */
++    function compoundPolicyCurrent(policy,groupId){const kingdom=readKingdom();if(policy!==null&&militaryPolicy(kingdom)?.stamp!==policy.stamp)throw Error("military selection changed before compound work");if(groupId){const district=parseGroupId(groupId)?.district,rows=kingdom?.districts?.filter((/** @type {any} */d)=>d.id===district);if(!Array.isArray(rows)||rows.length!==1||districtInFight(rows[0]))throw Error("compound in-fight or district changed; preserve");}}
+     /** @param {any} h */
+     function compoundFrame(h){chargeMilitaryWork(1);const at=h.location,tags=h.getTags();if(!Array.isArray(tags)||tags.length>64||tags.some(t=>typeof t!=="string"||t.length>256))throw Error("compound native tags unreadable");chargeMilitaryWork(tags.length+1);return{id:String(h.id),typeId:String(h.typeId),valid:h.isValid,location:{x:at.x,y:at.y,z:at.z},tags:[...tags].sort()};}
+     /** Strictly bounded global-tag query; absent loaded actor is NEVER a terminal receipt.
+@@ -374,7 +374,7 @@
+      * @param {any} job @param {any} policy */
+     function compoundPreflight(job,policy){const core=creationBindings.compound(),r=core.inspect(job.groupId);if(!r||r.kind!=="compound"||r.epoch!==job.epoch||r.generation!==job.generation||r[job.role].actor!==job.id||r[job.role].type!==job.type)throw Error("compound job identity changed");if(dimension.id!=="minecraft:overworld")throw Error("compound dimension mismatch");const handles=new Map(),frames=new Map();
+         for(const role of ["rider","mount"]){const m=r[role],tag=`civcavalry:v1:${r.epoch}:${r.group}:${r.generation}:${role}`,matches=compoundQuery(tag);if(["never","terminal","cancelled"].includes(m.phase)){if(matches.length)throw Error("unissued/terminal compound actor reappeared; preserve pair");continue;}if(m.phase==="pending")throw Error("compound pending outcome unknown; preserve pair");if(matches.length!==1)throw Error("compound role unloaded/absent; preserve pair");const h=matches[0],frame=compoundFrame(h);core.assertOwned({groupId:r.group,role,id:frame.id,typeId:frame.typeId,tags:frame.tags});handles.set(role,h);frames.set(role,frame);}
+-        compoundPolicyCurrent(policy);
++        compoundPolicyCurrent(policy,job.groupId);
+         const rider=handles.get("rider"),mount=handles.get("mount");let riding=null,riders=[];
+         if(mount){chargeMilitaryWork(1);const rideable=mount.getComponent("minecraft:rideable");if(!rideable||typeof rideable.getRiders!=="function")throw Error("compound rideable proof unavailable");chargeMilitaryWork(1);riders=rideable.getRiders();if(!Array.isArray(riders)||riders.length>1)throw Error("ambiguous compound riders");if(riders.length&&(!rider||String(riders[0].id)!==String(rider.id)))throw Error("foreign rider attached; preserve pair");}
+         if(rider){chargeMilitaryWork(1);const relation=rider.getComponent("minecraft:riding");if(relation){riding=relation.entityRidingOn;if(!mount||!riding||String(riding.id)!==String(mount.id))throw Error("rider on foreign mount; preserve pair");}}
+@@ -386,10 +386,10 @@
+     }
+     /** @param {any[]} jobs @param {any} policy @param {string|undefined} prepaidRaw */
+     function applyCompoundMaintenance(jobs,policy,prepaidRaw){const applied=[];let held=null;for(const job of jobs){try{
+-            if(job.kind==="birth"||job.kind==="seat"){if(!compoundTrial||creationBindings.format()!==3)throw Error("compound native trial disabled or wrong schema");const native=createCompoundNative({world,dimension,store:creationBindings,charge:chargeMilitaryWork,current:()=>{compoundPolicyCurrent(policy);if(world.getDynamicProperty(POP_CURSOR_KEY)!==prepaidRaw)throw Error("prepaid compound quota changed; preserve");}});if(job.kind==="birth"){const at=job.at?settleSpot(job.at):undefined;if(job.at&&!at)throw Error("no safe cavalry spawn column");const born=native.spawnRole(job,at);applied.push({action:{op:"spawn",groupId:job.groupId,role:job.role,reason:"compound charged role birth"},reason:null,entityId:born.id});}else{native.seat(job);applied.push({action:{op:"seat-role",groupId:job.groupId},reason:null,entityId:job.id});}continue;}
++            if(job.kind==="birth"||job.kind==="seat"){if(!compoundTrial||creationBindings.format()!==3)throw Error("compound native trial disabled or wrong schema");const native=createCompoundNative({world,dimension,store:creationBindings,charge:chargeMilitaryWork,readCurrent:()=>{if(dimension.id!=="minecraft:overworld"||world.getDynamicProperty(POP_CURSOR_KEY)!==prepaidRaw)throw Error("cavalry clearance quota/dimension changed; preserve");},current:()=>{compoundPolicyCurrent(policy,job.groupId);if(world.getDynamicProperty(POP_CURSOR_KEY)!==prepaidRaw)throw Error("prepaid compound quota changed; preserve");}});if(job.kind==="birth"){const at=job.at?settleSpot(job.at):undefined;if(job.at&&!at)throw Error("no safe cavalry spawn column");const born=native.spawnRole(job,at);applied.push({action:{op:"spawn",groupId:job.groupId,role:job.role,reason:"compound charged role birth"},reason:null,entityId:born.id});}else{native.seat(job);applied.push({action:{op:"seat-role",groupId:job.groupId},reason:null,entityId:job.id});}continue;}
+             let proof=compoundPreflight(job,policy),member=proof.record[job.role];if(job.kind==="cancel"){if(member.phase!=="never")throw Error("role no longer never-created");if(world.getDynamicProperty(POP_CURSOR_KEY)!==prepaidRaw)throw Error("prepaid compound quota changed; preserve");proof.core.cancelNeverCreated(job.groupId,job.role);applied.push({action:{op:"cancel-role",...job},reason:null,entityId:null});continue;}
+             if(!["alive","removing"].includes(member.phase))throw Error("compound role terminal changed");const frame=proof.frames.get(job.role),ticket=proof.core.beginRemove({groupId:job.groupId,role:job.role,id:frame.id,typeId:frame.typeId,tags:frame.tags});proof=compoundPreflight(job,policy);const h=proof.handles.get(job.role);if(!h)throw Error("compound removal actor unavailable");
+-            if(world.getDynamicProperty(POP_CURSOR_KEY)!==prepaidRaw)throw Error("prepaid compound quota changed; preserve");
++            compoundPolicyCurrent(policy,job.groupId);if(world.getDynamicProperty(POP_CURSOR_KEY)!==prepaidRaw)throw Error("prepaid compound quota changed; preserve");
+             // Counterpart/relationship/block callbacks may invalidate an earlier role frame.
+             // Re-read the ACTUAL deletion target after all of them; no metadata or counterpart callbacks follow.
+             const finalA=compoundFrame(h),finalB=compoundFrame(h);if(JSON.stringify(finalA)!==JSON.stringify(proof.frames.get(job.role))||JSON.stringify(finalA)!==JSON.stringify(finalB))throw Error("compound final deletion target changed after counterpart proof");
+--- before/integration/privateFreshV3Fixture.js
++++ proposed/integration/privateFreshV3Fixture.js
+@@ -0,0 +1,98 @@
++// @ts-check
++import {REVIEWED_CAVALRY_FIXTURE as REVIEWED_FRESH_FIXTURE} from './cavalryFreshTrust.js';
++import {createUnifiedStore} from './creationUnifiedStore.js';
++import {META} from './creationUnifiedV3.js';
++import {FAMILY,CUSTOM_CREATION_ENTITY_TYPES} from './creationBindings.js';
++import {createInitialKingdom,serializeKingdom} from '../kingdom/state.js';
++export const ACTIVATION_FAMILY='civ:creation_activation:',ACTIVATION_KEY=ACTIVATION_FAMILY+'v3',OBJECTIVE='ca_fresh_owner';
++const LIMITS=Object.freeze({allKeys:4096,entities:64,tags:64,tagChars:256,markerBytes:16384});
++/** @param {string} reason @returns {never} */const fail=reason=>{throw Error(reason);};
++/** @param {unknown} text */const ascii=text=>typeof text==='string'&&/^[A-Za-z0-9_-]{1,64}$/.test(text);
++/** @param {any} d */function trusted(d){return d&&d.v===1&&ascii(d.fixtureId)&&ascii(d.epoch)&&ascii(d.nonce)&&ascii(d.participant)&&Number.isSafeInteger(d.participantId)&&d.participantId>=0&&/^[A-F0-9]{64}$/.test(d.receiptSha256)&&/^[A-F0-9]{64}$/.test(d.levelSha256)&&d.operatorKnownNewVanilla===true;}
++/** Private compiled fixture adapter only. Construction is early-safe, no reads.
++ * No descriptor, receipt, epoch or fresh boolean comes from a command/request.
++ * @param {{world:any,isDeveloper:()=>boolean,isPeopleOn:()=>boolean,isBusy:()=>boolean}} deps */
++export function createPrivateFreshV3Fixture(deps){
++ const d=REVIEWED_FRESH_FIXTURE,world=deps.world;
++ /** @type {string|null} */let authorizing=null;
++ const initial=serializeKingdom(createInitialKingdom());
++ /** @type {Map<string,unknown>} */const expected=new Map(/** @type {[string,unknown][]} */([['civ:kingdom',initial],['civ_devgate',true]]));
++ /** @type {any} */let caller;
++ let callerId='';
++ function fast(){if(!caller||deps.isDeveloper()!==true||deps.isPeopleOn()!==false||deps.isBusy()!==false||caller.isValid!==true||caller.id!==callerId||caller.dimension.id!=='minecraft:overworld')fail('fresh activation player/gate/job changed');}
++ /** @template T @param {()=>T} read @returns {T} */function native(read){fast();let failed=false;/** @type {unknown} */let error;/** @type {T} */let value;try{value=read();}catch(e){failed=true;error=e;}fast();if(failed)throw error;return /** @type {T} */(value);}
++ /** Current-main namespace only: exact initial save/dev key, no history or other keys.
++  * @param {string|null} intent @param {string|null} header */
++ function properties(intent,header){
++  const ids=native(()=>world.getDynamicPropertyIds());if(!Array.isArray(ids)||ids.length>LIMITS.allKeys||ids.some(k=>typeof k!=='string')||new Set(ids).size!==ids.length)fail('fresh property census unreadable');
++  const allow=new Map(expected);if(intent!==null)allow.set(ACTIVATION_KEY,intent);if(header!==null)allow.set(META,header);
++  if(ids.length!==allow.size||ids.some(k=>!allow.has(k)))fail('fresh source/property history is not the exact initial snapshot');
++  for(const k of [...allow.keys()].sort())if(native(()=>world.getDynamicProperty(k))!==allow.get(k))fail('fresh initial property changed: '+k);
++ }
++ function marker(){
++  const objectives=native(()=>world.scoreboard.getObjectives());if(!Array.isArray(objectives)||objectives.length!==1)fail('fixture scoreboard objective census differs');
++  const objective=native(()=>world.scoreboard.getObjective(OBJECTIVE));if(!objective)fail('fixture objective absent');
++  const id=native(()=>objective.id),valid=native(()=>objective.isValid),name=native(()=>objective.displayName);
++  if(id!==OBJECTIVE||valid!==true||name!==d?.nonce||native(()=>objectives[0].id)!==OBJECTIVE)fail('fixture scoreboard identity differs');
++  const scores=native(()=>objective.getScores());if(!Array.isArray(scores)||scores.length!==1)fail('fixture score census differs');
++  const score=native(()=>scores[0].score),participant=native(()=>scores[0].participant);
++  if(!participant||native(()=>participant.isValid)!==true||native(()=>participant.type)!=='FakePlayer'||native(()=>participant.id)!==d?.participantId||native(()=>participant.displayName)!==d?.participant||score!==0)fail('fixture fake participant/score differs');
++  return JSON.stringify({id,name,participant:d?.participant,participantId:d?.participantId,score});
++ }
++ function emptyCensus(){
++  const players=native(()=>world.getAllPlayers());if(!Array.isArray(players)||players.length!==1||native(()=>players[0].id)!==callerId)fail('fresh activation requires exactly the caller');
++  for(const name of ['overworld','nether','the_end']){
++   const dimension=native(()=>world.getDimension(name));
++   if(native(()=>dimension.id)!=='minecraft:'+name)fail('unexpected dimension identity');
++   const rows=native(()=>dimension.getEntities({location:{x:0,y:64,z:0},closest:LIMITS.entities+1}));
++   if(!Array.isArray(rows)||rows.length>LIMITS.entities)fail('loaded entity census exceeds bound');
++   const seen=new Set();for(const entity of rows){
++    const id=native(()=>entity.id),type=native(()=>entity.typeId),valid=native(()=>entity.isValid),tags=native(()=>entity.getTags());
++    if(typeof id!=='string'||!id||id.length>128||seen.has(id)||typeof type!=='string'||valid!==true||!Array.isArray(tags)||tags.length>LIMITS.tags||tags.some(t=>typeof t!=='string'||t.length>LIMITS.tagChars))fail('loaded census identity/tags unreadable');seen.add(id);
++    if([...CUSTOM_CREATION_ENTITY_TYPES,"civ_trial:cavalry","civ_trial:cavalry_mount"].includes(type)||tags.some(t=>/^(?:civpop:|civbirth:|civbesiege:|civcavalry:)/.test(t)))fail('loaded population/siege history exists');
++   }
++  }
++ }
++ /** @param {string|null} intent @param {string|null} header */
++ function verify(intent,header){
++  if(!trusted(d))fail('no actual reviewed compiled blank-world receipt configured');
++  properties(intent,header);const mark=marker();emptyCensus();properties(intent,header);if(marker()!==mark)fail('fixture marker changed during verification');properties(intent,header);fast();
++ }
++ const store=createUnifiedStore(world,{format:3,verifyFreshWorld:()=>{
++  if(authorizing===null)fail('private initialization capability absent');verify(authorizing,null);
++  return {verified:true,fixtureId:/** @type {NonNullable<typeof d>} */(d).fixtureId,dimension:'minecraft:overworld',ownerHistory:'never-started'};
++ }});
++ /** @param {any} player */
++ function activate(player){
++  if(!trusted(d))fail('no actual reviewed compiled blank-world receipt configured');
++  if(caller)fail('fresh activation reentered');caller=player;
++  try{callerId=String(player?.id??'');
++   verify(null,null);
++   const descriptor=/** @type {NonNullable<typeof d>} */(d),base={v:3,bindingVersion:3,fixture:descriptor.fixtureId,epoch:descriptor.epoch,receiptSha256:descriptor.receiptSha256,levelSha256:descriptor.levelSha256,objective:OBJECTIVE,nonce:descriptor.nonce,participant:descriptor.participant,participantId:descriptor.participantId};
++   const intent=JSON.stringify({...base,phase:'intent'});if(intent.length>LIMITS.markerBytes)fail('activation intent byte bound');
++   // Positive intent publication before core initialize; no clear/recovery fallback.
++   properties(null,null);native(()=>world.setDynamicProperty(ACTIVATION_KEY,intent));if(native(()=>world.getDynamicProperty(ACTIVATION_KEY))!==intent)fail('activation intent readback failed');
++   verify(intent,null);authorizing=intent;
++   try{store.initialize({mode:'fresh',epoch:descriptor.epoch,fixture:descriptor.fixtureId});}finally{authorizing=null;}
++   const header=native(()=>world.getDynamicProperty(META));if(typeof header!=='string')fail('fresh binding header missing');
++   const exact=JSON.stringify({v:3,epoch:descriptor.epoch,mode:'fresh',fixture:descriptor.fixtureId,dimension:'minecraft:overworld',chunks:[],issued:0,pending:null});if(header!==exact)fail('fresh binding initial header differs');
++   verify(intent,header);
++   const complete=JSON.stringify({...base,phase:'complete'});properties(intent,header);native(()=>world.setDynamicProperty(ACTIVATION_KEY,complete));if(native(()=>world.getDynamicProperty(ACTIVATION_KEY))!==complete)fail('activation completion readback failed');properties(complete,header);return{state:'complete',fixture:descriptor.fixtureId};
++  }finally{authorizing=null;caller=undefined;callerId='';}
++ }
++ // Wiring must call this BEFORE legacy fallback. Any partial/unknown marker holds.
++ function status(){try{
++  const ids=world.getDynamicPropertyIds();if(!Array.isArray(ids)||ids.length>LIMITS.allKeys||ids.some((/** @type {any} */k)=>typeof k!=='string'))fail('activation state census unreadable');
++  if(ids.some(k=>k.startsWith(FAMILY)&&!k.startsWith(FAMILY+'v3:')))fail('v2/unknown binding history cannot become fresh-v3');
++  const active=ids.filter((/** @type {string} */k)=>k.startsWith(ACTIVATION_FAMILY));
++  if(!active.length){const raw=world.getDynamicProperty(META);if(typeof raw==='string'&&JSON.parse(raw).mode==='fresh')fail('fresh binding lacks completed activation');return{state:'absent'};}
++  if(!trusted(d)||active.length!==1||active[0]!==ACTIVATION_KEY)fail('unknown/unconfigured activation receipt');
++  const raw=world.getDynamicProperty(ACTIVATION_KEY);if(typeof raw!=='string'||raw.length>LIMITS.markerBytes)fail('activation receipt unreadable');const value=JSON.parse(raw),descriptor=/** @type {NonNullable<typeof d>} */(d);
++  const exact=JSON.stringify({v:3,bindingVersion:3,fixture:descriptor.fixtureId,epoch:descriptor.epoch,receiptSha256:descriptor.receiptSha256,levelSha256:descriptor.levelSha256,objective:OBJECTIVE,nonce:descriptor.nonce,participant:descriptor.participant,participantId:descriptor.participantId,phase:'complete'});
++  if(raw!==exact||value.phase!=='complete')fail('activation incomplete/mismatched; preserve intent and header');
++  store.inspect('district-1:civ:0');const header=JSON.parse(world.getDynamicProperty(META));if(header.epoch!==descriptor.epoch||header.fixture!==descriptor.fixtureId||header.mode!=='fresh')fail('activation/binding epoch differs');
++  if(world.getDynamicProperty(ACTIVATION_KEY)!==raw)fail('activation changed during final binding read');
++  return{state:'complete'};
++ }catch(error){return{state:'held',reason:String(error)};}}
++ return{store,activate,status};
++}
+--- before/main.js
++++ proposed/main.js
+@@ -1,3 +1,4 @@
++import {createCavalryMicrotrial} from "./integration/cavalryMicrotrial.js";
+ import { createCreationRuntime } from "./integration/creationRuntime.js";
+ import { CIV } from "./config.js";
+ import { system, world } from "@minecraft/server";
+@@ -61,7 +62,8 @@
+ registerMilitaryLifecycleSignals(world,militaryDiagnostics);
+ const creation=createCreationRuntime({world,isPeopleOn:()=>peopleGateOn(world),isBusy,isDeveloper:()=>world.getDynamicProperty(CIV.devGateKey)===true,readKingdom:()=>kingdomStore.load().kingdom});
+ creation.registerDeaths();
+-const streets=createPeopleStreets({getCreationBindings:creation.activeStore,readMilitarySelection:military.store.load,militaryDiagnostics});
++const cavalryMicrotrial=createCavalryMicrotrial({creation});
++const streets=createPeopleStreets({getCreationBindings:creation.activeStore,readMilitarySelection:military.store.load,militaryDiagnostics,...cavalryMicrotrial.streetsOptions()});
+ const civilianTravel=createCivilianTravel({world,readKingdom:()=>kingdomStore.load().kingdom,
+     admittedGroups:()=>streets.admittedGroups(world),isGateOn:()=>peopleGateOn(world),isBusy});
+ const civilianDestinations=createCivilianDestinations({readKingdom:()=>kingdomStore.load().kingdom,

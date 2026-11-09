@@ -163,7 +163,7 @@ test("the Ledger item definition and startup component agree, even with the deve
     assert.ok(definition.components["civapoc:open_ledger"]);
     assert.equal(system.startupSubscribers.length, 1);
     assert.equal(deathSubscribers.length, 2, "one informational military signal and one durable creation observer; no population owner");
-    assert.deepEqual(deathSubscribers.map(({ options }) => options.entityTypes), [["civ_trial:swordsman", "civ_trial:archer"], ["minecraft:villager_v2", "minecraft:iron_golem", "civ_trial:swordsman", "civ_trial:archer"]]);
+    assert.deepEqual(deathSubscribers.map(({ options }) => options.entityTypes), [["civ_trial:swordsman", "civ_trial:archer", "civ_trial:cavalry"], ["minecraft:villager_v2", "minecraft:iron_golem", "civ_trial:swordsman", "civ_trial:archer"]]);
     const component = itemComponents.get("civapoc:open_ledger");
     assert.equal(typeof component?.onUse, "function");
     const holder = createPlayer(world, { name: "ComponentOff" });

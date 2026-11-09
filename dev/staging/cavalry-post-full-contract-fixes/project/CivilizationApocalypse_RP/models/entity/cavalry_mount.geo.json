@@ -1,0 +1,203 @@
+{
+  "format_version": "1.12.0",
+  "minecraft:geometry": [
+    {
+      "description": {
+        "identifier": "geometry.civ_trial.cavalry_mount",
+        "texture_width": 64,
+        "texture_height": 64,
+        "visible_bounds_width": 4,
+        "visible_bounds_height": 4,
+        "visible_bounds_offset": [
+          0,
+          1.5,
+          0
+        ]
+      },
+      "bones": [
+        {
+          "name": "body",
+          "pivot": [
+            0,
+            16,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -5,
+                11,
+                -9
+              ],
+              "size": [
+                10,
+                10,
+                18
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "neck",
+          "pivot": [
+            0,
+            19,
+            -7
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -3,
+                19,
+                -11
+              ],
+              "size": [
+                6,
+                9,
+                6
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "head",
+          "pivot": [
+            0,
+            26,
+            -9
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -3,
+                24,
+                -17
+              ],
+              "size": [
+                6,
+                6,
+                10
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "front_left",
+          "pivot": [
+            3.5,
+            12,
+            -5.5
+          ],
+          "cubes": [
+            {
+              "origin": [
+                2,
+                0,
+                -7
+              ],
+              "size": [
+                3,
+                12,
+                3
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "front_right",
+          "pivot": [
+            -3.5,
+            12,
+            -5.5
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -5,
+                0,
+                -7
+              ],
+              "size": [
+                3,
+                12,
+                3
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "back_left",
+          "pivot": [
+            3.5,
+            12,
+            6.5
+          ],
+          "cubes": [
+            {
+              "origin": [
+                2,
+                0,
+                5
+              ],
+              "size": [
+                3,
+                12,
+                3
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "back_right",
+          "pivot": [
+            -3.5,
+            12,
+            6.5
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -5,
+                0,
+                5
+              ],
+              "size": [
+                3,
+                12,
+                3
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

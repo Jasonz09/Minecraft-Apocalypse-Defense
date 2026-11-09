@@ -1,0 +1,152 @@
+{
+  "format_version": "1.26.20",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "civ_trial:swordsman",
+      "is_spawnable": false,
+      "is_summonable": true
+    },
+    "components": {
+      "minecraft:type_family": {
+        "family": [
+          "civ_guard",
+          "irongolem",
+          "mob"
+        ]
+      },
+      "minecraft:health": {
+        "value": 30,
+        "max": 30
+      },
+      "minecraft:collision_box": {
+        "width": 0.6,
+        "height": 1.95
+      },
+      "minecraft:physics": {},
+      "minecraft:pushable_by_entity": {},
+      "minecraft:pushable_by_block": {},
+      "minecraft:persistent": {},
+      "minecraft:movement": {
+        "value": 0.23
+      },
+      "minecraft:movement.basic": {},
+      "minecraft:jump.static": {},
+      "minecraft:navigation.walk": {
+        "can_path_over_water": false,
+        "avoid_water": true,
+        "can_pass_doors": true,
+        "can_open_doors": false,
+        "can_break_doors": false
+      },
+      "minecraft:home": {
+        "restriction_radius": 12,
+        "restriction_type": "all_movement"
+      },
+      "minecraft:attack": {
+        "damage": 4
+      },
+      "minecraft:behavior.float": {
+        "priority": 0
+      },
+      "minecraft:behavior.move_towards_home_restriction": {
+        "priority": 1,
+        "speed_multiplier": 1
+      },
+      "minecraft:behavior.hurt_by_target": {
+        "priority": 1,
+        "alert_same_type": false,
+        "hurt_owner": false,
+        "entity_types": [
+          {
+            "filters": {
+              "all_of": [
+                { "any_of": [
+                  { "test": "is_family", "subject": "other", "value": "zombie" },
+                  { "test": "is_family", "subject": "other", "value": "illager" }
+                ] },
+                { "test": "is_family", "subject": "other", "operator": "not", "value": "player" },
+                { "test": "is_family", "subject": "other", "operator": "not", "value": "villager" },
+                { "test": "is_family", "subject": "other", "operator": "not", "value": "irongolem" },
+                { "test": "is_family", "subject": "other", "operator": "not", "value": "civ_guard" }
+              ]
+            },
+            "max_dist": 10,
+            "must_see": true,
+            "must_see_forget_duration": 1,
+            "reevaluate_description": true
+          }
+        ]
+      },
+      "minecraft:behavior.nearest_attackable_target": {
+        "priority": 2,
+        "must_see": true,
+        "must_reach": true,
+        "must_see_forget_duration": 1,
+        "persist_time": 0,
+        "scan_interval": 10,
+        "within_radius": 12,
+        "entity_types": [
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "any_of": [
+                    { "test": "is_family", "subject": "other", "value": "zombie" },
+                    { "test": "is_family", "subject": "other", "value": "pillager" },
+                    { "test": "is_family", "subject": "other", "value": "vindicator" }
+                  ]
+                },
+                {
+                  "test": "has_tag",
+                  "subject": "other",
+                  "value": "civbesiege:v1"
+                },
+                {
+                  "test": "is_family",
+                  "subject": "other",
+                  "operator": "not",
+                  "value": "player"
+                },
+                {
+                  "test": "is_family",
+                  "subject": "other",
+                  "operator": "not",
+                  "value": "villager"
+                },
+                {
+                  "test": "is_family",
+                  "subject": "other",
+                  "operator": "not",
+                  "value": "irongolem"
+                },
+                {
+                  "test": "is_family",
+                  "subject": "other",
+                  "operator": "not",
+                  "value": "civ_guard"
+                }
+              ]
+            },
+            "max_dist": 10
+          }
+        ]
+      },
+      "minecraft:behavior.melee_attack": {
+        "priority": 3,
+        "speed_multiplier": 1,
+        "track_target": true,
+        "require_complete_path": true,
+        "cooldown_time": 1,
+        "reach_multiplier": 1.5
+      },
+      "minecraft:behavior.look_at_player": {
+        "priority": 5,
+        "look_distance": 6,
+        "probability": 0.03
+      },
+      "minecraft:behavior.random_look_around": {
+        "priority": 6
+      }
+    }
+  }
+}

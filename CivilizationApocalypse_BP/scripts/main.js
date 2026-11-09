@@ -1,3 +1,4 @@
+import {createCavalryMicrotrial} from "./integration/cavalryMicrotrial.js";
 import { createCreationRuntime } from "./integration/creationRuntime.js";
 import { CIV } from "./config.js";
 import { system, world } from "@minecraft/server";
@@ -61,7 +62,8 @@ const militaryDiagnostics=createMilitaryLifecycleDiagnostics({readSelection:mili
 registerMilitaryLifecycleSignals(world,militaryDiagnostics);
 const creation=createCreationRuntime({world,isPeopleOn:()=>peopleGateOn(world),isBusy,isDeveloper:()=>world.getDynamicProperty(CIV.devGateKey)===true,readKingdom:()=>kingdomStore.load().kingdom});
 creation.registerDeaths();
-const streets=createPeopleStreets({getCreationBindings:creation.activeStore,readMilitarySelection:military.store.load,militaryDiagnostics});
+const cavalryMicrotrial=createCavalryMicrotrial({creation});
+const streets=createPeopleStreets({getCreationBindings:creation.activeStore,readMilitarySelection:military.store.load,militaryDiagnostics,...cavalryMicrotrial.streetsOptions()});
 const civilianTravel=createCivilianTravel({world,readKingdom:()=>kingdomStore.load().kingdom,
     admittedGroups:()=>streets.admittedGroups(world),isGateOn:()=>peopleGateOn(world),isBusy});
 const civilianDestinations=createCivilianDestinations({readKingdom:()=>kingdomStore.load().kingdom,

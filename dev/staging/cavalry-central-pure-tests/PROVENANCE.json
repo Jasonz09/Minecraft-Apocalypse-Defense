@@ -1,0 +1,11 @@
+{
+  "adaptedFrozen79Sources": {
+    "unified.test.mjs": "68E27B7B5F3132254119E84D4F5BEB477B144CE7D18BE987BF23CCA3F36FC0CB",
+    "compound-regressions.test.mjs": "9B4415352D30BE726B203F7886A530D338E64F2303AD6C065E7A84F05C5E85F8",
+    "completion.test.mjs": "8C3F490A479C9ED54BD1A9D61DCB25328103F3BCD892B1F8F089BB37C4604031"
+  },
+  "coherent191Source": "dev\\staging\\cavalry-v3-independent-review\\contracts\\project",
+  "sourceImports": "../../CivilizationApocalypse_BP/scripts/ only",
+  "testOnlyLoader": null,
+  "genuineFixturePermission": false
+}

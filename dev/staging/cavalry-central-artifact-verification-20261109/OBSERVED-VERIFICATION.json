@@ -1,0 +1,30 @@
+{
+  "scope": "read-only inspector promotion and observed private artifact verification, not independent helper code audit",
+  "regular191FreezeSha256": "F260220E9525C3A79A3EAB5AA92E2D47327DBDA731D4039F4BEED370B16CE0A9",
+  "regularFiles": 191,
+  "allFreezeHashesAndInventoryMatch": true,
+  "promotedInspectorPathsMatch": 3,
+  "oldRegular191UnchangedFiles": 190,
+  "onlyRegularPackChange": [
+    "CivilizationApocalypse_BP/scripts/integration/peopleStreets.js"
+  ],
+  "observedPrivateManifestSha256": "17788E46DB0001AADFA185B18D043E21AD65D1D3636318F474A904B1E1565A26",
+  "privateVsCurrentRegularDiffs": [
+    "CivilizationApocalypse_BP/scripts/integration/cavalryFreshTrust.js",
+    "CivilizationApocalypse_BP/scripts/integration/cavalryMicrotrialTrust.js"
+  ],
+  "privateVsPriorD7D5Diffs": [
+    "CivilizationApocalypse_BP/scripts/integration/peopleStreets.js"
+  ],
+  "privateVsOldRegular191Diffs": [
+    "CivilizationApocalypse_BP/scripts/integration/cavalryFreshTrust.js",
+    "CivilizationApocalypse_BP/scripts/integration/cavalryMicrotrialTrust.js",
+    "CivilizationApocalypse_BP/scripts/integration/peopleStreets.js"
+  ],
+  "privateCompiledValuesUnchangedFromGenuineD7D5": true,
+  "derivativeWorldAndPlanByteExactFromPrior": true,
+  "originalD7D5Preserved": true,
+  "nativeInstall": false,
+  "nativeAcceptance": false,
+  "sourceEdits": false
+}

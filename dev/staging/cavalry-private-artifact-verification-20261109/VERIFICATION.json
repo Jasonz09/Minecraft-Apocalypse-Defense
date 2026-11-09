@@ -1,0 +1,41 @@
+{
+  "scope": "ARTIFACT VERIFICATION by bundle-helper author, NOT an independent code audit; no install/source/world changes",
+  "bundleManifestSha256": "D7D5AD31CCF5EE5FF4AD1919A9E01983ADF9106840B23C9A5E1A7BF7244A74D9",
+  "rootWitnessSha256": "501B96B684C3CACC9153AD2271F5E052FAFF97BB6CE653F10DD30EAD2A5DDC60",
+  "privatePackFiles": 191,
+  "exactPackInventoryAndAllHashesMatch": true,
+  "nullCoherentSourceFiles": 191,
+  "nullCompositionDifferenceCount": 2,
+  "onlyPrivateDifferences": [
+    "CivilizationApocalypse_BP/scripts/integration/cavalryFreshTrust.js",
+    "CivilizationApocalypse_BP/scripts/integration/cavalryMicrotrialTrust.js"
+  ],
+  "privateConstantsMatchActualRootWitnessAndScoreboard": true,
+  "oldV2TrustRemainsNullAndByteExact": true,
+  "noSyntheticWitnessParametersUsed": true,
+  "sourcePadFilesVerified": 10,
+  "derivedWorldFilesVerified": 10,
+  "onlyWorldDifferences": [
+    "world_behavior_packs.json",
+    "world_resource_packs.json"
+  ],
+  "levelDatAndLevelnameUnchangedByBuilder": true,
+  "nativeAcceptance": false,
+  "nativeInstall": false,
+  "remainingReview": "Independent helper/v3 source audit owned by other agent; actual native v3 activation/seating/render/combat still pending",
+  "evidence": {
+    "padReceipt": {
+      "path": "E:\\CivilizationApocalypse\\dist\\vanilla-cavalry-pad-prepared-20261108.json",
+      "sha256": "538CE473748B300EDC4A2B09A5C43E7E46E01B1E8179853ECCC69526193508E7"
+    },
+    "padAudit": {
+      "path": "E:\\CivilizationApocalypse\\dev\\staging\\vanilla-cavalry-pad-audit-20261108\\AUDIT.json",
+      "sha256": "6F1387E2E7B1389AE43C9070784A0434197D32E66A6AEB6AEF711CD65ADCE139"
+    }
+  },
+  "limits": [
+    "Native floor/body command and visible enclosure proof; no independent chunk decoder proof",
+    "No native cavalry birth/seating/render/combat acceptance yet",
+    "No release city or template authority"
+  ]
+}

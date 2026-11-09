@@ -1,0 +1,36 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "civ_trial:swordsman",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/civ_trial/swordsman"
+      },
+      "geometry": {
+        "default": "geometry.civ_trial.swordsman"
+      },
+      "animations": {
+        "walk": "animation.civ_trial.swordsman.walk",
+        "attack": "animation.civ_trial.swordsman.attack",
+        "look": "animation.civ_trial.swordsman.look"
+      },
+      "scripts": {
+        "animate": [
+          "look",
+          {
+            "walk": "query.modified_move_speed > 0.01"
+          },
+          {
+            "attack": "variable.attack_time > 0.0"
+          }
+        ]
+      },
+      "render_controllers": [
+        "controller.render.civ_trial.swordsman"
+      ]
+    }
+  }
+}

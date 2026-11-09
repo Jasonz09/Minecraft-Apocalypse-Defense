@@ -139,10 +139,17 @@ test("default: only the gated people driver may reach the population sync", () =
     };
     walk(scriptsRoot);
     const offenders = [];
-    // Selection/status consumers inspect pure group data; none may import the
-    // reconciliation entry point or population adapter. Permit exact named reads,
-    // not a blanket second population-creation door.
-    const readOnlyImports = {
+    // Selection/status and injected metadata/planning helpers may import exact pure
+    // functions, never the native owner or reconciliation entry point. This table
+    // permits no extra physical owner; helper delegation is checked separately.
+    const reviewedPureImports = {
+        "integration/cavalryMicrotrial.js": {
+            "militarySelection.js": ["decodeMilitarySelection"], "settings.js": ["POP_SPOTS"],
+        },
+        "integration/compoundCompletion.js": {
+            "compoundPlanning.js": ["planCompoundCompletion"], "roleBudget.js": ["createRoleBudget"],
+            "cursor.js": ["decodeCursor", "encodeCursor", "cursorBytes"], "settings.js": ["POP_CURSOR_KEY", "POP_CURSOR_MAX_BYTES"],
+        },
         "integration/militaryLifecycleDiagnostics.js": {
             "identity.js": ["classifyTags", "isCanonicalFor"], "militarySelection.js": ["SWORDSMAN_TYPE", "MILITARY_TYPES"],
         },
@@ -167,12 +174,12 @@ test("default: only the gated people driver may reach the population sync", () =
         // An import, not a mention: config.js and the runtime both *describe* the sync in a comment, and a
         // guarantee that turns on prose breaks the first time anyone documents it.
         if (IMPORTS_SYNC.test(source)) {
-            if(Object.hasOwn(readOnlyImports,rel)) {
+            if(Object.hasOwn(reviewedPureImports,rel)) {
                 assert.ok(!/import[^;]*from\s+["'][^"']*popSync[^"']*["']/.test(source),`${rel} must never import the population owner`);
                 const imports=[...source.matchAll(/import\s*\{([^}]+)\}\s*from\s*["'][^"']*population\/([^"']+)["']/g)];
                 assert.ok(imports.length>0,`${rel} must use explicit named pure imports`);
                 for(const [,bindings,module] of imports) {
-                    const allowed=readOnlyImports[rel][module];
+                    const allowed=reviewedPureImports[rel][module];
                     assert.ok(allowed,`${rel}: unreviewed population module ${module}`);
                     for(const name of bindings.split(",").map(n=>n.trim().split(/\s+as\s+/)[0]))assert.ok(allowed.includes(name),`${rel}: ${name} must be reviewed as read-only`);
                 }
@@ -726,4 +733,14 @@ test("the adapter is the runtime boundary: it imports @minecraft/server, and the
     assert.ok(!/poptharness/.test(adapter), "the pack never imports the fake world");
     assert.equal(tagFor(groupIdOf("district-1", "civ", 0)), "civpop:v1:district-1:civ:0");
     assert.deepEqual(classifyTags([tagFor("district-1:civ:0")]).claims, ["district-1:civ:0"]);
+});
+
+// The new engine helper is delegated by the same owner, not a new reconciliation door.
+test("compound native capabilities remain delegated only by the sole owner and exact death observer",()=>{
+    const inbound={"integration/compoundNative.js":[],"integration/compoundCompletion.js":[]};
+    function visit(dir){for(const name of readdirSync(dir)){const file=join(dir,name);if(statSync(file).isDirectory())visit(file);else if(name.endsWith(".js")){const caller=file.slice(scriptsRoot.length+1).split("\\").join("/"),source=readFileSync(file,"utf8");for(const [,bindings,spec]of source.matchAll(/import\s*\{([^}]+)\}\s*from\s*["']([^"']+)["']/g)){if(!spec.startsWith("."))continue;const target=resolve(dirname(file),spec).slice(scriptsRoot.length+1).split("\\").join("/");if(Object.hasOwn(inbound,target))for(const binding of bindings.split(",").map(n=>n.trim().split(/\s+as\s+/)[0]))inbound[target].push(caller+":"+binding);}}}}
+    visit(scriptsRoot);
+    assert.deepEqual(inbound["integration/compoundNative.js"].sort(),["integration/creationRuntime.js:routeCompoundDeath","integration/popSync.js:createCompoundNative"],"only the sole owner receives spawn/seat capabilities; the existing observer receives death routing only");
+    assert.deepEqual(inbound["integration/compoundCompletion.js"],[],"the optional metadata helper has no production scheduling/command entry point");
+    assert.doesNotMatch(readFileSync(join(scriptsRoot,"integration/compoundNative.js"),"utf8"),/runInterval|runTimeout|\.subscribe\s*\(/,"delegated native helper creates no timer or subscriber");
 });

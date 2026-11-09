@@ -1,0 +1,51 @@
+{
+  "scope": "four NEW source-relative central cavalry core tests; no production changes",
+  "proposedFiles": [
+    {
+      "destination": "dev/test/cavalry-compound-planning.test.mjs",
+      "source": "dev/staging/cavalry-central-pure-tests/proposed/dev/test/cavalry-compound-planning.test.mjs",
+      "sha256": "360C5A76F21A36C6EEF760B21443DCBFCA2AE49E88AC252D804BF931E554FCE9",
+      "baselineSha256": null
+    },
+    {
+      "destination": "dev/test/cavalry-role-budget.test.mjs",
+      "source": "dev/staging/cavalry-central-pure-tests/proposed/dev/test/cavalry-role-budget.test.mjs",
+      "sha256": "F98440FB7B7D3365229B52BEA8B1165478B49FA2B7A7D54558B0273BC1C0728E",
+      "baselineSha256": null
+    },
+    {
+      "destination": "dev/test/cavalry-unified-durability.test.mjs",
+      "source": "dev/staging/cavalry-central-pure-tests/proposed/dev/test/cavalry-unified-durability.test.mjs",
+      "sha256": "EDA27BB085C7547BD02AE5342B275FD08EA4C9256176D73C627703352C210AA1",
+      "baselineSha256": null
+    },
+    {
+      "destination": "dev/test/cavalry-unified-store.test.mjs",
+      "source": "dev/staging/cavalry-central-pure-tests/proposed/dev/test/cavalry-unified-store.test.mjs",
+      "sha256": "B447D3CD2F0CBB417CD4C99FFE9BB936DAF8795FFD93821BA4F968CB7D4B6F1A",
+      "baselineSha256": null
+    }
+  ],
+  "validation": {
+    "pass": 47,
+    "fail": 0,
+    "durationMs": 167.3076,
+    "runtimePackFiles": 191,
+    "allTrustConstantsNull": true,
+    "centralActiveImports": true,
+    "testOnlyLoader": null
+  },
+  "files": {
+    "focused-final.log": "9B7B0FC8FA46453C9966FEF4C4CBAEE13FA9F19D6E0B0BD273EF9D14CFA40037",
+    "focused-first.log": "3D226C6D23ACA41D3C3EC0E64EE0F9953D36A8907F0F849760C132CB574FA0E0",
+    "proposed/dev/test/cavalry-compound-planning.test.mjs": "360C5A76F21A36C6EEF760B21443DCBFCA2AE49E88AC252D804BF931E554FCE9",
+    "proposed/dev/test/cavalry-role-budget.test.mjs": "F98440FB7B7D3365229B52BEA8B1165478B49FA2B7A7D54558B0273BC1C0728E",
+    "proposed/dev/test/cavalry-unified-durability.test.mjs": "EDA27BB085C7547BD02AE5342B275FD08EA4C9256176D73C627703352C210AA1",
+    "proposed/dev/test/cavalry-unified-store.test.mjs": "B447D3CD2F0CBB417CD4C99FFE9BB936DAF8795FFD93821BA4F968CB7D4B6F1A",
+    "PROVENANCE.json": "E3C4C4754DF1231F05A38A3E3FD79E65F042C47AF794933D7B21146C65FD5AC1",
+    "README.md": "B039F98B5FE695FF09BF6602EA53CE3567ABA71DC06FA32265B4BF90FB097D38",
+    "role-budget-mutation-negative.log": "3C142C2FF2B311924D3B573CAEAC8C44EC92A204EDF6BEFF2653E1DB24C2E79D",
+    "roleBudget-before-mutation.js.txt": "29E3EBB3A2ABFB43B3DB71FE6C82EFDA6B8E5F1B3435A9B0D9E8801B94D836B4",
+    "VALIDATION.json": "F912B8EA729B88E1C5F9C24E3EB56EF19F39B677165AADC09DA0ED4F418D525C"
+  }
+}

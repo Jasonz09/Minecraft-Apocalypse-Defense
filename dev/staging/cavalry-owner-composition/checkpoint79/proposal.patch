@@ -1,0 +1,633 @@
+--- before/integration/compoundCompletion.js
++++ proposed/integration/compoundCompletion.js
+@@ -0,0 +1,19 @@
++// @ts-check
++import {planCompoundCompletion} from "../population/compoundPlanning.js";
++import {createRoleBudget} from "../population/roleBudget.js";
++import {decodeCursor,encodeCursor,cursorBytes} from "../population/cursor.js";
++import {POP_CURSOR_KEY,POP_CURSOR_MAX_BYTES} from "../population/settings.js";
++/** Metadata-only same-owner helper. It NEVER spawns, seats, removes or queries an actor.
++ * Even its private ticket is not native clearance. Future owner must provide fresh two-body proof.
++ * @param {any} world @param {any} core @param {any} config
++ * @param {{currentAllowed:(groupId:string)=>boolean}} deps */
++export function createCompoundCompletion(world,core,config,deps){
++ const jobs=new WeakMap();let busy=false;
++ /** @param {()=>any} fn */function enter(fn){if(busy)throw Error("compound completion reentry");busy=true;try{return fn();}finally{busy=false;}}
++ function cursor(){const raw=world.getDynamicProperty(POP_CURSOR_KEY),decoded=decodeCursor(raw);if(decoded.status!=="ok")throw Error("compound completion requires valid quota cursor");return{raw,state:decoded.state};}
++ /** @param {string[]} admitted @param {number} tick */function plan(admitted,tick){return enter(()=>{const c=cursor(),rows=core.listCompounds(),p=planCompoundCompletion(rows,admitted,c.state,tick,config);return{...p,jobs:p.jobs.map(j=>{const job=Object.freeze({...j});jobs.set(job,{expected:j.expected,tick,group:j.groupId,role:j.role});return job;})};});}
++ /** Prepay one role attempt durably, then mark its exact NEVER role PENDING before any future native spawn.
++  * A crash between these phases costs quota; it never implies that an actor was created or absent.
++  * @param {any} job @param {number} tick */function prepare(job,tick){return enter(()=>{const privateJob=jobs.get(job);jobs.delete(job);if(!privateJob||privateJob.tick!==tick)throw Error("unknown/stale completion job");const c=cursor(),r=core.inspect(privateJob.group);if(JSON.stringify(r)!==privateJob.expected||!deps.currentAllowed(privateJob.group))throw Error("compound completion identity/admission changed");const b=createRoleBudget(c.state,tick,config);if(!b.reserve("spawn"))throw Error("compound completion quota exhausted");const next={...c.state,tick,...b.status()},raw=encodeCursor(next);if(cursorBytes(next)>POP_CURSOR_MAX_BYTES||world.getDynamicProperty(POP_CURSOR_KEY)!==c.raw)throw Error("compound completion cursor changed");world.setDynamicProperty(POP_CURSOR_KEY,raw);if(world.getDynamicProperty(POP_CURSOR_KEY)!==raw)throw Error("compound completion quota readback failed");if(!deps.currentAllowed(privateJob.group)||JSON.stringify(core.inspect(privateJob.group))!==privateJob.expected||world.getDynamicProperty(POP_CURSOR_KEY)!==raw)throw Error("compound completion changed after quota; preserved");const ticket=core.prepareRole(privateJob.group,privateJob.role,privateJob.expected);if(!deps.currentAllowed(privateJob.group)||world.getDynamicProperty(POP_CURSOR_KEY)!==raw)throw Error("compound completion quota/admission revoked during pending intent; preserved");return ticket;});}
++ return{plan,prepare,nativeBirthEnabled:false};
++}
+--- before/integration/compoundNative.js
++++ proposed/integration/compoundNative.js
+@@ -0,0 +1,36 @@
++// @ts-check
++import {isKnownTravelFooting,isTravelBodyClear} from "../people/walkSafety.js";
++const RIDER="civ_trial:cavalry",MOUNT="civ_trial:cavalry_mount";
++/** Concrete SAME-owner native adapter: no subscription, timer or independent reconciliation.
++ * Construction is inert. Factory flag stays false in every shipped/main call site.
++ * @param {{world:any,dimension:any,store:any,current:()=>void,charge:(n:number)=>void}} deps */
++export function createCompoundNative(deps){
++ const {world,dimension,store}=deps;
++ /** @param {any} r @param {'rider'|'mount'} role */const tag=(r,role)=>`civcavalry:v1:${r.epoch}:${r.group}:${r.generation}:${role}`;
++ /** @param {any} h */function frame(h){deps.charge(1);const at=h.location,tags=h.getTags();if(!Array.isArray(tags)||tags.length>64||tags.some(t=>typeof t!=="string"||t.length>256))throw Error("cavalry native tags unreadable");return{id:String(h.id),typeId:h.typeId,valid:h.isValid,at:{x:at.x,y:at.y,z:at.z},tags:[...tags].sort()};}
++ /** @param {any} r @param {'rider'|'mount'} role */function find(r,role){deps.current();deps.charge(1);const rows=dimension.getEntities({tags:[tag(r,role)],location:{x:0,y:64,z:0},closest:2});if(!Array.isArray(rows)||rows.length>1)throw Error("cavalry role query ambiguous");if(role==="rider"){deps.current();deps.charge(1);const canonical=dimension.getEntities({tags:["civpop:v1:"+r.group],location:{x:0,y:64,z:0},closest:2});if(!Array.isArray(canonical)||canonical.length!==(r.rider.phase==="alive"?1:0)||canonical.length&&String(canonical[0].id)!==r.rider.actor)throw Error("cavalry canonical identity conflict; preserve");}if(r[role].phase!=="alive"){if(rows.length)throw Error("unissued cavalry actor observed");return null;}if(rows.length!==1)throw Error("cavalry role unloaded/absent, preserve");const h=rows[0],a=frame(h);store.compound().assertOwned({groupId:r.group,role,id:a.id,typeId:a.typeId,tags:a.tags});const b=frame(h);if(JSON.stringify(a)!==JSON.stringify(b)||a.valid!==true)throw Error("cavalry role changed");return h;}
++ /** 3x3 horse floor plus 4-high composite body, and distinct rider landing floor/2-high body.
++  * At most48 getBlock calls per pass; no chunk loads or broad replaceability fallback.
++  * @param {{x:number,y:number,z:number}} center @param {string[]} [allowedIds] */function clearance(center,allowedIds=[]){deps.current();if(dimension.id!=="minecraft:overworld"||![center.x,center.y,center.z].every(Number.isFinite))throw Error("cavalry clearance dimension/position");const x=Math.floor(center.x),y=Math.floor(center.y),z=Math.floor(center.z);if(y< -63||y>315)throw Error("cavalry clearance height");deps.charge(1);const near=dimension.getEntities({location:center,maxDistance:4,closest:3});if(!Array.isArray(near)||near.length>2||near.some(h=>!allowedIds.includes(String(h.id))))throw Error("foreign entity in cavalry clearance; preserve");deps.current();const cells=[];for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++)for(let dy=-1;dy<=3;dy++)cells.push({x:x+dx,y:y+dy,z:z+dz,floor:dy===-1});for(let dy=-1;dy<=1;dy++)cells.push({x:x-2,y:y+dy,z,floor:dy===-1});
++ for(const c of cells){deps.current();deps.charge(1);const b=dimension.getBlock(c),id=b?.typeId;if(!b||b.isValid!==true)throw Error("cavalry clearance unloaded/unreadable");if(c.floor?!isKnownTravelFooting(id):!isTravelBodyClear(id))throw Error("cavalry two-body clearance blocked at "+[c.x,c.y,c.z].join(",")+" "+id);deps.current();}return{mount:{x:x+.5,y,z:z+.5},rider:{x:x-1.5,y,z:z+.5}};}
++ /** @param {any} job @param {{x:number,y:number,z:number}|undefined} at */function spawnRole(job,at){
++ const core=store.compound(),r=core.inspect(job.groupId);if(JSON.stringify(r)!==job.expected||r?.[job.role]?.phase!=="never")throw Error("cavalry birth source changed");
++ const rider=find(r,"rider"),mount=find(r,"mount");if(mount)throw Error("mount-first trial unsupported; preserve");let center=at;if(rider){const f=frame(rider);center={x:f.at.x+2,y:f.at.y,z:f.at.z};}if(!center)throw Error("cavalry spawn position unavailable");const allowedIds=[rider,mount].filter(Boolean).map(h=>String(h.id));const spots=clearance(center,allowedIds);deps.current();if(JSON.stringify(core.inspect(job.groupId))!==job.expected)throw Error("cavalry metadata changed before intent");const ticket=core.prepareRole(job.groupId,job.role,job.expected);deps.current();
++ // Metadata/native queries may run callbacks; repeat the complete physical proof AFTER pending intent.
++ const fresh=core.inspect(job.groupId);find(fresh,job.role==="rider"?"mount":"rider");clearance(center,allowedIds);deps.current();
++ find(fresh,job.role);
++ const type=job.role==="rider"?RIDER:MOUNT,point=job.role==="rider"?spots.rider:spots.mount;const h=dimension.spawnEntity(type,point),id=String(h.id);
++ try{core.recordSpawned(ticket,id);if(h.addTag(ticket.tag)!==true||job.role==="rider"&&h.addTag("civpop:v1:"+r.group)!==true)throw Error("cavalry newborn tags failed");const a=frame(h);if(a.id!==id||a.typeId!==type||a.valid!==true||!a.tags.includes(ticket.tag)||job.role==="rider"&&!a.tags.includes("civpop:v1:"+r.group))throw Error("cavalry newborn identity changed");deps.current();core.confirmBorn(ticket,{groupId:r.group,role:job.role,id,typeId:type,tags:a.tags});return{id,role:job.role};}
++ catch(error){
++  // Only this freshly returned exact handle may be rolled back; failed proof retains pending unknown.
++  try{deps.current();const a=frame(h);if(a.id!==id||a.typeId!==type||a.valid!==true)throw Error("newborn rollback identity unavailable");h.remove();if(h.isValid!==false)throw Error("newborn rollback unverified");core.rollbackRemoved(ticket,id);}catch(_hold){}throw error;
++ }
++ }
++ /** Seating is one separately charged owner action; it never spawns a companion.
++  * @param {any} job */function seat(job){const core=store.compound(),r=core.inspect(job.groupId);if(JSON.stringify(r)!==job.expected||r?.rider.phase!=="alive"||r.mount.phase!=="alive")throw Error("cavalry seat source changed");const rider=find(r,"rider"),mount=find(r,"mount");if(!rider||!mount)throw Error("cavalry seating parts unavailable");const a=frame(rider),b=frame(mount);if(Math.hypot(a.at.x-b.at.x,a.at.y-b.at.y,a.at.z-b.at.z)>4)throw Error("cavalry parts too far; no teleport");clearance(b.at,[a.id,b.id]);deps.current();const rideable=mount.getComponent("minecraft:rideable");if(!rideable||typeof rideable.getRiders!=="function"||typeof rideable.addRider!=="function")throw Error("cavalry seat component unavailable");const riders=rideable.getRiders(),relation=rider.getComponent("minecraft:riding"),on=relation?.entityRidingOn;if(!Array.isArray(riders)||riders.length>1||riders.some(h=>String(h.id)!==a.id)||on&&String(on.id)!==b.id)throw Error("foreign/inconsistent cavalry seat, preserve");if(riders.length===1&&on)return{already:true};if(riders.length||on)throw Error("cavalry seat directions disagree");deps.current();if(JSON.stringify(frame(rider))!==JSON.stringify(a)||JSON.stringify(frame(mount))!==JSON.stringify(b)||JSON.stringify(frame(rider))!==JSON.stringify(a))throw Error("cavalry seating identity changed");if(rideable.addRider(rider)!==true)throw Error("cavalry addRider refused; pair remains tracked");const after=rideable.getRiders(),riding=rider.getComponent("minecraft:riding")?.entityRidingOn;if(!Array.isArray(after)||after.length!==1||String(after[0].id)!==a.id||String(riding?.id)!==b.id)throw Error("cavalry seating unverified; pair remains tracked");return{already:false};}
++ return{clearance,spawnRole,seat};
++}
++/** Called from the EXISTING sole death subscription, not a new listener.
++ * Exact fresh native entityDie identity only. No entityRemove/unload/missing inference or aggregate debit.
++ * @param {any} event @param {any} store */
++export function routeCompoundDeath(event,store){const h=event.deadEntity,tags=h.getTags();if(!Array.isArray(tags)||tags.length>64||tags.some(t=>typeof t!=="string"))throw Error("compound death tags unreadable");if(![RIDER,MOUNT].includes(h.typeId))return false;const role=h.typeId===RIDER?"rider":"mount",claims=tags.filter(t=>t.startsWith("civcavalry:v1:"));if(claims.length!==1)throw Error("compound death role tag ambiguous");const m=/^civcavalry:v1:([A-Za-z0-9_-]{1,64}):(district-[1-9][0-9]*:sol:[0-9]+):([1-9][0-9]*):(rider|mount)$/.exec(claims[0]);if(!m||m[4]!==role)throw Error("compound death role mismatch");const id=String(h.id),typeId=h.typeId,again=h.getTags();if(!Array.isArray(again)||JSON.stringify([...tags].sort())!==JSON.stringify([...again].sort())||String(h.id)!==id||h.typeId!==typeId)throw Error("compound death identity changed");return store.compound().confirmDeath({groupId:m[2],role,id,typeId,tags:[...tags]});}
+--- before/integration/creationRuntime.js
++++ proposed/integration/creationRuntime.js
+@@ -1,3 +1,4 @@
++import {routeCompoundDeath} from "./compoundNative.js";
+ // @ts-check
+ import {FAMILY,META,CREATION_ENTITY_TYPES} from "./creationBindings.js";
+ import {createPrivateFreshFixture,ACTIVATION_FAMILY} from "./privateFreshFixture.js";
+@@ -44,6 +45,6 @@
+    fixture.activate(player);last='private first-spawn fixture activation complete';return true;
+   }catch(error){last='private first-spawn activation held: '+String(error).slice(0,180);return false;}
+  }
+- function registerDeaths(){if(registered)return false;deps.world.afterEvents.entityDie.subscribe((/** @type {any} */e)=>{try{const s=activeStore();if(!s)return;const h=e.deadEntity,tags=h.getTags();if(!Array.isArray(tags)||tags.length>64)throw Error("death identity unreadable");const claims=tags.filter(t=>typeof t==="string"&&t.startsWith("civpop:v1:"));if(claims.length!==1)return;const accepted=s.confirmDeath({groupId:claims[0].slice(10),id:String(h.id),typeId:h.typeId,tags:[...tags]});last=accepted?"exact physical death recorded; aggregate unchanged":"duplicate/untracked death ignored";}catch(e){last=`death held: ${String(e).slice(0,180)}`;}},{entityTypes:[...CREATION_ENTITY_TYPES]});registered=true;return true;}
++ function registerDeaths(){if(registered)return false;deps.world.afterEvents.entityDie.subscribe((/** @type {any} */e)=>{try{const s=activeStore();if(!s)return;const h=e.deadEntity;if(["civ_trial:cavalry","civ_trial:cavalry_mount"].includes(h.typeId)){const accepted=routeCompoundDeath(e,s);last=accepted?"exact cavalry role death recorded; aggregate unchanged":"duplicate/untracked cavalry death ignored";return;}const tags=h.getTags();if(!Array.isArray(tags)||tags.length>64)throw Error("death identity unreadable");const claims=tags.filter(t=>typeof t==="string"&&t.startsWith("civpop:v1:"));if(claims.length!==1)return;const accepted=s.confirmDeath({groupId:claims[0].slice(10),id:String(h.id),typeId:h.typeId,tags:[...tags]});last=accepted?"exact physical death recorded; aggregate unchanged":"duplicate/untracked death ignored";}catch(e){last=`death held: ${String(e).slice(0,180)}`;}},{entityTypes:[...CREATION_ENTITY_TYPES,"civ_trial:cavalry","civ_trial:cavalry_mount"]});registered=true;return true;}
+  return{activeStore,statusLines,command,registerDeaths,onInitialSpawn};
+ }
+--- before/integration/creationUnifiedStore.js
++++ proposed/integration/creationUnifiedStore.js
+@@ -0,0 +1,24 @@
++// @ts-check
++import{createCreationBindings as createSingleV2,FAMILY}from'./creationBindings.js';
++import{createUnifiedV3Bindings,ROLE_TYPES,SINGLE_TYPES}from'./creationUnifiedV3.js';
++/** Version dispatch never rewrites v2 metadata or guesses migration.
++ * format3 is a trusted factory choice, not a public command permission.
++ * @param {any} world @param {any} [deps] */
++export function createUnifiedStore(world,deps={}){
++ const v2=createSingleV2(world,deps),v3=createUnifiedV3Bindings(world,deps),removals=new WeakMap();
++ function format(){const ids=world.getDynamicPropertyIds();if(!Array.isArray(ids)||ids.length>4096||ids.some((/** @type {any} */k)=>typeof k!=='string'))throw Error('unified namespace unreadable');const keys=ids.filter((/** @type {string} */k)=>k.startsWith(FAMILY));const versions=new Set(keys.map((/** @type {string} */k)=>k.split(':')[2]));if(versions.size>1||[...versions].some(v=>v!=='v2'&&v!=='v3'))throw Error('mixed/unknown creation versions preserved');return keys.length?([...versions][0]==='v2'?2:3):(deps.format===3?3:2);}
++ /** @param {any} input */function initialize(input){return format()===2?v2.initialize(input):input.mode==='fresh'?v3.initialize(input.epoch,input.fixture):(()=>{throw Error('v3 legacy migration is not implemented');})();}
++ /** @param {string} g */function inspect(g){if(format()===2)return v2.inspect(g);const r=v3.inspect(g);return !r||r.kind==='compound'?r:{v:3,epoch:r.epoch,group:r.group,generation:r.generation,...r.single,phase:r.single.phase==='terminal'?'retired':r.single.phase};}
++ /** @param {string} g @param {string} type */function canBirth(g,type){if(format()===2)return v2.canBirth(g,type);if(!SINGLE_TYPES.includes(type))throw Error('single birth type unsupported');const r=v3.inspect(g);if(r&&r.kind!=='single')return{allowed:false,reason:'compound history requires compound owner'};if(r&&r.single.type!==type)throw Error('single bound type changed');return{allowed:!r||['never','terminal','cancelled'].includes(r.single.phase),reason:r?'single '+r.single.phase:'exact inventory never issued'};}
++ /** @param {string} g @param {string} type */function prepare(g,type){if(format()===2)return v2.prepare(g,type);const r=v3.inspect(g);if(!r||r.kind==='single'&&['terminal','cancelled'].includes(r.single.phase))v3.reserveSingle(g,type);else if(r.kind!=='single'||r.single.type!==type)throw Error('single/compound history conflict');return v3.prepareRole(g,'single');}
++ /** @param {any} ticket @param {string} id */const recordSpawned=(ticket,id)=>format()===2?v2.recordSpawned(ticket,id):v3.recordSpawned(ticket,id);
++ /** @param {any} ticket @param {any} live */const confirmBorn=(ticket,live)=>format()===2?v2.confirmBorn(ticket,live):v3.confirmBorn(ticket,{...live,role:'single'});
++ /** @param {any} ticket @param {string} id */const rollbackRemoved=(ticket,id)=>format()===2?v2.rollbackRemoved(ticket,id):v3.rollbackRemoved(ticket,id);
++ /** @param {any} live */const assertOwned=live=>format()===2?v2.assertOwned(live):v3.assertOwned({...live,role:live.role??'single'});
++ /** @param {any} live */function beginRemove(live){if(format()===2){const t=v2.beginRemove(live),wrapper=Object.freeze({...t,tag:`civbirth:v2:${t?.epoch}:${t?.group}:${t?.generation}`});removals.set(wrapper,t);return wrapper;}const r=v3.inspect(live.groupId);if(!r||r.kind!=='single')throw Error('compound removal needs both-role adapter');const t=v3.beginRemove({...live,role:'single'}),wrapper=Object.freeze({group:r.group,epoch:r.epoch,generation:r.generation,type:r.single.type,actor:r.single.actor,tag:`civbirth:v3:${r.epoch}:${r.group}:${r.generation}`});removals.set(wrapper,t);return wrapper;}
++ /** @param {any} ticket */function commitRemoved(ticket){const t=removals.get(ticket);removals.delete(ticket);if(!t)throw Error('unissued unified removal ticket');return format()===2?v2.commitRemoved(t):v3.commitRemoved(t);}
++ /** @param {any} live */const confirmDeath=live=>format()===2?v2.confirmDeath(live):v3.confirmDeath({...live,role:live.role??'single'});
++ /** @param {any[]} rows */const observeLoaded=rows=>format()===2?v2.observeLoaded(rows):v3.observeLoaded(rows.map(r=>{const stored=v3.inspect(r.groupId);return{...r,role:r.role??(stored?.kind==='compound'?'rider':'single')};}));
++ function compound(){if(format()!==3)throw Error('cavalry requires explicit v2-to-v3 migration; v2 preserved');return v3;}
++ return{initialize,inspect,canBirth,prepare,recordSpawned,confirmBorn,rollbackRemoved,assertOwned,beginRemove,commitRemoved,confirmDeath,observeLoaded,recoverIssuance:()=>format()===2?v2.recoverIssuance():v3.recoverIssuance(),compound,format,listCompounds:()=>format()===2?[]:v3.listCompounds()};
++}
+--- before/integration/creationUnifiedV3.js
++++ proposed/integration/creationUnifiedV3.js
+@@ -0,0 +1,131 @@
++// @ts-check
++/** Compound record experiment only. No entities, timers, implicit migration or casualty debit.
++ * @typedef {{getDynamicProperty:(key:string)=>unknown,setDynamicProperty:(key:string,value:string)=>void,getDynamicPropertyIds:()=>string[],afterEvents?:any}} WorldPort
++ * @typedef {{phase:string,type:string,actor:string|null,terminal:string}} Member
++ * @typedef {{v:number,epoch:string,group:string,generation:number,kind:string,[key:string]:any}} Binding
++ * @typedef {{index:number,count:number,hash:string}} ChunkHead
++ * @typedef {{group:string,type:string,index:number,oldChunkRaw:string|null,newChunkRaw:string,recordRaw:string}} Issue
++ * @typedef {{v:number,epoch:string,mode:string,fixture:string,dimension:string,chunks:ChunkHead[],issued:number,pending:Issue|null}} Epoch
++ * @typedef {{raw:string,value:Epoch,groups:Set<string>,chunks:Map<number,string>,records:Map<string,string>,actors:Map<string,string>}} Snapshot
++ * @typedef {{metaRaw:string,raw:string,group:string,epoch:string,generation:number,type:string,actor:string|null}} TicketContext
++ */
++export const FAMILY='civ:pop_bind:',PREFIX=FAMILY+'v3:',META=PREFIX+'meta',MAX_RECORDS=2048,MAX_BYTES=1536,CHUNK_GROUPS=64,MAX_CHUNKS=32,MAX_CHUNK_BYTES=4096,MAX_META_BYTES=8192;
++export const ROLE_TYPES=Object.freeze({rider:'civ_trial:cavalry',mount:'civ_trial:cavalry_mount'});
++export const SINGLE_TYPES=Object.freeze(['minecraft:villager_v2','minecraft:iron_golem','civ_trial:swordsman','civ_trial:archer']);
++const TYPES=new Set([...Object.values(ROLE_TYPES),...SINGLE_TYPES]);
++const ROLES=/** @type {const} */(['single','rider','mount']);
++/** @param {Binding} r @returns {Array<'single'|'single'|'rider'|'mount'>} */const rolesOf=r=>r.kind==='single'?['single']:['rider','mount'];
++const PHASES=new Set(['never','pending','alive','removing','terminal','cancelled']);
++/** @param {any} s */const ascii=s=>typeof s==='string'&&/^[A-Za-z0-9_-]{1,64}$/.test(s);
++/** @param {any} s */const group=s=>typeof s==='string'&&/^district-(?:[1-9]|[12]\d|3[0-2]):(?:civ|sol):(?:0|[1-9]\d{0,5})$/.test(s);
++/** @param {any} s */const actor=s=>typeof s==='string'&&/^[A-Za-z0-9:_-]{1,128}$/.test(s);
++/** @param {any} v @param {string[]} keys */const exact=(v,keys)=>v&&typeof v==='object'&&!Array.isArray(v)&&Object.keys(v).sort().join(',')===[...keys].sort().join(',');
++/** @param {any} tags @param {string} g */const canonical=(tags,g)=>Array.isArray(tags)&&tags.length<=64&&tags.every((/** @type {any} */t)=>typeof t==='string'&&t.length<=256)&&tags.filter((/** @type {string} */t)=>t.startsWith('civpop:')).length===1&&tags.includes('civpop:v1:'+g);
++/** @param {string} g */const key=g=>PREFIX+g;
++/** @param {number} n */const chunkKey=n=>PREFIX+'index:'+n;
++/** @param {Binding} r @param {'single'|'rider'|'mount'} role */export const birthTag=(r,role)=>role==='single'?`civbirth:v3:${r.epoch}:${r.group}:${r.generation}`:`civcavalry:v1:${r.epoch}:${r.group}:${r.generation}:${role}`;
++/** Stable checksum for accidental/cross-version corruption; not adversarial authentication. @param {string} text */
++function fingerprint(text){let n=2166136261;for(let i=0;i<text.length;i++){n^=text.charCodeAt(i);n=Math.imul(n,16777619);}return(n>>>0).toString(16).padStart(8,'0');}
++/** @param {any} raw @param {number} cap @returns {any} */function json(raw,cap){if(typeof raw!=='string'||raw.length>cap||/[^\x00-\x7f]/.test(raw))throw Error('bounded ASCII metadata missing/corrupt');return JSON.parse(raw);}
++/** @param {any} raw @param {Epoch} m @param {string} g @returns {Binding|null} */
++function parseRecord(raw,m,g){if(raw===undefined)return null;const r=json(raw,MAX_BYTES);
++ if(!exact(r,['v','epoch','group','generation','kind','single','rider','mount'])||r.v!==3||r.epoch!==m.epoch||r.group!==g||!group(g)||!['single','compound'].includes(r.kind)||(r.kind==='compound'&&!g.includes(':sol:'))||!Number.isSafeInteger(r.generation)||r.generation<1)throw Error('compound binding malformed/foreign/future');
++ if(r.kind==='single'?(r.rider!==null||r.mount!==null):(r.single!==null))throw Error('record kind/roles differ');
++ for(const role of rolesOf(r)){const a=r[role];if(!exact(a,['phase','type','actor','terminal'])||!PHASES.has(a.phase)||(role==='single'?!SINGLE_TYPES.includes(a.type):a.type!==ROLE_TYPES[role])||!(a.actor===null||actor(a.actor)))throw Error('compound role identity invalid');
++  if(a.phase==='never'&&(a.actor!==null||a.terminal!=='none'))throw Error('never role has history');
++  if(a.phase==='cancelled'&&(a.actor!==null||a.terminal!=='never-created'))throw Error('cancelled role is not proven never-created');
++  if(a.phase==='pending'&&a.terminal!=='none')throw Error('pending terminal invalid');
++  if(['alive','removing','terminal'].includes(a.phase)&&!actor(a.actor))throw Error('compound role actor absent');
++  if(a.phase==='terminal'?!['death','owner-remove','tag-rollback'].includes(a.terminal):a.phase!=='cancelled'&&a.terminal!=='none')throw Error('compound terminal inconsistent');
++ }
++ if(r.kind==='compound'&&r.rider.actor!==null&&r.rider.actor===r.mount.actor)throw Error('one actor cannot fill both roles');return r;
++}
++/** @param {any} raw @returns {Epoch} */
++function parseEpoch(raw){const m=json(raw,MAX_META_BYTES);if(!exact(m,['v','epoch','mode','fixture','dimension','chunks','issued','pending'])||m.v!==3||!ascii(m.epoch)||!ascii(m.fixture)||m.mode!=='fresh'||m.dimension!=='minecraft:overworld'||!Array.isArray(m.chunks)||m.chunks.length>MAX_CHUNKS||!Number.isSafeInteger(m.issued)||m.issued<0||m.issued>MAX_RECORDS)throw Error('binding epoch unsupported');let count=0;
++ m.chunks.forEach((/** @type {any} */h,/** @type {number} */i)=>{if(!exact(h,['index','count','hash'])||h.index!==i||!Number.isSafeInteger(h.count)||h.count<1||h.count>CHUNK_GROUPS||typeof h.hash!=='string'||!/^[a-f0-9]{8}$/.test(h.hash))throw Error('issuance header invalid');count+=h.count;});if(count!==m.issued)throw Error('issuance count inconsistent');
++ if(m.pending!==null){const p=m.pending;if(!exact(p,['group','type','index','oldChunkRaw','newChunkRaw','recordRaw'])||!group(p.group)||!TYPES.has(p.type)||!Number.isSafeInteger(p.index)||p.index<0||p.index>=MAX_CHUNKS||!(p.oldChunkRaw===null||typeof p.oldChunkRaw==='string')||typeof p.newChunkRaw!=='string'||typeof p.recordRaw!=='string')throw Error('issuance intent invalid');const r=parseRecord(p.recordRaw,m,p.group);if(!r||p.type!==(r.kind==='single'?r.single.type:ROLE_TYPES.rider)||r.generation!==1||rolesOf(r).some(role=>r[role].phase!=='never'||r[role].actor!==null))throw Error('issuance intent record differs');}
++ return m;
++}
++/** @param {any} raw @param {Epoch} m @param {number} index @returns {string[]} */
++function parseChunk(raw,m,index){const c=json(raw,MAX_CHUNK_BYTES);if(!exact(c,['v','epoch','index','groups'])||c.v!==3||c.epoch!==m.epoch||c.index!==index||!Array.isArray(c.groups)||c.groups.length<1||c.groups.length>CHUNK_GROUPS||!c.groups.every(group)||new Set(c.groups).size!==c.groups.length||JSON.stringify(c.groups)!==JSON.stringify([...c.groups].sort()))throw Error('issuance chunk malformed/foreign');return c.groups;}
++/** @param {WorldPort} world @param {{verifyFreshWorld?:()=>{verified:boolean,fixtureId:string,dimension:string,ownerHistory:string}}} [deps] */
++export function createUnifiedV3Bindings(world,deps={}){
++ let busy=false;
++ /** @type {WeakMap<object,TicketContext>} */const birthTickets=new WeakMap(),removalTickets=new WeakMap();
++ /** @template T @param {()=>T} fn @returns {T} */function enter(fn){if(busy)throw Error('binding operation reentered');busy=true;try{return fn();}finally{busy=false;}}
++ /** @param {boolean} [pendingAllowed] @returns {Snapshot} */
++ function snapshot(pendingAllowed=false){
++  const raw=world.getDynamicProperty(META);if(typeof raw!=='string')throw Error('binding epoch absent/corrupt');const m=parseEpoch(raw),ids=world.getDynamicPropertyIds();if(!Array.isArray(ids)||ids.length>4096||ids.some(k=>typeof k!=='string'||k.startsWith(FAMILY)&&!k.startsWith(PREFIX)))throw Error('unknown/future binding namespace');
++  if(m.pending&&!pendingAllowed)throw Error('interrupted issuance needs metadata recovery');
++  /** @type {Set<string>} */const groups=new Set();
++  /** @type {Map<number,string>} */const chunks=new Map();
++  /** @type {Map<string,string>} */const records=new Map();
++  const allowed=new Set([META]);
++  for(const h of m.chunks){const actual=world.getDynamicProperty(chunkKey(h.index));let indexed=actual;
++   if(m.pending?.index===h.index){if(actual!==m.pending.oldChunkRaw&&actual!==m.pending.newChunkRaw)throw Error('issuance standby changed; preserved');indexed=m.pending.oldChunkRaw;}
++   if(typeof indexed!=='string'||fingerprint(indexed)!==h.hash)throw Error('committed issuance chunk missing/changed');const members=parseChunk(indexed,m,h.index);if(members.length!==h.count)throw Error('chunk count differs');chunks.set(h.index,indexed);allowed.add(chunkKey(h.index));for(const g of members){if(groups.has(g))throw Error('duplicate issuance group');groups.add(g);allowed.add(key(g));}
++  }
++  if(groups.size!==m.issued)throw Error('exact issuance set differs');
++  if(m.pending){const p=m.pending;if(groups.has(p.group))throw Error('issuance intent reused group');const old=p.index<m.chunks.length?chunks.get(p.index):null;
++   if(p.index!==m.chunks.length-1&&p.index!==m.chunks.length||old!==p.oldChunkRaw)throw Error('issuance intent prior chunk differs');const prior=old===null?[]:parseChunk(old,m,p.index),next=parseChunk(p.newChunkRaw,m,p.index);if(prior.length>=CHUNK_GROUPS||JSON.stringify(next)!==JSON.stringify([...prior,p.group].sort()))throw Error('issuance intent membership differs');
++   if(p.index===m.chunks.length){const rawNew=world.getDynamicProperty(chunkKey(p.index));if(rawNew!==undefined&&rawNew!==p.newChunkRaw)throw Error('unknown new index chunk; preserved');if(rawNew!==undefined)allowed.add(chunkKey(p.index));}
++   const provisional=world.getDynamicProperty(key(p.group));if(provisional!==undefined){if(provisional!==p.recordRaw)throw Error('unexpected issuance record; preserved');allowed.add(key(p.group));}
++  }
++  const owned=ids.filter(k=>k.startsWith(FAMILY));if(owned.length!==allowed.size||owned.some(k=>!allowed.has(k)))throw Error('binding inventory keyset missing/substituted/unknown');
++  /** @type {Map<string,string>} */const actors=new Map();
++  for(const g of groups){const rawRecord=world.getDynamicProperty(key(g)),r=parseRecord(rawRecord,m,g);if(typeof rawRecord!=='string'||!r)throw Error('issued binding missing; preserved');records.set(g,rawRecord);for(const role of rolesOf(r)){const id=r[role].actor;if(id!==null){if(actors.has(id))throw Error('cross-group actor identity conflict; preserved');actors.set(id,g+':'+role);}}}
++  if(world.getDynamicProperty(META)!==raw)throw Error('epoch changed during census');return{raw,value:m,groups,chunks,records,actors};
++ }
++ /** @param {string} expected @param {Epoch} next */
++ function putEpoch(expected,next){const raw=JSON.stringify(next);if(raw.length>MAX_META_BYTES)throw Error('epoch byte cap');if(world.getDynamicProperty(META)!==expected)throw Error('epoch changed before publication');world.setDynamicProperty(META,raw);if(world.getDynamicProperty(META)!==raw)throw Error('epoch readback failed');return raw;}
++ /** @param {Snapshot} m @param {string} g @param {string} expected @param {Binding} next */
++ function write(m,g,expected,next){const fresh=snapshot();if(fresh.raw!==m.raw||fresh.records.get(g)!==expected)throw Error('binding raw/epoch changed before write');const raw=JSON.stringify(next);if(raw.length>MAX_BYTES)throw Error('binding record cap');if(!parseRecord(raw,m.value,g))throw Error('proposed compound record invalid');for(const role of rolesOf(next)){const id=next[role].actor,claim=id===null?undefined:fresh.actors.get(id);if(claim!==undefined&&claim!==g+':'+role)throw Error('cross-group actor ID reused; preserved');}world.setDynamicProperty(key(g),raw);if(world.getDynamicProperty(key(g))!==raw||world.getDynamicProperty(META)!==m.raw)throw Error('binding write/readback failed');return raw;}
++ /** Complete metadata only. Missing provision is UNKNOWNpending, NEVER spawn permission. @param {Snapshot} m */
++ function finishIssue(m){const p=m.value.pending;if(!p)return m;const fresh=snapshot(true);if(fresh.raw!==m.raw)throw Error('issuance changed before recovery');
++  const at=chunkKey(p.index),actual=world.getDynamicProperty(at);if(actual!==p.newChunkRaw){if(actual!==p.oldChunkRaw&&!(p.oldChunkRaw===null&&actual===undefined))throw Error('standby not owned; preserve');world.setDynamicProperty(at,p.newChunkRaw);if(world.getDynamicProperty(at)!==p.newChunkRaw)throw Error('index readback failed');}
++  const existing=world.getDynamicProperty(key(p.group));if(existing===undefined){world.setDynamicProperty(key(p.group),p.recordRaw);if(world.getDynamicProperty(key(p.group))!==p.recordRaw)throw Error('pending record readback failed');}else if(existing!==p.recordRaw)throw Error('issuance record changed; preserved');
++  const chunks=m.value.chunks.map(h=>({...h})),head={index:p.index,count:parseChunk(p.newChunkRaw,m.value,p.index).length,hash:fingerprint(p.newChunkRaw)};chunks[p.index]=head;
++  putEpoch(m.raw,{...m.value,chunks,issued:m.value.issued+1,pending:null});return snapshot();
++ }
++ /** @param {Snapshot} m @param {Binding} record */
++ function issue(m,record){if(m.groups.has(record.group)||m.value.issued>=MAX_RECORDS)throw Error('issued/capacity group held');let index=m.value.chunks.length-1,oldRaw=index<0?null:m.chunks.get(index)??null;let members=oldRaw===null?[]:parseChunk(oldRaw,m.value,index);if(members.length===CHUNK_GROUPS){index++;oldRaw=null;members=[];}if(index<0)index=0;if(index>=MAX_CHUNKS)throw Error('issuance capacity');
++  const newRaw=JSON.stringify({v:3,epoch:m.value.epoch,index,groups:[...members,record.group].sort()}),recordRaw=JSON.stringify(record);if(newRaw.length>MAX_CHUNK_BYTES||recordRaw.length>MAX_BYTES)throw Error('issuance size cap');
++  const intent={group:record.group,type:record.kind==='single'?record.single.type:ROLE_TYPES.rider,index,oldChunkRaw:oldRaw,newChunkRaw:newRaw,recordRaw};putEpoch(m.raw,{...m.value,pending:intent});return finishIssue(snapshot(true));
++ }
++ /** @param {string} g @param {Snapshot} m */function read(g,m){if(!group(g))throw Error('invalid group');return{raw:m.records.get(g),value:parseRecord(m.records.get(g),m.value,g)};}
++ /** @param {unknown} role @returns {'single'|'rider'|'mount'} */function roleOf(role){if(role!=='single'&&role!=='rider'&&role!=='mount')throw Error('unknown compound role');return role;}
++ /** @param {Binding} r @param {'single'|'rider'|'mount'} role @param {any} live */
++ function identity(r,role,live){if(!rolesOf(r).includes(role))throw Error('record does not own requested role');const a=r[role];if(!live||live.groupId!==r.group||live.role!==role||live.id!==a.actor||live.typeId!==a.type||!Array.isArray(live.tags)||live.tags.length>64||live.tags.some((/** @type {any} */t)=>typeof t!=='string'||t.length>256))throw Error('compound native role identity differs');
++  const own=live.tags.filter((/** @type {string} */t)=>t.startsWith('civpop:'));if(role!=='mount'?(own.length!==1||own[0]!=='civpop:v1:'+r.group):own.length!==0)throw Error('compound canonical role differs');
++  if(live.tags.filter((/** @type {string} */t)=>t.startsWith('civcavalry:')||t.startsWith('civbirth:')).length!==1||!live.tags.includes(birthTag(r,role)))throw Error('compound birth generation differs');
++ }
++ /** @param {string} epoch @param {string} fixture */function initialize(epoch,fixture){return enter(()=>{if(!ascii(epoch)||!ascii(fixture))throw Error('explicit valid fresh identity required');const ids=world.getDynamicPropertyIds();if(!Array.isArray(ids)||ids.length>4096||ids.some(k=>k.startsWith(FAMILY)))throw Error('existing single/compound namespace preserved; explicit migration required');
++ const proof=deps.verifyFreshWorld?.();if(proof?.verified!==true||proof.fixtureId!==fixture||proof.dimension!=='minecraft:overworld'||proof.ownerHistory!=='never-started')throw Error('private fresh provenance required');
++ /** @type {Epoch} */const m={v:3,epoch,mode:'fresh',fixture,dimension:'minecraft:overworld',chunks:[],issued:0,pending:null};const raw=JSON.stringify(m);if(world.getDynamicProperty(META)!==undefined)throw Error('compound epoch appeared');world.setDynamicProperty(META,raw);if(world.getDynamicProperty(META)!==raw)throw Error('compound epoch readback failed');return m;});}
++ /** @param {string} g */function reservePair(g){return enter(()=>{let m=snapshot();const prior=read(g,m);if(!group(g)||!g.includes(':sol:')||prior.value&&(prior.value.kind!=='compound'||!rolesOf(prior.value).every(role=>['terminal','cancelled'].includes(prior.value?.[role].phase??''))))throw Error('compound pair already issued or surviving; no absence replacement');
++ const generation=(prior.value?.generation??0)+1;if(!Number.isSafeInteger(generation))throw Error('compound generation exhausted');
++ /** @type {Binding} */const r={v:3,epoch:m.value.epoch,group:g,generation,kind:'compound',single:null,rider:{phase:'never',type:ROLE_TYPES.rider,actor:null,terminal:'none'},mount:{phase:'never',type:ROLE_TYPES.mount,actor:null,terminal:'none'}};
++ if(prior.value)write(m,g,/** @type {string} */(prior.raw),r);else issue(m,r);return r;});}
++ /** Single-actor records share this SAME v3 registry, not a parallel metadata owner.
++  * @param {string} g @param {string} type */function reserveSingle(g,type){return enter(()=>{if(!SINGLE_TYPES.includes(type))throw Error('single type unsupported');const m=snapshot(),prior=read(g,m);if(prior.value&&(prior.value.kind!=='single'||prior.value.single.type!==type||!['terminal','cancelled'].includes(prior.value.single.phase)))throw Error('single history/type held');const generation=(prior.value?.generation??0)+1;if(!Number.isSafeInteger(generation))throw Error('generation exhausted');/** @type {Binding} */const r={v:3,epoch:m.value.epoch,group:g,generation,kind:'single',single:{phase:'never',type,actor:null,terminal:'none'},rider:null,mount:null};if(prior.value)write(m,g,/** @type {string} */(prior.raw),r);else issue(m,r);return r;});}
++ /** @param {string} g @param {'single'|'rider'|'mount'} role @param {string} [expected] */function prepareRole(g,role,expected){return enter(()=>{role=roleOf(role);const m=snapshot(),r=read(g,m);if(expected!==undefined&&JSON.stringify(r.value)!==expected)throw Error('compound completion source changed before pending intent');if(!r.value||!rolesOf(r.value).includes(role)||r.value[role].phase!=='never'||rolesOf(r.value).some(k=>['pending','removing','terminal','cancelled'].includes(r.value?.[k].phase??'')))throw Error('compound role issued/pending; preserve');
++ const next={...r.value,[role]:{...r.value[role],phase:'pending'}},raw=write(m,g,/** @type {string} */(r.raw),next),ticket=Object.freeze({group:g,role,tag:birthTag(next,role)});
++ birthTickets.set(ticket,{metaRaw:m.raw,raw,group:g,epoch:next.epoch,generation:next.generation,type:next[role].type,actor:null});return ticket;});}
++ /** Exact never-created metadata permits explicit owner cancellation, not a death receipt.
++  * Pending/known issued roles are never cancellable from absence.
++  * @param {string} g @param {'single'|'rider'|'mount'} role */function cancelNeverCreated(g,role){return enter(()=>{role=roleOf(role);const m=snapshot(),r=read(g,m);if(!r.value||!rolesOf(r.value).includes(role)||r.value[role].phase!=='never')throw Error('issued/unknown role cannot be cancelled as never-created');const next={...r.value,[role]:{...r.value[role],phase:'cancelled',terminal:'never-created'}};write(m,g,/** @type {string} */(r.raw),next);return next;});}
++ /** @param {any} ticket */function pending(ticket){const info=birthTickets.get(ticket);if(!info)throw Error('unknown/consumed compound birth ticket');const role=roleOf(ticket.role),m=snapshot(),r=read(info.group,m);if(m.raw!==info.metaRaw||r.raw!==info.raw||!r.value||r.value.epoch!==info.epoch||r.value.generation!==info.generation||r.value[role].phase!=='pending'||r.value[role].type!==info.type)throw Error('compound pending raw/epoch/type differs');return{info,role,m,r:r.value,raw:/** @type {string} */(r.raw)};}
++ /** @param {any} ticket @param {string} id */function recordSpawned(ticket,id){return enter(()=>{const p=pending(ticket);if(!actor(id)||p.r[p.role].actor!==null||rolesOf(p.r).some(k=>p.r[k].actor===id))throw Error('compound spawned ID invalid/reused');const next={...p.r,[p.role]:{...p.r[p.role],actor:id}},raw=write(p.m,p.r.group,p.raw,next);p.info.raw=raw;p.info.actor=id;return next;});}
++ /** @param {any} ticket @param {any} live */function confirmBorn(ticket,live){return enter(()=>{const p=pending(ticket);identity(p.r,p.role,live);birthTickets.delete(ticket);const next={...p.r,[p.role]:{...p.r[p.role],phase:'alive'}};write(p.m,p.r.group,p.raw,next);return next;});}
++ /** Called ONLY after sole owner positively removed its exact newborn. @param {any} ticket @param {string} id */function rollbackRemoved(ticket,id){return enter(()=>{const p=pending(ticket);if(!actor(id)||p.r[p.role].actor!==null&&p.r[p.role].actor!==id||rolesOf(p.r).some(k=>k!==p.role&&p.r[k].actor===id))throw Error('compound rollback counterpart ID reused/differs');birthTickets.delete(ticket);const next={...p.r,[p.role]:{...p.r[p.role],actor:id,phase:'terminal',terminal:'tag-rollback'}};write(p.m,p.r.group,p.raw,next);return next;});}
++ /** Readonly assertion; native identity must be rechecked after these metadata getters by owner. @param {any} live */function assertOwned(live){return enter(()=>{const role=roleOf(live.role),m=snapshot(),r=read(live.groupId,m);if(!r.value||!rolesOf(r.value).includes(role)||!['alive','removing'].includes(r.value[role].phase))throw Error('compound owned role unavailable');identity(r.value,role,live);return true;});}
++ /** @param {any} live */function beginRemove(live){return enter(()=>{const role=roleOf(live.role),m=snapshot(),r=read(live.groupId,m);if(!r.value||!rolesOf(r.value).includes(role)||!['alive','removing'].includes(r.value[role].phase))throw Error('compound removal unavailable');identity(r.value,role,live);const next={...r.value,[role]:{...r.value[role],phase:'removing'}},raw=write(m,r.value.group,/** @type {string} */(r.raw),next),ticket=Object.freeze({group:next.group,role});removalTickets.set(ticket,{metaRaw:m.raw,raw,group:next.group,epoch:next.epoch,generation:next.generation,type:next[role].type,actor:next[role].actor});return ticket;});}
++ /** Called ONLY after exact successful native owner removal, never isValid=false/unload alone. @param {any} ticket */function commitRemoved(ticket){return enter(()=>{const info=removalTickets.get(ticket);removalTickets.delete(ticket);if(!info)throw Error('unknown/consumed compound removal ticket');const role=roleOf(ticket.role),m=snapshot(),r=read(info.group,m);if(m.raw!==info.metaRaw||r.raw!==info.raw||!r.value||r.value.epoch!==info.epoch||r.value.generation!==info.generation||r.value[role].phase!=='removing'||r.value[role].actor!==info.actor||r.value[role].type!==info.type)throw Error('stale compound removal authority');const next={...r.value,[role]:{...r.value[role],phase:'terminal',terminal:'owner-remove'}};write(m,info.group,/** @type {string} */(r.raw),next);return next;});}
++ /** Fresh exact entityDie identity only; returns physical role receipt, never aggregate debit. @param {any} live */function confirmDeath(live){return enter(()=>{const role=roleOf(live.role),m=snapshot(),r=read(live.groupId,m);if(!r.value)return false;identity(r.value,role,live);if(r.value[role].phase==='terminal')return false;if(!['alive','pending','removing'].includes(r.value[role].phase))throw Error('unissued compound death');const next={...r.value,[role]:{...r.value[role],phase:'terminal',terminal:'death'}};write(m,r.value.group,/** @type {string} */(r.raw),next);return{record:next,role,humanCasualtyDebit:0};});}
++ /** @param {any[]} rows */function observeLoaded(rows){return enter(()=>{if(!Array.isArray(rows)||rows.length>48)throw Error('compound observation cap');const seen=new Set();for(const live of rows){const role=roleOf(live.role),id=live.groupId+':'+role;if(seen.has(id))throw Error('compound duplicate role');seen.add(id);const m=snapshot(),r=read(live.groupId,m);if(!r.value)throw Error('unissued compound actor preserved');identity(r.value,role,live);if(['pending','removing'].includes(r.value[role].phase))write(m,r.value.group,/** @type {string} */(r.raw),{...r.value,[role]:{...r.value[role],phase:'alive'}});else if(r.value[role].phase!=='alive')throw Error('compound terminal actor reappeared; preserved');}});}
++ /** @param {string} g */function inspect(g){return enter(()=>read(g,snapshot()).value);}
++ /** Bounded active pair census for the SAME owner's maintenance pass. @param {number} [limit] */
++ function listCompounds(limit=24){return enter(()=>{if(!Number.isSafeInteger(limit)||limit<1||limit>48)throw Error('compound list cap');const m=snapshot(),rows=[];for(const[g,raw]of m.records){const r=parseRecord(raw,m.value,g);if(r?.kind==='compound'&&!rolesOf(r).every(role=>['terminal','cancelled'].includes(r[role].phase))){if(rows.length>=limit)throw Error('active compound census exceeds maintenance cap');rows.push(JSON.parse(JSON.stringify(r)));}}return rows;});}
++ const recoverIssuance=()=>enter(()=>finishIssue(snapshot(true)).value.pending===null);
++ return{initialize,reservePair,reserveSingle,prepareRole,cancelNeverCreated,recordSpawned,confirmBorn,rollbackRemoved,assertOwned,beginRemove,commitRemoved,confirmDeath,observeLoaded,inspect,recoverIssuance,listCompounds};
++}
+--- before/integration/peopleStreets.js
++++ proposed/integration/peopleStreets.js
+@@ -128,7 +128,7 @@
+             if(creationBindings){
+                 try{const owner=createPopSync({world,dimension,readKingdom:()=>ctx.kingdom,enabled:false,
+                     creationBindings,config:deps.config??{},readMilitarySelection:deps.readMilitarySelection,militaryDiagnostics:deps.militaryDiagnostics});
+-                    lastSync=owner;const result=owner.teardownBound(censusOurs(ctx,true));
++                    lastSync=owner;const result=owner.teardownBound(censusOurs(ctx,true),tickOf(ctx.tick,liveTick()));
+                     done.cleared+=result.removed;done.removed+=result.removed;done.refused=result.held;
+                     done.births="gate-off bound teardown; no birth requested";
+                     if(!result.held){done.admittedCiv=0;done.admittedSol=0;done.lod="gate off; only positively removed instances retired";done.hold=null;}
+--- before/integration/popSync.js
++++ proposed/integration/popSync.js
+@@ -1,3 +1,6 @@
++import {createCompoundNative} from "./compoundNative.js";
++import {compoundReservations,planCompoundCompletion} from "../population/compoundPlanning.js";
++import {createRoleBudget} from "../population/roleBudget.js";
+ import { world as runtimeWorld } from "@minecraft/server";
+ import { createKingdomStore } from "../kingdom/store.js";
+ import { buildGroupTable, chunkKeyOf, nearestDistance, nearestPostDistance, parseGroupId, postOf, spotFor } from "../population/groups.js";
+@@ -61,6 +64,7 @@
+     }
+     const config = resolveConfig(deps.config ?? {});
+     const creationBindings=deps.creationBindings;
++    const compoundTrial=deps.compoundNativeTrial===true; // STAGED trusted factory opt-in only; every main caller remains off.
+     const enabled = deps.enabled === true;
+     /** Last owner plan only: diagnostic reads never reconcile or advance its cursor. @type {any} */
+     let lastPlan;
+@@ -230,12 +234,13 @@
+     const plan = (prior, kingdom, tick) => {
+         const anchors = normaliseAnchors(anchorsOf());
+         const posts = postsOf(kingdom);
++        const activeCompounds=compoundRows(),reservations=compoundReservations(activeCompounds),compoundActive=activeCompounds.length>0;
+         const snapshot=militaryPolicy(kingdom);
+         const policy=snapshot?.selection?snapshot:null;
+         const session = observe(kingdom, anchors, posts,policy!==null||!!creationBindings);
+         if(policy?.selection){const found=findTagged(tagFor(policy.selection.groupId),true);diagnose("observe",policy.selection.groupId,found);for(const handle of found)session.admit(handle);}
+-        let result = reconcile(prior, session.observation, tick, config,policy?.typeForGroup??(creationBindings?(group=>POP_ENTITY_TYPES[group.kind]):undefined));
+-        if(policy!==null)chargeMilitaryWork(result.report.work??0);
++        let result = reconcile(prior, session.observation, tick, config,policy?.typeForGroup??(creationBindings?(group=>POP_ENTITY_TYPES[group.kind]):undefined),policy?.physicalCostForGroup??deps.physicalCostForGroup,reservations);
++        if(policy!==null||compoundActive)chargeMilitaryWork(result.report.work??0);
+         for (let pass = 0; pass < 2; pass += 1) {
+             let discovered = 0;
+             for (const action of result.actions) {
+@@ -253,9 +258,11 @@
+             if (discovered === 0) {
+                 break;
+             }
+-            result = reconcile(prior, session.observation, tick, config,policy?.typeForGroup??(creationBindings?(group=>POP_ENTITY_TYPES[group.kind]):undefined));
+-            if(policy!==null)chargeMilitaryWork(result.report.work??0);
+-        }
++            result = reconcile(prior, session.observation, tick, config,policy?.typeForGroup??(creationBindings?(group=>POP_ENTITY_TYPES[group.kind]):undefined),policy?.physicalCostForGroup??deps.physicalCostForGroup,reservations);
++            if(policy!==null||compoundActive)chargeMilitaryWork(result.report.work??0);
++        }
++        attachCompoundMaintenance(result,prior,tick);
++        if(activeCompounds.length){const completion=planCompoundCompletion(activeCompounds,result.state.physical,{tick,ops:result.state.ops,spawns:result.state.spawns},tick,config);result.report.compound.completionPreview=completion;result.report.compound.reservedActorSlots=reservations.length*2;}
+         lastPlan={tick,posts:Object.fromEntries(Object.entries(posts).map(([id,list])=>[id,{count:list.length,points:list.slice(0,9).map((/** @type {any} */p)=>({...p}))}])),
+             counts:new Map(kingdom.districts.map((/** @type {any} */d)=>[d.id,{civ:d.civilians,sol:d.soldiers}])),policy:snapshot,
+             admitted:[...result.state.physical],actions:result.actions,refused:result.report.refused??null,deferred:result.report.deferred??[],outcomes:[],
+@@ -265,11 +272,12 @@
+ 
+     /**
+      * @param {number} tick
+-     * @returns {{ refused: string | null, plan: any, cursor: string }}
++     * @returns {{ refused: string | null, plan: any, cursor: string,cursorRaw?:unknown }}
+      */
+     const planFromStore = (tick) => {
+         militaryWork=0;
+-        const loaded = decodeCursor(world.getDynamicProperty(POP_CURSOR_KEY));
++        const cursorRaw=world.getDynamicProperty(POP_CURSOR_KEY);
++        const loaded = decodeCursor(cursorRaw);
+         if (loaded.status === "newer") {
+             return { refused: `cursor refused: ${String(loaded.reason)}`, plan: null, cursor: loaded.status };
+         }
+@@ -278,8 +286,9 @@
+             return { refused: "no kingdom records are stored yet", plan: null, cursor: loaded.status };
+         }
+         try {
++            const rows=compoundRows();if(rows.some(r=>[r.rider,r.mount].some(m=>!["never","cancelled"].includes(m.phase)))&&loaded.status!=="ok")throw Error("issued compound quota cursor missing/corrupt; no budget reset from absence");
+             const planned = plan(loaded.state, kingdom, tick);
+-            return { refused: planned.result.report.refused ?? null, plan: planned, cursor: loaded.status };
++            return { refused: planned.result.report.refused ?? null, plan: planned, cursor: loaded.status,cursorRaw };
+         } catch(error) {
+             if(typeof deps.readMilitarySelection!=="function")throw error;
+             return {refused:String(error),plan:null,cursor:loaded.status};
+@@ -322,7 +331,12 @@
+             try{const rows=[];for(const handle of planned.plan.handles.values()){const d=describe(handle);if(!d)throw Error("creation observation unreadable");const read=classifyTags(d.tags);if(read.claims.length===1&&isCanonicalFor(read.ownTags,read.claims[0]))rows.push({groupId:read.claims[0],id:d.id,typeId:d.typeId,tags:d.tags});}creationBindings.observeLoaded(rows);}
+             catch(error){return{refused:"creation binding observation held: "+String(error),actions:[],report:planned.plan.result.report,applied:[],skipped:[],failed:[],saved:false};}
+         }
+-        const outcome = applyActions(planned.plan.result.actions, planned.plan.handles,planned.plan.policy);
++        const jobs=planned.plan.result.compoundMaintenance??[];
++        let prepaidRaw;
++        if(jobs.length){try{prepaidRaw=publishCompoundBudget(planned.cursorRaw,planned.plan.result.state);planned.plan.result.report.compound.quotaPrepaid=true;}catch(error){return{refused:String(error),actions:[],report:planned.plan.result.report,applied:[],skipped:[],failed:[],saved:false};}}
++        const maintenance=applyCompoundMaintenance(jobs,planned.plan.policy,prepaidRaw);
++        const outcome = maintenance.held?{applied:[],skipped:[],failed:[],militaryRefused:maintenance.held}:applyActions(planned.plan.result.actions, planned.plan.handles,planned.plan.policy,prepaidRaw);
++        outcome.applied.unshift(...maintenance.applied);
+         const saved = outcome.militaryRefused===null?saveCursor(planned.plan.result.state):{saved:false,reason:outcome.militaryRefused};
+         return {
+             refused: outcome.militaryRefused,
+@@ -336,12 +350,59 @@
+         };
+     }
+ 
++    /** @returns {any[]} */
++    function compoundRows(){const rows=creationBindings?.listCompounds?.()??[];if(!Array.isArray(rows)||rows.length>config.maxPhysicalTotal)throw Error("compound maintenance record cap");return rows;}
++    /** Plans one charged role operation at a time; native compound birth remains disabled.
++     * @param {any[]} rows @param {string[]} admitted */
++    function cleanupJobs(rows,admitted){const jobs=[],held=[];for(const r of rows){const cleanup=!admitted.includes(r.group)||[r.rider,r.mount].some(m=>["terminal","cancelled","removing"].includes(m.phase));if([r.rider,r.mount].some(m=>m.phase==="pending")){held.push(r.group+": pending role outcome unknown");continue;}if(!cleanup){if(!compoundTrial&&[r.rider,r.mount].some(m=>m.phase==="never"))held.push(r.group+": compound birth disabled; incomplete role remains tracked");continue;}for(const role of ["rider","mount"]){const m=r[role];if(m.phase==="never"||["alive","removing"].includes(m.phase))jobs.push({groupId:r.group,role,kind:m.phase==="never"?"cancel":"remove",epoch:r.epoch,generation:r.generation,id:m.actor,type:m.type});}}return{jobs,held};}
++    /** @param {any} result @param {any} prior @param {number} tick */
++    function attachCompoundMaintenance(result,prior,tick){const rows=compoundRows();if(!rows.length)return;const scheduled=cleanupJobs(rows,result.state.physical),groups=new Set(rows.map(r=>r.group));const budget=createRoleBudget({tick:prior?.tick??null,ops:prior?.ops??0,spawns:prior?.spawns??0},tick,config),jobs=[];for(const job of scheduled.jobs){if(budget.reserve(job.kind==="cancel"?"cancel":"remove"))jobs.push(job);else scheduled.held.push(job.groupId+": role budget pending");}
++        if(compoundTrial){const completion=planCompoundCompletion(rows,result.state.physical,{tick,...budget.status()},tick,config);for(const j of completion.jobs){if(budget.reserve("spawn"))jobs.push({...j,kind:"birth",id:null,at:result.actions.find((/** @type {any} */a)=>a.op==="spawn"&&a.groupId===j.groupId)?.at});}scheduled.held.push(...completion.held);for(const r of rows){if(result.state.physical.includes(r.group)&&r.rider.phase==="alive"&&r.mount.phase==="alive"){if(budget.reserve("cancel"))jobs.push({groupId:r.group,role:"rider",kind:"seat",epoch:r.epoch,generation:r.generation,id:r.rider.actor,type:r.rider.type,expected:JSON.stringify(r)});else scheduled.held.push(r.group+": seat action budget pending");}}}
++        const ordinary=[];for(const action of result.actions){if(groups.has(action.groupId))continue;if(action.op==="spawn"&&(scheduled.jobs.length||scheduled.held.length)){result.report.pending.spawn++;continue;}if(budget.reserve(action.op==="spawn"?"spawn":"remove"))ordinary.push(action);else result.report.pending[action.op]++;}
++        result.actions=ordinary;result.compoundMaintenance=jobs;const used=budget.status();result.state.ops=used.ops;result.state.spawns=used.spawns;Object.assign(result.report.budget,{opsUsed:used.ops,spawnsUsed:used.spawns});result.report.compound={scheduledRoleOps:jobs.length,roleJobs:jobs.map(j=>({...j})),held:scheduled.held,birthEnabled:compoundTrial,quotaPrepaid:false};if(scheduled.held.length)result.report.hold="Mounted guard is waiting: "+scheduled.held[0];result.report.actions={spawn:ordinary.filter(a=>a.op==="spawn").length,despawn:ordinary.filter(a=>a.op==="despawn").length+jobs.filter(j=>j.kind==="remove").length,retag:ordinary.filter(a=>a.op==="retag").length};
++    }
++    /** @param {unknown} expected @param {import("../population/cursor.js").CursorState} state */
++    function publishCompoundBudget(expected,state){const raw=encodeCursor(state);if(cursorBytes(state)>POP_CURSOR_MAX_BYTES||world.getDynamicProperty(POP_CURSOR_KEY)!==expected)throw Error("compound budget cursor changed; no native work");world.setDynamicProperty(POP_CURSOR_KEY,raw);if(world.getDynamicProperty(POP_CURSOR_KEY)!==raw)throw Error("compound budget publication unverified; no native work");return raw;}
++    /** @param {any} policy */
++    function compoundPolicyCurrent(policy){if(policy!==null&&militaryPolicy(readKingdom())?.stamp!==policy.stamp)throw Error("military selection changed before compound work");}
++    /** @param {any} h */
++    function compoundFrame(h){chargeMilitaryWork(1);const at=h.location,tags=h.getTags();if(!Array.isArray(tags)||tags.length>64||tags.some(t=>typeof t!=="string"||t.length>256))throw Error("compound native tags unreadable");chargeMilitaryWork(tags.length+1);return{id:String(h.id),typeId:String(h.typeId),valid:h.isValid,location:{x:at.x,y:at.y,z:at.z},tags:[...tags].sort()};}
++    /** Strictly bounded global-tag query; absent loaded actor is NEVER a terminal receipt.
++     * @param {string} tag */
++    function compoundQuery(tag){chargeMilitaryWork(1);const rows=dimension.getEntities({tags:[tag],location:{x:0,y:64,z:0},closest:2});if(!Array.isArray(rows)||rows.length>1)throw Error("compound query failed or duplicate; preserve pair");return rows;}
++    /** All metadata checks precede repeated final native role/relationship proof.
++     * @param {any} job @param {any} policy */
++    function compoundPreflight(job,policy){const core=creationBindings.compound(),r=core.inspect(job.groupId);if(!r||r.kind!=="compound"||r.epoch!==job.epoch||r.generation!==job.generation||r[job.role].actor!==job.id||r[job.role].type!==job.type)throw Error("compound job identity changed");if(dimension.id!=="minecraft:overworld")throw Error("compound dimension mismatch");const handles=new Map(),frames=new Map();
++        for(const role of ["rider","mount"]){const m=r[role],tag=`civcavalry:v1:${r.epoch}:${r.group}:${r.generation}:${role}`,matches=compoundQuery(tag);if(["never","terminal","cancelled"].includes(m.phase)){if(matches.length)throw Error("unissued/terminal compound actor reappeared; preserve pair");continue;}if(m.phase==="pending")throw Error("compound pending outcome unknown; preserve pair");if(matches.length!==1)throw Error("compound role unloaded/absent; preserve pair");const h=matches[0],frame=compoundFrame(h);core.assertOwned({groupId:r.group,role,id:frame.id,typeId:frame.typeId,tags:frame.tags});handles.set(role,h);frames.set(role,frame);}
++        compoundPolicyCurrent(policy);
++        const rider=handles.get("rider"),mount=handles.get("mount");let riding=null,riders=[];
++        if(mount){chargeMilitaryWork(1);const rideable=mount.getComponent("minecraft:rideable");if(!rideable||typeof rideable.getRiders!=="function")throw Error("compound rideable proof unavailable");chargeMilitaryWork(1);riders=rideable.getRiders();if(!Array.isArray(riders)||riders.length>1)throw Error("ambiguous compound riders");if(riders.length&&(!rider||String(riders[0].id)!==String(rider.id)))throw Error("foreign rider attached; preserve pair");}
++        if(rider){chargeMilitaryWork(1);const relation=rider.getComponent("minecraft:riding");if(relation){riding=relation.entityRidingOn;if(!mount||!riding||String(riding.id)!==String(mount.id))throw Error("rider on foreign mount; preserve pair");}}
++        if(Boolean(riding)!==Boolean(riders.length))throw Error("compound riding directions disagree");
++        for(const[role,h]of handles){const a=compoundFrame(h);if(!chunkLoadedAt(a.location))throw Error("compound final chunk unloaded");chargeMilitaryWork(1);const loadedBlock=dimension.getBlock(a.location);if(!loadedBlock||loadedBlock.isValid!==true)throw Error("compound final loaded block unreadable");const b=compoundFrame(h),c=compoundFrame(h),m=r[role],tag=`civcavalry:v1:${r.epoch}:${r.group}:${r.generation}:${role}`;
++            if(a.id!==m.actor||a.typeId!==m.type||a.valid!==true||![a.location.x,a.location.y,a.location.z].every(Number.isFinite)||a.tags.filter(t=>t.startsWith("civcavalry:")).length!==1||!a.tags.includes(tag)||JSON.stringify(a)!==JSON.stringify(b)||JSON.stringify(b)!==JSON.stringify(c)||JSON.stringify(frames.get(role))!==JSON.stringify(a))throw Error("compound native identity/location changed after metadata");
++            const own=a.tags.filter(t=>t.startsWith("civpop:"));if(role==="rider"?(own.length!==1||own[0]!==tagFor(r.group)):own.length!==0)throw Error("compound canonical role changed");}
++        return{core,record:r,handles,frames};
++    }
++    /** @param {any[]} jobs @param {any} policy @param {string|undefined} prepaidRaw */
++    function applyCompoundMaintenance(jobs,policy,prepaidRaw){const applied=[];let held=null;for(const job of jobs){try{
++            if(job.kind==="birth"||job.kind==="seat"){if(!compoundTrial||creationBindings.format()!==3)throw Error("compound native trial disabled or wrong schema");const native=createCompoundNative({world,dimension,store:creationBindings,charge:chargeMilitaryWork,current:()=>{compoundPolicyCurrent(policy);if(world.getDynamicProperty(POP_CURSOR_KEY)!==prepaidRaw)throw Error("prepaid compound quota changed; preserve");}});if(job.kind==="birth"){const at=job.at?settleSpot(job.at):undefined;if(job.at&&!at)throw Error("no safe cavalry spawn column");const born=native.spawnRole(job,at);applied.push({action:{op:"spawn",groupId:job.groupId,role:job.role,reason:"compound charged role birth"},reason:null,entityId:born.id});}else{native.seat(job);applied.push({action:{op:"seat-role",groupId:job.groupId},reason:null,entityId:job.id});}continue;}
++            let proof=compoundPreflight(job,policy),member=proof.record[job.role];if(job.kind==="cancel"){if(member.phase!=="never")throw Error("role no longer never-created");if(world.getDynamicProperty(POP_CURSOR_KEY)!==prepaidRaw)throw Error("prepaid compound quota changed; preserve");proof.core.cancelNeverCreated(job.groupId,job.role);applied.push({action:{op:"cancel-role",...job},reason:null,entityId:null});continue;}
++            if(!["alive","removing"].includes(member.phase))throw Error("compound role terminal changed");const frame=proof.frames.get(job.role),ticket=proof.core.beginRemove({groupId:job.groupId,role:job.role,id:frame.id,typeId:frame.typeId,tags:frame.tags});proof=compoundPreflight(job,policy);const h=proof.handles.get(job.role);if(!h)throw Error("compound removal actor unavailable");
++            if(world.getDynamicProperty(POP_CURSOR_KEY)!==prepaidRaw)throw Error("prepaid compound quota changed; preserve");
++            // Counterpart/relationship/block callbacks may invalidate an earlier role frame.
++            // Re-read the ACTUAL deletion target after all of them; no metadata or counterpart callbacks follow.
++            const finalA=compoundFrame(h),finalB=compoundFrame(h);if(JSON.stringify(finalA)!==JSON.stringify(proof.frames.get(job.role))||JSON.stringify(finalA)!==JSON.stringify(finalB))throw Error("compound final deletion target changed after counterpart proof");
++            h.remove();if(h.isValid!==false)throw Error("compound owner removal not positively observed");proof.core.commitRemoved(ticket);applied.push({action:{op:"despawn",groupId:job.groupId,entityId:job.id,role:job.role,reason:"compound tracked owner cleanup"},reason:null,entityId:job.id});
++        }catch(error){held=String(error);break;}}return{applied,held};}
++
+     /**
+      * @param {any[]} actions
+      * @param {Map<string, any>} handles
+      * @param {ReturnType<typeof militarySelectionPolicy>|null} policy
+-     */
+-    function applyActions(actions, handles,policy) {
++     * @param {string|undefined} [prepaidRaw]
++     */
++    function applyActions(actions, handles,policy,prepaidRaw) {
+         /** @type {any[]} */
+         const applied = [];
+         /** @type {any[]} */
+@@ -355,7 +416,7 @@
+                 if(policy!==null) {
+                     guardMilitaryAction(action,policy);
+                 }
+-                const beforeWrite=policy===null?undefined:()=>guardMilitaryAction(action,policy);
++                const beforeWrite=policy===null&&prepaidRaw===undefined?undefined:()=>{if(policy!==null)guardMilitaryAction(action,policy);if(prepaidRaw!==undefined&&world.getDynamicProperty(POP_CURSOR_KEY)!==prepaidRaw)throw Error("prepaid compound quota changed; preserve");};
+                 /** @type {{ ok: boolean, reason: string | null, entityId?: string,settled?:{x:number,y:number,z:number} }} */
+                 const outcome = action.op === "spawn" ? spawnOne(action,beforeWrite) : action.op === "despawn" ? removeOne(action, handles,beforeWrite) : retagOne(action, handles,beforeWrite);
+                 if(policy?.selection?.groupId===action.groupId)diagnose("ownerOutcome",action,outcome);
+@@ -449,7 +510,7 @@
+                 f.tags.length<=64&&f.tags.every((/** @type {any} */t)=>typeof t==="string"&&t.length<=256)&&
+                 isCanonicalFor(classifyTags(f.tags).ownTags,action.groupId)&&
+                 f.tags.filter((/** @type {string} */t)=>t.startsWith("civbirth:")).length===1&&
+-                f.tags.includes(`civbirth:v2:${removal.epoch}:${removal.group}:${removal.generation}`);
++                f.tags.includes(removal.tag??`civbirth:v2:${removal.epoch}:${removal.group}:${removal.generation}`);
+             if(!valid(first)||!valid(second)||!valid(third)||JSON.stringify(first)!==JSON.stringify(second)||JSON.stringify(second)!==JSON.stringify(third))throw Error("owner removal final live identity/location changed; preserved");
+         }
+         const removalId=removal?removal.actor:String(handle.id);handle.remove();
+@@ -512,6 +573,7 @@
+      * @returns {{ ok: boolean, reason: string | null, entityId?: string,settled?:{x:number,y:number,z:number} }}
+      */
+     function spawnOne(action,beforeWrite) {
++        if(action.typeId==="civ_trial:cavalry"){if(!compoundTrial)return{ok:false,reason:"compound native birth disabled; maintenance only"};if(!creationBindings||creationBindings.format()!==3)throw Error("fresh-v3 binding required for cavalry trial");beforeWrite?.();if(findTagged(tagFor(action.groupId),true).length)throw Error("cavalry canonical actor already exists");creationBindings.compound().reservePair(action.groupId);return{ok:false,reason:"cavalry pair reserved; charged per-role births begin next owner pass"};}
+         const tag = tagFor(action.groupId);
+         if (findTagged(tag,!!creationBindings).length > 0) {
+             return { ok: false, reason: "representative-exists" };
+@@ -626,14 +688,20 @@
+             ownerRefused:lastPlan.refused,admitted:lastPlan.admitted.includes(groupId),expectedType,postIndex,postCount:list?.count??0,post,requested,lastAttempt,
+             settle:{point:settled,reason:settleReason,nativeBlockReads:reads,maxBlockReads:240,limited,unreadable},live};
+     }
++    /** Same callback, same persisted tick quotas; never a namespace-only remove-all.
++     * @param {any[]} found @param {number|undefined} tick @param {any} policy @param {any[]} pairs */
++    function teardownCompounds(found,tick,policy,pairs){if(!Number.isSafeInteger(tick)||/** @type {number} */(tick)<0)throw Error("compound teardown requires explicit owner tick");const at=/** @type {number} */(tick),raw=world.getDynamicProperty(POP_CURSOR_KEY),cursor=decodeCursor(raw);if(cursor.status==="newer"||pairs.some(r=>[r.rider,r.mount].some(m=>!["never","cancelled"].includes(m.phase)))&&cursor.status!=="ok")throw Error("compound teardown quota cursor missing/corrupt/newer; preserve pair");const result=/** @type {any} */({actions:[],state:{...cursor.state,tick:at,runs:cursor.state.runs+1,physical:[]},report:{pending:{spawn:0,despawn:0,retag:0},budget:{}}});
++        const pairIds=new Set(pairs.map(r=>r.group)),handles=new Map(),seen=new Set();for(const h of found){const tags=h.getTags();if(!Array.isArray(tags)||tags.length>64)throw Error("compound teardown tag cap");chargeMilitaryWork(tags.length+1);const read=classifyTags(tags),g=read.claims[0];if(!isCanonicalFor(read.ownTags,g)||seen.has(g))throw Error("compound teardown canonical ambiguity");seen.add(g);if(pairIds.has(g))continue;const id=String(h.id);creationBindings.assertOwned({groupId:g,id,typeId:h.typeId,tags:[...tags]});handles.set(id,h);result.actions.push({op:"despawn",groupId:g,entityId:id,reason:"people gate-off owner cleanup"});}
++        attachCompoundMaintenance(result,cursor.state,at);const jobs=result.compoundMaintenance??[];if(!jobs.length&&!result.actions.length)return{removed:0,held:result.report.compound?.held?.[0]??"compound role budget pending"};const prepaidRaw=publishCompoundBudget(raw,result.state);const maintenance=applyCompoundMaintenance(jobs,policy,prepaidRaw);const ordinary=maintenance.held?{applied:[],militaryRefused:maintenance.held,failed:[],skipped:[]}:applyActions(result.actions,handles,policy,prepaidRaw);return{removed:maintenance.applied.filter(e=>e.action.op==="despawn").length+ordinary.applied.length,held:maintenance.held??ordinary.militaryRefused??ordinary.failed[0]?.error??ordinary.skipped[0]?.reason??result.report.compound?.held?.[0]??null};}
+     /** Gate-off removes only already-issued loaded actors through removeOne, never a new owner.
+      * No planning, birth, retag, cursor reset, or absent-instance terminal inference.
+-     * @param {any[]} found */
+-    function teardownBound(found){
++     * @param {any[]} found @param {number} [tick] */
++    function teardownBound(found,tick=undefined){
+         if(!creationBindings)throw Error("durable teardown requires creation bindings");
+         if(!Array.isArray(found)||found.length>config.maxPhysicalTotal)throw Error("bound teardown census cap");
+         militaryWork=0;creationBindings.recoverIssuance();
+         const policy=militaryPolicy(readKingdom()),seen=new Set(),handles=new Map(),actions=[];
++        const pairs=compoundRows();if(pairs.length)return teardownCompounds(found,tick,policy,pairs);
+         // Full preflight before the first removal: unknown/legacy/duplicate identities hold all.
+         for(const h of found){const tags=h.getTags();if(!Array.isArray(tags)||tags.length>64)throw Error("bound teardown tags cap");
+             const read=classifyTags(tags),groupId=read.claims[0],id=String(h.id);
+--- before/population/compoundPlanning.js
++++ proposed/population/compoundPlanning.js
+@@ -0,0 +1,27 @@
++// @ts-check
++import {parseGroupId} from "./groups.js";
++import {createRoleBudget} from "./roleBudget.js";
++/** Capacity is reserved for BOTH components until the full generation is terminal.
++ * Missing loaded actors do not release a reservation. Metadata was authenticated by the store.
++ * @param {any[]} rows @returns {{groupId:string,district:string,cost:2}[]} */
++export function compoundReservations(rows){
++ if(!Array.isArray(rows)||rows.length>24)throw Error("compound reservation cap");
++ const seen=new Set();return rows.map(r=>{const g=parseGroupId(r?.group);if(!g||g.kind!=="sol"||seen.has(r.group)||r.kind!=="compound"||!Number.isSafeInteger(r.generation)||r.generation<1||typeof r.epoch!=="string"||!r.epoch)throw Error("invalid compound reservation");seen.add(r.group);for(const role of ["rider","mount"]){const m=r[role];if(!m||!["never","pending","alive","removing","terminal","cancelled"].includes(m.phase))throw Error("invalid reserved role");}return{r,g};}).filter(({r})=>![r.rider,r.mount].every(m=>["terminal","cancelled"].includes(m.phase))).map(({r,g})=>({groupId:r.group,district:g.district,cost:/** @type {2} */(2)}));
++}
++/** Read-only role scheduling. A pending role means outcome unknown, never absence-retry.
++ * Returned jobs do not authorize native creation; actual owner must first prove BOTH body clearances.
++ * @param {any[]} rows @param {string[]} admitted @param {{tick:number|null,ops:number,spawns:number}} prior
++ * @param {number} tick @param {{maxOpsPerTick:number,maxSpawnsPerTick:number}} config */
++export function planCompoundCompletion(rows,admitted,prior,tick,config){
++ compoundReservations(rows);if(!Array.isArray(admitted)||admitted.length>24||new Set(admitted).size!==admitted.length)throw Error("invalid compound admission");
++ const budget=createRoleBudget(prior,tick,config),jobs=[],held=[];
++ for(const r of [...rows].sort((a,b)=>a.group<b.group?-1:a.group>b.group?1:0)){
++  if(!admitted.includes(r.group))continue;
++  if([r.rider,r.mount].some(m=>["pending","removing","terminal","cancelled"].includes(m.phase))){held.push(r.group+": unresolved/terminal role requires maintenance");continue;}
++  const role=r.rider.phase==="never"?"rider":r.mount.phase==="never"?"mount":null;
++  if(!role)continue;
++  if(!budget.reserve("spawn")){held.push(r.group+": role spawn budget pending");continue;}
++  jobs.push({groupId:r.group,role,epoch:r.epoch,generation:r.generation,type:r[role].type,expected:JSON.stringify(r),tick});
++ }
++ return{jobs,held,budget:budget.status(),nativeBirthEnabled:false};
++}
+--- before/population/lod.js
++++ proposed/population/lod.js
+@@ -20,6 +20,7 @@
+  *   homeDistance?: number,
+  *   spotLoaded: boolean,
+  *   bound: boolean,
++ *   physicalCost?: 1|2,
+  * }} LodInput
+  * @typedef {{ level: "physical" | "coarse" | "simulated", admitted: boolean, reason: string }} LodDecision
+  */
+@@ -41,9 +42,10 @@
+  * @param {LodInput[]} inputs
+  * @param {{ physicalRadius: number, holdRadius: number, coarseRadius: number, maxPhysicalPerDistrict: number, physicalFloorPerKind?: number, maxPhysicalTotal: number }} config
+  * @param {{ ops: number }} meter work counter, incremented for every group evaluated and every comparison
+- * @returns {{ decisions: Map<string, LodDecision>, counts: { physical: number, coarse: number, simulated: number, capped: number, chunkBlocked: number } }}
++ * @param {{groupId:string,district:string,cost:2}[]} [reservations] unresolved compound components consume capacity even when not loaded or in the group table
++ * @returns {{ decisions: Map<string, LodDecision>, counts: { physical: number, coarse: number, simulated: number, capped: number, chunkBlocked: number },actorSlots?:number,reservedActorSlots?:number,chargedActorSlots?:number }}
+  */
+-export function planLevels(inputs, config, meter) {
++export function planLevels(inputs, config, meter,reservations=[]) {
+     /** @type {Map<string, LodDecision>} */
+     const decisions = new Map();
+     /** @type {LodInput[]} */
+@@ -53,6 +55,7 @@
+ 
+     for (const input of inputs) {
+         meter.ops += 1;
++        if(input.physicalCost!==undefined&&input.physicalCost!==1&&input.physicalCost!==2)throw new Error("invalid physical actor cost");
+         if (input.headcount <= 0) {
+             decisions.set(input.id, { level: "simulated", admitted: false, reason: "empty" });
+             continue;
+@@ -117,18 +120,23 @@
+     }
+ 
+     const perDistrict = new Map();
+-    let total = 0;
++    const reserved=new Map();let reservedTotal=0;
++    if(!Array.isArray(reservations)||reservations.length>24)throw Error("reservation input cap");
++    for(const r of reservations){const parsed=parseGroupId(r?.groupId);if(!parsed||parsed.kind!=="sol"||parsed.district!==r.district||r.cost!==2||reserved.has(r.groupId))throw Error("invalid capacity reservation");reserved.set(r.groupId,r);reservedTotal+=r.cost;perDistrict.set(r.district,(perDistrict.get(r.district)??0)+r.cost);meter.ops++;}
++    let total = reservedTotal;
+     for (const candidate of candidates) {
+         const used = perDistrict.get(candidate.district) ?? 0;
+-        if (total >= config.maxPhysicalTotal) {
++        const own=reserved.get(candidate.id);if(own&&(own.district!==candidate.district||(candidate.physicalCost??1)!==2))throw Error("reserved group class/cost changed");
++        const cost=own?0:candidate.physicalCost??1;
++        if (total+cost > config.maxPhysicalTotal) {
+             capped += 1;
+             decisions.set(candidate.id, excluded(candidate, config, "capacity"));
+-        } else if (used >= config.maxPhysicalPerDistrict) {
++        } else if (used+cost > config.maxPhysicalPerDistrict) {
+             capped += 1;
+             decisions.set(candidate.id, excluded(candidate, config, "capacity"));
+         } else {
+-            total += 1;
+-            perDistrict.set(candidate.district, used + 1);
++            total += cost;
++            perDistrict.set(candidate.district, used + cost);
+             decisions.set(candidate.id, { level: "physical", admitted: true, reason: "admitted" });
+         }
+     }
+@@ -137,7 +145,7 @@
+     for (const decision of decisions.values()) {
+         counts[decision.level] += 1;
+     }
+-    return { decisions, counts };
++    return { decisions, counts,...(inputs.some(i=>i.physicalCost===2)||reservations.length?{actorSlots:inputs.reduce((n,i)=>n+(decisions.get(i.id)?.admitted?(i.physicalCost??1):0),0)}:{}),...(reservations.length?{reservedActorSlots:reservedTotal,chargedActorSlots:total}:{}) };
+ }
+ 
+ /**
+--- before/population/militarySelection.js
++++ proposed/population/militarySelection.js
+@@ -6,8 +6,9 @@
+ export const MILITARY_SELECTION_MAX_BYTES = 1024;
+ export const SWORDSMAN_TYPE = "civ_trial:swordsman";
+ export const ARCHER_TYPE = "civ_trial:archer";
+-export const MILITARY_TYPES=Object.freeze([SWORDSMAN_TYPE,ARCHER_TYPE]);
+-/** @typedef {{v:1|2,trialId:string,fixtureId:string,groupId:string,class:"swordsman"|"archer",typeId:typeof SWORDSMAN_TYPE|typeof ARCHER_TYPE,dimension:"minecraft:overworld"}} MilitarySelection */
++export const CAVALRY_TYPE="civ_trial:cavalry";
++export const MILITARY_TYPES=Object.freeze([SWORDSMAN_TYPE,ARCHER_TYPE,CAVALRY_TYPE]);
++/** @typedef {{v:1|2|3,trialId:string,fixtureId:string,groupId:string,class:"swordsman"|"archer"|"cavalry",typeId:typeof SWORDSMAN_TYPE|typeof ARCHER_TYPE|typeof CAVALRY_TYPE,dimension:"minecraft:overworld"}} MilitarySelection */
+ /** @typedef {{status:"absent"|"ok"|"refused",selection:MilitarySelection|null,stamp:string,reason:string|null}} MilitarySelectionRead */
+ /** @param {unknown} value */
+ const identifier = value => typeof value === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(value);
+@@ -19,7 +20,7 @@
+     try {
+         const value=JSON.parse(raw),keys=["class","dimension","fixtureId","groupId","trialId","typeId","v"];
+         if (!value || typeof value!=="object" || Array.isArray(value) || Object.keys(value).sort().join(",")!==keys.join(",")) return refused("military selection fields are invalid");
+-        if(!((value.v===1&&value.class==="swordsman"&&value.typeId===SWORDSMAN_TYPE)||(value.v===2&&value.class==="archer"&&value.typeId===ARCHER_TYPE)) || value.dimension!=="minecraft:overworld" || !identifier(value.trialId) || !identifier(value.fixtureId) || parseGroupId(value.groupId)?.kind!=="sol") return refused("military selection version, identity, class or dimension is unsupported");
++        if(!((value.v===1&&value.class==="swordsman"&&value.typeId===SWORDSMAN_TYPE)||(value.v===2&&value.class==="archer"&&value.typeId===ARCHER_TYPE)||(value.v===3&&value.class==="cavalry"&&value.typeId===CAVALRY_TYPE)) || value.dimension!=="minecraft:overworld" || !identifier(value.trialId) || !identifier(value.fixtureId) || parseGroupId(value.groupId)?.kind!=="sol") return refused("military selection version, identity, class or dimension is unsupported");
+         const selection=Object.freeze(/** @type {MilitarySelection} */({v:value.v,trialId:value.trialId,fixtureId:value.fixtureId,groupId:value.groupId,class:value.class,typeId:value.typeId,dimension:"minecraft:overworld"}));
+         return {status:"ok",selection,stamp:JSON.stringify(selection),reason:null};
+     } catch (_error) {return refused("military selection JSON is unreadable");}
+@@ -51,5 +52,5 @@
+         if(!parsed||group.kind!==parsed.kind||group.district!==parsed.district||group.index!==parsed.index) throw new Error("military group identity mismatch");
+         return selection?.groupId===group.id?selection.typeId:POP_ENTITY_TYPES[parsed.kind];
+     };
+-    return {selection,stamp:validated.stamp,typeForGroup};
++    return {selection,stamp:validated.stamp,typeForGroup,physicalCostForGroup:(/** @type {import("./groups.js").GroupRecord} */group)=>/** @type {1|2} */(selection?.class==="cavalry"&&selection.groupId===group.id?2:1)};
+ }
+--- before/population/reconcile.js
++++ proposed/population/reconcile.js
+@@ -118,7 +118,7 @@
+         clockReset: false,
+         refused: /** @type {string | null} */ (null),
+         hold: /** @type {string | null} */ (null),
+-        groups: { total: 0, physical: 0, coarse: 0, simulated: 0, capped: 0, chunkBlocked: 0 },
++        groups: /** @type {{total:number,physical:number,coarse:number,simulated:number,capped:number,chunkBlocked:number,admittedActorSlots?:number}} */ ({ total: 0, physical: 0, coarse: 0, simulated: 0, capped: 0, chunkBlocked: 0 }),
+         observed: { entities: 0, own: 0, foreign: 0, unmanaged: 0, orphans: 0 },
+         actions: { spawn: 0, despawn: 0, retag: 0 },
+         pending: { spawn: 0, despawn: 0, retag: 0 },
+@@ -364,9 +364,11 @@
+  * @param {number} tick
+  * @param {Partial<PopSyncConfig>} [overrides]
+  * @param {(group:import("./groups.js").GroupRecord)=>string} [typeForGroup] opt-in strict owner policy; absent preserves default behavior
++ * @param {(group:import("./groups.js").GroupRecord)=>1|2} [physicalCostForGroup]
++ * @param {{groupId:string,district:string,cost:2}[]} [reservations]
+  * @returns {{ actions: Array<SpawnAction | DespawnAction | RetagAction>, state: CursorState, report: any }}
+  */
+-export function reconcile(state, observation, tick, overrides = {}, typeForGroup = undefined) {
++export function reconcile(state, observation, tick, overrides = {}, typeForGroup = undefined, physicalCostForGroup=undefined,reservations=[]) {
+     if (!Number.isInteger(tick) || tick < 0) {
+         throw new RangeError(`reconcile: tick must be a non-negative integer, got ${String(tick)}`);
+     }
+@@ -480,10 +482,11 @@
+             homeDistance: districtPosts.length > 0 ? nearestPostDistance(districtPosts, anchors) : Infinity,
+             spotLoaded: spot !== null && loaded.has(chunkKeyOf(spot.x, spot.z)),
+             bound: scan.byGroup.has(group.id),
++            physicalCost:physicalCostForGroup?.(group),
+         });
+     }
+ 
+-    const plan = hold ? null : planLevels(inputs, config, meter);
++    const plan = hold ? null : planLevels(inputs, config, meter,reservations);
+     report.groups.total = table.groups.length;
+     if (hold) {
+         report.hold = "no anchor is near any player: nothing is spawned or demoted until one is; duplicates and retags are still resolved";
+@@ -588,6 +591,7 @@
+     }
+     if (plan !== null) {
+         Object.assign(report.groups, plan.counts);
++        if(plan.actorSlots!==undefined)report.groups.admittedActorSlots=plan.actorSlots;
+     }
+ 
+     // Budgets, in priority order: duplicates (the one-representative rule), retags (identity), demotions (capacity), spawns.
+--- before/population/roleBudget.js
++++ proposed/population/roleBudget.js
+@@ -0,0 +1,9 @@
++/** Shared action budget for SAME owner role work. Each role attempt costs one op;
++ * a role birth ALSO costs one spawn. No native operations occur here.
++ * @param {{tick:number|null,ops:number,spawns:number}} prior @param {number} tick
++ * @param {{maxOpsPerTick:number,maxSpawnsPerTick:number}} config */
++export function createRoleBudget(prior,tick,config){
++ if(!Number.isSafeInteger(tick)||tick<0||prior.tick!==null&&(!Number.isSafeInteger(prior.tick)||prior.tick<0)||![prior.ops,prior.spawns,config.maxOpsPerTick,config.maxSpawnsPerTick].every(n=>Number.isSafeInteger(n)&&n>=0))throw Error('invalid role budget');
++ let ops=prior.tick===tick?prior.ops:0,spawns=prior.tick===tick?prior.spawns:0;
++ return{reserve(/** @type {'spawn'|'remove'|'cancel'} */kind){if(!['spawn','remove','cancel'].includes(kind))throw Error('unknown role action');const birth=kind==='spawn';if(ops>=config.maxOpsPerTick||birth&&spawns>=config.maxSpawnsPerTick)return false;ops++;if(birth)spawns++;return true;},status:()=>({ops,spawns})};
++}

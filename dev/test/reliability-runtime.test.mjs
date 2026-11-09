@@ -218,7 +218,7 @@ test("main.js: importing it during early execution does not touch world state an
 test("main.js: registers exactly the subscriptions and four bounded runtime timers", () => {
     assert.equal(earlySnapshot.spawn, 3, "welcome, horn and template Ledger delivery follow playerSpawn");
     assert.equal(earlySnapshot.itemUse, 1, "the horn's use handler");
-    assert.deepEqual(earlySnapshot.death, [["civ_trial:swordsman", "civ_trial:archer"], ["minecraft:villager_v2", "minecraft:iron_golem", "civ_trial:swordsman", "civ_trial:archer"]], "two observational death subscriptions, exact type filters and no new timer");
+    assert.deepEqual(earlySnapshot.death, [["civ_trial:swordsman", "civ_trial:archer", "civ_trial:cavalry"], ["minecraft:villager_v2", "minecraft:iron_golem", "civ_trial:swordsman", "civ_trial:archer"]], "two observational death subscriptions, exact type filters and no new timer");
     assert.equal(earlySnapshot.interact, 1, "the gate-lever interaction listener");
     assert.equal(earlySnapshot.scriptEvents, 9, "status + inspection + debug + physical + gates + civ + starter script-event subscribers, + the people switch, + the Ledger development switch (the only Ledger listener while the gate is off)");
     assert.deepEqual([...earlySnapshot.intervals].sort((a, b) => a - b), [1, BEACON.guideTicks, 40, SIM.stepTicks], "one civilian travel poll (1 tick; driver defaults to 4-tick correction), gate-adapter poll (40 ticks), horn guide ticker, and simulation hour");

@@ -1,0 +1,40 @@
+{
+  "utc": "2026-11-09T01:22:50.676900+00:00",
+  "decision": "PASS_OBSERVED_PRIVATE_ARTIFACT_EXACT",
+  "manifestSha256": "17788E46DB0001AADFA185B18D043E21AD65D1D3636318F474A904B1E1565A26",
+  "ordinaryFreezeSha256": "F260220E9525C3A79A3EAB5AA92E2D47327DBDA731D4039F4BEED370B16CE0A9",
+  "sourceAndNewPrivatePackHashChecks": 382,
+  "oldPrivatePackChecks": 191,
+  "onlyNewVsOrdinaryDifferences": [
+    "CivilizationApocalypse_BP/scripts/integration/cavalryFreshTrust.js",
+    "CivilizationApocalypse_BP/scripts/integration/cavalryMicrotrialTrust.js"
+  ],
+  "onlyNewVsOldPrivateDifference": [
+    "CivilizationApocalypse_BP/scripts/integration/peopleStreets.js"
+  ],
+  "allThreeOrdinaryTrustsNULL": true,
+  "privateOldV2TrustNULL": true,
+  "closedWorldFilesEach": 10,
+  "newDerivativeEqualsOldDerivativeExactly": true,
+  "onlySourceWorldDifferences": [
+    "world_behavior_packs.json",
+    "world_resource_packs.json"
+  ],
+  "oldD7D5PreservedExact": true,
+  "privateConstantsProvenance": "Exact bytes to independently reviewed D7D5 compiled constants; witness/source/audit rehashed.",
+  "setupPlan": "Final plan pending regular191 deployment; no apply performed.",
+  "limits": [
+    "Second full central verification pending.",
+    "No native activation/birth/seating/render/combat/rejoin acceptance."
+  ],
+  "setupOptions": {
+    "sha256": "1762448B6C40C8C9758B4CAE0E5301D5186BFF433C4E48007BCBBFCD0059E4E9",
+    "bundleMatchesReviewed": true,
+    "worldFolder": "CA_CavalryOwner_c739e1b4",
+    "visibleName": "CA Cavalry Owner Nov8 c739e1b4",
+    "transactionId": "cavalry-c739e1b4-7c882be2",
+    "newWorldAndTransactionTargetsAbsent": true,
+    "backupRootOutsideAllScanParents": true,
+    "finalPlan": "Wait for root regular191 deployment; installed baseline must be freshly captured then."
+  }
+}

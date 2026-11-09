@@ -116,7 +116,7 @@ test("no people walk the streets while a district build holds the world", () => 
 test("main.js wires the streets driver, so the pack's one door has something behind it", () => {
     const source = readFileSync(join(scriptsRoot, "main.js"), "utf8");
     assert.equal([...source.matchAll(/\bcreatePeopleStreets\(/g)].length, 1, "one streets instance owns population reconciliation");
-    assert.match(source, /const streets=createPeopleStreets\(\{getCreationBindings:creation\.activeStore,readMilitarySelection:military\.store\.load,militaryDiagnostics\}\)/, "the sole owner receives the durable binding accessor, shared selection and observational diagnostics");
+    assert.match(source, /const streets=createPeopleStreets\(\{getCreationBindings:creation\.activeStore,readMilitarySelection:military\.store\.load,militaryDiagnostics,\.\.\.cavalryMicrotrial\.streetsOptions\(\)\}\)/, "the sole owner receives the durable binding accessor, shared selection, observational diagnostics and explicit private trial options");
     assert.match(source, /createOrdersDriver\(\{readMilitarySelection:military\.store\.load,admittedGroups:\(\)=>streets\.admittedGroups\(world\)\}\)/, "Orders uses the same selection and sole owner's admitted groups");
     assert.match(source, /peopleRuntime\.register\(streets\)/, "the streets driver is registered in main.js");
     assert.match(source, /admittedGroups:\(\)=>streets\.admittedGroups\(world\)/, "travel receives admission from the sole streets owner");

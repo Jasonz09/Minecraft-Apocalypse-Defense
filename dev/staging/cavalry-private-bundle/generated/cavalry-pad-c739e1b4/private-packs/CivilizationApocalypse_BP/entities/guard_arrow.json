@@ -1,0 +1,71 @@
+{
+  "format_version": "1.26.20",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "civ_trial:guard_arrow",
+      "is_spawnable": false,
+      "is_summonable": false
+    },
+    "components": {
+      "minecraft:collision_box": {
+        "width": 0.25,
+        "height": 0.25
+      },
+      "minecraft:physics": {},
+      "minecraft:projectile": {
+        "on_hit": {
+          "impact_damage": {
+            "damage": 4,
+            "filter": "monster",
+            "knockback": true,
+            "destroy_on_hit": true,
+            "destroy_on_hit_requires_damage": false,
+            "scale_damage_with_difficulty": false
+          }
+        },
+        "ignored_entities": [
+          "minecraft:player",
+          "minecraft:villager",
+          "minecraft:villager_v2",
+          "minecraft:iron_golem",
+          "civ_trial:swordsman",
+          "civ_trial:archer"
+        ],
+        "hit_sound": "bow.hit",
+        "power": 1.6,
+        "gravity": 0.05,
+        "uncertainty_base": 0,
+        "uncertainty_multiplier": 0,
+        "anchor": 1,
+        "offset": [
+          0,
+          -0.1,
+          0
+        ],
+        "should_bounce": false
+      },
+      "minecraft:timer": {
+        "looping": false,
+        "time": 5,
+        "time_down_event": {
+          "event": "civ_trial:expire",
+          "target": "self"
+        }
+      }
+    },
+    "component_groups": {
+      "civ_trial:expired": {
+        "minecraft:instant_despawn": {}
+      }
+    },
+    "events": {
+      "civ_trial:expire": {
+        "add": {
+          "component_groups": [
+            "civ_trial:expired"
+          ]
+        }
+      }
+    }
+  }
+}

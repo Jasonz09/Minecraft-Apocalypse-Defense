@@ -1,0 +1,36 @@
+{
+  "utc": "2026-11-09T01:30:51.493Z",
+  "decision": "PASS_EXACT_FINAL_READONLY_SETUP_PLAN",
+  "planSha256": "B618ACA3B743FEE834CA0A8335C64571EBCFCF26F9A08B4406A0C1BAE3B91071",
+  "bundleManifestSha256": "17788E46DB0001AADFA185B18D043E21AD65D1D3636318F474A904B1E1565A26",
+  "freshPlanDeepEqual": true,
+  "regularSourceInstalledHashChecks": 382,
+  "regularInventory": [
+    {
+      "name": "CivilizationApocalypse_BP",
+      "count": 177
+    },
+    {
+      "name": "CivilizationApocalypse_RP",
+      "count": 14
+    }
+  ],
+  "privateOnlyDifferences": [
+    "CivilizationApocalypse_BP/scripts/integration/cavalryFreshTrust.js",
+    "CivilizationApocalypse_BP/scripts/integration/cavalryMicrotrialTrust.js"
+  ],
+  "worldFiles": 10,
+  "onlyPlannedAdditionalWorldChanges": [
+    "level.dat",
+    "levelname.txt"
+  ],
+  "gameClosedBeforeAndAfter": true,
+  "newWorldAndAllTransactionTargetsAbsent": true,
+  "visibleName": "CA Cavalry Owner Nov8 c739e1b4",
+  "transactionId": "cavalry-c739e1b4-7c882be2",
+  "noApplyPerformed": true,
+  "limits": [
+    "Native activation/birth/seating/render/combat/rejoin remain unproved.",
+    "Root must use default closed-game guard and recompute/recheck at apply time."
+  ]
+}

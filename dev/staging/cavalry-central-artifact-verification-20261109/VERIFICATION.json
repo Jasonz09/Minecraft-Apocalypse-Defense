@@ -1,0 +1,61 @@
+{
+  "scope": "read-only central source/pin/import artifact verification; helper author is NOT independent helper code auditor",
+  "freezeSha256": "7C2D3F79FFAE33A27D735C089BEA25CD82105292C0E53CD20D9BDC87179EFF5D",
+  "activeRegularPackFiles": 191,
+  "exactInventoryAndEveryFreezeHashMatch": true,
+  "promotedPathPinsMatched": 45,
+  "allPromotedSourceBytesMatched": true,
+  "startupBaselineFiles": 176,
+  "unchangedOldPackFiles": 169,
+  "changedOldPackFiles": [
+    "CivilizationApocalypse_BP/scripts/integration/creationRuntime.js",
+    "CivilizationApocalypse_BP/scripts/integration/peopleStreets.js",
+    "CivilizationApocalypse_BP/scripts/integration/popSync.js",
+    "CivilizationApocalypse_BP/scripts/main.js",
+    "CivilizationApocalypse_BP/scripts/population/lod.js",
+    "CivilizationApocalypse_BP/scripts/population/militarySelection.js",
+    "CivilizationApocalypse_BP/scripts/population/reconcile.js"
+  ],
+  "newPackFiles": [
+    "CivilizationApocalypse_BP/entities/cavalry.json",
+    "CivilizationApocalypse_BP/entities/cavalry_mount.json",
+    "CivilizationApocalypse_BP/scripts/integration/cavalryFreshTrust.js",
+    "CivilizationApocalypse_BP/scripts/integration/cavalryMicrotrial.js",
+    "CivilizationApocalypse_BP/scripts/integration/cavalryMicrotrialTrust.js",
+    "CivilizationApocalypse_BP/scripts/integration/compoundCompletion.js",
+    "CivilizationApocalypse_BP/scripts/integration/compoundNative.js",
+    "CivilizationApocalypse_BP/scripts/integration/creationUnifiedStore.js",
+    "CivilizationApocalypse_BP/scripts/integration/creationUnifiedV3.js",
+    "CivilizationApocalypse_BP/scripts/integration/privateFreshV3Fixture.js",
+    "CivilizationApocalypse_BP/scripts/population/compoundPlanning.js",
+    "CivilizationApocalypse_BP/scripts/population/roleBudget.js",
+    "CivilizationApocalypse_RP/entity/cavalry.entity.json",
+    "CivilizationApocalypse_RP/entity/cavalry_mount.entity.json",
+    "CivilizationApocalypse_RP/models/entity/cavalry_mount.geo.json"
+  ],
+  "privateManifestSha256": "D7D5AD31CCF5EE5FF4AD1919A9E01983ADF9106840B23C9A5E1A7BF7244A74D9",
+  "privateVsRegularDifferences": [
+    "CivilizationApocalypse_BP/scripts/integration/cavalryFreshTrust.js",
+    "CivilizationApocalypse_BP/scripts/integration/cavalryMicrotrialTrust.js"
+  ],
+  "allThreeRegularTrustsNull": true,
+  "rpDependencyMatches": true,
+  "central68ManifestSha256": "5F2FFD4096B683718344A1481CC651FA3A5D8FAE44C7FFB5E924E60C1438E0DD",
+  "centralTestHelperFixturePinsMatch": 8,
+  "centralFilesReviewed": [
+    "dev/fixtures/cavalry-v3-native-stub.mjs",
+    "dev/fixtures/cavalry-v3-synthetic-trust.mjs",
+    "dev/lib/cavalry-v3-fixture.mjs",
+    "dev/lib/cavalry-v3-test-loader.mjs",
+    "dev/test/cavalry-v3-activation.test.mjs",
+    "dev/test/cavalry-v3-composition.test.mjs",
+    "dev/test/cavalry-v3-native-owner.test.mjs"
+  ],
+  "productionTargetsUseActiveSourceRelativeImports": true,
+  "noStagingRuntimeOrDistFallback": true,
+  "syntheticLoaderScope": "native stub plus explicit ?synthetic private witness imports only; production code remains active source",
+  "v2GoldenText": "reference only for default parity, not the new production target",
+  "heavyChecksRun": false,
+  "nativeAcceptance": false,
+  "productionEdits": false
+}

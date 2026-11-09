@@ -1,0 +1,29 @@
+{
+    "format_version": 2,
+    "header": {
+        "name": "Civilization Apocalypse Resource Pack",
+        "description": "Original human military models, textures and animations for Civilization Apocalypse.",
+        "uuid": "e634c636-7b98-49f7-81cd-13483bfa3f9f",
+        "version": [
+            1,
+            0,
+            0
+        ],
+        "min_engine_version": [
+            1,
+            26,
+            20
+        ]
+    },
+    "modules": [
+        {
+            "type": "resources",
+            "uuid": "ae8c98e7-ae12-463e-a9cd-687d9fcccb50",
+            "version": [
+                1,
+                0,
+                0
+            ]
+        }
+    ]
+}

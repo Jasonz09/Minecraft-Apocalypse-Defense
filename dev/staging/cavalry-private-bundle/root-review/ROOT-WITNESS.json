@@ -1,0 +1,32 @@
+{
+  "v": 1,
+  "decision": "ROOT_REVIEWED_CAVALRY_PAD",
+  "closed": true,
+  "noMainHistory": true,
+  "noAttachedPacks": true,
+  "neverPeopleOn": true,
+  "sourceReceipt": {
+    "path": "E:\\CivilizationApocalypse\\dist\\vanilla-cavalry-pad-prepared-20261108.json",
+    "sha256": "538CE473748B300EDC4A2B09A5C43E7E46E01B1E8179853ECCC69526193508E7"
+  },
+  "padAudit": {
+    "path": "E:\\CivilizationApocalypse\\dev\\staging\\vanilla-cavalry-pad-audit-20261108\\AUDIT.json",
+    "sha256": "6F1387E2E7B1389AE43C9070784A0434197D32E66A6AEB6AEF711CD65ADCE139"
+  },
+  "originalReceiptSha256": "BE44A5BA9E47C2AB890083B1FAD33657FEAF5B5B122C61A7C026CF0281EFA114",
+  "scoreboardAuditSha256": "784DFEEBD6F74B494B0F64E996AC360E1680B692557F478BB220F14387302230",
+  "fixtureId": "cavalry-pad-c739e1b4",
+  "epoch": "cavalry-owner-7c882be24dd1406582acdfc2a0b98462",
+  "origin": {
+    "x": 8,
+    "y": 301,
+    "z": 8
+  },
+  "operatorWitness": "Root created pristine vanilla witness, verified rename-only no-pack clone, then executed11 bounded developer commands in named disposable copy and saved/closed; no mod/people commands or NPC summons. Entire original+prepared observedCRC journal chain audited separately; this is not generic absence proof.",
+  "limits": [
+    "Native floor/body command and visible enclosure proof; no independent chunk decoder proof",
+    "No native cavalry birth/seating/render/combat acceptance yet",
+    "No release city or template authority"
+  ],
+  "utc": "2026-11-09T00:46:00.943387+00:00"
+}

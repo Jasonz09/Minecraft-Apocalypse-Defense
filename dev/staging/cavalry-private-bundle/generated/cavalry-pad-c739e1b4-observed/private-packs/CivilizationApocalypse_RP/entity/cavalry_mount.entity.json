@@ -1,0 +1,20 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "civ_trial:cavalry_mount",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/horse/horse_brown"
+      },
+      "geometry": {
+        "default": "geometry.civ_trial.cavalry_mount"
+      },
+      "render_controllers": [
+        "controller.render.civ_trial.swordsman"
+      ]
+    }
+  }
+}

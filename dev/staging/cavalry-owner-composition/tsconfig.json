@@ -14,7 +14,10 @@
     "typecheck/scripts/population/roleBudget.js",
     "typecheck/scripts/integration/peopleStreets.js",
     "typecheck/scripts/population/compoundPlanning.js",
-    "typecheck/scripts/integration/compoundCompletion.js"
+    "typecheck/scripts/integration/compoundCompletion.js",
+    "typecheck/scripts/integration/compoundNative.js",
+    "typecheck/scripts/integration/creationRuntime.js",
+    "api-contracts.ts"
   ],
   "exclude": []
 }

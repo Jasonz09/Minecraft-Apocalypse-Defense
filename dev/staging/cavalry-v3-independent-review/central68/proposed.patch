@@ -1,0 +1,213 @@
+--- /dev/null
++++ b/dev/fixtures/cavalry-v3-native-stub.mjs
+@@ -0,0 +1 @@
++export const system={currentTick:0};export const world={};
+--- /dev/null
++++ b/dev/fixtures/cavalry-v3-synthetic-trust.mjs
+@@ -0,0 +1,3 @@
++// Explicit synthetic test-only witness; never a genuine world receipt.
++export const d={v:1,fixtureId:'synthetic-cavalry',epoch:'synthetic-v3',receiptSha256:'A'.repeat(64),levelSha256:'B'.repeat(64),nonce:'synthetic-marker',participant:'fixture',participantId:17,operatorKnownNewVanilla:true};
++export const p={v:1,fixtureId:d.fixtureId,origin:{x:0.5,y:70,z:0.5}};
+--- /dev/null
++++ b/dev/fixtures/creation-runtime-v2-before-cavalry.txt
+@@ -0,0 +1,60 @@
++// @ts-check
++import {FAMILY,META,CREATION_ENTITY_TYPES} from "./creationBindings.js";
++import {createPrivateFreshFixture,ACTIVATION_FAMILY} from "./privateFreshFixture.js";
++import {REVIEWED_FRESH_FIXTURE} from "./freshFixtureTrust.js";
++/** Lazy optional integration proposal. Construction does not read native world state.
++ * Fresh activation is private compiled-fixture only; the shipped descriptor is null.
++ * @param {{world:any,isPeopleOn:()=>boolean,isBusy:()=>boolean,isDeveloper:()=>boolean,readKingdom:()=>any}} deps */
++export function createCreationRuntime(deps){
++ const fixture=createPrivateFreshFixture(deps),store=fixture.store;let registered=false,last="not observed";
++ function keys(){const k=deps.world.getDynamicPropertyIds();if(!Array.isArray(k)||k.length>4096||k.some(x=>typeof x!=="string")||new Set(k).size!==k.length)throw Error("creation state census unreadable");return k;}
++ function activeStore(){
++  const before=fixture.status();if(before.state==='held')throw Error('creation activation HOLD: '+before.reason);
++  const ids=keys();
++  if(before.state==='absent'&&ids.some(k=>k.startsWith(ACTIVATION_FAMILY)))throw Error('creation activation changed during census; HOLD');
++  const present=ids.some(k=>k.startsWith(FAMILY));
++  if(before.state==='absent'&&!present&&REVIEWED_FRESH_FIXTURE!==null)throw Error('private fixture activation pending; HOLD before legacy birth');
++  const after=fixture.status();if(after.state!==before.state||after.state==='held')throw Error('creation activation changed or held');
++  return present||after.state==='complete'?store:undefined;
++ }
++ function statusLines(){try{const s=activeStore();if(!s)return["Creation history: off (legacy population behavior).",`Last creation signal: ${last}`];s.inspect("district-1:civ:0");const m=JSON.parse(deps.world.getDynamicProperty(META));return[`Creation history: ${m.mode}; ${m.issued} groups; pending issuance ${m.pending?"held":"none"}.`,`Last creation signal: ${last}`];}catch(e){return[`Creation history held: ${String(e)}`];}}
++ /** @param {string} message @param {any} [player] */
++ function command(message,player){const text=message.trim();if(text==="status")return statusLines();
++  if(!deps.isDeveloper()||deps.isBusy()||deps.isPeopleOn())throw Error("creation activation requires development mode, people off and no active job");
++  if(text==="fresh confirm"){
++   fixture.activate(player);last='reviewed private fixture activation complete';return statusLines();
++  }
++  // A marker of any activation schema must never reach legacy initialization.
++  const activation=fixture.status();if(activation.state!=='absent'||keys().some(k=>k.startsWith(ACTIVATION_FAMILY)))throw Error('creation activation present or held; legacy fallback prohibited');
++  const m=/^legacy confirm epoch=([A-Za-z0-9_-]{1,64})$/.exec(text);if(!m)throw Error("use creation status or creation legacy confirm epoch=<unique-id>");
++  if(deps.readKingdom()?.starter!==undefined)throw Error("armed template/play state cannot become a development migration fixture");
++  if(fixture.status().state!=='absent'||keys().some(k=>k.startsWith(ACTIVATION_FAMILY)))throw Error('creation activation changed before legacy initialization; HOLD');
++  store.initialize({mode:"legacy",epoch:m[1],fixture:"legacy-preserve"});last="legacy history selected; unknown groups cannot be recreated";return statusLines();
++ }
++ // Subscription is early-safe: the first world read is inside the native event callback.
++ // No entityRemove fallback, no aggregate casualty authority and no replacement on absence.
++ /** @param {any} player */
++ function onInitialSpawn(player){
++  // No world read at all when the compiled descriptor is absent. Never set the developer flag.
++  if(REVIEWED_FRESH_FIXTURE===null)return false;
++  try{
++   const status=fixture.status();if(status.state==='complete')return false;
++   if(status.state!=='absent')throw Error('creation activation incomplete; preserve and HOLD');
++   if(deps.isDeveloper()!==true||deps.isPeopleOn()!==false||deps.isBusy()!==false)throw Error('private first-spawn activation needs preconfigured developer flag, people off and idle');
++   fixture.activate(player);last='private first-spawn fixture activation complete';return true;
++  }catch(error){last='private first-spawn activation held: '+String(error).slice(0,180);return false;}
++ }
++ // A compiled private profile must finish durable activation before its first
++ // accepted hour. Ordinary NULL-trust games receive no callback at all.
++ function simulationReady(){
++  try{
++   const before=fixture.status();if(before.state==='held')throw Error(before.reason);
++   const selected=activeStore();if(!selected)throw Error('private fixture activation pending');
++   selected.inspect('district-1:civ:0');
++   const after=fixture.status();if(after.state==='held'||after.state!==before.state)throw Error('activation changed during hour preflight');
++   return true;
++  }catch(error){last='simulation hour held: '+String(error).slice(0,180);return false;}
++ }
++ function registerDeaths(){if(registered)return false;deps.world.afterEvents.entityDie.subscribe((/** @type {any} */e)=>{try{const s=activeStore();if(!s)return;const h=e.deadEntity,tags=h.getTags();if(!Array.isArray(tags)||tags.length>64)throw Error("death identity unreadable");const claims=tags.filter(t=>typeof t==="string"&&t.startsWith("civpop:v1:"));if(claims.length!==1)return;const accepted=s.confirmDeath({groupId:claims[0].slice(10),id:String(h.id),typeId:h.typeId,tags:[...tags]});last=accepted?"exact physical death recorded; aggregate unchanged":"duplicate/untracked death ignored";}catch(e){last=`death held: ${String(e).slice(0,180)}`;}},{entityTypes:[...CREATION_ENTITY_TYPES]});registered=true;return true;}
++ return{activeStore,statusLines,command,registerDeaths,onInitialSpawn,beforeSimulationStep:REVIEWED_FRESH_FIXTURE===null?undefined:simulationReady};
++}
+--- /dev/null
++++ b/dev/lib/cavalry-v3-fixture.mjs
+@@ -0,0 +1,10 @@
++import{createPrivateFreshV3Fixture as createPrivateFreshFixture,OBJECTIVE}from'../../CivilizationApocalypse_BP/scripts/integration/privateFreshV3Fixture.js?synthetic';
++import{d}from'../fixtures/cavalry-v3-synthetic-trust.mjs';import{createInitialKingdom,serializeKingdom}from'../../CivilizationApocalypse_BP/scripts/kingdom/state.js';
++export function fixture(){
++ const props=new Map([['civ:kingdom',serializeKingdom(createInitialKingdom())],['civ_devgate',true]]),writes=[],calls=[];
++ const dims=Object.fromEntries(['overworld','nether','the_end'].map(name=>[name,{id:'minecraft:'+name,getEntities(query){calls.push(['census',name,query]);return[];}}]));
++ const player={id:'caller',isValid:true,dimension:dims.overworld};let gate=true,people=false,busy=false;
++ const participant={id:17,type:'FakePlayer',isValid:true,displayName:d.participant},objective={id:OBJECTIVE,isValid:true,displayName:d.nonce,getScores(){return[{participant,score:0}];}};
++ const world={getDynamicPropertyIds(){return[...props.keys()];},getDynamicProperty(key){calls.push(['read',key]);return props.get(key);},setDynamicProperty(key,value){writes.push({key,value});props.set(key,value);},getAllPlayers(){return[player];},getDimension(name){return dims[name];},scoreboard:{getObjective(){return objective;},getObjectives(){return[objective];}}};
++ const deps={world,isDeveloper:()=>gate,isPeopleOn:()=>people,isBusy:()=>busy},adapter=createPrivateFreshFixture(deps);return{adapter,world,deps,player,dims,props,writes,calls,participant,objective,setGate:x=>gate=x,setPeople:x=>people=x,setBusy:x=>busy=x};
++}--- /dev/null
++++ b/dev/lib/cavalry-v3-test-loader.mjs
+@@ -0,0 +1,3 @@
++import{d,p}from '../fixtures/cavalry-v3-synthetic-trust.mjs';
++const scripts=new URL('../../CivilizationApocalypse_BP/scripts/',import.meta.url);
++export async function resolve(spec,ctx,next){if(spec==='@minecraft/server')return next(new URL('../fixtures/cavalry-v3-native-stub.mjs',import.meta.url).href,ctx);let u;try{u=new URL(spec,ctx.parentURL);}catch{return next(spec,ctx);}if(ctx.parentURL?.startsWith(scripts.href)&&ctx.parentURL.includes('?synthetic')&&spec.startsWith('.')){if(u.pathname.endsWith('/cavalryFreshTrust.js'))return{url:'data:text/javascript,export const REVIEWED_CAVALRY_FIXTURE='+encodeURIComponent(JSON.stringify(d))+';',shortCircuit:true};if(u.pathname.endsWith('/cavalryMicrotrialTrust.js'))return{url:'data:text/javascript,export const PRIVATE_CAVALRY_TRIAL='+encodeURIComponent(JSON.stringify(p))+';',shortCircuit:true};u.search='?synthetic';return next(u.href,ctx);}return next(spec,ctx);}
+--- /dev/null
++++ b/dev/test/cavalry-v3-activation.test.mjs
+@@ -0,0 +1,33 @@
++// Explicit synthetic offline native fixtures only; every exercised production import is the active source.
++import {register as registerCavalryV3Loader} from 'node:module';
++registerCavalryV3Loader('../lib/cavalry-v3-test-loader.mjs',import.meta.url);
++import test from 'node:test';
++import assert from 'node:assert/strict';
++const {createPrivateFreshV3Fixture : createPrivateFreshFixture,ACTIVATION_KEY,ACTIVATION_FAMILY,OBJECTIVE}=await import('../../CivilizationApocalypse_BP/scripts/integration/privateFreshV3Fixture.js?synthetic');
++const {createPrivateFreshV3Fixture : unconfigured}=await import('../../CivilizationApocalypse_BP/scripts/integration/privateFreshV3Fixture.js');
++import {d} from '../fixtures/cavalry-v3-synthetic-trust.mjs';
++const {createInitialKingdom,serializeKingdom}=await import('../../CivilizationApocalypse_BP/scripts/kingdom/state.js');
++const {META,PREFIX}=await import('../../CivilizationApocalypse_BP/scripts/integration/creationUnifiedV3.js');
++function fixture(){
++ const props=new Map([['civ:kingdom',serializeKingdom(createInitialKingdom())],['civ_devgate',true]]),writes=[],calls=[];
++ const dims=Object.fromEntries(['overworld','nether','the_end'].map(name=>[name,{id:'minecraft:'+name,getEntities(query){calls.push(['census',name,query]);return[];}}]));
++ const player={id:'caller',isValid:true,dimension:dims.overworld};let gate=true,people=false,busy=false;
++ const participant={id:17,type:'FakePlayer',isValid:true,displayName:d.participant},objective={id:OBJECTIVE,isValid:true,displayName:d.nonce,getScores(){return[{participant,score:0}];}};
++ const world={getDynamicPropertyIds(){return[...props.keys()];},getDynamicProperty(key){calls.push(['read',key]);return props.get(key);},setDynamicProperty(key,value){writes.push({key,value});props.set(key,value);},getAllPlayers(){return[player];},getDimension(name){return dims[name];},scoreboard:{getObjective(){return objective;},getObjectives(){return[objective];}}};
++ const deps={world,isDeveloper:()=>gate,isPeopleOn:()=>people,isBusy:()=>busy},adapter=createPrivateFreshFixture(deps);return{adapter,world,deps,player,dims,props,writes,calls,participant,objective,setGate:x=>gate=x,setPeople:x=>people=x,setBusy:x=>busy=x};
++}
++test('genuine descriptor is absent: default factory refuses without native reads/writes, synthetic trust belongs only test loader',()=>{const f=fixture(),a=unconfigured(f.deps),before=f.calls.length;assert.throws(()=>a.activate(f.player),/no actual reviewed/);assert.equal(f.calls.length,before);assert.equal(f.writes.length,0);});
++test('synthetic exact virgin fixture commits intent BEFORE core header and completion, then normal sole-owner store available',()=>{const f=fixture();assert.deepEqual(f.adapter.activate(f.player),{state:'complete',fixture:d.fixtureId});assert.deepEqual(f.writes.map(x=>x.key),[ACTIVATION_KEY,META,ACTIVATION_KEY]);assert.equal(JSON.parse(f.writes[0].value).phase,'intent');assert.equal(JSON.parse(f.writes[2].value).phase,'complete');assert.equal(f.adapter.status().state,'complete');assert.equal(f.adapter.store.canBirth('district-1:civ:0','minecraft:villager_v2').allowed,true);assert.ok(f.calls.filter(c=>c[0]==='census').every(c=>c[2].closest===65));assert.throws(()=>f.adapter.activate(f.player));});
++for(const change of [f=>f.objective.displayName='wrong',f=>f.participant.type='Player',f=>f.participant.id=18,f=>f.objective.getScores=()=>[{participant:f.participant,score:1}],f=>f.objective.getScores=()=>[],f=>f.world.scoreboard.getObjectives=()=>[],f=>f.world.scoreboard.getObjective=()=>undefined])test('wrong/missing scoreboard provenance refuses before intent',()=>{const f=fixture();change(f);assert.throws(()=>f.adapter.activate(f.player));assert.equal(f.writes.length,0);});
++for(const key of ['civ_people','civ_pop','civ:military_trial','civ:pop_bind:v3:meta','civ:jobs:d1:meta','civ:starter','civ:unknown'])test('ANY current-main namespace history '+key+' refuses without changes',()=>{const f=fixture();f.props.set(key,false);assert.throws(()=>f.adapter.activate(f.player));assert.equal(f.writes.length,0);});
++test('evolved initial kingdom refuses rather than expanding freshness scope',()=>{const f=fixture(),k=JSON.parse(f.props.get('civ:kingdom'));k.step=1;f.props.set('civ:kingdom',JSON.stringify(k));assert.throws(()=>f.adapter.activate(f.player));assert.equal(f.writes.length,0);});
++for(const kind of ['canonical','birth','siege','unknown-tags','duplicate','overflow','throw'])test('bounded strict loaded census '+kind+' refuses, no empty-on-error or actor mutation',()=>{const f=fixture(),entity={id:'one',typeId:'minecraft:villager_v2',isValid:true,getTags:()=>kind==='canonical'?['civpop:v1:district-1:civ:0']:kind==='birth'?['civbirth:v2:x']:kind==='siege'?['civbesiege:v1']:Array(65).fill('tag')};f.dims.nether.getEntities=()=>{if(kind==='throw')throw undefined;return kind==='duplicate'?[entity,entity]:kind==='overflow'?Array(65).fill(entity):[entity];};assert.throws(()=>f.adapter.activate(f.player));assert.equal(f.writes.length,0);});
++for(const which of ['before','after'])for(const boundary of [1,2,3])test('activation crash '+which+' write'+boundary+' neverfallsback and neverinitializes a second epoch',()=>{const f=fixture(),set=f.world.setDynamicProperty;let writes=0;f.world.setDynamicProperty=(k,v)=>{writes++;if(writes===boundary&&which==='before')throw Error('crash');set(k,v);if(writes===boundary&&which==='after')throw Error('crash');};assert.throws(()=>f.adapter.activate(f.player));const next=createPrivateFreshFixture(f.deps),state=next.status().state;if(which==='before'&&boundary===1)assert.equal(state,'absent');else if(which==='after'&&boundary===3)assert.equal(state,'complete');else assert.equal(state,'held');if(f.props.has(ACTIVATION_KEY))assert.throws(()=>next.activate(f.player));});
++test('silent intent/header/completion failures hold; malformed/foreign activation never becomes legacy fallback',()=>{for(const boundary of [1,2,3]){const f=fixture(),set=f.world.setDynamicProperty;let n=0;f.world.setDynamicProperty=(k,v)=>{if(++n!==boundary)set(k,v);};assert.throws(()=>f.adapter.activate(f.player));assert.notEqual(f.adapter.status().state,'complete');}const f=fixture();f.props.set(ACTIVATION_FAMILY+'future','foreign');assert.equal(f.adapter.status().state,'held');assert.throws(()=>f.adapter.activate(f.player));assert.equal(f.writes.length,0);});
++for(const mutation of ['source','gate','player','cancel-job'])test('native scoreboard/census getter '+mutation+' reentry refuses before initialization',()=>{const f=fixture(),get=f.objective.getScores;let once=true;f.objective.getScores=()=>{if(once){once=false;if(mutation==='source')f.props.set('civ:jobs:meta','history');if(mutation==='gate')f.setGate(false);if(mutation==='player')f.player.dimension=f.dims.nether;if(mutation==='cancel-job')f.setBusy(true);}return get();};assert.throws(()=>f.adapter.activate(f.player));assert.equal(f.writes.length,0);});
++test('partial core fresh header without activation holds; successful record losing marker holds',()=>{const f=fixture();f.adapter.activate(f.player);f.props.delete(ACTIVATION_KEY);assert.equal(f.adapter.status().state,'held');});
++
++for(const type of ['civ_trial:cavalry','civ_trial:cavalry_mount'])test('expandedvirgincensus refuses managedrole '+type,()=>{const f=fixture();f.dims.overworld.getEntities=()=>[{id:'old',typeId:type,isValid:true,getTags:()=>[]}];assert.throws(()=>f.adapter.activate(f.player));assert.equal(f.writes.length,0);});
++test('cavalrytagonotherwiseordinaryentity is history, not an empty virginworld',()=>{const f=fixture();f.dims.nether.getEntities=()=>[{id:'old',typeId:'minecraft:pig',isValid:true,getTags:()=>['civcavalry:v1:old:district-1:sol:0:1:mount']}];assert.throws(()=>f.adapter.activate(f.player));assert.equal(f.writes.length,0);});
++test('v3completionbindsexactheaderandnewnamespace whilev2historyrefusesunchanged',()=>{const f=fixture();f.adapter.activate(f.player);assert.equal(ACTIVATION_KEY,'civ:creation_activation:v3');assert.deepEqual(JSON.parse(f.props.get(META)),{v:3,epoch:d.epoch,mode:'fresh',fixture:d.fixtureId,dimension:'minecraft:overworld',chunks:[],issued:0,pending:null});for(const key of ['civ:pop_bind:v2:meta','civ:pop_bind:v4:meta','civ:creation_activation:v1']){const g=fixture();g.props.set(key,'foreign');const before=new Map(g.props);assert.equal(g.adapter.status().state,'held');assert.throws(()=>g.adapter.activate(g.player));assert.deepEqual(g.props,before);}});
++test('completedv3status is durableauthority, not recurringvirginplayer/scoreboard permission',()=>{const f=fixture();f.adapter.activate(f.player);f.setGate(false);f.setPeople(true);f.objective.displayName='normal later play';f.props.set('civ:kingdom','later changed source');assert.equal(f.adapter.status().state,'complete');});
+--- /dev/null
++++ b/dev/test/cavalry-v3-composition.test.mjs
+@@ -0,0 +1,29 @@
++// Explicit synthetic offline native fixtures only; every exercised production import is the active source.
++import {register as registerCavalryV3Loader} from 'node:module';
++registerCavalryV3Loader('../lib/cavalry-v3-test-loader.mjs',import.meta.url);
++const {fixture}=await import('../lib/cavalry-v3-fixture.mjs');
++const baselineActual=new URL('../../CivilizationApocalypse_BP/scripts/integration/creationRuntime.js',import.meta.url);
++const oldRuntimeText=readFileSync(new URL('../fixtures/creation-runtime-v2-before-cavalry.txt',import.meta.url),'utf8').replace(/from\s+(['"])([^'"]+)\1/g,(_,q,s)=>`from ${q}${s.startsWith('.')?new URL(s,baselineActual).href:s}${q}`);
++const {createCreationRuntime:oldRuntime}=await import('data:text/javascript;base64,'+Buffer.from(oldRuntimeText).toString('base64'));
++
++import test from 'node:test';import assert from 'node:assert/strict';import{readFileSync}from'node:fs';
++const {createCreationRuntime}=await import('../../CivilizationApocalypse_BP/scripts/integration/creationRuntime.js');
++const {createCreationRuntime : configuredRuntime}=await import('../../CivilizationApocalypse_BP/scripts/integration/creationRuntime.js?synthetic');
++const {createCavalryMicrotrial}=await import('../../CivilizationApocalypse_BP/scripts/integration/cavalryMicrotrial.js');
++const {createCavalryMicrotrial : configuredTrial}=await import('../../CivilizationApocalypse_BP/scripts/integration/cavalryMicrotrial.js?synthetic');
++const {createInitialKingdom,serializeKingdom}=await import('../../CivilizationApocalypse_BP/scripts/kingdom/state.js');
++const {classifyStarterKeys,starterArmProblems}=await import('../../CivilizationApocalypse_BP/scripts/sim/starter.js');
++const {buildGroupTable,spotFor}=await import('../../CivilizationApocalypse_BP/scripts/population/groups.js');
++const {reconcile}=await import('../../CivilizationApocalypse_BP/scripts/population/reconcile.js');const {militarySelectionPolicy}=await import('../../CivilizationApocalypse_BP/scripts/population/militarySelection.js');
++function runtimeFixture(make=createCreationRuntime){const props=new Map(),calls=[],callbacks=[];const world={getDynamicPropertyIds(){calls.push('ids');return[...props.keys()];},getDynamicProperty(k){calls.push(k);return props.get(k);},setDynamicProperty(k,v){props.set(k,v);},afterEvents:{entityDie:{subscribe(cb,o){callbacks.push({cb,o});}}}};return{world,props,calls,callbacks,r:make({world,isPeopleOn:()=>false,isBusy:()=>false,isDeveloper:()=>false,readKingdom:()=>createInitialKingdom()})};}
++test('NULLv3andmicroprofiles areearlyinert; defaultstartuphasno guardorprivateactorconfiguration',()=>{const f=runtimeFixture(),m=createCavalryMicrotrial({creation:{activeStore(){throw Error('must not read');}}});assert.deepEqual(f.calls,[]);assert.equal(f.r.beforeSimulationStep,undefined);assert.deepEqual(m.streetsOptions(),{});assert.equal(m.description,'off');assert.equal(f.r.activeStore(),undefined);});
++test('defaultdeathsubscriptiontypesunchanged andregistrationisidempotent',()=>{const f=runtimeFixture();assert.equal(f.r.registerDeaths(),true);assert.equal(f.r.registerDeaths(),false);assert.equal(f.callbacks.length,1);assert.equal(f.callbacks[0].o.entityTypes.includes('civ_trial:cavalry'),false);});
++test('configuredv3startupholds beforeactivation andrefuses legacyfallback orv2migration',()=>{const f=runtimeFixture(configuredRuntime);assert.equal(typeof f.r.beforeSimulationStep,'function');assert.equal(f.r.beforeSimulationStep(),false);assert.throws(()=>f.r.command('legacy confirm epoch=other'),/development/);f.props.set('civ:pop_bind:v2:meta','legacy');assert.equal(f.r.beforeSimulationStep(),false);assert.ok(f.r.statusLines()[0].includes('held'));});
++test('configureddeathfilterincludesbothroles inexistingonesubscription',()=>{const f=runtimeFixture(configuredRuntime);f.r.registerDeaths();assert.equal(f.callbacks.length,1);assert.ok(f.callbacks[0].o.entityTypes.includes('civ_trial:cavalry'));assert.ok(f.callbacks[0].o.entityTypes.includes('civ_trial:cavalry_mount'));});
++test('privatemicrotrialusesoneactualderivedsoldiergroup notfixedmix orkingdomrewrite',()=>{const fakeStore={format:()=>3},creation={activeStore:()=>fakeStore},t=configuredTrial({creation}),o=t.streetsOptions(),k=createInitialKingdom(),before=serializeKingdom(k);assert.equal(o.compoundNativeTrial,true);assert.equal(o.config.maxOpsPerTick,1);assert.equal(o.config.maxSpawnsPerTick,1);const home=o.homes()['district-1'],origin=o.anchors()[0];assert.deepEqual(spotFor(home,'sol',0),origin);const groups=buildGroupTable(k,{groupSize:{civ:10,sol:5}}).groups,policy=militarySelectionPolicy(o.readMilitarySelection(),groups,'minecraft:overworld');assert.equal(policy.selection.groupId,'district-1:sol:0');const obs={kingdom:k,entities:[],anchors:[origin],homes:{'district-1':home},posts:{'district-1':[home]},loadedChunks:new Set(['0,0','0,-1','-1,0','-1,-1'])};const r=reconcile(undefined,obs,0,o.config,policy.typeForGroup,policy.physicalCostForGroup);assert.deepEqual(r.state.physical,['district-1:sol:0']);assert.equal(serializeKingdom(k),before);});
++test('microtrialreadrequirescompletedv3 andcannotacceptv2store',()=>{for(const store of[undefined,{format:()=>2}]){const t=configuredTrial({creation:{activeStore:()=>store}});assert.throws(()=>t.streetsOptions().readMilitarySelection(),/fresh-v3/);}});
++test('allbindingandactivationversionsarepreservedandrefusestarterexport',()=>{const k=createInitialKingdom(),keys=['civ:pop_bind:v3:meta','civ:pop_bind:v3:chunk:0','civ:pop_bind:v3:district-1:sol:0','civ:creation_activation:v3','civ:creation_activation:future'];assert.deepEqual(classifyStarterKeys(keys,{wipeKeyPrefixes:['civ:'],wipeKeys:keys}).keep,[...keys].sort());assert.ok(starterArmProblems({kingdom:k,keys}).some(x=>x.includes('physical creation history')));});
++test('maincomposesexistingstreetsandstartupcallback; no secondtimerspawnerorpublicfreshrequest',()=>{const main=readFileSync(new URL('../../CivilizationApocalypse_BP/scripts/main.js',import.meta.url),'utf8');assert.equal((main.match(/createPeopleStreets\(/g)||[]).length,1);assert.ok(main.includes('...cavalryMicrotrial.streetsOptions()'));assert.ok(main.includes('beforeStep: creation.beforeSimulationStep')||main.includes('beforeStep:creation.beforeSimulationStep'));const source=readFileSync(new URL('../../CivilizationApocalypse_BP/scripts/integration/cavalryMicrotrial.js',import.meta.url),'utf8');assert.equal(/spawnEntity|runInterval|runTimeout|setDynamicProperty/.test(source),false);});
++
++test('actualconfiguredruntimeactivationunblocksstartupwithsamev3store andmatchingprivateprofile',()=>{const f=fixture();f.world.afterEvents={entityDie:{subscribe(){}}};const r=configuredRuntime({...f.deps,readKingdom:()=>createInitialKingdom()});assert.equal(r.beforeSimulationStep(),false);r.command('fresh confirm',f.player);assert.equal(r.activeStore().format(),3);assert.equal(r.beforeSimulationStep(),true);const o=configuredTrial({creation:r}).streetsOptions();assert.equal(o.readMilitarySelection().selection.class,'cavalry');assert.equal(r.statusLines()[0].includes('fresh'),true);});
++test('actualNULLv2runtime retainsoldreadsequenceandlegacybytesexact withoutv3keys',()=>{const f=runtimeFixture(),g=runtimeFixture(oldRuntime);f.r.activeStore();g.r.activeStore();assert.deepEqual(f.calls,g.calls);assert.deepEqual(f.r.statusLines(),g.r.statusLines());assert.deepEqual(f.calls,g.calls);assert.deepEqual([...f.props],[...g.props]);assert.equal(f.r.beforeSimulationStep,g.r.beforeSimulationStep);});
+--- /dev/null
++++ b/dev/test/cavalry-v3-native-owner.test.mjs
+@@ -0,0 +1,51 @@
++// Explicit synthetic offline native fixtures only; every exercised production import is the active source.
++import {register as registerCavalryV3Loader} from 'node:module';
++registerCavalryV3Loader('../lib/cavalry-v3-test-loader.mjs',import.meta.url);
++const {createCreationRuntime : configuredRuntime}=await import('../../CivilizationApocalypse_BP/scripts/integration/creationRuntime.js?synthetic');
++const {createCavalryMicrotrial : configuredTrial}=await import('../../CivilizationApocalypse_BP/scripts/integration/cavalryMicrotrial.js?synthetic');
++const {createPeopleStreets}=await import('../../CivilizationApocalypse_BP/scripts/integration/peopleStreets.js');
++const {serializeKingdom}=await import('../../CivilizationApocalypse_BP/scripts/kingdom/state.js');
++import{d}from'../fixtures/cavalry-v3-synthetic-trust.mjs';
++import test from'node:test';import assert from'node:assert/strict';import{register}from'node:module';import{readFileSync}from'node:fs';const {createUnifiedStore}=await import('../../CivilizationApocalypse_BP/scripts/integration/creationUnifiedStore.js');
++register('data:text/javascript,'+encodeURIComponent(`export async function resolve(s,c,n){if(s==='@minecraft/server')return{url:'data:text/javascript,export const world={};export const system={};',shortCircuit:true};return n(s,c);}`));
++const root=new URL('../../',import.meta.url);const {createPopSync}=await import('../../CivilizationApocalypse_BP/scripts/integration/popSync.js');
++const{createPopWorld}=await import(new URL('dev/lib/poptharness.mjs',root)),{createInitialKingdom}=await import(new URL('CivilizationApocalypse_BP/scripts/kingdom/state.js',root));
++const {decodeMilitarySelection}=await import('../../CivilizationApocalypse_BP/scripts/population/militarySelection.js');
++const{createCompoundNative,routeCompoundDeath}=await import('../../CivilizationApocalypse_BP/scripts/integration/compoundNative.js');
++const G='district-1:sol:0';
++function pairFixture(config={},reserve=true){const pop=createPopWorld(),k=createInitialKingdom();pop.world.getDynamicPropertyIds=()=>[...pop.state.props.keys()];for(const d of k.districts){d.civilians=0;d.soldiers=d.id==='district-1'?5:0;d.garrison={front:d.soldiers,reserve:0};}pop.setKingdom(k);pop.loadArea(-64,-64,96,96);pop.setPlayers([{name:'p',x:0,y:70,z:0}]);const deps={format:3,verifyFreshWorld:()=>({verified:true,fixtureId:'one',dimension:'minecraft:overworld',ownerHistory:'never-started'})};let store=createUnifiedStore(pop.world,deps);store.initialize({mode:'fresh',epoch:'epoch-one',fixture:'one'});if(reserve)store.compound().reservePair(G);pop.setRawProperty('civ_pop',JSON.stringify({v:1,t:null,n:0,s:0,o:0,p:[]}));const state={foreign:false,mounted:false};let rider,mount;
++const liveRole=type=>[...pop.state.entities.values()].find(e=>e.alive&&e.typeId===type);
++const wrap=h=>h?new Proxy(h,{get(target,key){if(key==='getComponent')return id=>{if(target.typeId==='civ_trial:cavalry_mount'&&id==='minecraft:rideable')return{addRider:h=>{if(state.failSeat)return false;state.mounted=true;return true;},getRiders:()=>state.foreign?[{id:'foreign-rider'}]:state.mounted&&liveRole('civ_trial:cavalry')?.alive?[wrap(pop.dimension.getEntities({tags:['civpop:v1:'+G]})[0])]:[]};if(target.typeId==='civ_trial:cavalry'&&id==='minecraft:riding'&&state.mounted&&liveRole('civ_trial:cavalry_mount')?.alive)return{entityRidingOn:wrap(pop.dimension.getEntities({tags:[...liveRole('civ_trial:cavalry_mount').tags]})[0])};return undefined;};return Reflect.get(target,key);}}):h;
++const dimension={...pop.dimension,getEntities:q=>pop.dimension.getEntities(q).map(wrap)};
++const make=(role)=>{const core=store.compound(),ticket=core.prepareRole(G,role),h=pop.dimension.spawnEntity(role==='rider'?'civ_trial:cavalry':'civ_trial:cavalry_mount',{x:0,y:70,z:0});core.recordSpawned(ticket,h.id);h.addTag(ticket.tag);if(role==='rider')h.addTag('civpop:v1:'+G);core.confirmBorn(ticket,{groupId:G,role,id:h.id,typeId:h.typeId,tags:h.getTags()});const rec=pop.state.entities.get(h.id);if(role==='rider')rider=rec;else mount=rec;return rec;};
++const selection=decodeMilitarySelection(JSON.stringify({v:3,trialId:'one',fixtureId:'one',groupId:G,class:'cavalry',typeId:'civ_trial:cavalry',dimension:'minecraft:overworld'}));
++const owner=()=>createPopSync({world:pop.world,dimension,readKingdom:()=>pop.storedKingdom(),homes:()=>({'district-1':{x:0,y:70,z:0}}),enabled:true,creationBindings:store,compoundNativeTrial:state.trial!==false,readMilitarySelection:()=>state.selection??selection,config});
++return{pop,k,state,make,dimension,owner,get store(){return store;},get rider(){return rider;},get mount(){return mount;},canonical:()=>dimension.getEntities({tags:['civpop:v1:'+G]}),rejoin(){pop.restart();store=createUnifiedStore(pop.world,deps);}};}
++
++
++function adapter(f){return createCompoundNative({world:f.pop.world,dimension:f.dimension,store:f.store,current:()=>{},charge:()=>{}});}
++function allParts(f){return [...f.pop.state.entities.values()].filter(e=>e.alive&&e.typeId.startsWith('civ_trial:cavalry'));}
++
++test('optinsoleowner createsonechargedroleperhour then separatelyseatsboth; no newowner or hiddenbirth',()=>{const f=pairFixture({maxOpsPerTick:1,maxSpawnsPerTick:1});const a=f.owner().reconcileOnce(1000);assert.equal(a.refused,null);assert.equal(allParts(f).length,1);assert.equal(f.store.compound().inspect(G).rider.phase,'alive');assert.equal(f.store.compound().inspect(G).mount.phase,'never');assert.equal(a.report.budget.opsUsed,1);assert.equal(a.report.budget.spawnsUsed,1);assert.equal(a.report.actions.spawn,1);f.rejoin();assert.equal(f.owner().reconcileOnce(1000).applied.length,0);const b=f.owner().reconcileOnce(1001);assert.equal(b.refused,null);assert.equal(b.report.actions.spawn,1);assert.equal(allParts(f).length,2);assert.equal(f.store.compound().inspect(G).mount.phase,'alive');assert.equal(f.state.mounted,false);const c=f.owner().reconcileOnce(1002);assert.equal(c.refused,null);assert.equal(f.state.mounted,true);assert.equal(c.report.budget.opsUsed,1);assert.equal(c.report.budget.spawnsUsed,0);assert.equal(allParts(f).length,2);});
++test('class3singleaction firstreservesexactpairwithoutspawning; defaultoffstillnointent',()=>{for(const enabled of[true,false]){const f=pairFixture({},false);f.state.trial=enabled;f.owner().reconcileOnce(1000);assert.equal(allParts(f).length,0);assert.equal(f.store.compound().inspect(G)!==null,enabled);}});
++test('two-bodyclearance exactly48reads andrefusesunknown/liquid/fence/headlow/holes/unloaded',()=>{for(const bad of['minecraft:water','minecraft:oak_fence','minecraft:stone','minecraft:unknown',undefined]){const f=pairFixture(),get=f.dimension.getBlock;let count=0;f.dimension.getBlock=p=>{count++;return p.x===1&&p.y===73&&p.z===1?(bad?{isValid:true,typeId:bad}:undefined):get(p);};assert.throws(()=>adapter(f).clearance({x:0,y:70,z:0}),/clearance/);assert.ok(count<=48);}const f=pairFixture(),get=f.dimension.getBlock;let reads=0;f.dimension.getBlock=p=>{reads++;return get(p);};adapter(f).clearance({x:0,y:70,z:0});assert.equal(reads,48);});
++test('newbornforeigncanonical/failedtagrollsbackonlyexactcreatedrole orholdspending, neverreplacement',()=>{const f=pairFixture();f.pop.failNextTag();const r=f.owner().reconcileOnce(1000);assert.ok(r.refused);assert.equal(allParts(f).length,0);assert.equal(f.store.compound().inspect(G).rider.phase,'terminal');assert.equal(f.store.compound().inspect(G).mount.phase,'never');});
++test('unloadedexistingriderdefersmount acrossrestart, noabsence replacement',()=>{const f=pairFixture();f.owner().reconcileOnce(1000);const rider=allParts(f)[0];rider.x=80;f.pop.unloadArea(64,-64,96,96);f.rejoin();f.owner().reconcileOnce(1001);assert.equal(allParts(f).length,1);assert.equal(f.store.compound().inspect(G).mount.phase,'never');});
++test('failedseating keepsbothrolesaliveandtracked no extraentity, gateoffstilltwo-partcleanup',()=>{const f=pairFixture();f.owner().reconcileOnce(1000);f.owner().reconcileOnce(1001);f.state.failSeat=true;const r=f.owner().reconcileOnce(1002);assert.match(r.refused,/addRider/);assert.equal(allParts(f).length,2);f.state.failSeat=false;f.owner().teardownBound(f.canonical(),1003);assert.equal(allParts(f).length,0);});
++test('positivefreshmountdeathroutesexactroleonly, staleduplicatedeathcannotdebitrideroraggregate',()=>{const f=pairFixture();const rider=f.make('rider'),mount=f.make('mount'),h=f.dimension.getEntities({tags:[...mount.tags]})[0];assert.ok(routeCompoundDeath({deadEntity:h},f.store));assert.equal(f.store.compound().inspect(G).mount.phase,'terminal');assert.equal(f.store.compound().inspect(G).rider.phase,'alive');assert.equal(routeCompoundDeath({deadEntity:h},f.store),false);assert.equal(f.k.districts[0].soldiers,5);assert.equal(rider.alive,true);});
++test('wrongrole/foreigndeath/unknownnamespace neverretires compound',()=>{const f=pairFixture(),r=f.make('rider');const h=f.dimension.getEntities({tags:['civpop:v1:'+G]})[0];r.tags.add('civcavalry:v1:epoch-one:'+G+':1:mount');assert.throws(()=>routeCompoundDeath({deadEntity:h},f.store),/ambiguous/);assert.equal(f.store.compound().inspect(G).rider.phase,'alive');});
++
++test('actualspawn/native/tag/metadata crashwindows nevercreate2 ofeitherrole onrestart',()=>{for(let n=0;n<=18;n++){const f=pairFixture();f.pop.crashAfterMutations(n);try{f.owner().reconcileOnce(1000);}catch{}f.rejoin();try{f.owner().reconcileOnce(1001);}catch{}for(const type of['civ_trial:cavalry','civ_trial:cavalry_mount'])assert.ok(allParts(f).filter(e=>e.typeId===type).length<=1,'crash '+n+' '+type);}});
++test('postpendingnativeobstructionkeepsunknownintent andnevercreatesactorafterfailedclearance',()=>{const f=pairFixture(),get=f.dimension.getBlock;let changed=false;f.dimension.getBlock=p=>{const r=f.store.compound().inspect(G);if(r.rider.phase==='pending'&&p.y>=70){changed=true;return{isValid:true,typeId:'minecraft:oak_fence'};}return get(p);};const r=f.owner().reconcileOnce(1000);assert.ok(r.refused);assert.equal(changed,true);assert.equal(allParts(f).length,0);assert.equal(f.store.compound().inspect(G).rider.phase,'pending');f.dimension.getBlock=get;f.rejoin();f.owner().reconcileOnce(1001);assert.equal(allParts(f).length,0);});
++test('foreignpassengerrefusesseatingandpreservesbothtrackedroles',()=>{const f=pairFixture();f.make('rider');f.make('mount');f.state.foreign=true;const r=f.owner().reconcileOnce(1000);assert.ok(r.refused);assert.equal(allParts(f).length,2);assert.equal(f.state.mounted,false);});
++test('proposedBPfamilyseat/staticgeometry aredistinctmanagedassets with no engine companion spawner',()=>{const json=p=>JSON.parse(readFileSync(new URL('../../'+p,import.meta.url),'utf8'));const rider=json('CivilizationApocalypse_BP/entities/cavalry.json')['minecraft:entity'],horse=json('CivilizationApocalypse_BP/entities/cavalry_mount.json')['minecraft:entity'];assert.equal(horse.description.identifier,'civ_trial:cavalry_mount');assert.equal(rider.description.identifier,'civ_trial:cavalry');assert.equal(horse.components['minecraft:rideable'].seat_count,1);assert.equal(horse.components['minecraft:rideable'].pull_in_entities,false);assert.deepEqual(horse.components['minecraft:rideable'].family_types,['civ_cavalry_rider']);assert.ok(rider.components['minecraft:type_family'].family.includes('civ_cavalry_rider'));assert.equal(JSON.stringify(horse).includes('minecraft:addrider'),false);assert.equal(JSON.stringify(horse).includes('minecraft:spawn_entity'),false);assert.equal(horse.components['minecraft:rideable'].family_types.includes('player'),false);const geo=json('CivilizationApocalypse_RP/models/entity/cavalry_mount.geo.json');assert.equal(geo['minecraft:geometry'][0].bones.length,7);});
++
++test('deathroutingextends existing one subscription; nativefactoryhas no scheduler or listener',()=>{const runtime=readFileSync(new URL('../../CivilizationApocalypse_BP/scripts/integration/creationRuntime.js',import.meta.url),'utf8'),native=readFileSync(new URL('../../CivilizationApocalypse_BP/scripts/integration/compoundNative.js',import.meta.url),'utf8');assert.equal((runtime.match(/entityDie\.subscribe\(/g)||[]).length,1);assert.ok(runtime.includes('routeCompoundDeath(e,s)'));assert.ok(runtime.includes('"civ_trial:cavalry","civ_trial:cavalry_mount"'));assert.equal(/runInterval|runTimeout|\.subscribe\(/.test(native),false);});
++
++test('lastpendingcanonicalquery cannotrevokequotaandstillspawnnativeactor',()=>{const f=pairFixture(),get=f.dimension.getEntities,initial=f.pop.state.props.get('civ_pop');let revoked=false;f.dimension.getEntities=q=>{const rows=get(q),r=f.store.compound().inspect(G);if(!revoked&&r.rider.phase==='pending'&&q.tags?.includes('civpop:v1:'+G)){revoked=true;f.pop.setRawProperty('civ_pop',initial);}return rows;};const r=f.owner().reconcileOnce(1000);assert.equal(revoked,true);assert.ok(r.refused);assert.equal(allParts(f).length,0);assert.equal(f.store.compound().inspect(G).rider.phase,'pending');});
++
++test('actualprivateactivationtoexistingstreetscreatesonepairandseatsacrossacceptedhours withoutcityorpopulationrewrite',()=>{const pop=createPopWorld(),k=createInitialKingdom();pop.world.getDynamicPropertyIds=()=>[...pop.state.props.keys()];pop.setKingdom(k);pop.setRawProperty('civ_devgate',true);pop.loadArea(-48,-48,48,48);let mounted=false;const parts=type=>[...pop.state.entities.values()].find(e=>e.alive&&e.typeId===type);let dimension;const wrap=h=>new Proxy(h,{get(target,key){if(key==='getComponent')return name=>{if(target.typeId==='civ_trial:cavalry_mount'&&name==='minecraft:rideable')return{getRiders:()=>mounted?[dimension.getEntities({tags:['civpop:v1:'+G]})[0]]:[],addRider(){mounted=true;return true;}};if(target.typeId==='civ_trial:cavalry'&&name==='minecraft:riding'&&mounted)return{entityRidingOn:dimension.getEntities({tags:[...parts('civ_trial:cavalry_mount').tags]})[0]};};return Reflect.get(target,key);}});dimension={...pop.dimension,getEntities:q=>pop.dimension.getEntities(q).map(wrap)};
++const player={id:'caller',isValid:true,name:'caller',location:{x:.5,y:70,z:.5},dimension};pop.world.getAllPlayers=()=>[player];pop.world.getDimension=n=>n==='overworld'?dimension:{id:'minecraft:'+n,getEntities:()=>[]};const participant={id:d.participantId,type:'FakePlayer',isValid:true,displayName:d.participant},objective={id:'ca_fresh_owner',isValid:true,displayName:d.nonce,getScores:()=>[{participant,score:0}]};pop.world.scoreboard={getObjectives:()=>[objective],getObjective:()=>objective};pop.world.afterEvents={entityDie:{subscribe(){}}};let people=false;const creation=configuredRuntime({world:pop.world,isPeopleOn:()=>people,isBusy:()=>false,isDeveloper:()=>true,readKingdom:()=>k});assert.equal(creation.beforeSimulationStep(),false);creation.command('fresh confirm',player);assert.equal(creation.beforeSimulationStep(),true);const beforeDistricts=JSON.stringify(k.districts),trial=configuredTrial({creation}),streets=createPeopleStreets({getCreationBindings:creation.activeStore,isGateOn:()=>people,...trial.streetsOptions()});people=true;for(let tick=1000;tick<=1003;tick++){k.step=tick-1000;const savedBefore=serializeKingdom(k);streets.onHour({world:pop.world,dimension,kingdom:k,report:{},tick});assert.equal(serializeKingdom(k),savedBefore);}const r=creation.activeStore().compound().inspect(G);assert.equal(r.rider.phase,'alive',JSON.stringify(streets.status()));assert.equal(r.mount.phase,'alive',JSON.stringify(streets.status()));assert.equal(mounted,true);assert.equal(pop.state.spawned.length,2);assert.equal(JSON.stringify(k.districts),beforeDistricts);assert.equal(pop.state.props.has('civ:military_selection:v1'),false);});
++
++test('lateclearancepolicychange refusesbeforebirth atfullwritebarrierwithoutraisingreadorworkcaps',()=>{const f=pairFixture(),get=f.dimension.getBlock;let changed=false;f.dimension.getBlock=p=>{const block=get(p);if(!changed&&p.y===73){changed=true;f.state.selection=decodeMilitarySelection(undefined);}return block;};const r=f.owner().reconcileOnce(1000);assert.equal(changed,true);assert.ok(r.refused);assert.equal(allParts(f).length,0);});
++test('compoundspawnseatandcleanup preserveexistingin-fightbarrier',()=>{for(const kind of['birth','seat','remove']){const f=pairFixture();if(kind!=='birth'){f.make('rider');f.make('mount');}f.k.districts[0].assault=1;f.pop.setKingdom(f.k);const before=f.pop.state.spawned.length;if(kind==='remove')assert.equal(f.owner().teardownBound(f.canonical(),1000).removed,0);else f.owner().reconcileOnce(1000);assert.equal(f.pop.state.spawned.length,before);assert.equal(f.state.mounted,false);if(kind!=='birth')assert.equal(allParts(f).length,2);}});

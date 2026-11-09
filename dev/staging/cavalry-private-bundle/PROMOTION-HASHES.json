@@ -1,0 +1,23 @@
+{
+  "scope": "reviewable stage-only private-bundle builder; no genuine descriptor/world/output built",
+  "files": {
+    "build.mjs": "E7F1875DDD9CCFBD067858A4B33DCA77CD978ADE438602C5D567C92DCF306EBA",
+    "builder.test.mjs": "E52A6CB659B2EE0B62E6E6893DE17D13B1A1768343C9B2B7881DE1A66BD01D3F",
+    "focused.log": "6EB923F3932360E1BC5FB97FA2D40E8CC81984A04AFC4220FB813EA199CF1710",
+    "OPTIONS-EXAMPLE.json": "0D3C5054C1DAE165B3C0EE649452F47519E33D0C97EE56557D0CA0DEFDCBA3A7",
+    "README.md": "B4A1765A52CFD64E68D017E0B93FBBBFE34ACD749D321D60A0129992C103FDE3",
+    "ROOT-WITNESS-EXAMPLE.json": "B4EEFC7043D4B45A298B688C1D08DF84A4A3ACFCE6E2231107F262D31EF3FF0E"
+  },
+  "focused": {
+    "tests": 10,
+    "pass": 10,
+    "fail": 0,
+    "durationMs": 92.0703,
+    "log": "focused.log"
+  },
+  "syntaxCheck": "node --check build.mjs PASS",
+  "actualBundleBuilt": false,
+  "compiledGenuineTrust": false,
+  "nativeInstalled": false,
+  "requiresRootReviewedPadWitness": true
+}
