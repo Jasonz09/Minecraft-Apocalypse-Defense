@@ -1,0 +1,176 @@
+{
+  "utc": "2026-11-09T01:42:30.975457+00:00",
+  "scope": "Actual immutable closed-copy evidence; no live DB or SST decoding, source edits or entity/world writes.",
+  "activationDecision": "PASS_DURABLE_FRESH_V3_ACTIVATION_ZERO_ISSUED",
+  "nativeMountDecision": "BLOCKED_ENTITY_JSON_PARSE_ERROR_DO_NOT_ENABLE_PEOPLE",
+  "sourceReceipt": "dist/cavalry-v3-activated-20261109.json",
+  "backup": "E:\\CivilizationApocalypse\\dist\\backups\\cavalry-v3-activated-20261109",
+  "files": {
+    "db/000005.ldb": {
+      "bytes": 113931,
+      "sha256": "B1A225BEC7A731EB30099E6AD4011B4B281AD9E0AAF02A8BF0DB37DA26D4C310"
+    },
+    "db/000008.ldb": {
+      "bytes": 94876,
+      "sha256": "2867F2842C50540BB816D15D8D49DAF0B16737AD24E2ACE444659C88B2CCFE84"
+    },
+    "db/000009.log": {
+      "bytes": 583730,
+      "sha256": "1B3E0883DFD957AF57ED01684384E6807DFF92EF7CB3D85BA10868B5E2E7967B"
+    },
+    "db/000010.ldb": {
+      "bytes": 175742,
+      "sha256": "078DC3AA2A46D060E0D84B58ED21B00D6B7077EA7705BD7BB719BE81BB0C9103"
+    },
+    "db/CURRENT": {
+      "bytes": 16,
+      "sha256": "8AF72F43857550B01EAB1019335772B367A17A9884A7A759FDF4FE6F272B90AA"
+    },
+    "db/MANIFEST-000007": {
+      "bytes": 219,
+      "sha256": "F04614657343A11C2893F1CF3F78ACDCD9E9FE2DFCED0B51E3C7AB50685F2641"
+    },
+    "level.dat": {
+      "bytes": 3078,
+      "sha256": "2C5E8A8BD814BBC707EB58B7770DAE7A92C8D5CCC304502A156A32182B65962B"
+    },
+    "level.dat_old": {
+      "bytes": 3078,
+      "sha256": "3C6B38A7FE17235AA452FFBD61CEA7A875D3218C97ABACFEE0CBEA93B1A8F362"
+    },
+    "levelname.txt": {
+      "bytes": 30,
+      "sha256": "A0654022CFD05C856EBF98F9ACFD04BA5CB0BAA42534BF8EB78B4A1FB1D10CEB"
+    },
+    "world_behavior_packs.json": {
+      "bytes": 93,
+      "sha256": "077B3AB7AFF3F0DF44324397897EA3D31AD40D9020193BB561468534F2C44A50"
+    },
+    "world_icon.jpeg": {
+      "bytes": 107003,
+      "sha256": "491C0354B8C1862813C4A9C2A7793E0622C8D2423E10DE0287D71DFA8C6AC74D"
+    },
+    "world_resource_packs.json": {
+      "bytes": 93,
+      "sha256": "369934E4A54E66671DC8672C3E53135CEC7F0CDF6D7FDE80794B85AF9416AEAD"
+    }
+  },
+  "exact12FileInventoryAndHashesMatch": true,
+  "filesStableDuringAudit": true,
+  "parserSha256": "C4DC2BB4292E4845E308B5ACE3B0982C52BA054A26092A8B0CD95BF36F276257",
+  "wal": {
+    "logicalRecords": 8,
+    "mutations": 1046,
+    "firstSequence": 1038,
+    "lastSequence": 2083,
+    "contiguousObservedSequences": true
+  },
+  "mainSnapshots": [
+    {
+      "sequence": 1085,
+      "kingdomStep": 0,
+      "keys": [
+        "civ:kingdom"
+      ]
+    },
+    {
+      "sequence": 1089,
+      "kingdomStep": 0,
+      "keys": [
+        "civ:kingdom"
+      ]
+    },
+    {
+      "sequence": 1098,
+      "kingdomStep": 0,
+      "keys": [
+        "civ:kingdom",
+        "civ_devgate"
+      ]
+    },
+    {
+      "sequence": 1103,
+      "kingdomStep": 1,
+      "keys": [
+        "civ:creation_activation:v3",
+        "civ:kingdom",
+        "civ:pop_bind:v3:meta",
+        "civ_devgate"
+      ]
+    }
+  ],
+  "activation": {
+    "v": 3,
+    "bindingVersion": 3,
+    "fixture": "cavalry-pad-c739e1b4",
+    "epoch": "cavalry-owner-7c882be24dd1406582acdfc2a0b98462",
+    "receiptSha256": "538CE473748B300EDC4A2B09A5C43E7E46E01B1E8179853ECCC69526193508E7",
+    "levelSha256": "42FFB51160BF4799746AF1E3AC413D2CA2831702DE6A135A584A2D56FDF9A896",
+    "objective": "ca_fresh_owner",
+    "nonce": "CA_FRESH_8e17b80d8dc644d3",
+    "participant": "NEVER_PEOPLE_ON",
+    "participantId": 1,
+    "phase": "complete"
+  },
+  "header": {
+    "v": 3,
+    "epoch": "cavalry-owner-7c882be24dd1406582acdfc2a0b98462",
+    "mode": "fresh",
+    "fixture": "cavalry-pad-c739e1b4",
+    "dimension": "minecraft:overworld",
+    "chunks": [],
+    "issued": 0,
+    "pending": null
+  },
+  "peopleGateCursorOrRoleIntentInObservedMainSnapshots": false,
+  "scoreboard": {
+    "sequence": 1108,
+    "rawSha256": "0F679144AE2B0ACEC9F5EF760E638F12D564DEAAA905AE1F5F935BC5390E256F",
+    "tree": {
+      "Criteria": [],
+      "DisplayObjectives": [],
+      "Entries": [
+        {
+          "FakePlayerName": "NEVER_PEOPLE_ON",
+          "IdentityType": 3,
+          "ScoreboardId": 1
+        }
+      ],
+      "LastUniqueID": 1,
+      "Objectives": [
+        {
+          "Criteria": "dummy",
+          "DisplayName": "CA_FRESH_8e17b80d8dc644d3",
+          "Name": "ca_fresh_owner",
+          "Scores": [
+            {
+              "Score": 0,
+              "ScoreboardId": 1
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "closedContentLog": {
+    "source": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\logs\\ContentLog2026-11-08_20-32-05_1.txt",
+    "bytes": 2318,
+    "sha256": "2D2DB340726671AE8AF74C5008A0D22FEC549EDDCA400F09362D1E7CAA771FF1",
+    "copy": "closed-content-log.txt",
+    "errors": [
+      "20:32:38[Log][error]-CA Cavalry Owner Nov8 c739e1b4 | actor_definitions | %APPDATA%/Minecraft Bedrock/Users/Shared/games/com.mojang/development_behavior_packs/CivilizationApocalypse_BP | civ_trial:cavalry_mount | minecraft:entity |  -> components -> minecraft:pushable: this component was found in the input, but is not present in the Schema",
+      "20:32:38[Actor][error]-CA Cavalry Owner Nov8 c739e1b4 | actor_definitions | %APPDATA%/Minecraft Bedrock/Users/Shared/games/com.mojang/development_behavior_packs/CivilizationApocalypse_BP | civ_trial:cavalry_mount | minecraft:entity | ERROR: Entity 'civ_trial:cavalry_mount' failed to load from JSON: parse errors occurred:  -> components -> minecraft:pushable: this component was found in the input, but is not present in the Schema"
+    ],
+    "errorCount": 2,
+    "warningCount": 0,
+    "highMemoryCount": 0,
+    "molangCount": 0,
+    "scriptExceptionCount": 0
+  },
+  "limitations": [
+    "No SST/entity census or universal absence/history proof.",
+    "Closed flush does not prove individual activation crash phases.",
+    "No people enabled, pair birth, seating, rendering or cavalry combat acceptance.",
+    "Two mount-definition errors block next native owner birth until corrected."
+  ]
+}

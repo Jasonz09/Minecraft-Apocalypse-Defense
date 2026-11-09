@@ -1,0 +1,9 @@
+# Fresh fixed private bundle — staged artifact only
+
+Only root-signed witness E2BF0D…F08315 is accepted. The builder pins old observed17788, immutable10-file source538CE4, audit6F1387 and old root witness501B96. It requires current ordinary191 exactly equal observedF260 freeze plus reviewed mount7EE29 schema repair. Unknown source changes refuse. New fixture cavalry-pad-fixed-20261109-b61e and epoch cavalry-owner-c69474372d104b22a33e1f5af93ef748 are exact root-chosen identities; halted c739e1b4 is never used as source/retried/reset.
+
+No install, launch, catalog lookup or world cleanup exists. Output is only a new stage subdirectory, with no-overwrite and link refusal. All reads are bounded file-descriptor reads. New private pack copies191 verified ordinary files, compiles ONLY two constants, then checks the reviewed graph. The closed derivative copies exactly10 immutable source files and changes only two bindings. Its DB/level bytes are identical to the pristine pad and old derivative; the normal reviewed setup helper later changes only world names. Initial/final source inventories and final root witness hash are checked. Any failed build retains incomplete output and never emits completion.
+
+Nine small refusal tests pass656.8248ms after the actual stage build; previous logs retained. They are not a full filesystem rollback test or native proof. Existing reviewed paired setup helper remains the ONLY eventual installer.
+
+Actual generated bundle manifest00E2103A…6AD08CD contains191files, graph0issues. Compared to old observed private, only mountJSON and two fresh trust constants differ. Root independent code/artifact review and fixed-build full gates are still required before installation. SETUP-OPTIONS-PROPOSED.json is an unexecuted proposal; final makeSetupPlan must wait for regular fixed191 deployment so predecessor hashes cannot be stale. No actual world or installed pack was changed here.

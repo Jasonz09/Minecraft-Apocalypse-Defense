@@ -1,0 +1,38 @@
+{
+  "decision": "APPROVE_STAGED_BUILDER_AND_ACTUAL_ARTIFACT_PENDING_FULL_AND_SETUP_REVIEW",
+  "authorHandoffSha256": "801FAB9E949DB7AF9E961EE4EF42553FFAD1F886B6A5848B148A78A9F7BF4AF6",
+  "bundleManifestSha256": "00E2103A6EB53C10173430ECEF0C4592FDFF61854034A4C0632B0DD706AD08CD",
+  "allHandoffPinsMatch": true,
+  "packCount": 191,
+  "exactInventoryHashesSizesMatch": true,
+  "onlyDifferencesVsCurrentOrdinary191": [
+    "CivilizationApocalypse_BP/scripts/integration/cavalryFreshTrust.js",
+    "CivilizationApocalypse_BP/scripts/integration/cavalryMicrotrialTrust.js"
+  ],
+  "oldV2TrustNull": true,
+  "derivativeTenFilesExactPriorPristineDerivative": true,
+  "derivativeChangesVsActualPristinePad": [
+    "world_behavior_packs.json",
+    "world_resource_packs.json"
+  ],
+  "newFixture": "cavalry-pad-fixed-20261109-b61e",
+  "newEpoch": "cavalry-owner-c69474372d104b22a33e1f5af93ef748",
+  "rootWitnessSha256": "E2BF0DAFA3195348DB845CC6FEC4C37CE440F778F21004BF4CDBA7CAC9F08315",
+  "focused": {
+    "pass": 9,
+    "fail": 0,
+    "durationMs": 126.5224
+  },
+  "codeReview": [
+    "Only root-pinned actual witness admitted; old halted epoch/id rejected.",
+    "Source ordinary191 inventory pinned with single reviewed mount repair, readback after copy.",
+    "Output new unique folder with exclusive writes, no installer or catalog writer.",
+    "Actual output compiled descriptor independently checked; helper reuses prior descriptor and is not a general provenance importer."
+  ],
+  "limits": [
+    "Full current source gate pending.",
+    "Final setup plan must bind fixed ordinary installed state.",
+    "No corrected mount native load, role birth, seating or appearance proof.",
+    "Failed activated/peopleON world preserved and never reused."
+  ]
+}

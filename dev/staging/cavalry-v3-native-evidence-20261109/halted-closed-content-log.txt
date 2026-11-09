@@ -1,0 +1,20 @@
+20:36:08[Scripting][verbose]-Plugin Discovered [Civilization Apocalypse Behavior Pack] PackId [fd04cb50-dddc-4ebe-83fc-5b5375819bcb_1.0.0] ModuleId [eeb1f41d-2811-4f68-9d0b-7303188f3867]
+
+20:36:08[Scripting][verbose]-Plugin [Civilization Apocalypse Behavior Pack] - promoted [@minecraft/server] from [2.7.0] to [2.11.0] requested by [Civilization Apocalypse Behavior Pack - 1.0.0].
+
+20:36:08[Scripting][verbose]-Plugin [Civilization Apocalypse Behavior Pack] - promoted [@minecraft/server] from [2.0.0] to [2.11.0] requested by [@minecraft/server-ui-bindings - 2.3.0].
+
+20:36:08[Scripting][verbose]-Plugin [Civilization Apocalypse Behavior Pack] - promoted [@minecraft/server] from [2.0.0] to [2.11.0] requested by [@minecraft/server-ui-bindings - 2.1.0].
+
+20:36:08[Scripting][verbose]-Plugin [Civilization Apocalypse Behavior Pack] - promoted [@minecraft/server-bindings] from [2.7.0] to [2.11.0] requested by [@minecraft/server - 2.7.0].
+
+20:36:08[Scripting][verbose]-Plugin [Civilization Apocalypse Behavior Pack] - promoted [@minecraft/server-bindings] from [2.0.0] to [2.11.0] requested by [@minecraft/server - 2.0.0].
+
+20:36:08[Scripting][verbose]-Plugin [Civilization Apocalypse Behavior Pack] - promoted [@minecraft/server-ui-bindings] from [2.1.0] to [2.3.0] requested by [@minecraft/server-ui - 2.1.0].
+
+20:36:08[Scripting][verbose]-Plugin [Civilization Apocalypse Behavior Pack] - promoted [@minecraft/server-ui] from [2.1.0] to [2.3.0] requested by [Civilization Apocalypse Behavior Pack - 1.0.0].
+
+20:36:09[Log][error]-CA Cavalry Owner Nov8 c739e1b4 | actor_definitions | %APPDATA%/Minecraft Bedrock/Users/Shared/games/com.mojang/development_behavior_packs/CivilizationApocalypse_BP | civ_trial:cavalry_mount | minecraft:entity |  -> components -> minecraft:pushable: this component was found in the input, but is not present in the Schema
+
+20:36:09[Actor][error]-CA Cavalry Owner Nov8 c739e1b4 | actor_definitions | %APPDATA%/Minecraft Bedrock/Users/Shared/games/com.mojang/development_behavior_packs/CivilizationApocalypse_BP | civ_trial:cavalry_mount | minecraft:entity | ERROR: Entity 'civ_trial:cavalry_mount' failed to load from JSON: parse errors occurred:  -> components -> minecraft:pushable: this component was found in the input, but is not present in the Schema
+

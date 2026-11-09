@@ -1,0 +1,73 @@
+{
+  "scope": "STAGE ONLY fresh fixed private bundle; no native acceptance/install",
+  "fixtureId": "cavalry-pad-fixed-20261109-b61e",
+  "epoch": "cavalry-owner-c69474372d104b22a33e1f5af93ef748",
+  "stagedPrivatePack": {
+    "files": 191,
+    "plan": "PRIVATE-PACK-PLAN.json",
+    "sha256": "B23EA06FB90683F1D1E5CA8B39FA7FFCA1A97E5681F23F170502A6EFBEE14D1E"
+  },
+  "derivative": {
+    "plan": "DERIVATIVE-PLAN.json",
+    "sha256": "647D4FF15DA27F5A6C3777A3C50D19D23BDBDFBFB505A87586BA4EA62BD749EE",
+    "files": [
+      {
+        "path": "db/000005.ldb",
+        "sha256": "B1A225BEC7A731EB30099E6AD4011B4B281AD9E0AAF02A8BF0DB37DA26D4C310"
+      },
+      {
+        "path": "db/000006.log",
+        "sha256": "0FDC67255654FD181C802E9D9D60400753CB2B680C98B4D82FB53409FD379641"
+      },
+      {
+        "path": "db/CURRENT",
+        "sha256": "0861415CADA612EA5834D56E2CF1055D3E63979B69EB71D32AE9AE394D8306CD"
+      },
+      {
+        "path": "db/MANIFEST-000004",
+        "sha256": "26FDF46323F59F291CC10A15129B769237EA052E2F2163EF1BC1BFADC775277B"
+      },
+      {
+        "path": "level.dat",
+        "sha256": "42FFB51160BF4799746AF1E3AC413D2CA2831702DE6A135A584A2D56FDF9A896"
+      },
+      {
+        "path": "level.dat_old",
+        "sha256": "C398B3D41D088465AB6E48C51CF2D3FDC8CF7D6DB6226F5BC3A2A514D83EEF4B"
+      },
+      {
+        "path": "levelname.txt",
+        "sha256": "8BD5646836596AFAEE6962E9AF15F58D552A1AC6660ABF8664EE4964051B6502"
+      },
+      {
+        "path": "world_behavior_packs.json",
+        "sha256": "01AF74386555C60D2E900BD9AC47F5DF1EBF128CA79B3C10F606C3BC8F0FFDD0"
+      },
+      {
+        "path": "world_icon.jpeg",
+        "sha256": "E96E1707EF8ED9A1B44A8CC884E9EED232F79777B08F579D2A70CBCD3C6D4668"
+      },
+      {
+        "path": "world_resource_packs.json",
+        "sha256": "C6D58F9C10A91AEAF20D18E14C12B7FD0F458598D59B35A99C704877658E5D81"
+      }
+    ],
+    "opened": false,
+    "nativeCatalog": false
+  },
+  "rootWitnessSha256": "E2BF0DAFA3195348DB845CC6FEC4C37CE440F778F21004BF4CDBA7CAC9F08315",
+  "proposedTrusts": [
+    {
+      "destination": "CivilizationApocalypse_BP/scripts/integration/cavalryFreshTrust.js",
+      "sha256": "59FC455AF8B58DA9C587307CE22975431C5194C5A91B2512CF358A5471D1C9A1"
+    },
+    {
+      "destination": "CivilizationApocalypse_BP/scripts/integration/cavalryMicrotrialTrust.js",
+      "sha256": "7557A6728F2DAD5DE2568C4BC87840121D5040A57684E153A305ACE482312B86"
+    }
+  ],
+  "nativeAcceptance": false,
+  "compiledIntoActive": false,
+  "previousFrozenBundle": "17788E46DB0001AADFA185B18D043E21AD65D1D3636318F474A904B1E1565A26",
+  "contentPackGraph": []
+}

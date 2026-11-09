@@ -1,0 +1,16 @@
+{
+    "format_version": "1.21.90",
+    "minecraft:item": {
+        "description": {
+            "identifier": "civapoc:ledger"
+        },
+        "components": {
+            "minecraft:display_name": { "value": "Commander's Ledger" },
+            "minecraft:icon": "book_writable",
+            "minecraft:max_stack_size": 1,
+            "minecraft:interact_button": "Open Ledger",
+            "minecraft:use_modifiers": { "use_duration": 0.05, "movement_modifier": 1 },
+            "civapoc:open_ledger": {}
+        }
+    }
+}

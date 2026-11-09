@@ -1,0 +1,135 @@
+{
+  "decision": "PEOPLE_GATE_ON_ZERO_REGISTERED_ROLE_ISSUANCE_OBSERVED",
+  "receipt": "dist/cavalry-v3-mount-load-halted-20261109.json",
+  "files": {
+    "level.dat": {
+      "bytes": 3078,
+      "sha256": "1BBDEE9950C300FA5675841B1FC1E10674408835566BA04205B88ED10E351905"
+    },
+    "level.dat_old": {
+      "bytes": 3078,
+      "sha256": "CF66009F8BD63074E589821F8940A9DD33457DDB688EAE2C4B6AE840CED2DE0C"
+    },
+    "levelname.txt": {
+      "bytes": 30,
+      "sha256": "A0654022CFD05C856EBF98F9ACFD04BA5CB0BAA42534BF8EB78B4A1FB1D10CEB"
+    },
+    "world_behavior_packs.json": {
+      "bytes": 93,
+      "sha256": "077B3AB7AFF3F0DF44324397897EA3D31AD40D9020193BB561468534F2C44A50"
+    },
+    "world_icon.jpeg": {
+      "bytes": 36993,
+      "sha256": "7F45B61F814A0B6E51A4912DB9053AC92D2C857917B943F3B3E20AC9095946D0"
+    },
+    "world_resource_packs.json": {
+      "bytes": 93,
+      "sha256": "369934E4A54E66671DC8672C3E53135CEC7F0CDF6D7FDE80794B85AF9416AEAD"
+    },
+    "db/000013.log": {
+      "bytes": 615169,
+      "sha256": "3EC7814C08820455BBE74ACFF2382498C8E29F1A38580F3B4CDC373AFF70EB1A"
+    },
+    "db/000014.ldb": {
+      "bytes": 239405,
+      "sha256": "8854C281DC3D25201C3FCE9C8302E26A15680B9C26CCC3F20B574E52395B17F3"
+    },
+    "db/CURRENT": {
+      "bytes": 16,
+      "sha256": "A197CC479C3BC03EF7B8D2B228F02A9BFC8C7CC6343719C5E26BEBC0CA4ECF06"
+    },
+    "db/MANIFEST-000011": {
+      "bytes": 239,
+      "sha256": "0E0858EB8A8392D48F29DD07547A4AC0F49023A9C57C238CD4A5E6355DE853CE"
+    }
+  },
+  "exactTenFileInventoryHashSizeMatch": true,
+  "CRC_WAL": {
+    "first": 2084,
+    "last": 3105,
+    "mutations": 1022,
+    "contiguous": true,
+    "previousLast": 2083
+  },
+  "snapshots": [
+    {
+      "sequence": 2103,
+      "keys": [
+        "civ:creation_activation:v3",
+        "civ:kingdom",
+        "civ:pop_bind:v3:meta",
+        "civ_devgate"
+      ]
+    },
+    {
+      "sequence": 2113,
+      "keys": [
+        "civ:creation_activation:v3",
+        "civ:kingdom",
+        "civ:pop_bind:v3:meta",
+        "civ_devgate"
+      ]
+    },
+    {
+      "sequence": 2117,
+      "keys": [
+        "civ:creation_activation:v3",
+        "civ:kingdom",
+        "civ:pop_bind:v3:meta",
+        "civ_devgate"
+      ]
+    },
+    {
+      "sequence": 2126,
+      "keys": [
+        "civ:creation_activation:v3",
+        "civ:kingdom",
+        "civ:pop_bind:v3:meta",
+        "civ_devgate",
+        "civ_people"
+      ]
+    },
+    {
+      "sequence": 2131,
+      "keys": [
+        "civ:creation_activation:v3",
+        "civ:kingdom",
+        "civ:pop_bind:v3:meta",
+        "civ_devgate",
+        "civ_people"
+      ]
+    }
+  ],
+  "finalSequence": 2131,
+  "peopleGate": 1,
+  "activationAndHeaderRawUnchanged": true,
+  "header": {
+    "v": 3,
+    "epoch": "cavalry-owner-7c882be24dd1406582acdfc2a0b98462",
+    "mode": "fresh",
+    "fixture": "cavalry-pad-c739e1b4",
+    "dimension": "minecraft:overworld",
+    "chunks": [],
+    "issued": 0,
+    "pending": null
+  },
+  "cursorOrRoleIntentKeysObserved": false,
+  "closedLog": {
+    "source": "C:\\Users\\zhaoF\\AppData\\Roaming\\Minecraft Bedrock\\logs\\ContentLog2026-11-08_20-35-33_1.txt",
+    "bytes": 2318,
+    "sha256": "077F3528F9433D53BD83D6B03840106FD739193C02D1444F8D06903D88141912",
+    "errors": [
+      "20:36:09[Log][error]-CA Cavalry Owner Nov8 c739e1b4 | actor_definitions | %APPDATA%/Minecraft Bedrock/Users/Shared/games/com.mojang/development_behavior_packs/CivilizationApocalypse_BP | civ_trial:cavalry_mount | minecraft:entity |  -> components -> minecraft:pushable: this component was found in the input, but is not present in the Schema",
+      "20:36:09[Actor][error]-CA Cavalry Owner Nov8 c739e1b4 | actor_definitions | %APPDATA%/Minecraft Bedrock/Users/Shared/games/com.mojang/development_behavior_packs/CivilizationApocalypse_BP | civ_trial:cavalry_mount | minecraft:entity | ERROR: Entity 'civ_trial:cavalry_mount' failed to load from JSON: parse errors occurred:  -> components -> minecraft:pushable: this component was found in the input, but is not present in the Schema"
+    ],
+    "warnings": 0,
+    "highMemory": 0,
+    "Molang": 0,
+    "scriptExceptions": 0
+  },
+  "limits": [
+    "No SST/entity census or universal absence proof.",
+    "No exact cause of nonissuance or native birth/seating proof.",
+    "People gate is ON in preserved halted backup; do not blindly resume."
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "decision": "APPROVE_MINIMAL_SCHEMA_REPAIR_FULL_NATIVE_PENDING",
+  "manifestSha256": "EFBEE4121F7609CC46529481193965ED948A99403C0DC2B9F88EE84022F66979",
+  "allFourPinsVerified": true,
+  "inverseJSONDiffOnlyTrueTrueToSplitEmptyComponents": true,
+  "activeAlreadyPromotedProposal": true,
+  "focusedProposed": [
+    4,
+    0,
+    70.2666
+  ],
+  "focusedFullValidationOverlay": [
+    4,
+    0,
+    73.0044
+  ],
+  "primaryRawIndependentlyVerified": {
+    "sourceUrl": "https://raw.githubusercontent.com/Mojang/bedrock-samples/46d817108cc218bfb4f6e8b93debf4d438eacadb/behavior_pack/entities/horse.json",
+    "tag": "v1.26.20.4",
+    "rawSha256": "E415193D14C1E855F61FF1B15BCBDDACB61C766BCE8E47D3A92E17EFA2353FD8",
+    "rawBytes": 21173,
+    "formatVersion": "1.26.10",
+    "pushComponents": {
+      "minecraft:pushable_by_entity": {},
+      "minecraft:pushable_by_block": {}
+    },
+    "legacyRemovedAtFormat": "1.26.10",
+    "docs": [
+      "https://learn.microsoft.com/en-us/minecraft/creator/reference/content/entityreference/examples/entitycomponents/minecraftcomponent_pushable?view=minecraft-bedrock-stable",
+      "https://learn.microsoft.com/en-us/minecraft/creator/reference/content/entityreference/examples/entitycomponents/minecraftcomponent_pushable_by_entity?view=minecraft-bedrock-stable",
+      "https://learn.microsoft.com/en-us/minecraft/creator/reference/content/entityreference/examples/entitycomponents/minecraftcomponent_pushable_by_block?view=minecraft-bedrock-stable"
+    ]
+  },
+  "MicrosoftCutoffAndEquivalenceDocsVerified": true,
+  "limits": [
+    "Targeted regression, not complete schema validator.",
+    "No native corrected mount load/birth/seating proof.",
+    "No reviewer production/world edits."
+  ]
+}

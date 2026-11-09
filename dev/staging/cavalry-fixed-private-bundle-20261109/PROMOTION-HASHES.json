@@ -1,0 +1,34 @@
+{
+  "utc": "2026-11-09T01:47:07.840562+00:00",
+  "scope": "Stage-only author handoff; not independent approval/install/native proof",
+  "files": {
+    "build-real.log": "973FCED340E19A116097B2E0A23A652701CC390C9A393F383D9C8DCEC59CEA82",
+    "build.mjs": "84D6AB379D639D179BD851C8FB06A2B6B5FDA8A7F1726AFC681D07D540C1A9FB",
+    "builder.test.mjs": "71D47256F3684C1D437BF037ED5489E7C5B8D2689FA7ECBC3889ED6DC8CAFB69",
+    "focused-final.log": "343327541F9337BF992A554635D99491D90D58BB08AC7200CF2C4734ECE0B0CC",
+    "focused-post-build.log": "A3EDEF97A82503792C5F6259DBD1E4A76BDC877124E706CAA3357804E15E3FF8",
+    "focused.log": "B8D4389161F979761279EA88FB3AD92BDEF21B64E90E35C45D581E4E50ED71B7",
+    "README.md": "AD382AF14DA0A777A09B5C1D9A566E478EBC186DD6878F6AA85CD0B7B9D50D64",
+    "SETUP-OPTIONS-PROPOSED.json": "2E25CCB4EEB8AADC5FBD40D50B315D862F92594A6DEB5B8BEA270CBA9F4A3744"
+  },
+  "bundleRoot": "E:\\CivilizationApocalypse\\dev\\staging\\cavalry-fixed-private-bundle-20261109\\generated\\cavalry-pad-fixed-20261109-b61e",
+  "bundleManifestSha256": "00E2103A6EB53C10173430ECEF0C4592FDFF61854034A4C0632B0DD706AD08CD",
+  "packFiles": 191,
+  "graphProblems": [],
+  "onlyDifferencesFromOldObservedPrivate": [
+    "CivilizationApocalypse_BP/entities/cavalry_mount.json",
+    "CivilizationApocalypse_BP/scripts/integration/cavalryFreshTrust.js",
+    "CivilizationApocalypse_BP/scripts/integration/cavalryMicrotrialTrust.js"
+  ],
+  "closedDerivativeTenFilesExactOldDerivative": true,
+  "focused": {
+    "pass": 9,
+    "fail": 0,
+    "durationMs": 656.8248,
+    "log": "focused-post-build.log"
+  },
+  "rootWitnessSha256": "E2BF0DAFA3195348DB845CC6FEC4C37CE440F778F21004BF4CDBA7CAC9F08315",
+  "nativeAcceptance": false,
+  "installed": false,
+  "finalSetupPlan": "Not generated: wait for fixed ordinary191 deployment"
+}

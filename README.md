@@ -2,6 +2,8 @@
 
 **Where we are — step2 of8 is current; the whole roadmap is unfinished.**
 
+**Native test update — November 8 evening:** the fresh-v3 activation was verified in a closed save, but Minecraft rejected the cavalry mount definition with two schema errors. The subsequent halted save retains people enabled, zero registered issuance, no pending intent and no observed role registration; this does not prove entity absence or native cavalry behavior. Both failed-trial saves remain preserved. A minimal documented push-component replacement is now integrated, with four focused regression checks passing; all2,387 tests, all5gates and52headless stages pass (612,727.1659ms,0fail/cancel/skip). The fixed regular191 build is installed with private settings NULL, verified by382source/installed checks. Native cavalry acceptance remains BLOCKED until a fresh fixed-build trial passes. Evidence: `dev/staging/cavalry-v3-native-evidence-20261109/AUDIT.json` and `dist/cavalry-mount-schema-integration-20261109.json`, `dist/cavalry-mount-fixed-installed-verification-20261109.json` and `dist/cavalry-mount-schema-full-verify-20261109.log`.
+
 **November 8 verified checkpoint:** the191-file cavalry development build is
 installed with all three private settings NULL.2,383/2,383 tests, all5 gates and
 52/52 headless stages pass (608,679.8169ms,0fail/cancel/skip). Root verifies382

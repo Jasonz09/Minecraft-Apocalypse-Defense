@@ -1,0 +1,53 @@
+{
+  "utc": "2026-11-09T01:41:34.610196+00:00",
+  "scope": "One data entity schema repair plus targeted central tests/primary fixtures; no main edits",
+  "proposedFiles": [
+    {
+      "destination": "CivilizationApocalypse_BP/entities/cavalry_mount.json",
+      "source": "dev/staging/cavalry-mount-schema-fix-20261109/proposed/CivilizationApocalypse_BP/entities/cavalry_mount.json",
+      "sha256": "7EE29AAAB63BDF545E7F102D82B6EECE848466C049944AD33E0F2BCEDB1D69CD",
+      "baselineSha256": "DE35483687111CF2CF825B4E93EE3077CF126247C3C513FCC64D1E154863AD21"
+    },
+    {
+      "destination": "dev/fixtures/cavalry-mount-before-push-fix.json",
+      "source": "dev/staging/cavalry-mount-schema-fix-20261109/proposed/dev/fixtures/cavalry-mount-before-push-fix.json",
+      "sha256": "DE35483687111CF2CF825B4E93EE3077CF126247C3C513FCC64D1E154863AD21",
+      "baselineSha256": null
+    },
+    {
+      "destination": "dev/fixtures/cavalry-push-components-primary.json",
+      "source": "dev/staging/cavalry-mount-schema-fix-20261109/proposed/dev/fixtures/cavalry-push-components-primary.json",
+      "sha256": "1C43EC4C458DA8FC7818A2FE69B85477DC4023F5E7A353C56AE0B66CF2E09C23",
+      "baselineSha256": null
+    },
+    {
+      "destination": "dev/test/cavalry-mount-push-schema.test.mjs",
+      "source": "dev/staging/cavalry-mount-schema-fix-20261109/proposed/dev/test/cavalry-mount-push-schema.test.mjs",
+      "sha256": "7286BF752CE9C76A741F39564D824004EEBDB3BD99850DC25F6FEA2F90613789",
+      "baselineSha256": null
+    }
+  ],
+  "focused": {
+    "pass": 4,
+    "fail": 0,
+    "durationMs": 76.4137,
+    "log": "focused.log"
+  },
+  "before": {
+    "pass": 1,
+    "fail": 3,
+    "log": "before.log"
+  },
+  "nativeLog": {
+    "sourceFilename": "ContentLog2026-11-08_20-32-05_1.txt",
+    "retained": "native-original-content-log.txt",
+    "sha256": "2D2DB340726671AE8AF74C5008A0D22FEC549EDDCA400F09362D1E7CAA771FF1",
+    "bytes": 2318,
+    "errors": 2,
+    "warnings": 0,
+    "scriptExceptions": 0,
+    "MolangLines": 0
+  },
+  "typescript": "No JS/TS changes; data-only delta",
+  "nativeAcceptance": false
+}

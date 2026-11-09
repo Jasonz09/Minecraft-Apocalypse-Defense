@@ -1,0 +1,23 @@
+{
+  "utc": "2026-11-09T01:47:52.497Z",
+  "builderReviewed": true,
+  "manifestSha256": "801FAB9E949DB7AF9E961EE4EF42553FFAD1F886B6A5848B148A78A9F7BF4AF6",
+  "bundleManifestSha256": "00E2103A6EB53C10173430ECEF0C4592FDFF61854034A4C0632B0DD706AD08CD",
+  "packPins": 191,
+  "onlyDifferencesVsCurrentOrdinary": [
+    "CivilizationApocalypse_BP/scripts/integration/cavalryFreshTrust.js",
+    "CivilizationApocalypse_BP/scripts/integration/cavalryMicrotrialTrust.js"
+  ],
+  "tenWorldFilesExactEarlierPristineDerivative": true,
+  "focused": {
+    "pass": 9,
+    "fail": 0,
+    "durationMs": 472.5097
+  },
+  "installed": false,
+  "nativeAccepted": false,
+  "limits": [
+    "Full fixed-build gates pending",
+    "Final installed-state setup plan requires independent review"
+  ]
+}
