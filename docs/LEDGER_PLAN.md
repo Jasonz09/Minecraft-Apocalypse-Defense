@@ -1,5 +1,7 @@
 # Commander's Ledger - implementation plan (presenters, runtime and dev-gated wiring on master)
 
+**November8 access correction:** live access is rechecked for pending confirmation, delayed forms, fresh action context, saves and physical follow-up. Closed/unreadable access ends the affected session; fresh explicit use works after re-enable. Already completed saves are retained with truthful status. Fifteen new production-relative regression cases,211focused Ledger/realm checks and the full2,550-case suite pass; the fix is installed in the regular194-file build. Native UI verification of this correction remains OPEN. See `docs/checkpoints/2026-11-08-ledger-access.json`.
+
 The historical city-test deployment gate has been met. The Ledger is wired behind `civ_ledger_dev` and was tested on a separate imported city copy in Minecraft 26.60 on 2026-11-02: recovery, opening, Military, unavailable-action explanations, recruitment confirmation/result, Back navigation and item persistence passed. It remains off by default pending the rest of the checklist.
 The existing script-event commands stay as developer/debug tools.
 

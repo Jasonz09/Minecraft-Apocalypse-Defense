@@ -1,0 +1,62 @@
+{
+  "utc": "2026-11-09T04:46:07.818062+00:00",
+  "packFiles": 194,
+  "sourceInstalledChecks": 388,
+  "exactInventories": true,
+  "freezeSha256": "6A79A07D7694C829BD0D07295C7B6793D0FCDADD171DA89DD84585DD7A2FB001",
+  "regularTrust": "all3 NULL in source and installed packs",
+  "fullLogSha256": "CC34E156C3536DED4C337F400894FA112FD153888F6D1CFA89464B7F27355906",
+  "tests": 2550,
+  "pass": 2550,
+  "fail": 0,
+  "cancelled": 0,
+  "skipped": 0,
+  "gates": 5,
+  "headless": 52,
+  "native194Acceptance": "OPEN; no launch window available on latest resume",
+  "nativePrivate191Cavalry": "First-pair birth/seating/rejoin only PASS",
+  "wholeRoadmap": "UNFINISHED step2/8",
+  "clientDate": "2026-11-08",
+  "branch": "master",
+  "priorInstalledCheckpoint": "5302d72eafe546e6c6dfdb06c186c9ff771aa6ab",
+  "changes": [
+    "Live Ledger access revocation blocks pending recruitment/service actions and delayed forms",
+    "Last access check follows complete action-context assembly",
+    "Completed saves retained; attempted service wording truthful; late physical followup held",
+    "Realm source formatting only:74CRCRLF sequences normalized with exact TypeScript token parity"
+  ],
+  "newCentralCases": 15,
+  "focused": {
+    "tests": 211,
+    "pass": 211,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 5011.9562
+  },
+  "fullDurationMs": 572116.7486,
+  "review": {
+    "manifestSha256": "3F86677E6821E0143072FA72E3DD60803BB255CCD8399D9C3EDEEF893055F20A",
+    "independentReviewSha256": "A8601BE2086D0625A1D84B7B329DB31F3576D0FB5DA48F4279B89D2F3C82E60F",
+    "existingFailureEvidencePreserved": true
+  },
+  "developerPreview": {
+    "valid": true,
+    "kind": "CivilizationApocalypseDeveloperPreview",
+    "sourceFiles": 194,
+    "pairedPacks": 2,
+    "worldIncluded": false,
+    "releaseApproved": false,
+    "cleanStarterVerified": false,
+    "bindingStatus": {
+      "state": "NOT_CHECKED",
+      "scope": "No world supplied; examples are not installed bindings or clean-world proof"
+    },
+    "receiptSha256": "26439A52851DD04FA118560BD6F0DF2E2C4C3F719DA766B98F45B92336868980",
+    "archiveSha256": "9B3472F22AE79E00EB1025E6B83A11BFA5CF91BFBB72C8AE211DEA8240040E43"
+  },
+  "nativeBlocker": "accessibility window-opened handler did not become ready; no Minecraft window on resume; manual launch requested",
+  "nextNative": "SAME disposable CA Natural Lights Nov9 78a94a0c: remaining7wall+3leaf checks, D3-D5 readonly lighting previews, preparation timing/daynight/walking; no bulk cleanup yet",
+  "originalWorlds": "Untouched; latest disposable15-file closed backup preserved",
+  "roadmap": "Unfinished step2/8; no public release or normal-city cavalry/physical-siege acceptance"
+}

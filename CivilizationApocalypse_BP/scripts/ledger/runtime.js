@@ -147,6 +147,15 @@ export function createLedgerUi(deps) {
         }
     }
 
+    /** Close only this session when live access is revoked/unreadable.
+     * @param {Session} session @param {string[]} [notice] */
+    function accessCurrent(session, notice = []) {
+        if (!isCurrent(session)) return false;
+        if (gateIsOpen()) return true;
+        tell(session.player, [...notice, ...GATE_OFF_LINES]);
+        finish(session);
+        return false;
+    }
     /** @returns {any} */
     function liveStatus() {
         try {
@@ -201,7 +210,7 @@ export function createLedgerUi(deps) {
      * @param {MenuModel} model
      */
     function showModel(session, model) {
-        if (!isCurrent(session)) {
+        if (!accessCurrent(session)) {
             return;
         }
         session.current = model;
@@ -222,7 +231,7 @@ export function createLedgerUi(deps) {
      * @param {Session} session
      */
     function render(session) {
-        if (!isCurrent(session)) {
+        if (!accessCurrent(session)) {
             return;
         }
         const loaded = readKingdom();
@@ -255,7 +264,7 @@ export function createLedgerUi(deps) {
      */
     function onResponse(session, response) {
         try {
-            if (!isCurrent(session)) {
+            if (!accessCurrent(session)) {
                 return;
             }
             const answer = /** @type {{ canceled?: boolean, cancelationReason?: string, selection?: number } | undefined} */ (response);
@@ -368,26 +377,34 @@ export function createLedgerUi(deps) {
      * @param {Record<string, unknown>} params
      */
     function execute(session, id, params) {
+        if (!accessCurrent(session)) return;
         const loaded = readKingdom();
         if (loaded.kingdom === undefined) {
             showModel(session, buildResultModel({ ok: false, title: "Not done", lines: [], reason: loaded.reason }));
             return;
         }
         const working = JSON.parse(JSON.stringify(loaded.kingdom));
-        const outcome = runAction(id, {
+        const actionContext = {
             kingdom: working,
             services: deps.services,
             player: session.player,
-            tell: (lines) => tell(session.player, lines),
-        }, params);
+            tell: (/** @type {string[]} */ lines) => tell(session.player, lines),
+        };
+        if (!accessCurrent(session)) return;
+        const outcome = runAction(id, actionContext, params);
         let result = outcome;
+        const serviceNotice = actionSpec(id)?.touchesKingdom === false ? ["The action was attempted before Ledger access closed; check its status before retrying."] : [];
+        if (!accessCurrent(session, serviceNotice)) return;
+        let saved = false;
         if (outcome.ok && actionSpec(id)?.touchesKingdom === true) {
             try {
                 kingdomStore.save(working);
+                saved = true;
             } catch (error) {
                 result = { ok: false, title: "Not saved", lines: [], reason: `the kingdom could not be saved (${String(error)})` };
             }
         }
+        if (!accessCurrent(session, saved ? ["The confirmed change was saved before Ledger access closed."] : [])) return;
         if (result.ok && outcome.afterSave !== undefined) {
             try {
                 outcome.afterSave();
